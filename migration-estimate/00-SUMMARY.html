@@ -1,0 +1,231 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Legacy CBS → .NET 10 Migration — Estimate (one-page summary)</title>
+<style>
+:root{color-scheme:light dark}
+*{box-sizing:border-box}
+body{margin:0;background:#f6f8fa;color:#1f2328;font:16px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif}
+.wrap{max-width:900px;margin:0 auto;padding:32px 24px 96px}
+.card{background:#fff;border:1px solid #d0d7de;border-radius:10px;padding:40px 48px}
+h1,h2,h3{line-height:1.25;font-weight:600}
+h1{font-size:1.9rem;margin:0 0 .3em;padding-bottom:.3em;border-bottom:1px solid #d8dee4}
+h2{font-size:1.4rem;margin:1.8em 0 .6em;padding-bottom:.25em;border-bottom:1px solid #eaeef2}
+h3{font-size:1.12rem;margin:1.4em 0 .5em}
+p,li{margin:.5em 0}
+a{color:#0969da;text-decoration:none}
+a:hover{text-decoration:underline}
+code{font-family:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;font-size:.86em;background:#eff1f3;padding:.15em .4em;border-radius:6px}
+pre{background:#f6f8fa;border:1px solid #d8dee4;border-radius:8px;padding:14px 16px;overflow:auto}
+pre code{background:none;padding:0;font-size:.85em;line-height:1.45}
+blockquote{margin:1em 0;padding:.4em 1em;color:#3d444d;border-left:4px solid #d0d7de;background:#f6f8fa;border-radius:0 6px 6px 0}
+blockquote>:first-child{margin-top:0}blockquote>:last-child{margin-bottom:0}
+table{border-collapse:collapse;width:100%;margin:1em 0;display:block;overflow:auto}
+th,td{border:1px solid #d0d7de;padding:8px 12px;text-align:left;vertical-align:top}
+th{background:#f6f8fa;font-weight:600}
+tr:nth-child(2n) td{background:#f6f8fa}
+hr{border:0;border-top:1px solid #d8dee4;margin:2em 0}
+pre{position:relative}
+pre>button.copy{position:absolute;top:8px;right:8px;padding:5px 9px;cursor:pointer;
+  font:600 .68rem/1 ui-monospace,SFMono-Regular,Consolas,monospace;letter-spacing:.03em;
+  color:#636c76;background:#fff;border:1px solid #d0d7de;border-radius:6px;
+  opacity:0;transition:opacity .12s}
+pre:hover>button.copy,pre>button.copy:focus{opacity:1}
+pre>button.copy.done{color:#0a3622;background:#dafbe1;border-color:#4ac26b}
+@media(hover:none){pre>button.copy{opacity:1}}
+td code.cp{cursor:pointer}
+td code.cp:hover,td code.cp:focus{outline:1px solid #8c959f;outline-offset:1px}
+td code.cp.done{color:#0a3622;background:#dafbe1}
+.docnav{margin:0 0 20px;font-size:.85rem;color:#636c76}
+.docnav a{color:#636c76}
+ul{padding-left:1.4em}ol{padding-left:1.4em}
+@media(max-width:640px){.card{padding:24px 18px}.wrap{padding:16px 10px 64px}}
+@media(prefers-color-scheme:dark){
+ body{background:#0d1117;color:#e6edf3}
+ .card{background:#161b22;border-color:#30363d}
+ h1{border-color:#30363d}h2{border-color:#21262d}
+ code{background:#262c34}
+ pre{background:#0d1117;border-color:#30363d}
+ blockquote{background:#161b22;border-color:#30363d;color:#9198a1}
+ th,td{border-color:#30363d}th{background:#161b22}tr:nth-child(2n) td{background:#12171e}
+ a{color:#4493f8}.docnav,.docnav a{color:#9198a1}
+ hr{border-color:#30363d}
+ pre>button.copy{color:#9198a1;background:#161b22;border-color:#30363d}
+ pre>button.copy.done{color:#aff5b4;background:#1b4721;border-color:#2ea043}
+ td code.cp.done{color:#aff5b4;background:#1b4721}
+}
+</style></head>
+<body><div class="wrap"><div class="card">
+<div class="docnav"><a href="../index.html">&#8592; All docs</a></div>
+<h1 id="legacy-cbs-net-10-migration-estimate-one-page-summary">Legacy CBS → .NET 10 Migration — Estimate (one-page summary)</h1>
+<p><strong>Prepared 17 June 2026 · ROM estimate (±40%) · Confidential</strong>
+Basis: automated scan of the legacy codebase + measured velocity from six delivered pilot screens.</p>
+<h2 id="headline">Headline</h2>
+<table>
+<thead>
+<tr>
+<th>Likely effort</th>
+<th>Indicative timeline</th>
+<th>Team</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>~10,550 person-days (~48 person-years)</strong></td>
+<td><strong>~2.5–3 years</strong></td>
+<td><strong>~20 (dev / QA / BA / PM)</strong></td>
+</tr>
+</tbody>
+</table>
+<h2 id="measured-scope-counted-not-guessed">Measured scope (counted, not guessed)</h2>
+<ul>
+<li><strong>1,458</strong> ASPX screens — of which <strong>1,059</strong> functional + <strong>399</strong> reports</li>
+<li><strong>5,317</strong> stored procedures · <strong>1,497</strong> VB code-behind files · <strong>19</strong> reusable controls</li>
+<li>Functional screens by complexity: Simple <strong>121</strong> · Medium <strong>751</strong> · Complex <strong>187</strong></li>
+<li>Largest modules: RetailBanking 667 · Reports 362 · HO 203 · Reconciliation 74</li>
+</ul>
+<h2 id="why-this-is-achievable">Why this is achievable</h2>
+<p>The reusable <strong>foundation is already built and proven on six delivered screens</strong> — framework, auth/session, menu + fail-closed access control, multi-database data layer, reusable UI components, and a repeatable per-screen recipe. That work (typically 15–20% of such a programme) is <strong>excluded from the build figures</strong> and materially de-risks delivery. The <strong>strangler-fig</strong> approach cuts over module-by-module — value early, no big-bang.</p>
+<h2 id="effort-breakdown-likely">Effort breakdown (likely)</h2>
+<table>
+<thead>
+<tr>
+<th>Workstream</th>
+<th style="text-align: right;">Effort (pd)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Simple / Medium / Complex screens</td>
+<td style="text-align: right;">182 / 3,004 / 1,870</td>
+</tr>
+<tr>
+<td>Reports (re-implement) + platform</td>
+<td style="text-align: right;">838</td>
+</tr>
+<tr>
+<td>Core engine procedures (interest, GL, day-end, clearing)</td>
+<td style="text-align: right;">600</td>
+</tr>
+<tr>
+<td>Data migration + parallel-run tooling</td>
+<td style="text-align: right;">200</td>
+</tr>
+<tr>
+<td>Foundation remaining + cross-provider hardening</td>
+<td style="text-align: right;">240</td>
+</tr>
+<tr>
+<td><strong>Build subtotal</strong></td>
+<td style="text-align: right;"><strong>6,934</strong></td>
+</tr>
+<tr>
+<td>QA + UAT (30%) · PM/BA/DevOps (20%) · Security</td>
+<td style="text-align: right;">2,080 · 1,387 · 150</td>
+</tr>
+<tr>
+<td><strong>TOTAL — likely</strong></td>
+<td style="text-align: right;"><strong>~10,550 (~48 PY)</strong></td>
+</tr>
+</tbody>
+</table>
+<h2 id="range-timeline">Range &amp; timeline</h2>
+<ul>
+<li><strong>Optimistic</strong> ~7,400 pd (~34 PY) · <strong>Likely</strong> ~10,550 pd (~48 PY) · <strong>Pessimistic</strong> ~14,800 pd (~67 PY)</li>
+<li>By team: 15 → ~3.2 yr · <strong>20 → ~2.4 yr (recommended)</strong> · 25 → ~1.9 yr (add ramp-up + UAT ⇒ plan ~2.5–3 yr)</li>
+</ul>
+<h2 id="top-cost-drivers">Top cost drivers</h2>
+<ol>
+<li><strong>Database target</strong> — single-DB removes ~120–150 pd; multi-provider (Oracle/PostgreSQL) adds hardening.</li>
+<li><strong>Reports: rehost vs rebuild</strong> — swings the total by ~500–700 pd (the single biggest lever).</li>
+<li><strong>5,317 stored procedures</strong> — deep embedded logic; highest-risk engines, need senior attention + parallel-run.</li>
+<li><strong>Banking compliance</strong> — reconciliation + likely regulator sign-off lengthen UAT.</li>
+</ol>
+<h2 id="recommendation">Recommendation</h2>
+<p><strong>Approve a 4–6 week discovery phase now.</strong> It converts this ROM into a committed plan (±15%), settles the reports and database-target decisions, and produces a firm Phase-1 budget — before any large build commitment. The proven foundation means the team can begin migrating screens immediately afterward.</p>
+<hr />
+<h2 id="deliverables-in-this-pack">Deliverables in this pack</h2>
+<table>
+<thead>
+<tr>
+<th>File</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>00-SUMMARY.md</code></td>
+<td>This one-page summary + slide outline</td>
+</tr>
+<tr>
+<td><code>TrustBank-Migration-Estimate.docx</code></td>
+<td>Full management report (8 sections)</td>
+</tr>
+<tr>
+<td><code>TrustBank-Migration-Estimate.pptx</code></td>
+<td>9-slide management deck</td>
+</tr>
+<tr>
+<td><code>TrustBank-Migration-Estimate.xlsx</code></td>
+<td>Editable assumptions, module inventory, full 1,458-screen list</td>
+</tr>
+<tr>
+<td><code>screens-raw.tsv</code></td>
+<td>Raw screen inventory (Module / SubArea / Screen / path)</td>
+</tr>
+<tr>
+<td><code>procs-raw.txt</code></td>
+<td>Raw stored-procedure list (5,317)</td>
+</tr>
+</tbody>
+</table>
+<h2 id="slide-deck-outline-pptx">Slide deck outline (<code>.pptx</code>)</h2>
+<ol>
+<li><strong>Title</strong> — Legacy CBS → .NET 10 Migration; headline figures</li>
+<li><strong>Executive summary</strong> — scope, foundation-already-built, strangler-fig</li>
+<li><strong>Measured scope</strong> — counts + complexity column chart</li>
+<li><strong>Effort breakdown</strong> — full workstream table → ~10,550 pd</li>
+<li><strong>Estimate range</strong> — optimistic / likely / pessimistic + drivers</li>
+<li><strong>Indicative timeline</strong> — duration by team size (15 / 20 / 25)</li>
+<li><strong>Phased roadmap</strong> — Phase 0 (done) → Phase 6 (cutover)</li>
+<li><strong>Key risks &amp; cost drivers</strong> — DB target, reports, procedures, compliance</li>
+<li><strong>Recommendation</strong> — approve 4–6 week discovery</li>
+</ol>
+</div></div>
+<script>
+(function(){
+ function put(t){
+  if(navigator.clipboard&&navigator.clipboard.writeText)return navigator.clipboard.writeText(t);
+  return new Promise(function(res,rej){
+   var a=document.createElement('textarea');a.value=t;a.setAttribute('readonly','');
+   a.style.cssText='position:fixed;top:0;left:0;opacity:0';document.body.appendChild(a);
+   a.select();var ok=false;try{ok=document.execCommand('copy')}catch(e){}
+   document.body.removeChild(a);ok?res():rej()});
+ }
+ function flash(el,txt,ms){
+  var was=el.textContent;el.classList.add('done');if(txt)el.textContent=txt;
+  setTimeout(function(){el.classList.remove('done');if(txt)el.textContent=was},ms||1200);
+ }
+ function copy(text,el,okTxt){
+  put(text).then(function(){flash(el,okTxt)},function(){
+   if(okTxt){var w=el.textContent;el.textContent='Ctrl+C';setTimeout(function(){el.textContent=w},2000)}});
+ }
+ document.querySelectorAll('pre').forEach(function(pre){
+  if(pre.classList.contains('txtdoc'))return;
+  var b=document.createElement('button');
+  b.type='button';b.className='copy';b.textContent='Copy';
+  b.setAttribute('aria-label','Copy this code block to the clipboard');
+  b.addEventListener('click',function(){copy((pre.querySelector('code')||pre).innerText,b,'Copied')});
+  pre.appendChild(b);
+ });
+ document.querySelectorAll('td code').forEach(function(c){
+  if(!c.textContent.trim())return;
+  c.classList.add('cp');c.tabIndex=0;c.setAttribute('role','button');
+  c.title='Click to copy';
+  c.addEventListener('click',function(){copy(c.textContent,c)});
+  c.addEventListener('keydown',function(e){
+   if(e.key==='Enter'||e.key===' '){e.preventDefault();copy(c.textContent,c)}});
+ });
+})();
+</script>
+</body></html>

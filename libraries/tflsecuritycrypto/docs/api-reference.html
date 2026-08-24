@@ -1,0 +1,416 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>TflSecurityCrypto — API Reference</title>
+<style>
+:root{color-scheme:light dark}
+*{box-sizing:border-box}
+body{margin:0;background:#f6f8fa;color:#1f2328;font:16px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif}
+.wrap{max-width:900px;margin:0 auto;padding:32px 24px 96px}
+.card{background:#fff;border:1px solid #d0d7de;border-radius:10px;padding:40px 48px}
+h1,h2,h3{line-height:1.25;font-weight:600}
+h1{font-size:1.9rem;margin:0 0 .3em;padding-bottom:.3em;border-bottom:1px solid #d8dee4}
+h2{font-size:1.4rem;margin:1.8em 0 .6em;padding-bottom:.25em;border-bottom:1px solid #eaeef2}
+h3{font-size:1.12rem;margin:1.4em 0 .5em}
+p,li{margin:.5em 0}
+a{color:#0969da;text-decoration:none}
+a:hover{text-decoration:underline}
+code{font-family:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;font-size:.86em;background:#eff1f3;padding:.15em .4em;border-radius:6px}
+pre{background:#f6f8fa;border:1px solid #d8dee4;border-radius:8px;padding:14px 16px;overflow:auto}
+pre code{background:none;padding:0;font-size:.85em;line-height:1.45}
+blockquote{margin:1em 0;padding:.4em 1em;color:#3d444d;border-left:4px solid #d0d7de;background:#f6f8fa;border-radius:0 6px 6px 0}
+blockquote>:first-child{margin-top:0}blockquote>:last-child{margin-bottom:0}
+table{border-collapse:collapse;width:100%;margin:1em 0;display:block;overflow:auto}
+th,td{border:1px solid #d0d7de;padding:8px 12px;text-align:left;vertical-align:top}
+th{background:#f6f8fa;font-weight:600}
+tr:nth-child(2n) td{background:#f6f8fa}
+hr{border:0;border-top:1px solid #d8dee4;margin:2em 0}
+pre{position:relative}
+pre>button.copy{position:absolute;top:8px;right:8px;padding:5px 9px;cursor:pointer;
+  font:600 .68rem/1 ui-monospace,SFMono-Regular,Consolas,monospace;letter-spacing:.03em;
+  color:#636c76;background:#fff;border:1px solid #d0d7de;border-radius:6px;
+  opacity:0;transition:opacity .12s}
+pre:hover>button.copy,pre>button.copy:focus{opacity:1}
+pre>button.copy.done{color:#0a3622;background:#dafbe1;border-color:#4ac26b}
+@media(hover:none){pre>button.copy{opacity:1}}
+td code.cp{cursor:pointer}
+td code.cp:hover,td code.cp:focus{outline:1px solid #8c959f;outline-offset:1px}
+td code.cp.done{color:#0a3622;background:#dafbe1}
+.docnav{margin:0 0 20px;font-size:.85rem;color:#636c76}
+.docnav a{color:#636c76}
+ul{padding-left:1.4em}ol{padding-left:1.4em}
+@media(max-width:640px){.card{padding:24px 18px}.wrap{padding:16px 10px 64px}}
+@media(prefers-color-scheme:dark){
+ body{background:#0d1117;color:#e6edf3}
+ .card{background:#161b22;border-color:#30363d}
+ h1{border-color:#30363d}h2{border-color:#21262d}
+ code{background:#262c34}
+ pre{background:#0d1117;border-color:#30363d}
+ blockquote{background:#161b22;border-color:#30363d;color:#9198a1}
+ th,td{border-color:#30363d}th{background:#161b22}tr:nth-child(2n) td{background:#12171e}
+ a{color:#4493f8}.docnav,.docnav a{color:#9198a1}
+ hr{border-color:#30363d}
+ pre>button.copy{color:#9198a1;background:#161b22;border-color:#30363d}
+ pre>button.copy.done{color:#aff5b4;background:#1b4721;border-color:#2ea043}
+ td code.cp.done{color:#aff5b4;background:#1b4721}
+}
+</style></head>
+<body><div class="wrap"><div class="card">
+<div class="docnav"><a href="../../../index.html">&#8592; All docs</a></div>
+<h1 id="tflsecuritycrypto-api-reference">TflSecurityCrypto — API Reference</h1>
+<p>Every public member of the <code>TflSecurityCrypto</code> assembly (namespace <code>TflSecurityCrypto</code>, TFM <code>net10.0</code>).
+All types are static-method containers; nothing needs instantiating. See <a href="../README.html">../README.md</a> for
+orientation and <a href="security-notes.html">security-notes.md</a> for which primitive is appropriate where.</p>
+<p>Legend — <strong>Current</strong>: use for new work · <strong>Legacy</strong>: compatibility only · <strong>Unsupported</strong>: throws on .NET 10.</p>
+<hr />
+<h2 id="passwordhash-static-class-current"><code>PasswordHash</code> — static class · <strong>Current</strong></h2>
+<p>PBKDF2-HMAC-SHA256 password storage. One-way; no decrypt exists.</p>
+<h3 id="constants">Constants</h3>
+<table>
+<thead>
+<tr>
+<th>Member</th>
+<th>Type</th>
+<th>Value</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>CurrentVersion</code></td>
+<td><code>const string</code></td>
+<td><code>"v1"</code></td>
+<td>Format tag written into every new hash. Only this version is accepted when parsing.</td>
+</tr>
+<tr>
+<td><code>CurrentIterations</code></td>
+<td><code>const int</code></td>
+<td><code>600000</code></td>
+<td>Iterations used by <code>Create</code> and the threshold used by <code>NeedsRehash</code>.</td>
+</tr>
+</tbody>
+</table>
+<p>Internal parameters (not public, stated for auditability): salt 16 bytes, derived key 32 bytes, PRF SHA-256,
+separator <code>'$'</code>.</p>
+<h3 id="static-string-createstring-password"><code>static string Create(string password)</code></h3>
+<p>Generates a cryptographically random 16-byte salt, derives a 32-byte key with <code>Rfc2898DeriveBytes.Pbkdf2</code>, and
+returns <code>v1$&lt;iterations&gt;$&lt;base64 salt&gt;$&lt;base64 key&gt;</code>.</p>
+<ul>
+<li><strong>Throws</strong> <code>ArgumentNullException</code> when <code>password</code> is <code>null</code>. An <strong>empty string is valid</strong> and hashes normally.</li>
+<li>Non-deterministic by design: same password ⇒ different output each call.</li>
+<li>Cost: ~600k SHA-256 rounds — deliberately slow (tens of milliseconds). Do not call it in a loop over a batch.</li>
+</ul>
+<h3 id="static-bool-verifystring-password-string-storedhash"><code>static bool Verify(string password, string storedHash)</code></h3>
+<p>Parses <code>storedHash</code>, re-derives with the embedded salt/iterations/key-length, compares with
+<code>CryptographicOperations.FixedTimeEquals</code>.</p>
+<ul>
+<li>Returns <code>false</code> — <strong>never throws</strong> — for <code>null</code> password, or a <code>storedHash</code> that is null, empty, has ≠ 4
+  fields, carries a version other than <code>v1</code>, has a non-numeric or non-positive iteration count, or invalid Base64.</li>
+<li>Constant-time comparison: no early exit that could leak byte positions by timing.</li>
+</ul>
+<h3 id="static-bool-needsrehashstring-storedhash"><code>static bool NeedsRehash(string storedHash)</code></h3>
+<p><code>true</code> when the stored value cannot be parsed at all (missing / malformed / non-current version) <strong>or</strong> its
+iteration count is below <code>CurrentIterations</code>. Intended use — right after a successful <code>Verify</code>:</p>
+<pre><code class="language-csharp">if (PasswordHash.Verify(submitted, stored) )
+{
+    if (PasswordHash.NeedsRehash(stored))
+        SaveNewHash(PasswordHash.Create(submitted));   // silent cost upgrade
+    SignIn();
+}
+</code></pre>
+<hr />
+<h2 id="cryptography-class-static-members-legacy"><code>Cryptography</code> — class (static members) · <strong>Legacy</strong></h2>
+<p>Ported 1:1 from the legacy VB.NET implementation; output is byte-for-byte identical.</p>
+<h3 id="static-byte-encryptstring-text"><code>static byte[] Encrypt(string text)</code></h3>
+<p>Raw <strong>MD5</strong> of the UTF-8 bytes of <code>text</code>. Unsalted, 16 bytes. Compatibility only — see
+<a href="security-notes.html#md5-cryptographyencryptstring">security-notes.md</a>.</p>
+<h3 id="static-string-encryptstring-toencrypt-bool-usehashing"><code>static string Encrypt(string toEncrypt, bool useHashing)</code></h3>
+<p><strong>Triple-DES</strong>, <code>CipherMode.ECB</code>, <code>PaddingMode.PKCS7</code>, over UTF-8 bytes; result Base64.</p>
+<table>
+<thead>
+<tr>
+<th><code>useHashing</code></th>
+<th>Key material</th>
+<th>Result</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>true</code></td>
+<td>MD5 of the key string → 16 bytes (two-key 3DES)</td>
+<td>Works. This is the path in use.</td>
+</tr>
+<tr>
+<td><code>false</code></td>
+<td>Raw UTF-8 bytes of the key string</td>
+<td>The built-in default key is 14 bytes — invalid for 3DES, so this <strong>throws</strong>. Matches legacy behaviour.</td>
+</tr>
+</tbody>
+</table>
+<p>Key resolution: <code>ConfigurationManager.AppSettings["SecurityKey"]</code> if non-empty, otherwise a hard-coded default
+literal in <code>Cryptography.cs</code>. On hosts without an <code>app.config</code> (i.e. any ASP.NET Core app) the default is always used.</p>
+<h3 id="static-string-decryptstring-cipherstring-bool-usehashing"><code>static string Decrypt(string cipherString, bool useHashing)</code></h3>
+<p>Inverse of the above. <code>cipherString</code> must be Base64; invalid Base64 throws <code>FormatException</code>, and a wrong key
+throws <code>CryptographicException</code> (bad PKCS7 padding). Neither is caught internally — the method rethrows.</p>
+<h3 id="static-byte-encryptstring-text-string-salt"><code>static byte[] Encrypt(string text, string salt)</code></h3>
+<p>Salted <strong>SHA-256</strong>. Appends a fixed suffix literal to <code>salt</code>, calls the internal <code>SimpleHash.ComputeHash(text,
+"SHA256", saltBytes)</code>, and returns the <strong>UTF-8 bytes of the resulting Base64 string</strong> (not the raw digest — a
+legacy quirk preserved deliberately).</p>
+<h3 id="static-bool-verifyhashstring-text-string-salt"><code>static bool VerifyHash(string text, string salt)</code></h3>
+<p>Recomputes the salted SHA-256 for <code>text</code> and verifies it. Note the legacy semantics: it hashes <code>text</code> and then
+verifies that same freshly computed hash, so it answers "is this hash self-consistent", not "does this match a
+stored value". To check a candidate against a stored hash, compare <code>Encrypt(text, salt)</code> to the stored bytes.</p>
+<hr />
+<h2 id="rc4-sealed-class-static-members-private-constructor-legacy"><code>RC4</code> — sealed class (static members, private constructor) · <strong>Legacy</strong></h2>
+<table>
+<thead>
+<tr>
+<th>Member</th>
+<th>Signature</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>mHexKey</code></td>
+<td><code>public static string</code></td>
+<td>Shared hex key suffix, mirrored in the JS twin. Public and mutable — treat as read-only.</td>
+</tr>
+<tr>
+<td><code>GetRandomKey</code></td>
+<td><code>static string GetRandomKey()</code></td>
+<td><code>Guid.NewGuid().ToString()</code>.</td>
+</tr>
+<tr>
+<td><code>Encrypt</code></td>
+<td><code>static string Encrypt(string key, string data)</code></td>
+<td>UTF-16LE (<code>Encoding.Unicode</code>) bytes, RC4, then Base64.</td>
+</tr>
+<tr>
+<td><code>Decrypt</code></td>
+<td><code>static string Decrypt(string key, string data)</code></td>
+<td>Base64-decode, RC4, UTF-16LE decode.</td>
+</tr>
+<tr>
+<td><code>Encrypt</code> / <code>Decrypt</code></td>
+<td><code>static byte[] …(byte[] key, byte[] data)</code></td>
+<td>Identical transform — RC4 is its own inverse.</td>
+</tr>
+<tr>
+<td><code>GetJsModuleScript</code></td>
+<td><code>static string GetJsModuleScript()</code></td>
+<td>Minified JavaScript module (<code>RC4.rc4Encrypt</code> + <code>RC4.encode64</code>) so a browser can produce the same ciphertext.</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Throws</strong> <code>DivideByZeroException</code> for an empty key (<code>key[i % key.Length]</code> with length 0) — legacy behaviour,
+pinned by test.</p>
+<hr />
+<h2 id="rngcsp-class-static-members-current"><code>RNGCSP</code> — class (static members) · <strong>Current</strong></h2>
+<h3 id="static-byte-rolldicebyte-numbersides"><code>static byte RollDice(byte numberSides)</code></h3>
+<p>Uniform random value in <code>1..numberSides</code> from <code>RandomNumberGenerator</code>, using rejection sampling: bytes at or
+above <code>numberSides * (255 / numberSides)</code> are discarded so the modulo does not skew the distribution.</p>
+<ul>
+<li><strong>Throws</strong> <code>ArgumentOutOfRangeException</code> when <code>numberSides &lt;= 0</code>.</li>
+<li>Suitable wherever a small uniform random integer is needed; for anything larger use
+  <code>RandomNumberGenerator.GetInt32</code> directly.</li>
+</ul>
+<hr />
+<h2 id="charsetutil-class-static-members-utility"><code>CharSetUtil</code> — class (static members) · Utility</h2>
+<h3 id="static-string-chrint-p_intbyte"><code>static string Chr(int p_intByte)</code></h3>
+<p>Code-page-1252 single-byte → string, the VB <code>Chr()</code> equivalent. Registers <code>CodePagesEncodingProvider</code> on each
+call. <strong>Throws</strong> <code>ArgumentOutOfRangeException</code> outside <code>0..255</code>.</p>
+<hr />
+<h2 id="machineidentity-class-static-members-legacy-windows-only"><code>MachineIdentity</code> — class (static members) · <strong>Legacy</strong> · Windows only</h2>
+<p><code>[SupportedOSPlatform("windows")]</code>. WMI queries via <code>System.Management</code>. Every member propagates the underlying
+<code>ManagementException</code> on failure.</p>
+<table>
+<thead>
+<tr>
+<th>Member</th>
+<th>Returns</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>GetWin32_BaseBoard_SerialNumber()</code></td>
+<td>Motherboard serial (<code>Win32_BaseBoard.SerialNumber</code>)</td>
+</tr>
+<tr>
+<td><code>GetWin32_Processor_ProcessorId()</code></td>
+<td>CPU id (<code>Win32_Processor.ProcessorId</code>)</td>
+</tr>
+<tr>
+<td><code>GetWin32_LogicalDisk_VolumeSerialNumber()</code></td>
+<td>Volume serial of <code>c:</code></td>
+</tr>
+<tr>
+<td><code>GetVolumeSerialNumber(string driveLetter)</code></td>
+<td>Volume serial of the given drive (e.g. <code>"d:"</code>); <code>""</code> if not found</td>
+</tr>
+<tr>
+<td><code>GetWin32_NetworkAdapterConfiguration_MacAddress()</code></td>
+<td>First MAC address</td>
+</tr>
+</tbody>
+</table>
+<h3 id="static-string-generatekey"><code>static string GenerateKey()</code></h3>
+<p>Composes a three-line <code>key=value</code> block (baseboard serial, C: volume serial, processor id) and returns
+<code>Cryptography.Encrypt(block, useHashing: true)</code> — i.e. the Triple-DES ciphertext of the machine fingerprint.</p>
+<hr />
+<h2 id="machineidentityvalidator-class-static-members-legacy-windows-only"><code>MachineIdentityValidator</code> — class (static members) · <strong>Legacy</strong> · Windows only</h2>
+<h3 id="static-bool-validatemachineidentitystring-licensefile"><code>static bool ValidateMachineIdentity(string licenseFile)</code></h3>
+<p>Reads the licence file and validates it against this machine.</p>
+<ol>
+<li><strong>Fail-open guard</strong> — if <code>MachineIdentity.GenerateKey()</code> throws (no WMI, non-Windows, restricted service
+   account), the method returns <strong><code>true</code></strong>. Preserved legacy behaviour; do not rely on it as a security control.</li>
+<li><strong>Expiry prefix</strong> — if the content starts with the fixed date-time marker, the following 24 characters decrypt
+   to <code>yyyyMMdd</code>; past that date it throws <code>ApplicationException("License expired")</code>.</li>
+<li><strong>Trial window</strong> — if the decrypted payload contains <code>TRIAL</code>, the leading <code>$</code>-terminated segment is parsed as
+   <code>…,&lt;startDate&gt;,&lt;days&gt;</code>; outside the window it rewrites the licence file and throws
+   <code>ApplicationException("License file expired.")</code>.</li>
+<li><strong>Machine binding</strong> — decrypts the remaining payload a second time and compares with this machine's decrypted
+   key. Mismatch ⇒ <code>false</code>; match ⇒ <code>true</code>.</li>
+</ol>
+<p>Other exceptions surface as thrown: <code>FileNotFoundException</code>, <code>FormatException</code> (bad Base64), <code>CryptographicException</code>
+(wrong key), <code>FormatException</code> from <code>DateTime.ParseExact</code>.</p>
+<hr />
+<h2 id="appconfigsectionprotector-class-static-members-unsupported-on-net-10"><code>AppConfigSectionProtector</code> — class (static members) · <strong>Unsupported on .NET 10</strong></h2>
+<table>
+<thead>
+<tr>
+<th>Member</th>
+<th>Behaviour</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>static void ProtectConnectionString(string exePath)</code></td>
+<td>Throws <code>PlatformNotSupportedException</code></td>
+</tr>
+<tr>
+<td><code>static void UnprotectConnectionString(string exePath)</code></td>
+<td>Throws <code>PlatformNotSupportedException</code></td>
+</tr>
+</tbody>
+</table>
+<p>Protected-configuration providers (<code>DataProtectionConfigurationProvider</code>) are not supported by
+<code>System.Configuration</code> on .NET (Core) 5+. Use <code>System.Security.Cryptography.ProtectedData</code> instead.</p>
+<hr />
+<h2 id="configfileprotection-class-static-members-unsupported-on-net-10"><code>ConfigFileProtection</code> — class (static members) · <strong>Unsupported on .NET 10</strong></h2>
+<table>
+<thead>
+<tr>
+<th>Member</th>
+<th>Behaviour</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>static void ProtectSection(string sectionName, string provider, string applicationPath)</code></td>
+<td>Throws <code>PlatformNotSupportedException</code></td>
+</tr>
+<tr>
+<td><code>static void UnProtectSection(string sectionName, string applicationPath)</code></td>
+<td>Throws <code>PlatformNotSupportedException</code></td>
+</tr>
+</tbody>
+</table>
+<p><code>System.Web.Configuration.WebConfigurationManager</code> does not exist on .NET (Core). Use ASP.NET Core Data
+Protection or an external secret store.</p>
+<hr />
+<h2 id="simplehash-internal-documented-for-completeness"><code>SimpleHash</code> — <strong>internal</strong>, documented for completeness</h2>
+<p>Not part of the public API; visible to <code>TflSecurityCrypto.Tests</code> via <code>InternalsVisibleTo</code>. Derived from the
+Obviex sample the legacy VB library used.</p>
+<ul>
+<li><code>static string ComputeHash(string plainText, string hashAlgorithm, byte[] saltBytes)</code> — appends the salt to the
+  UTF-8 plaintext, hashes with <code>MD5</code> / <code>SHA1</code> / <code>SHA256</code> / <code>SHA384</code> / <code>SHA512</code> (case-insensitive; <strong>anything
+  unrecognised falls back to MD5</strong>), then returns Base64 of <code>hash || salt</code>. A <code>null</code> salt generates a random
+  4–7-byte non-zero salt.</li>
+<li><code>static bool VerifyHash(string plainText, string hashAlgorithm, string hashValue)</code> — recovers the salt from the
+  tail of <code>hashValue</code> (using the algorithm's known digest length), recomputes, and compares.</li>
+</ul>
+<hr />
+<h2 id="exception-summary">Exception summary</h2>
+<table>
+<thead>
+<tr>
+<th>Exception</th>
+<th>Raised by</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>ArgumentNullException</code></td>
+<td><code>PasswordHash.Create(null)</code></td>
+</tr>
+<tr>
+<td><code>ArgumentOutOfRangeException</code></td>
+<td><code>RNGCSP.RollDice(&lt;= 0)</code>, <code>CharSetUtil.Chr</code> outside 0–255</td>
+</tr>
+<tr>
+<td><code>DivideByZeroException</code></td>
+<td><code>RC4</code> with an empty key</td>
+</tr>
+<tr>
+<td><code>CryptographicException</code></td>
+<td><code>Cryptography.Decrypt</code> with the wrong key (PKCS7 padding failure)</td>
+</tr>
+<tr>
+<td><code>FormatException</code></td>
+<td><code>Cryptography.Decrypt</code> / <code>RC4.Decrypt</code> with non-Base64 input</td>
+</tr>
+<tr>
+<td><code>ApplicationException</code></td>
+<td><code>MachineIdentityValidator</code> — expired licence or expired trial</td>
+</tr>
+<tr>
+<td><code>PlatformNotSupportedException</code></td>
+<td>Both config-protection types, every member</td>
+</tr>
+<tr>
+<td><em>(any)</em></td>
+<td><code>Cryptography.Encrypt(text, useHashing: false)</code> — invalid 3DES key size</td>
+</tr>
+</tbody>
+</table>
+<p><code>PasswordHash.Verify</code> and <code>PasswordHash.NeedsRehash</code> are the only members guaranteed never to throw on malformed
+input.</p>
+</div></div>
+<script>
+(function(){
+ function put(t){
+  if(navigator.clipboard&&navigator.clipboard.writeText)return navigator.clipboard.writeText(t);
+  return new Promise(function(res,rej){
+   var a=document.createElement('textarea');a.value=t;a.setAttribute('readonly','');
+   a.style.cssText='position:fixed;top:0;left:0;opacity:0';document.body.appendChild(a);
+   a.select();var ok=false;try{ok=document.execCommand('copy')}catch(e){}
+   document.body.removeChild(a);ok?res():rej()});
+ }
+ function flash(el,txt,ms){
+  var was=el.textContent;el.classList.add('done');if(txt)el.textContent=txt;
+  setTimeout(function(){el.classList.remove('done');if(txt)el.textContent=was},ms||1200);
+ }
+ function copy(text,el,okTxt){
+  put(text).then(function(){flash(el,okTxt)},function(){
+   if(okTxt){var w=el.textContent;el.textContent='Ctrl+C';setTimeout(function(){el.textContent=w},2000)}});
+ }
+ document.querySelectorAll('pre').forEach(function(pre){
+  if(pre.classList.contains('txtdoc'))return;
+  var b=document.createElement('button');
+  b.type='button';b.className='copy';b.textContent='Copy';
+  b.setAttribute('aria-label','Copy this code block to the clipboard');
+  b.addEventListener('click',function(){copy((pre.querySelector('code')||pre).innerText,b,'Copied')});
+  pre.appendChild(b);
+ });
+ document.querySelectorAll('td code').forEach(function(c){
+  if(!c.textContent.trim())return;
+  c.classList.add('cp');c.tabIndex=0;c.setAttribute('role','button');
+  c.title='Click to copy';
+  c.addEventListener('click',function(){copy(c.textContent,c)});
+  c.addEventListener('keydown',function(e){
+   if(e.key==='Enter'||e.key===' '){e.preventDefault();copy(c.textContent,c)}});
+ });
+})();
+</script>
+</body></html>

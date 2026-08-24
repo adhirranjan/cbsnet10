@@ -1,0 +1,399 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Perf baseline — account list (DB-side filter/sort/page, step 1)</title>
+<style>
+:root{color-scheme:light dark}
+*{box-sizing:border-box}
+body{margin:0;background:#f6f8fa;color:#1f2328;font:16px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif}
+.wrap{max-width:900px;margin:0 auto;padding:32px 24px 96px}
+.card{background:#fff;border:1px solid #d0d7de;border-radius:10px;padding:40px 48px}
+h1,h2,h3{line-height:1.25;font-weight:600}
+h1{font-size:1.9rem;margin:0 0 .3em;padding-bottom:.3em;border-bottom:1px solid #d8dee4}
+h2{font-size:1.4rem;margin:1.8em 0 .6em;padding-bottom:.25em;border-bottom:1px solid #eaeef2}
+h3{font-size:1.12rem;margin:1.4em 0 .5em}
+p,li{margin:.5em 0}
+a{color:#0969da;text-decoration:none}
+a:hover{text-decoration:underline}
+code{font-family:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;font-size:.86em;background:#eff1f3;padding:.15em .4em;border-radius:6px}
+pre{background:#f6f8fa;border:1px solid #d8dee4;border-radius:8px;padding:14px 16px;overflow:auto}
+pre code{background:none;padding:0;font-size:.85em;line-height:1.45}
+blockquote{margin:1em 0;padding:.4em 1em;color:#3d444d;border-left:4px solid #d0d7de;background:#f6f8fa;border-radius:0 6px 6px 0}
+blockquote>:first-child{margin-top:0}blockquote>:last-child{margin-bottom:0}
+table{border-collapse:collapse;width:100%;margin:1em 0;display:block;overflow:auto}
+th,td{border:1px solid #d0d7de;padding:8px 12px;text-align:left;vertical-align:top}
+th{background:#f6f8fa;font-weight:600}
+tr:nth-child(2n) td{background:#f6f8fa}
+hr{border:0;border-top:1px solid #d8dee4;margin:2em 0}
+pre{position:relative}
+pre>button.copy{position:absolute;top:8px;right:8px;padding:5px 9px;cursor:pointer;
+  font:600 .68rem/1 ui-monospace,SFMono-Regular,Consolas,monospace;letter-spacing:.03em;
+  color:#636c76;background:#fff;border:1px solid #d0d7de;border-radius:6px;
+  opacity:0;transition:opacity .12s}
+pre:hover>button.copy,pre>button.copy:focus{opacity:1}
+pre>button.copy.done{color:#0a3622;background:#dafbe1;border-color:#4ac26b}
+@media(hover:none){pre>button.copy{opacity:1}}
+td code.cp{cursor:pointer}
+td code.cp:hover,td code.cp:focus{outline:1px solid #8c959f;outline-offset:1px}
+td code.cp.done{color:#0a3622;background:#dafbe1}
+.docnav{margin:0 0 20px;font-size:.85rem;color:#636c76}
+.docnav a{color:#636c76}
+ul{padding-left:1.4em}ol{padding-left:1.4em}
+@media(max-width:640px){.card{padding:24px 18px}.wrap{padding:16px 10px 64px}}
+@media(prefers-color-scheme:dark){
+ body{background:#0d1117;color:#e6edf3}
+ .card{background:#161b22;border-color:#30363d}
+ h1{border-color:#30363d}h2{border-color:#21262d}
+ code{background:#262c34}
+ pre{background:#0d1117;border-color:#30363d}
+ blockquote{background:#161b22;border-color:#30363d;color:#9198a1}
+ th,td{border-color:#30363d}th{background:#161b22}tr:nth-child(2n) td{background:#12171e}
+ a{color:#4493f8}.docnav,.docnav a{color:#9198a1}
+ hr{border-color:#30363d}
+ pre>button.copy{color:#9198a1;background:#161b22;border-color:#30363d}
+ pre>button.copy.done{color:#aff5b4;background:#1b4721;border-color:#2ea043}
+ td code.cp.done{color:#aff5b4;background:#1b4721}
+}
+</style></head>
+<body><div class="wrap"><div class="card">
+<div class="docnav"><a href="../index.html">&#8592; All docs</a></div>
+<h1 id="perf-baseline-account-list-db-side-filtersortpage-step-1">Perf baseline — account list (DB-side filter/sort/page, step 1)</h1>
+<ul>
+<li>Generated: 2026-07-30 17:23:46</li>
+<li>Iterations: 6 (warmup 2), page 1 × 15, provider SqlServer</li>
+<li>Name-filter term: <code>RA</code> · branch order: large-&gt;small</li>
+<li>Read-only probe. Targets: current <code>AccountService.SearchAccountsAsync</code>, legacy
+  <code>pr_b_GetAccountList</code>, and a <code>SqlQuery</code> DB-paged prototype (4 joins + OFFSET/FETCH + COUNT).</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th style="text-align: right;">Branch</th>
+<th>Band</th>
+<th style="text-align: right;">Open accts</th>
+<th>Target</th>
+<th style="text-align: right;">Round-trips</th>
+<th style="text-align: right;">min</th>
+<th style="text-align: right;">avg</th>
+<th style="text-align: right;">median</th>
+<th style="text-align: right;">p95</th>
+<th style="text-align: right;">max</th>
+<th>result</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: right;">14</td>
+<td>large</td>
+<td style="text-align: right;">20,480</td>
+<td>1 C# current</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">318.4</td>
+<td style="text-align: right;">362.5</td>
+<td style="text-align: right;">352.4</td>
+<td style="text-align: right;">409.9</td>
+<td style="text-align: right;">417.0</td>
+<td>15 of 20364</td>
+</tr>
+<tr>
+<td style="text-align: right;">14</td>
+<td>large</td>
+<td style="text-align: right;">20,480</td>
+<td>2 C# current +filter</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">334.8</td>
+<td style="text-align: right;">349.5</td>
+<td style="text-align: right;">340.4</td>
+<td style="text-align: right;">382.8</td>
+<td style="text-align: right;">393.7</td>
+<td>15 of 6488</td>
+</tr>
+<tr>
+<td style="text-align: right;">14</td>
+<td>large</td>
+<td style="text-align: right;">20,480</td>
+<td>3 Legacy proc</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">357.6</td>
+<td style="text-align: right;">460.9</td>
+<td style="text-align: right;">362.6</td>
+<td style="text-align: right;">804.2</td>
+<td style="text-align: right;">945.9</td>
+<td>20364 rows</td>
+</tr>
+<tr>
+<td style="text-align: right;">14</td>
+<td>large</td>
+<td style="text-align: right;">20,480</td>
+<td>4 DB-paged proto</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">422.7</td>
+<td style="text-align: right;">444.9</td>
+<td style="text-align: right;">441.7</td>
+<td style="text-align: right;">469.9</td>
+<td style="text-align: right;">473.8</td>
+<td>15 of 20364</td>
+</tr>
+<tr>
+<td style="text-align: right;">14</td>
+<td>large</td>
+<td style="text-align: right;">20,480</td>
+<td>5 DB-paged +filter</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">466.9</td>
+<td style="text-align: right;">483.3</td>
+<td style="text-align: right;">476.3</td>
+<td style="text-align: right;">508.5</td>
+<td style="text-align: right;">513.5</td>
+<td>15 of 6488</td>
+</tr>
+<tr>
+<td style="text-align: right;">14</td>
+<td>large</td>
+<td style="text-align: right;">20,480</td>
+<td>6 Join+memory page</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">265.4</td>
+<td style="text-align: right;">270.4</td>
+<td style="text-align: right;">269.2</td>
+<td style="text-align: right;">277.8</td>
+<td style="text-align: right;">280.1</td>
+<td>15 of 20364</td>
+</tr>
+<tr>
+<td style="text-align: right;">14</td>
+<td>large</td>
+<td style="text-align: right;">20,480</td>
+<td>7 Join+mem +filter</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">259.8</td>
+<td style="text-align: right;">263.0</td>
+<td style="text-align: right;">263.4</td>
+<td style="text-align: right;">265.8</td>
+<td style="text-align: right;">266.0</td>
+<td>15 of 6488</td>
+</tr>
+<tr>
+<td style="text-align: right;">43</td>
+<td>medium</td>
+<td style="text-align: right;">7,516</td>
+<td>1 C# current</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">132.9</td>
+<td style="text-align: right;">144.1</td>
+<td style="text-align: right;">145.1</td>
+<td style="text-align: right;">151.0</td>
+<td style="text-align: right;">151.1</td>
+<td>15 of 7392</td>
+</tr>
+<tr>
+<td style="text-align: right;">43</td>
+<td>medium</td>
+<td style="text-align: right;">7,516</td>
+<td>2 C# current +filter</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">127.0</td>
+<td style="text-align: right;">141.0</td>
+<td style="text-align: right;">141.8</td>
+<td style="text-align: right;">148.5</td>
+<td style="text-align: right;">150.1</td>
+<td>15 of 3252</td>
+</tr>
+<tr>
+<td style="text-align: right;">43</td>
+<td>medium</td>
+<td style="text-align: right;">7,516</td>
+<td>3 Legacy proc</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">143.4</td>
+<td style="text-align: right;">150.4</td>
+<td style="text-align: right;">151.8</td>
+<td style="text-align: right;">153.2</td>
+<td style="text-align: right;">153.5</td>
+<td>7392 rows</td>
+</tr>
+<tr>
+<td style="text-align: right;">43</td>
+<td>medium</td>
+<td style="text-align: right;">7,516</td>
+<td>4 DB-paged proto</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">698.8</td>
+<td style="text-align: right;">711.6</td>
+<td style="text-align: right;">706.3</td>
+<td style="text-align: right;">730.6</td>
+<td style="text-align: right;">732.6</td>
+<td>15 of 7392</td>
+</tr>
+<tr>
+<td style="text-align: right;">43</td>
+<td>medium</td>
+<td style="text-align: right;">7,516</td>
+<td>5 DB-paged +filter</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">705.3</td>
+<td style="text-align: right;">720.6</td>
+<td style="text-align: right;">721.9</td>
+<td style="text-align: right;">734.4</td>
+<td style="text-align: right;">735.8</td>
+<td>15 of 3252</td>
+</tr>
+<tr>
+<td style="text-align: right;">43</td>
+<td>medium</td>
+<td style="text-align: right;">7,516</td>
+<td>6 Join+memory page</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">115.1</td>
+<td style="text-align: right;">119.7</td>
+<td style="text-align: right;">119.7</td>
+<td style="text-align: right;">123.3</td>
+<td style="text-align: right;">123.5</td>
+<td>15 of 7392</td>
+</tr>
+<tr>
+<td style="text-align: right;">43</td>
+<td>medium</td>
+<td style="text-align: right;">7,516</td>
+<td>7 Join+mem +filter</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">112.6</td>
+<td style="text-align: right;">116.2</td>
+<td style="text-align: right;">115.7</td>
+<td style="text-align: right;">119.5</td>
+<td style="text-align: right;">120.1</td>
+<td>15 of 3252</td>
+</tr>
+<tr>
+<td style="text-align: right;">53</td>
+<td>small</td>
+<td style="text-align: right;">1,392</td>
+<td>1 C# current</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">46.8</td>
+<td style="text-align: right;">48.1</td>
+<td style="text-align: right;">48.3</td>
+<td style="text-align: right;">49.0</td>
+<td style="text-align: right;">49.0</td>
+<td>15 of 1362</td>
+</tr>
+<tr>
+<td style="text-align: right;">53</td>
+<td>small</td>
+<td style="text-align: right;">1,392</td>
+<td>2 C# current +filter</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">46.1</td>
+<td style="text-align: right;">48.2</td>
+<td style="text-align: right;">48.0</td>
+<td style="text-align: right;">50.0</td>
+<td style="text-align: right;">50.0</td>
+<td>15 of 562</td>
+</tr>
+<tr>
+<td style="text-align: right;">53</td>
+<td>small</td>
+<td style="text-align: right;">1,392</td>
+<td>3 Legacy proc</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">44.7</td>
+<td style="text-align: right;">48.0</td>
+<td style="text-align: right;">45.6</td>
+<td style="text-align: right;">54.3</td>
+<td style="text-align: right;">55.0</td>
+<td>1362 rows</td>
+</tr>
+<tr>
+<td style="text-align: right;">53</td>
+<td>small</td>
+<td style="text-align: right;">1,392</td>
+<td>4 DB-paged proto</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">701.4</td>
+<td style="text-align: right;">714.7</td>
+<td style="text-align: right;">714.5</td>
+<td style="text-align: right;">727.0</td>
+<td style="text-align: right;">728.3</td>
+<td>15 of 1362</td>
+</tr>
+<tr>
+<td style="text-align: right;">53</td>
+<td>small</td>
+<td style="text-align: right;">1,392</td>
+<td>5 DB-paged +filter</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">687.1</td>
+<td style="text-align: right;">697.3</td>
+<td style="text-align: right;">695.6</td>
+<td style="text-align: right;">709.1</td>
+<td style="text-align: right;">711.7</td>
+<td>15 of 562</td>
+</tr>
+<tr>
+<td style="text-align: right;">53</td>
+<td>small</td>
+<td style="text-align: right;">1,392</td>
+<td>6 Join+memory page</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">44.9</td>
+<td style="text-align: right;">47.2</td>
+<td style="text-align: right;">47.1</td>
+<td style="text-align: right;">49.2</td>
+<td style="text-align: right;">49.4</td>
+<td>15 of 1362</td>
+</tr>
+<tr>
+<td style="text-align: right;">53</td>
+<td>small</td>
+<td style="text-align: right;">1,392</td>
+<td>7 Join+mem +filter</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">43.4</td>
+<td style="text-align: right;">45.6</td>
+<td style="text-align: right;">45.8</td>
+<td style="text-align: right;">47.5</td>
+<td style="text-align: right;">47.5</td>
+<td>15 of 562</td>
+</tr>
+</tbody>
+</table>
+<p><em>Generated by TflCbs.Tools.PerfProbe. Timings are wall-clock over an un-logged connection;
+round-trip counts come from a counting logger over one separate call.</em></p>
+</div></div>
+<script>
+(function(){
+ function put(t){
+  if(navigator.clipboard&&navigator.clipboard.writeText)return navigator.clipboard.writeText(t);
+  return new Promise(function(res,rej){
+   var a=document.createElement('textarea');a.value=t;a.setAttribute('readonly','');
+   a.style.cssText='position:fixed;top:0;left:0;opacity:0';document.body.appendChild(a);
+   a.select();var ok=false;try{ok=document.execCommand('copy')}catch(e){}
+   document.body.removeChild(a);ok?res():rej()});
+ }
+ function flash(el,txt,ms){
+  var was=el.textContent;el.classList.add('done');if(txt)el.textContent=txt;
+  setTimeout(function(){el.classList.remove('done');if(txt)el.textContent=was},ms||1200);
+ }
+ function copy(text,el,okTxt){
+  put(text).then(function(){flash(el,okTxt)},function(){
+   if(okTxt){var w=el.textContent;el.textContent='Ctrl+C';setTimeout(function(){el.textContent=w},2000)}});
+ }
+ document.querySelectorAll('pre').forEach(function(pre){
+  if(pre.classList.contains('txtdoc'))return;
+  var b=document.createElement('button');
+  b.type='button';b.className='copy';b.textContent='Copy';
+  b.setAttribute('aria-label','Copy this code block to the clipboard');
+  b.addEventListener('click',function(){copy((pre.querySelector('code')||pre).innerText,b,'Copied')});
+  pre.appendChild(b);
+ });
+ document.querySelectorAll('td code').forEach(function(c){
+  if(!c.textContent.trim())return;
+  c.classList.add('cp');c.tabIndex=0;c.setAttribute('role','button');
+  c.title='Click to copy';
+  c.addEventListener('click',function(){copy(c.textContent,c)});
+  c.addEventListener('keydown',function(e){
+   if(e.key==='Enter'||e.key===' '){e.preventDefault();copy(c.textContent,c)}});
+ });
+})();
+</script>
+</body></html>

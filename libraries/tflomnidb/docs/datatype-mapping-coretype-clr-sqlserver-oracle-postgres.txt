@@ -1,0 +1,75 @@
+Datatype Mapping: CoreDataType / CLR / SQL Server / Oracle / PostgreSQL
+=======================================================================
+
+Schema-conversion reference. Defaults mirror the TflOmniDb provider type mappers.
+
+CoreDataType        CLR / .NET           SQL Server            Oracle                    PostgreSQL                      Notes                                           
+------------------  -------------------  --------------------  ------------------------  ------------------------------  ------------------------------------------------
+
+[ Boolean & integer ]
+Boolean             bool                 BIT                   NUMBER(1,0)               BOOLEAN                         Oracle <23c: NUMBER(1) 0/1; 23c+ has BOOLEAN    
+(none)              byte                 TINYINT               NUMBER(3,0)               SMALLINT                        TINYINT is unsigned 0-255; no byte CoreDataType 
+Int16               short / Int16        SMALLINT              NUMBER(5,0)               SMALLINT                                                                        
+Int32               int / Int32          INT                   NUMBER(10,0)              INTEGER                                                                         
+Int64               long / Int64         BIGINT                NUMBER(19,0)              BIGINT                                                                          
+(none)              long (identity)      INT IDENTITY          GENERATED AS IDENTITY     GENERATED AS IDENTITY / serial  Identity = KeyGeneration strategy, not a type   
+
+[ Exact numeric ]
+Decimal             decimal              DECIMAL(p,s)          NUMBER(p,s)               NUMERIC(p,s)                    NUMERIC == DECIMAL                              
+Decimal             decimal              NUMERIC(p,s)          NUMBER(p,s)               NUMERIC(p,s)                    Oracle NUMBER max precision 38                  
+Money               decimal              MONEY                 NUMBER(19,4)              NUMERIC(19,4)                   Avoid PG MONEY (locale); canonical NUMERIC(19,4)
+(none)              decimal              SMALLMONEY            NUMBER(10,4)              NUMERIC(10,4)                   Map to Decimal/Money; range ~ +/-214,748.3647   
+
+[ Approximate numeric ]
+Single              float / Single       REAL                  BINARY_FLOAT              REAL                            REAL = FLOAT(24), 4-byte                        
+Double              double / Double      FLOAT                 BINARY_DOUBLE             DOUBLE PRECISION                FLOAT(53) = 8-byte double; FLOAT(24)->REAL      
+
+[ Character & text ]
+AnsiString          string               VARCHAR(n)            VARCHAR2(n CHAR)          VARCHAR(n)                      Oracle VARCHAR2 <= 4000 bytes (32767 extended)  
+UnicodeString       string               NVARCHAR(n)           NVARCHAR2(n)              VARCHAR(n)                      Unicode; PG is UTF-8 native (no N-prefix)       
+AnsiStringFixed     string               CHAR(n)               CHAR(n CHAR)              CHAR(n)                         Fixed length, space-padded                      
+UnicodeStringFixed  string               NCHAR(n)              NCHAR(n)                  CHAR(n)                         Unicode fixed length                            
+Clob                string               VARCHAR(MAX)          CLOB                      TEXT                            Large ANSI text (> 8000 bytes)                  
+NClob               string               NVARCHAR(MAX)         NCLOB                     TEXT                            Large Unicode text                              
+Clob                string               TEXT (legacy)         CLOB                      TEXT                            Deprecated -> use VARCHAR(MAX)                  
+NClob               string               NTEXT (legacy)        NCLOB                     TEXT                            Deprecated -> use NVARCHAR(MAX)                 
+
+[ Date & time ]
+Date                DateTime / DateOnly  DATE                  DATE                      DATE                            Oracle DATE INCLUDES time-of-day (to sec)       
+Time                TimeSpan / TimeOnly  TIME(p)               INTERVAL DAY TO SECOND    TIME(p)                         Oracle has no TIME-of-day type                  
+DateTime            DateTime             DATETIME2(p)          TIMESTAMP(p)              TIMESTAMP(p)                    Preferred date+time; p = frac-sec precision     
+DateTime            DateTime             DATETIME (legacy)     TIMESTAMP(3)              TIMESTAMP(3)                    ~3.33 ms precision; range 1753-9999             
+DateTime            DateTime             SMALLDATETIME         TIMESTAMP(0)              TIMESTAMP(0)                    Minute precision; 1900-2079                     
+DateTimeOffset      DateTimeOffset       DATETIMEOFFSET        TIMESTAMP WITH TIME ZONE  TIMESTAMPTZ                     Timezone-aware                                  
+
+[ Binary ]
+Binary              byte[]               VARBINARY(n)          RAW(n)                    BYTEA                           Oracle RAW <= 2000 bytes; beyond -> BLOB        
+BinaryFixed         byte[]               BINARY(n)             RAW(n)                    BYTEA                           Fixed; PG has no fixed-length binary            
+Blob                byte[]               VARBINARY(MAX)        BLOB                      BYTEA                           Large binary object                             
+Blob                byte[]               IMAGE (legacy)        BLOB                      BYTEA                           Deprecated -> use VARBINARY(MAX)                
+
+[ Identifier & concurrency ]
+Guid                Guid                 UNIQUEIDENTIFIER      RAW(16)                   UUID                            Oracle SYS_GUID(); PG native UUID               
+(none)              byte[] (rowversion)  ROWVERSION            (none)                    (xmin sys col)                  IsRowVersion flag -> app-managed int version    
+
+[ XML & JSON ]
+Xml                 string / SqlXml      XML                   XMLTYPE                   XML                             Native XML on all three                         
+Json                string               JSON / NVARCHAR(MAX)  JSON (21c+)/CLOB          JSONB                           PG JSONB preferred; Oracle <21c CLOB + IS JSON  
+
+[ No direct equivalent (redesign) ]
+(none)              object               SQL_VARIANT           (none / ANYDATA)          (none)                          Redesign to a typed column                      
+(none)              (tree)               HIERARCHYID           (none)                    LTREE (extension)               Remodel as a materialized path                  
+(none)              (spatial)            GEOGRAPHY / GEOMETRY  SDO_GEOMETRY              geometry/geography              Oracle Spatial / PostGIS extension              
+
+General notes
+-------------
+1. CoreDataType is TflOmniDb's provider-neutral type enum (Core/CoreDataType.cs); the per-provider type mappers translate it to the native types in each column. '(none)' marks a SQL Server type with no canonical CoreDataType - map it to the nearest enum value, or set a per-column native override.
+2. Per-column overrides exist via the [DbColumn] SqlServerType / OracleType / PostgresType escape hatches for the rare native-type need.
+3. Money is deliberately NUMERIC(19,4) on all three engines - PostgreSQL's MONEY type is locale-dependent and unsafe for financial code.
+4. Identifier casing: Oracle folds unquoted identifiers to UPPER, PostgreSQL to lower. Quote consistently, or pick one case across the schema.
+5. Oracle DATE always carries a time component (to seconds). Use TIMESTAMP for fractional seconds; for pure dates, enforce truncation in the app.
+6. Booleans: target Oracle <23c as NUMBER(1) with 0/1 values; Oracle 23c+ and PostgreSQL have a native BOOLEAN.
+7. Auto-increment: PostgreSQL and Oracle 12c+ support GENERATED ... AS IDENTITY; older Oracle needs a SEQUENCE + trigger.
+8. Row versioning: there is no portable equivalent to SQL Server ROWVERSION. Use an app-managed integer version column (TflOmniDb IsRowVersion) checked in the UPDATE WHERE clause; Oracle ORA_ROWSCN / PostgreSQL xmin are not drop-in replacements.
+9. LOBs map (N)VARCHAR(MAX)/VARBINARY(MAX) -> Oracle CLOB/NCLOB/BLOB -> PostgreSQL TEXT/BYTEA.
+10. PostgreSQL is UTF-8 native, so NVARCHAR and VARCHAR both collapse to VARCHAR/TEXT; JSONB beats JSON for indexing (GIN); BYTEA covers all binary widths.

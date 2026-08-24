@@ -1,0 +1,179 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Datatype Mapping: CoreDataType / CLR / SQL Server / Oracle</title>
+<style>
+:root{color-scheme:light dark}
+*{box-sizing:border-box}
+body{margin:0;background:#f6f8fa;color:#1f2328;font:16px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif}
+.wrap{max-width:900px;margin:0 auto;padding:32px 24px 96px}
+.card{background:#fff;border:1px solid #d0d7de;border-radius:10px;padding:40px 48px}
+h1,h2,h3{line-height:1.25;font-weight:600}
+h1{font-size:1.9rem;margin:0 0 .3em;padding-bottom:.3em;border-bottom:1px solid #d8dee4}
+h2{font-size:1.4rem;margin:1.8em 0 .6em;padding-bottom:.25em;border-bottom:1px solid #eaeef2}
+h3{font-size:1.12rem;margin:1.4em 0 .5em}
+p,li{margin:.5em 0}
+a{color:#0969da;text-decoration:none}
+a:hover{text-decoration:underline}
+code{font-family:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;font-size:.86em;background:#eff1f3;padding:.15em .4em;border-radius:6px}
+pre{background:#f6f8fa;border:1px solid #d8dee4;border-radius:8px;padding:14px 16px;overflow:auto}
+pre code{background:none;padding:0;font-size:.85em;line-height:1.45}
+blockquote{margin:1em 0;padding:.4em 1em;color:#3d444d;border-left:4px solid #d0d7de;background:#f6f8fa;border-radius:0 6px 6px 0}
+blockquote>:first-child{margin-top:0}blockquote>:last-child{margin-bottom:0}
+table{border-collapse:collapse;width:100%;margin:1em 0;display:block;overflow:auto}
+th,td{border:1px solid #d0d7de;padding:8px 12px;text-align:left;vertical-align:top}
+th{background:#f6f8fa;font-weight:600}
+tr:nth-child(2n) td{background:#f6f8fa}
+hr{border:0;border-top:1px solid #d8dee4;margin:2em 0}
+pre{position:relative}
+pre>button.copy{position:absolute;top:8px;right:8px;padding:5px 9px;cursor:pointer;
+  font:600 .68rem/1 ui-monospace,SFMono-Regular,Consolas,monospace;letter-spacing:.03em;
+  color:#636c76;background:#fff;border:1px solid #d0d7de;border-radius:6px;
+  opacity:0;transition:opacity .12s}
+pre:hover>button.copy,pre>button.copy:focus{opacity:1}
+pre>button.copy.done{color:#0a3622;background:#dafbe1;border-color:#4ac26b}
+@media(hover:none){pre>button.copy{opacity:1}}
+td code.cp{cursor:pointer}
+td code.cp:hover,td code.cp:focus{outline:1px solid #8c959f;outline-offset:1px}
+td code.cp.done{color:#0a3622;background:#dafbe1}
+.docnav{margin:0 0 20px;font-size:.85rem;color:#636c76}
+.docnav a{color:#636c76}
+ul{padding-left:1.4em}ol{padding-left:1.4em}
+@media(max-width:640px){.card{padding:24px 18px}.wrap{padding:16px 10px 64px}}
+@media(prefers-color-scheme:dark){
+ body{background:#0d1117;color:#e6edf3}
+ .card{background:#161b22;border-color:#30363d}
+ h1{border-color:#30363d}h2{border-color:#21262d}
+ code{background:#262c34}
+ pre{background:#0d1117;border-color:#30363d}
+ blockquote{background:#161b22;border-color:#30363d;color:#9198a1}
+ th,td{border-color:#30363d}th{background:#161b22}tr:nth-child(2n) td{background:#12171e}
+ a{color:#4493f8}.docnav,.docnav a{color:#9198a1}
+ hr{border-color:#30363d}
+ pre>button.copy{color:#9198a1;background:#161b22;border-color:#30363d}
+ pre>button.copy.done{color:#aff5b4;background:#1b4721;border-color:#2ea043}
+ td code.cp.done{color:#aff5b4;background:#1b4721}
+}
+
+pre.txtdoc{font-size:.8rem;line-height:1.45;white-space:pre;overflow-x:auto;
+           border:0;background:none;padding:0;margin-top:1.2em}
+@media(prefers-color-scheme:dark){pre.txtdoc{background:none}}
+</style></head>
+<body><div class="wrap"><div class="card">
+<div class="docnav"><a href="../../../index.html">&#8592; All docs</a> &middot;
+plain-text document &middot; <a href="datatype-mapping-coretype-clr-sqlserver-oracle.txt">view raw .txt</a></div>
+<h1>Datatype Mapping: CoreDataType / CLR / SQL Server / Oracle</h1>
+<pre class="txtdoc">Datatype Mapping: CoreDataType / CLR / SQL Server / Oracle
+==========================================================
+
+Schema-conversion reference. Defaults mirror the TflOmniDb provider type mappers.
+
+CoreDataType        CLR / .NET           SQL Server            Oracle                    Notes                                           
+------------------  -------------------  --------------------  ------------------------  ------------------------------------------------
+
+[ Boolean &amp; integer ]
+Boolean             bool                 BIT                   NUMBER(1,0)               Oracle &lt;23c: NUMBER(1) 0/1; 23c+ has BOOLEAN    
+(none)              byte                 TINYINT               NUMBER(3,0)               TINYINT is unsigned 0-255; no byte CoreDataType 
+Int16               short / Int16        SMALLINT              NUMBER(5,0)                                                               
+Int32               int / Int32          INT                   NUMBER(10,0)                                                              
+Int64               long / Int64         BIGINT                NUMBER(19,0)                                                              
+(none)              long (identity)      INT IDENTITY          GENERATED AS IDENTITY     Identity = KeyGeneration strategy, not a type   
+
+[ Exact numeric ]
+Decimal             decimal              DECIMAL(p,s)          NUMBER(p,s)               NUMERIC == DECIMAL                              
+Decimal             decimal              NUMERIC(p,s)          NUMBER(p,s)               Oracle NUMBER max precision 38                  
+Money               decimal              MONEY                 NUMBER(19,4)              Avoid PG MONEY (locale); canonical NUMERIC(19,4)
+(none)              decimal              SMALLMONEY            NUMBER(10,4)              Map to Decimal/Money; range ~ +/-214,748.3647   
+
+[ Approximate numeric ]
+Single              float / Single       REAL                  BINARY_FLOAT              REAL = FLOAT(24), 4-byte                        
+Double              double / Double      FLOAT                 BINARY_DOUBLE             FLOAT(53) = 8-byte double; FLOAT(24)-&gt;REAL      
+
+[ Character &amp; text ]
+AnsiString          string               VARCHAR(n)            VARCHAR2(n CHAR)          Oracle VARCHAR2 &lt;= 4000 bytes (32767 extended)  
+UnicodeString       string               NVARCHAR(n)           NVARCHAR2(n)              Unicode; PG is UTF-8 native (no N-prefix)       
+AnsiStringFixed     string               CHAR(n)               CHAR(n CHAR)              Fixed length, space-padded                      
+UnicodeStringFixed  string               NCHAR(n)              NCHAR(n)                  Unicode fixed length                            
+Clob                string               VARCHAR(MAX)          CLOB                      Large ANSI text (&gt; 8000 bytes)                  
+NClob               string               NVARCHAR(MAX)         NCLOB                     Large Unicode text                              
+Clob                string               TEXT (legacy)         CLOB                      Deprecated -&gt; use VARCHAR(MAX)                  
+NClob               string               NTEXT (legacy)        NCLOB                     Deprecated -&gt; use NVARCHAR(MAX)                 
+
+[ Date &amp; time ]
+Date                DateTime / DateOnly  DATE                  DATE                      Oracle DATE INCLUDES time-of-day (to sec)       
+Time                TimeSpan / TimeOnly  TIME(p)               INTERVAL DAY TO SECOND    Oracle has no TIME-of-day type                  
+DateTime            DateTime             DATETIME2(p)          TIMESTAMP(p)              Preferred date+time; p = frac-sec precision     
+DateTime            DateTime             DATETIME (legacy)     TIMESTAMP(3)              ~3.33 ms precision; range 1753-9999             
+DateTime            DateTime             SMALLDATETIME         TIMESTAMP(0)              Minute precision; 1900-2079                     
+DateTimeOffset      DateTimeOffset       DATETIMEOFFSET        TIMESTAMP WITH TIME ZONE  Timezone-aware                                  
+
+[ Binary ]
+Binary              byte[]               VARBINARY(n)          RAW(n)                    Oracle RAW &lt;= 2000 bytes; beyond -&gt; BLOB        
+BinaryFixed         byte[]               BINARY(n)             RAW(n)                    Fixed; PG has no fixed-length binary            
+Blob                byte[]               VARBINARY(MAX)        BLOB                      Large binary object                             
+Blob                byte[]               IMAGE (legacy)        BLOB                      Deprecated -&gt; use VARBINARY(MAX)                
+
+[ Identifier &amp; concurrency ]
+Guid                Guid                 UNIQUEIDENTIFIER      RAW(16)                   Oracle SYS_GUID(); PG native UUID               
+(none)              byte[] (rowversion)  ROWVERSION            (none)                    IsRowVersion flag -&gt; app-managed int version    
+
+[ XML &amp; JSON ]
+Xml                 string / SqlXml      XML                   XMLTYPE                   Native XML on all three                         
+Json                string               JSON / NVARCHAR(MAX)  JSON (21c+)/CLOB          PG JSONB preferred; Oracle &lt;21c CLOB + IS JSON  
+
+[ No direct equivalent (redesign) ]
+(none)              object               SQL_VARIANT           (none / ANYDATA)          Redesign to a typed column                      
+(none)              (tree)               HIERARCHYID           (none)                    Remodel as a materialized path                  
+(none)              (spatial)            GEOGRAPHY / GEOMETRY  SDO_GEOMETRY              Oracle Spatial / PostGIS extension              
+
+General notes
+-------------
+1. CoreDataType is TflOmniDb&#x27;s provider-neutral type enum (Core/CoreDataType.cs); the per-provider type mappers translate it to the native types in each column. &#x27;(none)&#x27; marks a SQL Server type with no canonical CoreDataType - map it to the nearest enum value, or set a per-column native override.
+2. Per-column overrides exist via the [DbColumn] SqlServerType / OracleType escape hatches for the rare native-type need.
+3. Money is deliberately NUMBER(19,4) to match SQL Server&#x27;s NUMERIC(19,4) for financial code.
+4. Identifier casing: Oracle folds unquoted identifiers to UPPER. Quote consistently, or pick one case across the schema.
+5. Oracle DATE always carries a time component (to seconds). Use TIMESTAMP for fractional seconds; for pure dates, enforce truncation in the app.
+6. Booleans: target Oracle &lt;23c as NUMBER(1) with 0/1 values; Oracle 23c+ has a native BOOLEAN.
+7. Auto-increment: Oracle 12c+ supports GENERATED ... AS IDENTITY; older Oracle needs a SEQUENCE + trigger.
+8. Row versioning: there is no Oracle equivalent to SQL Server ROWVERSION. Use an app-managed integer version column (TflOmniDb IsRowVersion) checked in the UPDATE WHERE clause; ORA_ROWSCN is not a drop-in replacement.
+9. LOBs map (N)VARCHAR(MAX)/VARBINARY(MAX) -&gt; Oracle CLOB/NCLOB/BLOB.
+10. Oracle RAW columns cap at 2000 bytes; use BLOB for larger binary. VARCHAR2 caps at 4000 bytes (32767 with extended string types).
+</pre>
+</div></div>
+<script>
+(function(){
+ function put(t){
+  if(navigator.clipboard&&navigator.clipboard.writeText)return navigator.clipboard.writeText(t);
+  return new Promise(function(res,rej){
+   var a=document.createElement('textarea');a.value=t;a.setAttribute('readonly','');
+   a.style.cssText='position:fixed;top:0;left:0;opacity:0';document.body.appendChild(a);
+   a.select();var ok=false;try{ok=document.execCommand('copy')}catch(e){}
+   document.body.removeChild(a);ok?res():rej()});
+ }
+ function flash(el,txt,ms){
+  var was=el.textContent;el.classList.add('done');if(txt)el.textContent=txt;
+  setTimeout(function(){el.classList.remove('done');if(txt)el.textContent=was},ms||1200);
+ }
+ function copy(text,el,okTxt){
+  put(text).then(function(){flash(el,okTxt)},function(){
+   if(okTxt){var w=el.textContent;el.textContent='Ctrl+C';setTimeout(function(){el.textContent=w},2000)}});
+ }
+ document.querySelectorAll('pre').forEach(function(pre){
+  if(pre.classList.contains('txtdoc'))return;
+  var b=document.createElement('button');
+  b.type='button';b.className='copy';b.textContent='Copy';
+  b.setAttribute('aria-label','Copy this code block to the clipboard');
+  b.addEventListener('click',function(){copy((pre.querySelector('code')||pre).innerText,b,'Copied')});
+  pre.appendChild(b);
+ });
+ document.querySelectorAll('td code').forEach(function(c){
+  if(!c.textContent.trim())return;
+  c.classList.add('cp');c.tabIndex=0;c.setAttribute('role','button');
+  c.title='Click to copy';
+  c.addEventListener('click',function(){copy(c.textContent,c)});
+  c.addEventListener('keydown',function(e){
+   if(e.key==='Enter'||e.key===' '){e.preventDefault();copy(c.textContent,c)}});
+ });
+})();
+</script>
+</body></html>

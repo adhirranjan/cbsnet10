@@ -1,0 +1,75 @@
+Datatype Mapping: CoreDataType / CLR / SQL Server / Oracle
+==========================================================
+
+Schema-conversion reference. Defaults mirror the TflOmniDb provider type mappers.
+
+CoreDataType        CLR / .NET           SQL Server            Oracle                    Notes                                           
+------------------  -------------------  --------------------  ------------------------  ------------------------------------------------
+
+[ Boolean & integer ]
+Boolean             bool                 BIT                   NUMBER(1,0)               Oracle <23c: NUMBER(1) 0/1; 23c+ has BOOLEAN    
+(none)              byte                 TINYINT               NUMBER(3,0)               TINYINT is unsigned 0-255; no byte CoreDataType 
+Int16               short / Int16        SMALLINT              NUMBER(5,0)                                                               
+Int32               int / Int32          INT                   NUMBER(10,0)                                                              
+Int64               long / Int64         BIGINT                NUMBER(19,0)                                                              
+(none)              long (identity)      INT IDENTITY          GENERATED AS IDENTITY     Identity = KeyGeneration strategy, not a type   
+
+[ Exact numeric ]
+Decimal             decimal              DECIMAL(p,s)          NUMBER(p,s)               NUMERIC == DECIMAL                              
+Decimal             decimal              NUMERIC(p,s)          NUMBER(p,s)               Oracle NUMBER max precision 38                  
+Money               decimal              MONEY                 NUMBER(19,4)              Avoid PG MONEY (locale); canonical NUMERIC(19,4)
+(none)              decimal              SMALLMONEY            NUMBER(10,4)              Map to Decimal/Money; range ~ +/-214,748.3647   
+
+[ Approximate numeric ]
+Single              float / Single       REAL                  BINARY_FLOAT              REAL = FLOAT(24), 4-byte                        
+Double              double / Double      FLOAT                 BINARY_DOUBLE             FLOAT(53) = 8-byte double; FLOAT(24)->REAL      
+
+[ Character & text ]
+AnsiString          string               VARCHAR(n)            VARCHAR2(n CHAR)          Oracle VARCHAR2 <= 4000 bytes (32767 extended)  
+UnicodeString       string               NVARCHAR(n)           NVARCHAR2(n)              Unicode; PG is UTF-8 native (no N-prefix)       
+AnsiStringFixed     string               CHAR(n)               CHAR(n CHAR)              Fixed length, space-padded                      
+UnicodeStringFixed  string               NCHAR(n)              NCHAR(n)                  Unicode fixed length                            
+Clob                string               VARCHAR(MAX)          CLOB                      Large ANSI text (> 8000 bytes)                  
+NClob               string               NVARCHAR(MAX)         NCLOB                     Large Unicode text                              
+Clob                string               TEXT (legacy)         CLOB                      Deprecated -> use VARCHAR(MAX)                  
+NClob               string               NTEXT (legacy)        NCLOB                     Deprecated -> use NVARCHAR(MAX)                 
+
+[ Date & time ]
+Date                DateTime / DateOnly  DATE                  DATE                      Oracle DATE INCLUDES time-of-day (to sec)       
+Time                TimeSpan / TimeOnly  TIME(p)               INTERVAL DAY TO SECOND    Oracle has no TIME-of-day type                  
+DateTime            DateTime             DATETIME2(p)          TIMESTAMP(p)              Preferred date+time; p = frac-sec precision     
+DateTime            DateTime             DATETIME (legacy)     TIMESTAMP(3)              ~3.33 ms precision; range 1753-9999             
+DateTime            DateTime             SMALLDATETIME         TIMESTAMP(0)              Minute precision; 1900-2079                     
+DateTimeOffset      DateTimeOffset       DATETIMEOFFSET        TIMESTAMP WITH TIME ZONE  Timezone-aware                                  
+
+[ Binary ]
+Binary              byte[]               VARBINARY(n)          RAW(n)                    Oracle RAW <= 2000 bytes; beyond -> BLOB        
+BinaryFixed         byte[]               BINARY(n)             RAW(n)                    Fixed; PG has no fixed-length binary            
+Blob                byte[]               VARBINARY(MAX)        BLOB                      Large binary object                             
+Blob                byte[]               IMAGE (legacy)        BLOB                      Deprecated -> use VARBINARY(MAX)                
+
+[ Identifier & concurrency ]
+Guid                Guid                 UNIQUEIDENTIFIER      RAW(16)                   Oracle SYS_GUID(); PG native UUID               
+(none)              byte[] (rowversion)  ROWVERSION            (none)                    IsRowVersion flag -> app-managed int version    
+
+[ XML & JSON ]
+Xml                 string / SqlXml      XML                   XMLTYPE                   Native XML on all three                         
+Json                string               JSON / NVARCHAR(MAX)  JSON (21c+)/CLOB          PG JSONB preferred; Oracle <21c CLOB + IS JSON  
+
+[ No direct equivalent (redesign) ]
+(none)              object               SQL_VARIANT           (none / ANYDATA)          Redesign to a typed column                      
+(none)              (tree)               HIERARCHYID           (none)                    Remodel as a materialized path                  
+(none)              (spatial)            GEOGRAPHY / GEOMETRY  SDO_GEOMETRY              Oracle Spatial / PostGIS extension              
+
+General notes
+-------------
+1. CoreDataType is TflOmniDb's provider-neutral type enum (Core/CoreDataType.cs); the per-provider type mappers translate it to the native types in each column. '(none)' marks a SQL Server type with no canonical CoreDataType - map it to the nearest enum value, or set a per-column native override.
+2. Per-column overrides exist via the [DbColumn] SqlServerType / OracleType escape hatches for the rare native-type need.
+3. Money is deliberately NUMBER(19,4) to match SQL Server's NUMERIC(19,4) for financial code.
+4. Identifier casing: Oracle folds unquoted identifiers to UPPER. Quote consistently, or pick one case across the schema.
+5. Oracle DATE always carries a time component (to seconds). Use TIMESTAMP for fractional seconds; for pure dates, enforce truncation in the app.
+6. Booleans: target Oracle <23c as NUMBER(1) with 0/1 values; Oracle 23c+ has a native BOOLEAN.
+7. Auto-increment: Oracle 12c+ supports GENERATED ... AS IDENTITY; older Oracle needs a SEQUENCE + trigger.
+8. Row versioning: there is no Oracle equivalent to SQL Server ROWVERSION. Use an app-managed integer version column (TflOmniDb IsRowVersion) checked in the UPDATE WHERE clause; ORA_ROWSCN is not a drop-in replacement.
+9. LOBs map (N)VARCHAR(MAX)/VARBINARY(MAX) -> Oracle CLOB/NCLOB/BLOB.
+10. Oracle RAW columns cap at 2000 bytes; use BLOB for larger binary. VARCHAR2 caps at 4000 bytes (32767 with extended string types).

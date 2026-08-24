@@ -1,0 +1,421 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>DEVELOPER FAQ / HOW-TO - TrustBank CBS (.NET 10)</title>
+<style>
+:root{color-scheme:light dark}
+*{box-sizing:border-box}
+body{margin:0;background:#f6f8fa;color:#1f2328;font:16px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif}
+.wrap{max-width:900px;margin:0 auto;padding:32px 24px 96px}
+.card{background:#fff;border:1px solid #d0d7de;border-radius:10px;padding:40px 48px}
+h1,h2,h3{line-height:1.25;font-weight:600}
+h1{font-size:1.9rem;margin:0 0 .3em;padding-bottom:.3em;border-bottom:1px solid #d8dee4}
+h2{font-size:1.4rem;margin:1.8em 0 .6em;padding-bottom:.25em;border-bottom:1px solid #eaeef2}
+h3{font-size:1.12rem;margin:1.4em 0 .5em}
+p,li{margin:.5em 0}
+a{color:#0969da;text-decoration:none}
+a:hover{text-decoration:underline}
+code{font-family:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;font-size:.86em;background:#eff1f3;padding:.15em .4em;border-radius:6px}
+pre{background:#f6f8fa;border:1px solid #d8dee4;border-radius:8px;padding:14px 16px;overflow:auto}
+pre code{background:none;padding:0;font-size:.85em;line-height:1.45}
+blockquote{margin:1em 0;padding:.4em 1em;color:#3d444d;border-left:4px solid #d0d7de;background:#f6f8fa;border-radius:0 6px 6px 0}
+blockquote>:first-child{margin-top:0}blockquote>:last-child{margin-bottom:0}
+table{border-collapse:collapse;width:100%;margin:1em 0;display:block;overflow:auto}
+th,td{border:1px solid #d0d7de;padding:8px 12px;text-align:left;vertical-align:top}
+th{background:#f6f8fa;font-weight:600}
+tr:nth-child(2n) td{background:#f6f8fa}
+hr{border:0;border-top:1px solid #d8dee4;margin:2em 0}
+pre{position:relative}
+pre>button.copy{position:absolute;top:8px;right:8px;padding:5px 9px;cursor:pointer;
+  font:600 .68rem/1 ui-monospace,SFMono-Regular,Consolas,monospace;letter-spacing:.03em;
+  color:#636c76;background:#fff;border:1px solid #d0d7de;border-radius:6px;
+  opacity:0;transition:opacity .12s}
+pre:hover>button.copy,pre>button.copy:focus{opacity:1}
+pre>button.copy.done{color:#0a3622;background:#dafbe1;border-color:#4ac26b}
+@media(hover:none){pre>button.copy{opacity:1}}
+td code.cp{cursor:pointer}
+td code.cp:hover,td code.cp:focus{outline:1px solid #8c959f;outline-offset:1px}
+td code.cp.done{color:#0a3622;background:#dafbe1}
+.docnav{margin:0 0 20px;font-size:.85rem;color:#636c76}
+.docnav a{color:#636c76}
+ul{padding-left:1.4em}ol{padding-left:1.4em}
+@media(max-width:640px){.card{padding:24px 18px}.wrap{padding:16px 10px 64px}}
+@media(prefers-color-scheme:dark){
+ body{background:#0d1117;color:#e6edf3}
+ .card{background:#161b22;border-color:#30363d}
+ h1{border-color:#30363d}h2{border-color:#21262d}
+ code{background:#262c34}
+ pre{background:#0d1117;border-color:#30363d}
+ blockquote{background:#161b22;border-color:#30363d;color:#9198a1}
+ th,td{border-color:#30363d}th{background:#161b22}tr:nth-child(2n) td{background:#12171e}
+ a{color:#4493f8}.docnav,.docnav a{color:#9198a1}
+ hr{border-color:#30363d}
+ pre>button.copy{color:#9198a1;background:#161b22;border-color:#30363d}
+ pre>button.copy.done{color:#aff5b4;background:#1b4721;border-color:#2ea043}
+ td code.cp.done{color:#aff5b4;background:#1b4721}
+}
+
+pre.txtdoc{font-size:.8rem;line-height:1.45;white-space:pre;overflow-x:auto;
+           border:0;background:none;padding:0;margin-top:1.2em}
+@media(prefers-color-scheme:dark){pre.txtdoc{background:none}}
+</style></head>
+<body><div class="wrap"><div class="card">
+<div class="docnav"><a href="index.html">&#8592; All docs</a> &middot;
+plain-text document &middot; <a href="faq-how-to.txt">view raw .txt</a></div>
+<h1>DEVELOPER FAQ / HOW-TO - TrustBank CBS (.NET 10)</h1>
+<pre class="txtdoc"> Practical answers so you can work smoothly. If something here disagrees with
+ CLAUDE.md, CLAUDE.md wins - tell us and we&#x27;ll fix this doc.
+
+ New here? Read in this order:
+   1. docs/architecture-overview.md   - what the projects are and how they fit
+   2. docs/guides/building-a-crud-screen.txt - build one screen end to end
+   3. This file                        - day-to-day how-tos and gotchas
+   4. docs/guides/starting-a-new-module.txt - when adding a whole new domain
+   5. docs/single-sign-on.txt          - only when touching auth/multi-host
+   6. docs/deploy/*.txt                 - when deploying (IIS / Docker, single /
+      multi host)
+
+
+==============================================================================
+ SECTION A - GETTING STARTED
+==============================================================================
+Q. What is this project?
+A. An incremental strangler-fig migration of TrustBank CBS (core banking) from
+   ASP.NET WebForms / VB.NET / .NET 4.8 to .NET 10 / C# MVC. Legacy screens are
+   rebuilt as MVC while old URLs keep working until cutover.
+
+Q. What do I need installed?
+A. .NET 10 SDK, access to the dev SQL Server (and Oracle if you test cross-
+   provider), Node.js (only to `node --check` JavaScript), and Visual Studio or
+   VS Code. The legacy source (analysis only, DO NOT edit) is at
+   E:\adtemp\_del_now\20260606_cbs_source_code\Trust.Bank.Publish\.
+
+Q. Where is everything?
+A. Solution dir:  E:\Adhir\AdWork\TrustBank.Code\TflCbsNet10Sol\
+   Solution file: TflCbsNet10Sol.slnx
+   Active app:    TflCbs.Host.Main  (thin MVC host / composition root)
+   Screens live in per-domain web RCLs: TflCbs.Modules.&lt;Area&gt;.Web
+   Business logic: TflCbsServices  (+ TflCbs.Core.Authentication)
+   Web plumbing:  TflCbs.Framework
+   Entities:      TflCbs.Entities
+   See docs/architecture-overview.md for the full project map.
+
+Q. Dev DB credentials?
+A. sa / sql@2019 (dev only - never hardcode creds/connection strings in code;
+   use config).
+
+
+==============================================================================
+ SECTION B - BUILD &amp; RUN (the commands you&#x27;ll use most)
+==============================================================================
+Q. How do I build the app?
+A. dotnet build TflCbs.Host.Main
+
+Q. How do I run the app?
+A. dotnet run --project TflCbs.Host.Main
+   Dev URL: https://localhost:7225  (or http://localhost:5019). Prefer HTTPS.
+   Launch config: trustbank-ui.
+   !! ALWAYS STOP THE APP BEFORE THE NEXT BUILD to free DLL locks - including an
+      instance launched by Visual Studio&#x27;s debugger (kill the dotnet /
+      TflCbs.Host.Main / app .NET Host process). Stopping the debugged app is
+      authorized; just don&#x27;t close the Visual Studio IDE (devenv) itself.
+
+Q. I changed an entity in TflCbs.Entities. What&#x27;s special?
+A. BUILD TflCbs.Entities FIRST, then the dependents:
+       dotnet build TflCbs.Entities
+       dotnet build TflCbs.Host.Main
+   Why: peers reference TflCbs.Entities as a bare compiled DLL (HintPath), so
+   there&#x27;s no build-order edge to do it for you.
+
+Q. How do I run the tests?
+A. All service tests:     dotnet test TflCbs.Tests
+   One test:              dotnet test TflCbs.Tests --filter &quot;FullyQualifiedName~TestName&quot;
+   Arch boundary tests:   dotnet test TflCbs.ArchTests
+
+Q. How do I check a JavaScript file?
+A. node --check &lt;file.js&gt;
+
+Q. Build fails with &quot;file is locked&quot; / &quot;being used by another process&quot;.
+A. The app is still running. Stop it (including the VS-debugged instance) and
+   rebuild. See the stop-before-build rule above.
+
+
+==============================================================================
+ SECTION C - &quot;HOW DO I...&quot; COMMON TASKS
+==============================================================================
+Q. How do I add a new CRUD screen (e.g. a master)?
+A. Follow docs/guides/building-a-crud-screen.txt (worked example: the State
+   master at /Hr/State). Short version, in order:
+     1. Entity exists? If new table, generate it, then build TflCbs.Entities first.
+     2. Add YourThingService in TflCbsServices/&lt;Domain&gt;/ - primary ctor
+        (DataAccess data), Repository&lt;T&gt; accessor, Search/Load/Save/Update/
+        Delete returning Result/Result&lt;T&gt;. Then RUN cbs-sync-test-demo (below).
+     3. Register it with ONE AddScoped line in that domain&#x27;s
+        &lt;Domain&gt;Module.AddServices (TflCbsServices/&lt;Domain&gt;/&lt;Domain&gt;Module.cs)
+        - NOT in Program.cs; AddCbsModules discovers the module automatically.
+     4. Add the Form model (DataAnnotations + string? Row, implements IRowForm)
+        in the web RCL&#x27;s Models/&lt;Area&gt;/; reuse EditViewModel&lt;TForm&gt;.
+     5. Add the Controller in the right Area&#x27;s web RCL
+        (TflCbs.Modules.&lt;Area&gt;.Web) with [Area], [Route], [CbsAccessScreen];
+        inherit CbsScreenController and use its helpers (TryOpenRecord /
+        TryBeginWrite / TryConsume / ProtectId / SavedOk...). Token ids are
+        STRINGS - parse to your PK type at the call site (mind decimal PKs).
+     6. Add the View (copy State&#x27;s Index.cshtml; adjust fields/columns/
+        NavigateTemplate).
+     7. Point the screen&#x27;s a_Menus.NavigateURL at /Area/YourThing with a
+        DbMigrator migration (one script per provider), then run
+        `dotnet run --project TflCbs.Tools.DbMigrator -- upgrade`.
+     8. Build + verify.
+
+Q. How do I start a whole NEW module (new domain)?
+A. Follow docs/guides/starting-a-new-module.txt (worked example: the
+   Administration module). Key facts: the service side is a FOLDER in
+   TflCbsServices with an ICbsModule (auto-discovered); the web side is a new
+   RCL project (TflCbs.Modules.&lt;Name&gt;.Web) the host composes via a gated
+   AddApplicationPart; the name must be registered in ~12 places - use the
+   checklist in that doc (arch tests included).
+
+Q. Which project does my screen go in?
+A. The web RCL for its RUNTIME menu area, not necessarily its data domain.
+   Screens follow legacy menu placement. Example: State/District/Taluka live in
+   TflCbs.Modules.Hr.Web (HR menu) even though they&#x27;re backed by the &quot;General&quot;
+   service module. Don&#x27;t realign code modules to match menu modules.
+
+Q. How do I add or change a service method?
+A. Edit the *Service in TflCbsServices (return Result/Result&lt;T&gt;, no throwing
+   across the boundary, no raw SQL/procs - use Repository&lt;T&gt;). Then, after ANY
+   public method add/change/remove, RUN the cbs-sync-test-demo agent - it syncs
+   TflCbs.Tests + TflCbs.Demo, builds, and runs the tests.
+
+Q. How do I generate a new entity?
+A. Use the TflOmniDb.Scaffold generator against the DB, write the .cs into
+   TflCbs.Entities, then `dotnet build TflCbs.Entities` FIRST. Entities are auto-
+   generated - don&#x27;t hand-edit generated files; put hand-written helpers in a
+   sibling partial-class file.
+
+Q. How do I add a NuGet package?
+A. Central Package Management is on. Add the VERSION in
+   Directory.Packages.props, then a version-LESS &lt;PackageReference&gt; in the
+   csproj. Don&#x27;t put versions in csproj files.
+
+Q. How do I switch the database provider at runtime (dev)?
+A. Use the dev-only DB Switcher (_DbSwitcher) in the UI. Providers supported:
+   SQL Server, Oracle, PostgreSQL (via TflOmniDb DataAccess/DatabaseSelector).
+
+Q. How do I extend a reusable component (picker/date picker/search)?
+A. Keep additions ADDITIVE with SAFE DEFAULTS - never break existing pickers.
+   After changing a SHARED component, run the component-docs-sync and
+   component-demo agents.
+
+
+==============================================================================
+ SECTION D - THE HELPER AGENTS (use them proactively)
+==============================================================================
+  cbs-sync-test-demo   After ANY public method add/change/remove on a *Service
+                       in TflCbsServices. Syncs Tests + Demo, builds, runs.
+  component-demo       After adding/extending a reusable UI component. Updates
+                       the dev showcase at /Dev/Components with dummy data.
+  component-docs-sync  After adding/changing a SHARED UI component. Updates the
+                       legacy-vs-new component comparison guide.
+
+
+==============================================================================
+ SECTION E - CONVENTIONS QUICK-REFERENCE
+==============================================================================
+  NAMING
+    - C# types/methods            PascalCase
+    - locals/params               camelCase
+    - private fields              _camelCase
+    - TflCbs.Entities properties     UPPERCASE (DB-generated)
+    - client assets               kebab-case (cbs-search.js)
+    - Areas + controllers per domain: Areas/&lt;Area&gt;/Controllers/...
+    - views: Areas/&lt;Area&gt;/Views/&lt;Controller&gt;/...
+    - shared partials: _PascalCase.cshtml in Views/Shared
+
+  DATA
+    - NO stored procedures / NO raw SQL for new master CRUD - use Repository&lt;T&gt;.
+      Preserve legacy raw-SQL/procs ONLY where already migrated as such.
+    - Services return Result / Result&lt;T&gt; - handle errors explicitly, never
+      throw across the service boundary, no silent failures.
+
+  WEB
+    - Attribute routing pins the new URLs; a_Menus.NavigateURL holds the route
+      the menu links to (one row -&gt; its own screen&#x27;s route only - AllowedUrls
+      is derived from that column).
+    - Command-dispatch POST uses &lt;button name=&quot;command&quot; value=&quot;...&quot;&gt;, or per-
+      action routing with formaction.
+    - Access is FAIL-CLOSED (CbsAccessMiddleware); menu authorization is server-
+      side. Never widen access or bypass the menu/route guard.
+    - RowToken: opaque ids. Via CbsScreenController: TryOpenRecord/TryBeginWrite
+      for reads, TryConsume for writes; ProtectId a fresh token on every
+      redisplay. Token ids are STRINGS - parse to the service&#x27;s PK type at the
+      call site (A_ROLE.ROLEID is decimal; never narrow through int).
+
+  NOTIFICATIONS
+    - Server CRUD outcomes -&gt; blocking ack modal (this.NotifySuccess/NotifyError
+      -&gt; _Notification).
+    - Client guards -&gt; transient toast.
+
+  SECURITY
+    - Never hardcode credentials/connection strings - use config. Never log
+      secrets.
+
+
+==============================================================================
+ SECTION F - MULTI-HOST / SSO (only if you touch it)
+==============================================================================
+Q. What are the thin hosts and the gateway?
+A. Besides the default host (TflCbs.Host.Main), each domain can run standalone:
+     TflCbs.Host.Hr              :5300 / :7300
+     TflCbs.Host.Lockers         :5200 / :7200
+     TflCbs.Host.RetailBanking   :5400 / :7400
+     TflCbs.Host.Administration  :5500 / :7500
+     TflCbs.Gateway (YARP)       :5100 / :7100  - one origin fronting all hosts
+   The gateway gives one cookie domain, which is what makes cross-host SSO work.
+
+Q. How do I run the shared-SSO multi-host setup?
+A. The topology is now baked into launch/appsettings.Development.json:
+     - Run TflCbs.Gateway, the thin host(s), and the default host.
+     - For the DEFAULT host to join the shared cluster, launch it with the
+       `https (shared-sso)` profile (bakes DataProtection__KeyRing=TflOmniDb +
+       Auth__SessionRevocation=TflOmniDb + AllowedReturnHosts). Its plain
+       `https`/`http` profiles stay single-host (FileSystem keys / InMemory
+       revocation) so everyday dev isn&#x27;t coupled to the SSO tables.
+     - A plain `dotnet run` per project brings the HTTPS topology up (no args).
+   Needs the two shared tables: CBS_DATAPROTECTIONKEYS, CBS_SESSIONREVOCATIONS.
+   Full detail: docs/single-sign-on.txt.
+
+Q. My thin host denies every screen even for authorized users!
+A. AllowedUrls comes from a_Menus.NavigateURL, so a screen is reachable only
+   once that column holds its new route - check the DbMigrator migration for
+   the screen actually ran (`-- preview` lists what is pending).
+   Related gotcha for any file config a thin host LINKS (logmasking.json): it
+   only lands in bin/, so it must be loaded from AppContext.BaseDirectory, not
+   the content root (a relative AddJsonFile under `dotnet run` silently misses
+   it). Already fixed in the shipped hosts - copy that pattern in a new one.
+
+
+==============================================================================
+ SECTION G - VERIFICATION CHECKLIST (before you call it done)
+==============================================================================
+  After C#/Razor changes .......... dotnet build TflCbs.Host.Main  (build only)
+  After TflCbs.Entities changes ...... dotnet build TflCbs.Entities FIRST, then deps
+  After a service API change ...... run cbs-sync-test-demo; dotnet test TflCbs.Tests passes
+  After JS changes ................ node --check &lt;file&gt;
+  Architecture boundaries ......... dotnet test TflCbs.ArchTests
+  UI/runtime behaviour ............ run the app, verify at https://localhost:7225,
+                                    then STOP it before the next build
+
+
+==============================================================================
+ SECTION H - TROUBLESHOOTING (common errors -&gt; fix)
+==============================================================================
+  &quot;DLL is locked&quot; on build
+      -&gt; The app is still running (maybe under the VS debugger). Stop the app
+         process, then rebuild.
+
+  Type/entity changes not picked up
+      -&gt; You didn&#x27;t build TflCbs.Entities first. `dotnet build TflCbs.Entities`, then
+         rebuild dependents.
+
+  New screen returns 404 / AccessDenied
+      -&gt; Check: [Area]/[Route] correct? a_Menus.NavigateURL updated to that
+         route (DbMigrator migration applied)? The screen&#x27;s menu entry present
+         for your user? Module enabled in Modules:Enabled? Access is
+         fail-closed - all four must line up.
+
+  Arch test failure (framework -&gt; screens, or a module referencing another
+  module&#x27;s Areas/Models)
+      -&gt; You crossed a boundary. Framework must not depend on screens; a web
+         module must not reference another module&#x27;s Areas.X/Models.X. Move the
+         shared bit to Framework or Web.Shared.
+
+  Service throws instead of returning a friendly message
+      -&gt; Wrap in try/catch and return Result.Fail(...). Never let an exception
+         cross the service boundary.
+
+  Package version error
+      -&gt; Version belongs in Directory.Packages.props, not the csproj.
+
+  Tests/Demo out of sync after a service change
+      -&gt; Run the cbs-sync-test-demo agent.
+
+  Lab / Lab.Demo won&#x27;t build in the solution
+      -&gt; They&#x27;re intentionally EXCLUDED from the solution (experimental, API
+         drift). Build them standalone only.
+
+
+==============================================================================
+ SECTION I - GOLDEN RULES (memorize these)
+==============================================================================
+  1. Running the app is allowed for verification - STOP it before rebuilding.
+  2. No raw SQL / stored procedures for new master CRUD - use Repository&lt;T&gt;.
+  3. Services return Result/Result&lt;T&gt; - no silent failures, no throwing across
+     the boundary.
+  4. Access is fail-closed - never widen access or bypass the menu/route guard.
+  5. Reusable components stay additive with safe defaults.
+  6. Build TflCbs.Entities FIRST when entities change.
+  7. Never hardcode credentials/connection strings; never log secrets.
+  8. WHEN UNCERTAIN, ASK rather than assume.
+
+
+==============================================================================
+ SECTION J - WORKING MEMORY / CHANGELOG
+==============================================================================
+  - Read CHANGELOG.md at the start of a session to understand current state.
+  - After any significant change, add ONE line to CHANGELOG.md:
+        [YYYY-MM-DD] type: brief description
+    types: feat | fix | docs | refactor | test
+  - Cross-session notes live in .claude/memory/ (index: MEMORY.md).
+
+
+==============================================================================
+ SECTION K - RELATED DOCS
+==============================================================================
+  docs/architecture-overview.md            whole-solution project map + flow
+  docs/guides/building-a-crud-screen.txt     build one screen end to end
+  docs/guides/starting-a-new-module.txt      add a whole new domain module
+  docs/single-sign-on.txt                    cross-host SSO
+  docs/FEATURES-SHOWCASE.txt                 one-line feature inventory
+  docs/architecture/reusable-boundary.md     framework/screen split rationale
+  docs/architecture/modular-monolith.md      business-layer split rationale
+  CLAUDE.md                                  the authoritative project instructions
+==============================================================================</pre>
+</div></div>
+<script>
+(function(){
+ function put(t){
+  if(navigator.clipboard&&navigator.clipboard.writeText)return navigator.clipboard.writeText(t);
+  return new Promise(function(res,rej){
+   var a=document.createElement('textarea');a.value=t;a.setAttribute('readonly','');
+   a.style.cssText='position:fixed;top:0;left:0;opacity:0';document.body.appendChild(a);
+   a.select();var ok=false;try{ok=document.execCommand('copy')}catch(e){}
+   document.body.removeChild(a);ok?res():rej()});
+ }
+ function flash(el,txt,ms){
+  var was=el.textContent;el.classList.add('done');if(txt)el.textContent=txt;
+  setTimeout(function(){el.classList.remove('done');if(txt)el.textContent=was},ms||1200);
+ }
+ function copy(text,el,okTxt){
+  put(text).then(function(){flash(el,okTxt)},function(){
+   if(okTxt){var w=el.textContent;el.textContent='Ctrl+C';setTimeout(function(){el.textContent=w},2000)}});
+ }
+ document.querySelectorAll('pre').forEach(function(pre){
+  if(pre.classList.contains('txtdoc'))return;
+  var b=document.createElement('button');
+  b.type='button';b.className='copy';b.textContent='Copy';
+  b.setAttribute('aria-label','Copy this code block to the clipboard');
+  b.addEventListener('click',function(){copy((pre.querySelector('code')||pre).innerText,b,'Copied')});
+  pre.appendChild(b);
+ });
+ document.querySelectorAll('td code').forEach(function(c){
+  if(!c.textContent.trim())return;
+  c.classList.add('cp');c.tabIndex=0;c.setAttribute('role','button');
+  c.title='Click to copy';
+  c.addEventListener('click',function(){copy(c.textContent,c)});
+  c.addEventListener('keydown',function(e){
+   if(e.key==='Enter'||e.key===' '){e.preventDefault();copy(c.textContent,c)}});
+ });
+})();
+</script>
+</body></html>

@@ -1,0 +1,338 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>TrustBank CBS — Architecture Discussion Brief</title>
+<style>
+:root{color-scheme:light dark}
+*{box-sizing:border-box}
+body{margin:0;background:#f6f8fa;color:#1f2328;font:16px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif}
+.wrap{max-width:900px;margin:0 auto;padding:32px 24px 96px}
+.card{background:#fff;border:1px solid #d0d7de;border-radius:10px;padding:40px 48px}
+h1,h2,h3{line-height:1.25;font-weight:600}
+h1{font-size:1.9rem;margin:0 0 .3em;padding-bottom:.3em;border-bottom:1px solid #d8dee4}
+h2{font-size:1.4rem;margin:1.8em 0 .6em;padding-bottom:.25em;border-bottom:1px solid #eaeef2}
+h3{font-size:1.12rem;margin:1.4em 0 .5em}
+p,li{margin:.5em 0}
+a{color:#0969da;text-decoration:none}
+a:hover{text-decoration:underline}
+code{font-family:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;font-size:.86em;background:#eff1f3;padding:.15em .4em;border-radius:6px}
+pre{background:#f6f8fa;border:1px solid #d8dee4;border-radius:8px;padding:14px 16px;overflow:auto}
+pre code{background:none;padding:0;font-size:.85em;line-height:1.45}
+blockquote{margin:1em 0;padding:.4em 1em;color:#3d444d;border-left:4px solid #d0d7de;background:#f6f8fa;border-radius:0 6px 6px 0}
+blockquote>:first-child{margin-top:0}blockquote>:last-child{margin-bottom:0}
+table{border-collapse:collapse;width:100%;margin:1em 0;display:block;overflow:auto}
+th,td{border:1px solid #d0d7de;padding:8px 12px;text-align:left;vertical-align:top}
+th{background:#f6f8fa;font-weight:600}
+tr:nth-child(2n) td{background:#f6f8fa}
+hr{border:0;border-top:1px solid #d8dee4;margin:2em 0}
+pre{position:relative}
+pre>button.copy{position:absolute;top:8px;right:8px;padding:5px 9px;cursor:pointer;
+  font:600 .68rem/1 ui-monospace,SFMono-Regular,Consolas,monospace;letter-spacing:.03em;
+  color:#636c76;background:#fff;border:1px solid #d0d7de;border-radius:6px;
+  opacity:0;transition:opacity .12s}
+pre:hover>button.copy,pre>button.copy:focus{opacity:1}
+pre>button.copy.done{color:#0a3622;background:#dafbe1;border-color:#4ac26b}
+@media(hover:none){pre>button.copy{opacity:1}}
+td code.cp{cursor:pointer}
+td code.cp:hover,td code.cp:focus{outline:1px solid #8c959f;outline-offset:1px}
+td code.cp.done{color:#0a3622;background:#dafbe1}
+.docnav{margin:0 0 20px;font-size:.85rem;color:#636c76}
+.docnav a{color:#636c76}
+ul{padding-left:1.4em}ol{padding-left:1.4em}
+@media(max-width:640px){.card{padding:24px 18px}.wrap{padding:16px 10px 64px}}
+@media(prefers-color-scheme:dark){
+ body{background:#0d1117;color:#e6edf3}
+ .card{background:#161b22;border-color:#30363d}
+ h1{border-color:#30363d}h2{border-color:#21262d}
+ code{background:#262c34}
+ pre{background:#0d1117;border-color:#30363d}
+ blockquote{background:#161b22;border-color:#30363d;color:#9198a1}
+ th,td{border-color:#30363d}th{background:#161b22}tr:nth-child(2n) td{background:#12171e}
+ a{color:#4493f8}.docnav,.docnav a{color:#9198a1}
+ hr{border-color:#30363d}
+ pre>button.copy{color:#9198a1;background:#161b22;border-color:#30363d}
+ pre>button.copy.done{color:#aff5b4;background:#1b4721;border-color:#2ea043}
+ td code.cp.done{color:#aff5b4;background:#1b4721}
+}
+</style></head>
+<body><div class="wrap"><div class="card">
+<div class="docnav"><a href="../index.html">&#8592; All docs</a></div>
+<h1 id="trustbank-cbs-architecture-discussion-brief">TrustBank CBS — Architecture Discussion Brief</h1>
+<p><strong>Internal briefing note · 21 August 2026 · For a management review of the .NET 10 migration</strong></p>
+<p><em>One page of "where we are", one of "what's open", and the decisions we need. Detail lives in the reference documents listed at the end.</em></p>
+<hr />
+<h2 id="1-the-position-in-five-lines">1. The position in five lines</h2>
+<ul>
+<li>We are migrating TrustBank CBS from <strong>ASP.NET WebForms / VB.NET / .NET 4.8</strong> to <strong>.NET 10 / C# ASP.NET Core MVC</strong>, using a <strong>strangler-fig</strong> approach — legacy keeps running, screens cut over one at a time.</li>
+<li>The <strong>reusable foundation is finished and proven</strong>: framework, security, session, multi-database data layer, UI component toolkit, and a repeatable per-screen recipe. This is typically 15–20% of a programme of this size and it is behind us.</li>
+<li>The target architecture — a <strong>modular monolith</strong> — is not a plan, it is <strong>built</strong>. As of <strong>29 July 2026 all 8 business domains are their own assemblies</strong> and the old shared service project was dissolved.</li>
+<li>The platform runs today in <strong>four deployment shapes</strong> (IIS single, IIS multi-host behind a gateway, Docker single, Docker multi-host) from <strong>one codebase</strong>, and on <strong>three databases</strong> (SQL Server, Oracle, PostgreSQL).</li>
+<li>An independent pre-production review scored the solution <strong>62/100</strong> in July; remediation has moved it to <strong>~77</strong>. <strong>Two gate items remain</strong>, and one of them — no source control or CI — is the single biggest thing to fix, and it now also gates the value of <strong>four test suites — 380 automated tests</strong> — that nothing runs automatically.</li>
+</ul>
+<hr />
+<h2 id="2-what-is-built">2. What is built</h2>
+<p><strong>36 projects</strong> in the build solution, in four clean tiers.</p>
+<table>
+<thead>
+<tr>
+<th>Tier</th>
+<th>Projects</th>
+<th>What it gives us</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Foundation</strong></td>
+<td><code>TflCbs.Abstractions</code>, <code>TflCbs.Framework</code></td>
+<td><code>Result&lt;T&gt;</code> contract, module contract, the four framework ports, security guard, session, tokens, search infrastructure. Framework references <em>only</em> Abstractions — never a business service or a screen.</td>
+</tr>
+<tr>
+<td><strong>Business modules (8/8 promoted)</strong></td>
+<td>Core, always on: <code>General</code>, <code>Reference</code>, <code>Core.Authentication</code> · Domains: <code>Accounts</code>, <code>Administration</code>, <code>Clearing</code>, <code>HR</code>, <code>Lockers</code>, <code>RetailBanking</code></td>
+<td>Each domain is independently owned, separately buildable, and can be switched on or off by configuration.</td>
+</tr>
+<tr>
+<td><strong>Screens</strong></td>
+<td>5 domain web libraries (<code>*.Web</code>) + 2 core (auth, shell) + <code>TflCbs.Web.Shared</code></td>
+<td>Screens ship as Razor Class Libraries, so a host composes exactly the screens it needs.</td>
+</tr>
+<tr>
+<td><strong>Hosts &amp; infrastructure</strong></td>
+<td><code>TflCbs.Host.Main</code> (full host), YARP <code>Gateway</code>, 4 thin per-module hosts · <code>TflCbs.Entities</code>, <code>TflOmniDb</code>, <code>TflOmniLog</code>, <code>TflSecurityCrypto</code> · <code>DbMigrator</code></td>
+<td>Same code, many footprints. In-house entity, data-access, logging and crypto libraries — no niche third-party dependencies. Schema changes are versioned and journalled by a migration runner.</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Delivered functionality so far:</strong> 12 domain screens across 5 areas, plus login/logout, module chooser, menu, home and error handling — 47 views. These are the pilot screens the delivery estimate is calibrated on, not throwaway demos: they run against the real database.</p>
+<p><strong>Two things changed in August that are worth a line each.</strong> The two in-house libraries (<code>TflOmniDb</code>, <code>TflSecurityCrypto</code>) were <strong>vendored into the repository</strong>, so the solution is now self-contained — previously a fresh copy could not be built unless an unrelated archive folder happened to sit at the right relative path, which is exactly the kind of thing that fails on the first day of a new team member or a new build agent. And the shared configuration files that are security controls (log masking) or operational controls (route cut-over) were moved out of the default host into a solution-level <code>config/</code> folder linked by all five hosts, so they cannot drift apart between hosts.</p>
+<hr />
+<h2 id="3-the-architectural-decisions-and-why-they-were-made">3. The architectural decisions, and why they were made</h2>
+<p><strong>Modular monolith — one process, one database, hard internal boundaries.</strong></p>
+<p>This is the deliberate middle path between the legacy monolith and microservices, and for a core banking system it is the defensible choice:</p>
+<ul>
+<li><strong>Money movement needs transactions.</strong> One database gives us real ACID guarantees across a posting. A distributed design would trade that for eventual consistency and a class of failure modes we would then have to engineer around — for no benefit at our volumes.</li>
+<li><strong>Operationally simple today.</strong> One application to deploy, monitor and back up.</li>
+<li><strong>But the boundaries are real.</strong> Modules talk to each other only through published contracts, and <strong>94 automated architecture tests fail the build</strong> if anyone crosses a line. This is the crucial difference from a conventional monolith: the design cannot silently erode as the team grows. The suite also guards <em>itself</em>: a meta-check verifies that each boundary rule is still genuinely capable of failing, so a rule cannot quietly turn green by becoming impossible to violate.</li>
+<li><strong>Scale-out is available without a rewrite.</strong> Because the boundaries are enforced, we already run individual modules as separate hosts behind a gateway. That capability is built and demonstrated — we simply do not need it yet.</li>
+</ul>
+<p><strong>Second decision: horizontal framework/screen split.</strong> Reusable plumbing lives in one assembly that has no knowledge of any screen. That is what makes the per-screen migration recipe fast and repeatable, and it is likewise arch-tested.</p>
+<hr />
+<h2 id="4-what-is-proven-with-evidence">4. What is proven, with evidence</h2>
+<table>
+<thead>
+<tr>
+<th>Claim</th>
+<th>Evidence</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Boundaries hold</td>
+<td><strong>94 architecture tests</strong>, run on every build</td>
+</tr>
+<tr>
+<td>Business logic works on all three databases</td>
+<td><strong>149 cross-provider service tests</strong></td>
+</tr>
+<tr>
+<td>The whole stack works end to end</td>
+<td><strong>74 in-process integration tests</strong> do a full authenticated round trip against the real pipeline — login, 22 module tiles, live menu, real search results from the database</td>
+</tr>
+<tr>
+<td>The browser sees what we think it sees</td>
+<td><strong>63 Playwright end-to-end tests</strong> across 10 specs — the strict content-security policy actually enforced, session/cookie behaviour, and every reusable component driven for real</td>
+</tr>
+<tr>
+<td>Access control is fail-closed</td>
+<td>Central guard on every request + a startup assertion that it cannot be ordered away, both pinned by tests</td>
+</tr>
+<tr>
+<td>No SQL injection surface</td>
+<td>All access parameterized; new master CRUD is forbidden raw SQL by standing rule</td>
+</tr>
+<tr>
+<td>Rewrites are no slower than the procs they replace</td>
+<td>Dated performance reports comparing migrated C# against the original T-SQL, on both SQL Server and Oracle</td>
+</tr>
+<tr>
+<td>The migration recipe is real</td>
+<td>Documented step-by-step tutorial plus a written definition-of-done; a new developer builds a full CRUD screen from it</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="5-scope-and-effort-the-commercial-picture">5. Scope and effort — the commercial picture</h2>
+<p>From an automated scan of the legacy codebase plus measured velocity on the delivered pilot screens (ROM, ±40%, prepared 17 June 2026):</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Legacy scope counted</strong></td>
+<td>1,458 ASPX screens (1,059 functional + 399 reports) · 5,317 stored procedures · 1,497 VB code-behind files</td>
+</tr>
+<tr>
+<td><strong>Likely effort</strong></td>
+<td>~10,550 person-days (~48 person-years)</td>
+</tr>
+<tr>
+<td><strong>Indicative timeline</strong></td>
+<td>~2.5–3 years with a team of ~20</td>
+</tr>
+<tr>
+<td><strong>Range</strong></td>
+<td>Optimistic ~7,400 pd · Likely ~10,550 pd · Pessimistic ~14,800 pd</td>
+</tr>
+</tbody>
+</table>
+<p><strong>The three biggest levers on that number:</strong> whether reports are rebuilt or rehosted (±500–700 pd), whether we commit to one database or keep all three (±120–150 pd), and how much senior attention the high-risk engine procedures (interest, GL, day-end, clearing) need.</p>
+<hr />
+<h2 id="6-open-risks-what-we-would-want-to-say-before-anyone-asks">6. Open risks — what we would want to say before anyone asks</h2>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Item</th>
+<th>Status</th>
+<th>Why it matters</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>1</strong></td>
+<td><strong>No source control or CI</strong></td>
+<td><strong>Open — highest priority, unchanged since July</strong></td>
+<td>The working tree is still not a git repository. Nothing is recoverable, nothing gates a bad change, and we have already kept dead code purely because we could not retrieve it later. Every other item on this list gets cheaper the moment this is fixed, because a fix can then be proven and kept. Cheap to do; it should not survive another sprint.</td>
+</tr>
+<tr>
+<td><strong>2</strong></td>
+<td>Optimistic concurrency not rolled out</td>
+<td>Partial</td>
+<td>The pattern is built and DB-verified on one master. Until it is applied to the remaining write services, concurrent edits are last-writer-wins.</td>
+</tr>
+<tr>
+<td><strong>3</strong></td>
+<td>Database credentials and certificates</td>
+<td>Partial</td>
+<td>Secrets are out of committed config, but the shared administrative login still needs rotating and replacing with a least-privilege account, and the self-signed certificate needs replacing for production.</td>
+</tr>
+<tr>
+<td><strong>4</strong></td>
+<td>No infrastructure-as-code; observability instrumented but disabled by default</td>
+<td>Deferred by decision</td>
+<td>These are the "next band" items after the production gate, not blockers. <strong>The controller and end-to-end test tiers that sat here in July are now done</strong> — 74 in-process integration tests and 63 browser tests.</td>
+</tr>
+</tbody>
+</table>
+<p>Items 1–3 are the remainder of a written eight-item gate plan; six are already complete, including the two Critical findings (an authentication bypass and reversible password storage — passwords are now PBKDF2, with all 1,731 user records migrated).</p>
+<p><strong>The honest summary:</strong> the <em>structure</em> of this system is its strongest attribute and was rated as such independently. The remaining risk is almost entirely <strong>process and operations</strong>, not design.</p>
+<hr />
+<h2 id="7-what-we-would-like-decided">7. What we would like decided</h2>
+<ol>
+<li><strong>Authorize source control and a CI pipeline now.</strong> Small effort, removes the largest single risk, and every subsequent fix then lands behind a test gate.</li>
+<li><strong>Settle the reports question</strong> — rebuild or rehost. It is the biggest single swing in the estimate and it blocks a firm Phase-1 budget.</li>
+<li><strong>Settle the database target</strong> — commit to one engine, or fund keeping all three. We support three today; that has an ongoing hardening cost.</li>
+<li><strong>Approve a 4–6 week discovery phase</strong> to convert the ±40% ROM into a committed ±15% plan before any large build commitment. The foundation is ready, so the team can start migrating screens the day it ends.</li>
+</ol>
+<hr />
+<h2 id="appendix-reference-documents">Appendix — reference documents</h2>
+<table>
+<thead>
+<tr>
+<th>Document</th>
+<th>Audience</th>
+<th>Formats</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>architecture-overview.md</code></td>
+<td>The full engineering reference — every project, why it exists, and how a request flows end to end</td>
+<td>md · html · txt · pdf · docx</td>
+</tr>
+<tr>
+<td><code>architecture/TrustBank-CBS-Platform-Architecture</code></td>
+<td>Outward-facing; for an institution evaluating the platform</td>
+<td>md · html · txt · pdf · docx</td>
+</tr>
+<tr>
+<td><code>architecture-review/ARCHITECTURE-REVIEW</code></td>
+<td>The independent pre-production review, findings graded C/H/M</td>
+<td>md · html · txt · pdf · docx</td>
+</tr>
+<tr>
+<td><code>architecture-review/REMEDIATION-PLAN</code></td>
+<td>The eight-item gate plan; live status</td>
+<td>md · html · txt · pdf · docx</td>
+</tr>
+<tr>
+<td><code>architecture/modular-monolith.md</code></td>
+<td>Decision record — the vertical module split</td>
+<td>md · html · txt · pdf · docx</td>
+</tr>
+<tr>
+<td><code>architecture/reusable-boundary.md</code></td>
+<td>Decision record — the framework/screen split</td>
+<td>md · html · txt · pdf · docx</td>
+</tr>
+<tr>
+<td><code>migration-estimate/TrustBank-Migration-Estimate</code></td>
+<td>Commercial pack — report, deck and workbook</td>
+<td>docx · pptx · xlsx</td>
+</tr>
+<tr>
+<td><code>port-map.md</code></td>
+<td>Every host, port and deployment shape on one page</td>
+<td>md · html</td>
+</tr>
+<tr>
+<td><code>guides/day-one.md</code> · <code>guides/building-a-crud-screen.md</code> · <code>guides/screen-definition-of-done.md</code></td>
+<td>The onboarding path: first-day setup, the per-screen recipe, and the review gate</td>
+<td>md · html</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<p><em>Prepared from the solution as it stands on 21 August 2026. Figures for tests, projects and screens are counted from the source tree, not estimated.</em></p>
+</div></div>
+<script>
+(function(){
+ function put(t){
+  if(navigator.clipboard&&navigator.clipboard.writeText)return navigator.clipboard.writeText(t);
+  return new Promise(function(res,rej){
+   var a=document.createElement('textarea');a.value=t;a.setAttribute('readonly','');
+   a.style.cssText='position:fixed;top:0;left:0;opacity:0';document.body.appendChild(a);
+   a.select();var ok=false;try{ok=document.execCommand('copy')}catch(e){}
+   document.body.removeChild(a);ok?res():rej()});
+ }
+ function flash(el,txt,ms){
+  var was=el.textContent;el.classList.add('done');if(txt)el.textContent=txt;
+  setTimeout(function(){el.classList.remove('done');if(txt)el.textContent=was},ms||1200);
+ }
+ function copy(text,el,okTxt){
+  put(text).then(function(){flash(el,okTxt)},function(){
+   if(okTxt){var w=el.textContent;el.textContent='Ctrl+C';setTimeout(function(){el.textContent=w},2000)}});
+ }
+ document.querySelectorAll('pre').forEach(function(pre){
+  if(pre.classList.contains('txtdoc'))return;
+  var b=document.createElement('button');
+  b.type='button';b.className='copy';b.textContent='Copy';
+  b.setAttribute('aria-label','Copy this code block to the clipboard');
+  b.addEventListener('click',function(){copy((pre.querySelector('code')||pre).innerText,b,'Copied')});
+  pre.appendChild(b);
+ });
+ document.querySelectorAll('td code').forEach(function(c){
+  if(!c.textContent.trim())return;
+  c.classList.add('cp');c.tabIndex=0;c.setAttribute('role','button');
+  c.title='Click to copy';
+  c.addEventListener('click',function(){copy(c.textContent,c)});
+  c.addEventListener('keydown',function(e){
+   if(e.key==='Enter'||e.key===' '){e.preventDefault();copy(c.textContent,c)}});
+ });
+})();
+</script>
+</body></html>

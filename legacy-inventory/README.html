@@ -1,0 +1,1311 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>TrustBank CBS — Legacy Screen Inventory</title>
+<style>
+:root{color-scheme:light dark}
+*{box-sizing:border-box}
+body{margin:0;background:#f6f8fa;color:#1f2328;font:16px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif}
+.wrap{max-width:900px;margin:0 auto;padding:32px 24px 96px}
+.card{background:#fff;border:1px solid #d0d7de;border-radius:10px;padding:40px 48px}
+h1,h2,h3{line-height:1.25;font-weight:600}
+h1{font-size:1.9rem;margin:0 0 .3em;padding-bottom:.3em;border-bottom:1px solid #d8dee4}
+h2{font-size:1.4rem;margin:1.8em 0 .6em;padding-bottom:.25em;border-bottom:1px solid #eaeef2}
+h3{font-size:1.12rem;margin:1.4em 0 .5em}
+p,li{margin:.5em 0}
+a{color:#0969da;text-decoration:none}
+a:hover{text-decoration:underline}
+code{font-family:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;font-size:.86em;background:#eff1f3;padding:.15em .4em;border-radius:6px}
+pre{background:#f6f8fa;border:1px solid #d8dee4;border-radius:8px;padding:14px 16px;overflow:auto}
+pre code{background:none;padding:0;font-size:.85em;line-height:1.45}
+blockquote{margin:1em 0;padding:.4em 1em;color:#3d444d;border-left:4px solid #d0d7de;background:#f6f8fa;border-radius:0 6px 6px 0}
+blockquote>:first-child{margin-top:0}blockquote>:last-child{margin-bottom:0}
+table{border-collapse:collapse;width:100%;margin:1em 0;display:block;overflow:auto}
+th,td{border:1px solid #d0d7de;padding:8px 12px;text-align:left;vertical-align:top}
+th{background:#f6f8fa;font-weight:600}
+tr:nth-child(2n) td{background:#f6f8fa}
+hr{border:0;border-top:1px solid #d8dee4;margin:2em 0}
+pre{position:relative}
+pre>button.copy{position:absolute;top:8px;right:8px;padding:5px 9px;cursor:pointer;
+  font:600 .68rem/1 ui-monospace,SFMono-Regular,Consolas,monospace;letter-spacing:.03em;
+  color:#636c76;background:#fff;border:1px solid #d0d7de;border-radius:6px;
+  opacity:0;transition:opacity .12s}
+pre:hover>button.copy,pre>button.copy:focus{opacity:1}
+pre>button.copy.done{color:#0a3622;background:#dafbe1;border-color:#4ac26b}
+@media(hover:none){pre>button.copy{opacity:1}}
+td code.cp{cursor:pointer}
+td code.cp:hover,td code.cp:focus{outline:1px solid #8c959f;outline-offset:1px}
+td code.cp.done{color:#0a3622;background:#dafbe1}
+.docnav{margin:0 0 20px;font-size:.85rem;color:#636c76}
+.docnav a{color:#636c76}
+ul{padding-left:1.4em}ol{padding-left:1.4em}
+@media(max-width:640px){.card{padding:24px 18px}.wrap{padding:16px 10px 64px}}
+@media(prefers-color-scheme:dark){
+ body{background:#0d1117;color:#e6edf3}
+ .card{background:#161b22;border-color:#30363d}
+ h1{border-color:#30363d}h2{border-color:#21262d}
+ code{background:#262c34}
+ pre{background:#0d1117;border-color:#30363d}
+ blockquote{background:#161b22;border-color:#30363d;color:#9198a1}
+ th,td{border-color:#30363d}th{background:#161b22}tr:nth-child(2n) td{background:#12171e}
+ a{color:#4493f8}.docnav,.docnav a{color:#9198a1}
+ hr{border-color:#30363d}
+ pre>button.copy{color:#9198a1;background:#161b22;border-color:#30363d}
+ pre>button.copy.done{color:#aff5b4;background:#1b4721;border-color:#2ea043}
+ td code.cp.done{color:#aff5b4;background:#1b4721}
+}
+</style></head>
+<body><div class="wrap"><div class="card">
+<div class="docnav"><a href="../index.html">&#8592; All docs</a></div>
+<h1 id="trustbank-cbs-legacy-screen-inventory">TrustBank CBS — Legacy Screen Inventory</h1>
+<p>Every UI surface in the legacy WebForms application (1,477 screens), counted <strong>module-wise</strong> and <strong>module × category</strong>, with complexity derived from the code rather than the folder name.</p>
+<blockquote>
+<p><strong>Generated:</strong> 2026-08-24 by <a href="../../scripts/legacy-screen-inventory.py">scripts/legacy-screen-inventory.py</a> — re-run it to refresh; do not hand-edit.<br />
+<strong>Source scanned:</strong> <code>E:\adtemp\_del_now\20260606_cbs_source_code\Trust.Bank.Publish</code> (analysis only, never edited).<br />
+<strong>Companion docs:</strong> <a href="../migration-estimate/00-SUMMARY.html">migration-estimate/00-SUMMARY.md</a> (commercial ROM estimate) · <a href="../migrated-vs-new.html">migrated-vs-new.md</a> (cross-cutting ported/rebuilt/new ledger).<br />
+<strong>Machine-readable:</strong> <code>screens.tsv</code> · <code>procs-by-screen.tsv</code> · <code>shared-procs.tsv</code> · <a href="TrustBank-Legacy-Inventory.html"><code>TrustBank-Legacy-Inventory.html</code></a> (filter + sort in the browser) · <code>TrustBank-Legacy-Inventory.xlsx</code>.</p>
+</blockquote>
+<h2 id="1-at-a-glance">1. At a glance</h2>
+<table>
+<thead>
+<tr>
+<th></th>
+<th style="text-align: right;">Count</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Screens total (<code>.aspx</code> + <code>.ascx</code>)</td>
+<td style="text-align: right;"><strong>1,477</strong></td>
+</tr>
+<tr>
+<td>Functional screens (non-report)</td>
+<td style="text-align: right;"><strong>1,075</strong></td>
+</tr>
+<tr>
+<td>Reports</td>
+<td style="text-align: right;"><strong>402</strong></td>
+</tr>
+<tr>
+<td>Modules (top-level folders)</td>
+<td style="text-align: right;">20</td>
+</tr>
+<tr>
+<td>Distinct stored procedures referenced</td>
+<td style="text-align: right;">4,186</td>
+</tr>
+<tr>
+<td>Lines of markup + code-behind</td>
+<td style="text-align: right;">2,063,896</td>
+</tr>
+<tr>
+<td>Screens with sibling <code>.js</code> / <code>.html</code> assets</td>
+<td style="text-align: right;">92</td>
+</tr>
+<tr>
+<td><strong>Migrated to .NET 10 so far</strong></td>
+<td style="text-align: right;"><strong>8</strong> (0.5%)</td>
+</tr>
+<tr>
+<td><strong>Remaining</strong></td>
+<td style="text-align: right;"><strong>1,469</strong></td>
+</tr>
+</tbody>
+</table>
+<h2 id="2-module-wise">2. Module-wise</h2>
+<p>Screen count, size and migration status per top-level module.</p>
+<table>
+<thead>
+<tr>
+<th>Module</th>
+<th style="text-align: right;">Screens</th>
+<th style="text-align: right;">Reports</th>
+<th style="text-align: right;">Functional</th>
+<th style="text-align: right;">Lines of code</th>
+<th style="text-align: right;">Distinct procs</th>
+<th style="text-align: right;">Migrated</th>
+<th style="text-align: right;">Remaining</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>RetailBanking</td>
+<td style="text-align: right;">671</td>
+<td style="text-align: right;">22</td>
+<td style="text-align: right;">649</td>
+<td style="text-align: right;">1,049,978</td>
+<td style="text-align: right;">2,056</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">670</td>
+</tr>
+<tr>
+<td>Reports</td>
+<td style="text-align: right;">362</td>
+<td style="text-align: right;">362</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">352,535</td>
+<td style="text-align: right;">1,484</td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;">362</td>
+</tr>
+<tr>
+<td>HO</td>
+<td style="text-align: right;">203</td>
+<td style="text-align: right;">5</td>
+<td style="text-align: right;">198</td>
+<td style="text-align: right;">360,657</td>
+<td style="text-align: right;">426</td>
+<td style="text-align: right;">5</td>
+<td style="text-align: right;">198</td>
+</tr>
+<tr>
+<td>Reconciliation</td>
+<td style="text-align: right;">74</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">74</td>
+<td style="text-align: right;">123,413</td>
+<td style="text-align: right;">117</td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;">74</td>
+</tr>
+<tr>
+<td>Inventory</td>
+<td style="text-align: right;">23</td>
+<td style="text-align: right;">4</td>
+<td style="text-align: right;">19</td>
+<td style="text-align: right;">64,786</td>
+<td style="text-align: right;">72</td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;">23</td>
+</tr>
+<tr>
+<td>EmployeeDemand</td>
+<td style="text-align: right;">21</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">21</td>
+<td style="text-align: right;">20,822</td>
+<td style="text-align: right;">26</td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;">21</td>
+</tr>
+<tr>
+<td>Hr</td>
+<td style="text-align: right;">21</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">21</td>
+<td style="text-align: right;">11,918</td>
+<td style="text-align: right;">14</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">20</td>
+</tr>
+<tr>
+<td>Helpdesk</td>
+<td style="text-align: right;">21</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">19</td>
+<td style="text-align: right;">26,261</td>
+<td style="text-align: right;">47</td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;">21</td>
+</tr>
+<tr>
+<td>UserControls</td>
+<td style="text-align: right;">19</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">19</td>
+<td style="text-align: right;">12,916</td>
+<td style="text-align: right;">16</td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;">19</td>
+</tr>
+<tr>
+<td>Lockers</td>
+<td style="text-align: right;">15</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">15</td>
+<td style="text-align: right;">28,492</td>
+<td style="text-align: right;">64</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">14</td>
+</tr>
+<tr>
+<td>(root)</td>
+<td style="text-align: right;">13</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">12</td>
+<td style="text-align: right;">1,933</td>
+<td style="text-align: right;">6</td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;">13</td>
+</tr>
+<tr>
+<td>Config</td>
+<td style="text-align: right;">8</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">6</td>
+<td style="text-align: right;">3,158</td>
+<td style="text-align: right;">4</td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;">8</td>
+</tr>
+<tr>
+<td>Authentication</td>
+<td style="text-align: right;">7</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">7</td>
+<td style="text-align: right;">1,248</td>
+<td style="text-align: right;">4</td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;">7</td>
+</tr>
+<tr>
+<td>external_api</td>
+<td style="text-align: right;">5</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">5</td>
+<td style="text-align: right;">1,043</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;">5</td>
+</tr>
+<tr>
+<td>fp</td>
+<td style="text-align: right;">5</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">5</td>
+<td style="text-align: right;">1,065</td>
+<td style="text-align: right;">9</td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;">5</td>
+</tr>
+<tr>
+<td>StatutoryReports</td>
+<td style="text-align: right;">3</td>
+<td style="text-align: right;">3</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">1,256</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;">3</td>
+</tr>
+<tr>
+<td>ajax</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">237</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;">2</td>
+</tr>
+<tr>
+<td>Customer360</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">1,027</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;">2</td>
+</tr>
+<tr>
+<td>CcpcClearing</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">246</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;">1</td>
+</tr>
+<tr>
+<td>ServiceBranch</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">905</td>
+<td style="text-align: right;">4</td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;">1</td>
+</tr>
+<tr>
+<td><strong>Total</strong></td>
+<td style="text-align: right;"><strong>1,477</strong></td>
+<td style="text-align: right;"><strong>402</strong></td>
+<td style="text-align: right;"><strong>1,075</strong></td>
+<td style="text-align: right;"><strong>2,063,896</strong></td>
+<td style="text-align: right;"><strong>4,186</strong></td>
+<td style="text-align: right;"><strong>8</strong></td>
+<td style="text-align: right;"><strong>1,469</strong></td>
+</tr>
+</tbody>
+</table>
+<h2 id="3-module-category">3. Module × category</h2>
+<p>Category is assigned from the screen's own evidence — controls present, whether the code-behind writes, which procedures it calls — with the first matching rule winning:</p>
+<table>
+<thead>
+<tr>
+<th>Category</th>
+<th>Assigned when</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Report</td>
+<td>Reports/StatutoryReports module, a ReportViewer/Crystal control, or <code>report</code>/<code>rpt</code> in the path</td>
+</tr>
+<tr>
+<td>UserControl</td>
+<td>a <code>.ascx</code> shared control</td>
+</tr>
+<tr>
+<td>Handler / API / Ajax</td>
+<td><code>external_api</code>/<code>ajax</code>/<code>fp</code> module, <code>handler</code> in the name, or no server controls at all</td>
+</tr>
+<tr>
+<td>Popup / Dialog</td>
+<td><code>popup</code>/<code>dialog</code> in the file name</td>
+</tr>
+<tr>
+<td>Wizard / Multi-tab</td>
+<td><code>asp:Wizard</code> or a tab container (<code>MultiView</code> alone is the legacy list/edit toggle, not a wizard, so it does not count)</td>
+</tr>
+<tr>
+<td>Transaction / Entry</td>
+<td>posting/voucher/receipt/transfer/cheque path, a maker-checker name, or a writing form with no list</td>
+</tr>
+<tr>
+<td>Batch / Process</td>
+<td>day-end, EOD, batch, generation, closure or scroll in the name</td>
+</tr>
+<tr>
+<td>CRUD master</td>
+<td>has a grid <strong>and</strong> the code-behind writes — the classic list + insert/update/delete master</td>
+</tr>
+<tr>
+<td>Search / List / Inquiry</td>
+<td>has a grid, no writes — read-only listing or enquiry</td>
+</tr>
+<tr>
+<td>Client-rendered / Other</td>
+<td>almost no server controls — the UI is hand-written HTML/JS, so the control-based rules cannot see it. Listed explicitly rather than silently bucketed</td>
+</tr>
+</tbody>
+</table>
+<table>
+<thead>
+<tr>
+<th>Module</th>
+<th style="text-align: right;">Report</th>
+<th style="text-align: right;">UserControl</th>
+<th style="text-align: right;">Handler / API / Ajax</th>
+<th style="text-align: right;">Popup / Dialog</th>
+<th style="text-align: right;">Wizard / Multi-tab</th>
+<th style="text-align: right;">Transaction / Entry</th>
+<th style="text-align: right;">Batch / Process</th>
+<th style="text-align: right;">CRUD master</th>
+<th style="text-align: right;">Search / List / Inquiry</th>
+<th style="text-align: right;">Client-rendered / Other</th>
+<th style="text-align: right;">Total</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>RetailBanking</td>
+<td style="text-align: right;">22</td>
+<td style="text-align: right;">4</td>
+<td style="text-align: right;">6</td>
+<td style="text-align: right;">31</td>
+<td style="text-align: right;">10</td>
+<td style="text-align: right;">178</td>
+<td style="text-align: right;">17</td>
+<td style="text-align: right;">278</td>
+<td style="text-align: right;">83</td>
+<td style="text-align: right;">42</td>
+<td style="text-align: right;"><strong>671</strong></td>
+</tr>
+<tr>
+<td>Reports</td>
+<td style="text-align: right;">362</td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;"><strong>362</strong></td>
+</tr>
+<tr>
+<td>HO</td>
+<td style="text-align: right;">5</td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">6</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">32</td>
+<td style="text-align: right;">4</td>
+<td style="text-align: right;">132</td>
+<td style="text-align: right;">9</td>
+<td style="text-align: right;">12</td>
+<td style="text-align: right;"><strong>203</strong></td>
+</tr>
+<tr>
+<td>Reconciliation</td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;">3</td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;">14</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">50</td>
+<td style="text-align: right;">4</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;"><strong>74</strong></td>
+</tr>
+<tr>
+<td>Inventory</td>
+<td style="text-align: right;">4</td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;">15</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;"><strong>23</strong></td>
+</tr>
+<tr>
+<td>EmployeeDemand</td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;">4</td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;">16</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;"><strong>21</strong></td>
+</tr>
+<tr>
+<td>Hr</td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;">3</td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;">13</td>
+<td style="text-align: right;">4</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;"><strong>21</strong></td>
+</tr>
+<tr>
+<td>Helpdesk</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;">3</td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;">12</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;"><strong>21</strong></td>
+</tr>
+<tr>
+<td>UserControls</td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;">15</td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;"><strong>19</strong></td>
+</tr>
+<tr>
+<td>Lockers</td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;">4</td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;">11</td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;"><strong>15</strong></td>
+</tr>
+<tr>
+<td>(root)</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;">5</td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;">5</td>
+<td style="text-align: right;"><strong>13</strong></td>
+</tr>
+<tr>
+<td>Config</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;">3</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;"><strong>8</strong></td>
+</tr>
+<tr>
+<td>Authentication</td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;">3</td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;">3</td>
+<td style="text-align: right;"><strong>7</strong></td>
+</tr>
+<tr>
+<td>external_api</td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;">5</td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;"><strong>5</strong></td>
+</tr>
+<tr>
+<td>fp</td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;">5</td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;"><strong>5</strong></td>
+</tr>
+<tr>
+<td>StatutoryReports</td>
+<td style="text-align: right;">3</td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;"><strong>3</strong></td>
+</tr>
+<tr>
+<td>ajax</td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;"><strong>2</strong></td>
+</tr>
+<tr>
+<td>Customer360</td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;"><strong>2</strong></td>
+</tr>
+<tr>
+<td>CcpcClearing</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;"><strong>1</strong></td>
+</tr>
+<tr>
+<td>ServiceBranch</td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;"><strong>1</strong></td>
+</tr>
+<tr>
+<td><strong>Total</strong></td>
+<td style="text-align: right;"><strong>402</strong></td>
+<td style="text-align: right;"><strong>19</strong></td>
+<td style="text-align: right;"><strong>28</strong></td>
+<td style="text-align: right;"><strong>48</strong></td>
+<td style="text-align: right;"><strong>11</strong></td>
+<td style="text-align: right;"><strong>238</strong></td>
+<td style="text-align: right;"><strong>23</strong></td>
+<td style="text-align: right;"><strong>533</strong></td>
+<td style="text-align: right;"><strong>105</strong></td>
+<td style="text-align: right;"><strong>70</strong></td>
+<td style="text-align: right;"><strong>1477</strong></td>
+</tr>
+</tbody>
+</table>
+<h2 id="4-module-complexity">4. Module × complexity</h2>
+<p>Complexity is scored from measurables — code-behind length, control count, distinct procedures called, grids, wizard, client assets — then banded on the population's quartiles: <strong>Simple</strong> &lt; 4.0, <strong>Medium</strong> 4.0–12.0, <strong>Complex</strong> &gt; 12.0. Reports are shown in their own band.</p>
+<table>
+<thead>
+<tr>
+<th>Module</th>
+<th style="text-align: right;">Simple</th>
+<th style="text-align: right;">Medium</th>
+<th style="text-align: right;">Complex</th>
+<th style="text-align: right;">Report</th>
+<th style="text-align: right;">Total</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>RetailBanking</td>
+<td style="text-align: right;">145</td>
+<td style="text-align: right;">282</td>
+<td style="text-align: right;">222</td>
+<td style="text-align: right;">22</td>
+<td style="text-align: right;"><strong>671</strong></td>
+</tr>
+<tr>
+<td>Reports</td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;">362</td>
+<td style="text-align: right;"><strong>362</strong></td>
+</tr>
+<tr>
+<td>HO</td>
+<td style="text-align: right;">46</td>
+<td style="text-align: right;">103</td>
+<td style="text-align: right;">49</td>
+<td style="text-align: right;">5</td>
+<td style="text-align: right;"><strong>203</strong></td>
+</tr>
+<tr>
+<td>Reconciliation</td>
+<td style="text-align: right;">7</td>
+<td style="text-align: right;">38</td>
+<td style="text-align: right;">29</td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;"><strong>74</strong></td>
+</tr>
+<tr>
+<td>Inventory</td>
+<td style="text-align: right;">3</td>
+<td style="text-align: right;">7</td>
+<td style="text-align: right;">9</td>
+<td style="text-align: right;">4</td>
+<td style="text-align: right;"><strong>23</strong></td>
+</tr>
+<tr>
+<td>EmployeeDemand</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">14</td>
+<td style="text-align: right;">6</td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;"><strong>21</strong></td>
+</tr>
+<tr>
+<td>Hr</td>
+<td style="text-align: right;">9</td>
+<td style="text-align: right;">11</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;"><strong>21</strong></td>
+</tr>
+<tr>
+<td>Helpdesk</td>
+<td style="text-align: right;">4</td>
+<td style="text-align: right;">12</td>
+<td style="text-align: right;">3</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;"><strong>21</strong></td>
+</tr>
+<tr>
+<td>UserControls</td>
+<td style="text-align: right;">10</td>
+<td style="text-align: right;">6</td>
+<td style="text-align: right;">3</td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;"><strong>19</strong></td>
+</tr>
+<tr>
+<td>Lockers</td>
+<td style="text-align: right;">4</td>
+<td style="text-align: right;">6</td>
+<td style="text-align: right;">5</td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;"><strong>15</strong></td>
+</tr>
+<tr>
+<td>(root)</td>
+<td style="text-align: right;">11</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;"><strong>13</strong></td>
+</tr>
+<tr>
+<td>Config</td>
+<td style="text-align: right;">5</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;"><strong>8</strong></td>
+</tr>
+<tr>
+<td>Authentication</td>
+<td style="text-align: right;">6</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;"><strong>7</strong></td>
+</tr>
+<tr>
+<td>external_api</td>
+<td style="text-align: right;">5</td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;"><strong>5</strong></td>
+</tr>
+<tr>
+<td>fp</td>
+<td style="text-align: right;">3</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;"><strong>5</strong></td>
+</tr>
+<tr>
+<td>StatutoryReports</td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;">3</td>
+<td style="text-align: right;"><strong>3</strong></td>
+</tr>
+<tr>
+<td>ajax</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;"><strong>2</strong></td>
+</tr>
+<tr>
+<td>Customer360</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;"><strong>2</strong></td>
+</tr>
+<tr>
+<td>CcpcClearing</td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;"><strong>1</strong></td>
+</tr>
+<tr>
+<td>ServiceBranch</td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;"><strong>1</strong></td>
+</tr>
+<tr>
+<td><strong>Total</strong></td>
+<td style="text-align: right;"><strong>262</strong></td>
+<td style="text-align: right;"><strong>486</strong></td>
+<td style="text-align: right;"><strong>327</strong></td>
+<td style="text-align: right;"><strong>402</strong></td>
+<td style="text-align: right;"><strong>1477</strong></td>
+</tr>
+</tbody>
+</table>
+<p><code>screens.tsv</code> also carries <code>LegacyBucket</code>, the folder-name-based bucket used by the June 2026 estimate, so the two are comparable: <strong>600 of 1,477 screens (41%) land in a different band once scored from the code.</strong></p>
+<h2 id="5-biggest-screens">5. Biggest screens</h2>
+<p>The 20 highest-scoring screens — where the migration effort concentrates.</p>
+<table>
+<thead>
+<tr>
+<th>Screen</th>
+<th>Module</th>
+<th>Category</th>
+<th style="text-align: right;">Code lines</th>
+<th style="text-align: right;">Controls</th>
+<th style="text-align: right;">Procs</th>
+<th style="text-align: right;">Score</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>RetailBanking/Account/c_Loan.aspx</code></td>
+<td>RetailBanking</td>
+<td>Wizard / Multi-tab</td>
+<td style="text-align: right;">38,279</td>
+<td style="text-align: right;">1133</td>
+<td style="text-align: right;">54</td>
+<td style="text-align: right;">319.39</td>
+</tr>
+<tr>
+<td><code>Reports/RetailBanking/ReportOptions.aspx</code></td>
+<td>Reports</td>
+<td>Report</td>
+<td style="text-align: right;">28,354</td>
+<td style="text-align: right;">938</td>
+<td style="text-align: right;">205</td>
+<td style="text-align: right;">314.71</td>
+</tr>
+<tr>
+<td><code>RetailBanking/Account/AgriLTMTLoan.aspx</code></td>
+<td>RetailBanking</td>
+<td>Wizard / Multi-tab</td>
+<td style="text-align: right;">30,103</td>
+<td style="text-align: right;">881</td>
+<td style="text-align: right;">41</td>
+<td style="text-align: right;">250.01</td>
+</tr>
+<tr>
+<td><code>HO/b_ClientCKYCR_V3.aspx</code></td>
+<td>HO</td>
+<td>CRUD master</td>
+<td style="text-align: right;">33,608</td>
+<td style="text-align: right;">701</td>
+<td style="text-align: right;">41</td>
+<td style="text-align: right;">240.98</td>
+</tr>
+<tr>
+<td><code>Reports/RetailBanking/New RetailBanking Report/ReportSettings.aspx</code></td>
+<td>Reports</td>
+<td>Report</td>
+<td style="text-align: right;">19,899</td>
+<td style="text-align: right;">448</td>
+<td style="text-align: right;">172</td>
+<td style="text-align: right;">237.07</td>
+</tr>
+<tr>
+<td><code>HO/ProjectFormulation/p_SchemeDetailsV1.aspx</code></td>
+<td>HO</td>
+<td>CRUD master</td>
+<td style="text-align: right;">23,524</td>
+<td style="text-align: right;">348</td>
+<td style="text-align: right;">16</td>
+<td style="text-align: right;">176.95</td>
+</tr>
+<tr>
+<td><code>HO/b_ClientCKYCR_V1.aspx</code></td>
+<td>HO</td>
+<td>CRUD master</td>
+<td style="text-align: right;">22,979</td>
+<td style="text-align: right;">544</td>
+<td style="text-align: right;">23</td>
+<td style="text-align: right;">168.2</td>
+</tr>
+<tr>
+<td><code>HO/ProjectFormulation/p_SchemeDetails.aspx</code></td>
+<td>HO</td>
+<td>CRUD master</td>
+<td style="text-align: right;">22,029</td>
+<td style="text-align: right;">310</td>
+<td style="text-align: right;">14</td>
+<td style="text-align: right;">165.35</td>
+</tr>
+<tr>
+<td><code>RetailBanking/Transaction/x_LoanFDSettlement.aspx</code></td>
+<td>RetailBanking</td>
+<td>Transaction / Entry</td>
+<td style="text-align: right;">17,751</td>
+<td style="text-align: right;">436</td>
+<td style="text-align: right;">51</td>
+<td style="text-align: right;">159.84</td>
+</tr>
+<tr>
+<td><code>RetailBanking/Transaction/x_FDRAutoTransferTransaction.aspx</code></td>
+<td>RetailBanking</td>
+<td>Transaction / Entry</td>
+<td style="text-align: right;">14,161</td>
+<td style="text-align: right;">231</td>
+<td style="text-align: right;">62</td>
+<td style="text-align: right;">136.15</td>
+</tr>
+<tr>
+<td><code>RetailBanking/Account/depositAccount.aspx</code></td>
+<td>RetailBanking</td>
+<td>Wizard / Multi-tab</td>
+<td style="text-align: right;">15,610</td>
+<td style="text-align: right;">507</td>
+<td style="text-align: right;">28</td>
+<td style="text-align: right;">131.85</td>
+</tr>
+<tr>
+<td><code>RetailBanking/Transaction/x_FDRenewalTransaction.aspx</code></td>
+<td>RetailBanking</td>
+<td>Transaction / Entry</td>
+<td style="text-align: right;">13,104</td>
+<td style="text-align: right;">205</td>
+<td style="text-align: right;">61</td>
+<td style="text-align: right;">126.66</td>
+</tr>
+<tr>
+<td><code>RetailBanking/Transaction/x_ManyToManyTransactionIBT_V1.aspx</code></td>
+<td>RetailBanking</td>
+<td>Transaction / Entry</td>
+<td style="text-align: right;">13,194</td>
+<td style="text-align: right;">228</td>
+<td style="text-align: right;">46</td>
+<td style="text-align: right;">124.41</td>
+</tr>
+<tr>
+<td><code>RetailBanking/Account/c_LoanSecurity.aspx</code></td>
+<td>RetailBanking</td>
+<td>CRUD master</td>
+<td style="text-align: right;">15,396</td>
+<td style="text-align: right;">44</td>
+<td style="text-align: right;">32</td>
+<td style="text-align: right;">123.75</td>
+</tr>
+<tr>
+<td><code>Lockers/k_LockerIssue.aspx</code></td>
+<td>Lockers</td>
+<td>CRUD master</td>
+<td style="text-align: right;">13,211</td>
+<td style="text-align: right;">289</td>
+<td style="text-align: right;">30</td>
+<td style="text-align: right;">115.74</td>
+</tr>
+<tr>
+<td><code>RetailBanking/loanRepayment.aspx</code></td>
+<td>RetailBanking</td>
+<td>Transaction / Entry</td>
+<td style="text-align: right;">13,846</td>
+<td style="text-align: right;">267</td>
+<td style="text-align: right;">23</td>
+<td style="text-align: right;">113.68</td>
+</tr>
+<tr>
+<td><code>HO/b_ClientV1.aspx</code></td>
+<td>HO</td>
+<td>CRUD master</td>
+<td style="text-align: right;">15,453</td>
+<td style="text-align: right;">356</td>
+<td style="text-align: right;">12</td>
+<td style="text-align: right;">113.41</td>
+</tr>
+<tr>
+<td><code>RetailBanking/c_LoanDisbursement.aspx</code></td>
+<td>RetailBanking</td>
+<td>CRUD master</td>
+<td style="text-align: right;">13,530</td>
+<td style="text-align: right;">234</td>
+<td style="text-align: right;">27</td>
+<td style="text-align: right;">112.49</td>
+</tr>
+<tr>
+<td><code>HO/ProjectFormulation/p_LoanCase_v1.aspx</code></td>
+<td>HO</td>
+<td>Wizard / Multi-tab</td>
+<td style="text-align: right;">12,879</td>
+<td style="text-align: right;">434</td>
+<td style="text-align: right;">28</td>
+<td style="text-align: right;">111.45</td>
+</tr>
+<tr>
+<td><code>RetailBanking/Transaction/x_TransactionOtherDetails.aspx</code></td>
+<td>RetailBanking</td>
+<td>Transaction / Entry</td>
+<td style="text-align: right;">7,240</td>
+<td style="text-align: right;">473</td>
+<td style="text-align: right;">38</td>
+<td style="text-align: right;">111.03</td>
+</tr>
+</tbody>
+</table>
+<h2 id="6-shared-stored-procedures">6. Shared stored procedures</h2>
+<p>832 procedures are called by more than one screen. Each is a migration lever: convert it once and every calling screen moves closer. Full list in <code>shared-procs.tsv</code>; the top 20 by reach:</p>
+<table>
+<thead>
+<tr>
+<th>Procedure</th>
+<th style="text-align: right;">Screens</th>
+<th>Modules</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>pr_g_getconsbranches</code></td>
+<td style="text-align: right;">179</td>
+<td>HO, Helpdesk, Inventory, Lockers …</td>
+</tr>
+<tr>
+<td><code>pr_x_getglobalclient</code></td>
+<td style="text-align: right;">39</td>
+<td>HO, Lockers, Reports, RetailBanking</td>
+</tr>
+<tr>
+<td><code>pr_re_sb_fwgetaccount</code></td>
+<td style="text-align: right;">36</td>
+<td>Reconciliation, Reports</td>
+</tr>
+<tr>
+<td><code>pr_x_getservicebranch</code></td>
+<td style="text-align: right;">35</td>
+<td>Reconciliation, Reports, RetailBanking</td>
+</tr>
+<tr>
+<td><code>pr_x_calculationofservicetaxcommon</code></td>
+<td style="text-align: right;">34</td>
+<td>Lockers, RetailBanking, UserControls</td>
+</tr>
+<tr>
+<td><code>pr_re_getaccountnumberwithbalanceamount</code></td>
+<td style="text-align: right;">27</td>
+<td>Reconciliation, Reports</td>
+</tr>
+<tr>
+<td><code>pr_b_getchargesamount</code></td>
+<td style="text-align: right;">26</td>
+<td>Lockers, Reports, RetailBanking</td>
+</tr>
+<tr>
+<td><code>pr_re_fwgetaccountformat</code></td>
+<td style="text-align: right;">26</td>
+<td>Reconciliation, Reports</td>
+</tr>
+<tr>
+<td><code>pr_re_getbankname</code></td>
+<td style="text-align: right;">25</td>
+<td>Reconciliation, Reports</td>
+</tr>
+<tr>
+<td><code>pr_x_scrollsave</code></td>
+<td style="text-align: right;">24</td>
+<td>HO, Inventory, RetailBanking</td>
+</tr>
+<tr>
+<td><code>pr_x_getaccountdetails</code></td>
+<td style="text-align: right;">22</td>
+<td>Lockers, RetailBanking</td>
+</tr>
+<tr>
+<td><code>pr_g_rupeesinwords</code></td>
+<td style="text-align: right;">21</td>
+<td>HO, Reports, RetailBanking</td>
+</tr>
+<tr>
+<td><code>pr_x_getaccounts</code></td>
+<td style="text-align: right;">21</td>
+<td>Reports, RetailBanking, UserControls</td>
+</tr>
+<tr>
+<td><code>pr_c_getchagestype</code></td>
+<td style="text-align: right;">18</td>
+<td>RetailBanking</td>
+</tr>
+<tr>
+<td><code>pr_g_getcity</code></td>
+<td style="text-align: right;">16</td>
+<td>EmployeeDemand, HO, RetailBanking</td>
+</tr>
+<tr>
+<td><code>pr_cts_getcellconstringname</code></td>
+<td style="text-align: right;">15</td>
+<td>Reports, RetailBanking</td>
+</tr>
+<tr>
+<td><code>pr_b_getmonthlastworkingdate</code></td>
+<td style="text-align: right;">14</td>
+<td>RetailBanking</td>
+</tr>
+<tr>
+<td><code>pr_b_lockunlockaccount</code></td>
+<td style="text-align: right;">14</td>
+<td>RetailBanking</td>
+</tr>
+<tr>
+<td><code>pr_ft_getifsccode</code></td>
+<td style="text-align: right;">14</td>
+<td>Inventory, RetailBanking</td>
+</tr>
+<tr>
+<td><code>pr_g_getaccountheadv2</code></td>
+<td style="text-align: right;">14</td>
+<td>RetailBanking</td>
+</tr>
+</tbody>
+</table>
+<h2 id="7-migration-status">7. Migration status</h2>
+<p>Joined from the A_MENUS cutover migration <a href="../../TflCbs.Tools.DbMigrator/Migrations/sqlserver/0004_menu_routes_cutover.sql">0004_menu_routes_cutover.sql</a>, which retired the old <code>config/routecutover.json</code> map and made the menu row the single source of truth. <strong>8 of 1,477 screens</strong> have a new route today.</p>
+<table>
+<thead>
+<tr>
+<th>Legacy screen</th>
+<th>Module</th>
+<th>Category</th>
+<th>New route</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>HO/Admin/a_Module.aspx</code></td>
+<td>HO</td>
+<td>CRUD master</td>
+<td><code>/Administration/Module</code></td>
+</tr>
+<tr>
+<td><code>HO/Admin/a_RoleMaster.aspx</code></td>
+<td>HO</td>
+<td>CRUD master</td>
+<td><code>/Administration/Role</code></td>
+</tr>
+<tr>
+<td><code>HO/Bank/g_District.aspx</code></td>
+<td>HO</td>
+<td>CRUD master</td>
+<td><code>/Hr/District</code></td>
+</tr>
+<tr>
+<td><code>HO/Bank/g_State.aspx</code></td>
+<td>HO</td>
+<td>CRUD master</td>
+<td><code>/Hr/State</code></td>
+</tr>
+<tr>
+<td><code>HO/Bank/g_Taluka.aspx</code></td>
+<td>HO</td>
+<td>CRUD master</td>
+<td><code>/Hr/Taluka</code></td>
+</tr>
+<tr>
+<td><code>Hr/h_DiscipActionHistory.aspx</code></td>
+<td>Hr</td>
+<td>CRUD master</td>
+<td><code>/Hr/DiscipActionHistory</code></td>
+</tr>
+<tr>
+<td><code>Lockers/k_LockerType.aspx</code></td>
+<td>Lockers</td>
+<td>CRUD master</td>
+<td><code>/Lockers/LockerType</code></td>
+</tr>
+<tr>
+<td><code>RetailBanking/b_AccHoldingAmount.aspx</code></td>
+<td>RetailBanking</td>
+<td>CRUD master</td>
+<td><code>/RetailBanking/AccHoldingAmount · /RetailBanking/AccHoldingAmount/Authorize</code></td>
+</tr>
+</tbody>
+</table>
+<p>Screens rebuilt without a menu-route entry (login, menu, module chooser) are not counted here — the migration is the only machine-checkable source, and padding it by hand would defeat the point. Two cases are un-migrated <strong>on purpose</strong> and documented in that script: <code>~/ho/GlobalClientDocAttach.aspx</code> (no controller exists) and the <code>RELEASE</code>/<code>RELEASEPASS</code> modes of <code>~/retailbanking/b_AccHoldingAmount.aspx</code> (only <code>ENTRY</code>/<code>ENTRYPASS</code> are migrated).</p>
+<h2 id="8-caveats">8. Caveats</h2>
+<ul>
+<li>Category and complexity are <strong>heuristics over static signals</strong>, meant to size and route work, not to replace a screen-by-screen walkthrough in discovery.</li>
+<li>A screen counted here is not necessarily reachable: dead pages left in the tree still have files. Confirming reachability needs the menu tables (<code>a_Module</code> / rights), which this scan deliberately does not touch.</li>
+<li>Report bodies (RDL/Crystal definitions) are out of scope; only the <code>.aspx</code> hosting them is counted.</li>
+<li>Procedure references are the <code>pr_*</code> names appearing in the code-behind. Procedures reached indirectly (built at runtime, or via the compiled BLL) are invisible to a static scan, so <code>Distinct procs</code> is a floor.</li>
+</ul>
+</div></div>
+<script>
+(function(){
+ function put(t){
+  if(navigator.clipboard&&navigator.clipboard.writeText)return navigator.clipboard.writeText(t);
+  return new Promise(function(res,rej){
+   var a=document.createElement('textarea');a.value=t;a.setAttribute('readonly','');
+   a.style.cssText='position:fixed;top:0;left:0;opacity:0';document.body.appendChild(a);
+   a.select();var ok=false;try{ok=document.execCommand('copy')}catch(e){}
+   document.body.removeChild(a);ok?res():rej()});
+ }
+ function flash(el,txt,ms){
+  var was=el.textContent;el.classList.add('done');if(txt)el.textContent=txt;
+  setTimeout(function(){el.classList.remove('done');if(txt)el.textContent=was},ms||1200);
+ }
+ function copy(text,el,okTxt){
+  put(text).then(function(){flash(el,okTxt)},function(){
+   if(okTxt){var w=el.textContent;el.textContent='Ctrl+C';setTimeout(function(){el.textContent=w},2000)}});
+ }
+ document.querySelectorAll('pre').forEach(function(pre){
+  if(pre.classList.contains('txtdoc'))return;
+  var b=document.createElement('button');
+  b.type='button';b.className='copy';b.textContent='Copy';
+  b.setAttribute('aria-label','Copy this code block to the clipboard');
+  b.addEventListener('click',function(){copy((pre.querySelector('code')||pre).innerText,b,'Copied')});
+  pre.appendChild(b);
+ });
+ document.querySelectorAll('td code').forEach(function(c){
+  if(!c.textContent.trim())return;
+  c.classList.add('cp');c.tabIndex=0;c.setAttribute('role','button');
+  c.title='Click to copy';
+  c.addEventListener('click',function(){copy(c.textContent,c)});
+  c.addEventListener('keydown',function(e){
+   if(e.key==='Enter'||e.key===' '){e.preventDefault();copy(c.textContent,c)}});
+ });
+})();
+</script>
+</body></html>

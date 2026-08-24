@@ -1,0 +1,876 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Solution architecture — TrustBank CBS (.NET 10)</title>
+<style>
+:root{color-scheme:light dark}
+*{box-sizing:border-box}
+body{margin:0;background:#f6f8fa;color:#1f2328;font:16px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif}
+.wrap{max-width:900px;margin:0 auto;padding:32px 24px 96px}
+.card{background:#fff;border:1px solid #d0d7de;border-radius:10px;padding:40px 48px}
+h1,h2,h3{line-height:1.25;font-weight:600}
+h1{font-size:1.9rem;margin:0 0 .3em;padding-bottom:.3em;border-bottom:1px solid #d8dee4}
+h2{font-size:1.4rem;margin:1.8em 0 .6em;padding-bottom:.25em;border-bottom:1px solid #eaeef2}
+h3{font-size:1.12rem;margin:1.4em 0 .5em}
+p,li{margin:.5em 0}
+a{color:#0969da;text-decoration:none}
+a:hover{text-decoration:underline}
+code{font-family:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;font-size:.86em;background:#eff1f3;padding:.15em .4em;border-radius:6px}
+pre{background:#f6f8fa;border:1px solid #d8dee4;border-radius:8px;padding:14px 16px;overflow:auto}
+pre code{background:none;padding:0;font-size:.85em;line-height:1.45}
+blockquote{margin:1em 0;padding:.4em 1em;color:#3d444d;border-left:4px solid #d0d7de;background:#f6f8fa;border-radius:0 6px 6px 0}
+blockquote>:first-child{margin-top:0}blockquote>:last-child{margin-bottom:0}
+table{border-collapse:collapse;width:100%;margin:1em 0;display:block;overflow:auto}
+th,td{border:1px solid #d0d7de;padding:8px 12px;text-align:left;vertical-align:top}
+th{background:#f6f8fa;font-weight:600}
+tr:nth-child(2n) td{background:#f6f8fa}
+hr{border:0;border-top:1px solid #d8dee4;margin:2em 0}
+pre{position:relative}
+pre>button.copy{position:absolute;top:8px;right:8px;padding:5px 9px;cursor:pointer;
+  font:600 .68rem/1 ui-monospace,SFMono-Regular,Consolas,monospace;letter-spacing:.03em;
+  color:#636c76;background:#fff;border:1px solid #d0d7de;border-radius:6px;
+  opacity:0;transition:opacity .12s}
+pre:hover>button.copy,pre>button.copy:focus{opacity:1}
+pre>button.copy.done{color:#0a3622;background:#dafbe1;border-color:#4ac26b}
+@media(hover:none){pre>button.copy{opacity:1}}
+td code.cp{cursor:pointer}
+td code.cp:hover,td code.cp:focus{outline:1px solid #8c959f;outline-offset:1px}
+td code.cp.done{color:#0a3622;background:#dafbe1}
+.docnav{margin:0 0 20px;font-size:.85rem;color:#636c76}
+.docnav a{color:#636c76}
+ul{padding-left:1.4em}ol{padding-left:1.4em}
+@media(max-width:640px){.card{padding:24px 18px}.wrap{padding:16px 10px 64px}}
+@media(prefers-color-scheme:dark){
+ body{background:#0d1117;color:#e6edf3}
+ .card{background:#161b22;border-color:#30363d}
+ h1{border-color:#30363d}h2{border-color:#21262d}
+ code{background:#262c34}
+ pre{background:#0d1117;border-color:#30363d}
+ blockquote{background:#161b22;border-color:#30363d;color:#9198a1}
+ th,td{border-color:#30363d}th{background:#161b22}tr:nth-child(2n) td{background:#12171e}
+ a{color:#4493f8}.docnav,.docnav a{color:#9198a1}
+ hr{border-color:#30363d}
+ pre>button.copy{color:#9198a1;background:#161b22;border-color:#30363d}
+ pre>button.copy.done{color:#aff5b4;background:#1b4721;border-color:#2ea043}
+ td code.cp.done{color:#aff5b4;background:#1b4721}
+}
+</style></head>
+<body><div class="wrap"><div class="card">
+<div class="docnav"><a href="index.html">&#8592; All docs</a></div>
+<h1 id="solution-architecture-trustbank-cbs-net-10">Solution architecture — TrustBank CBS (.NET 10)</h1>
+<p>Every project in the solution, why it exists, what it does, how they depend on each other, and how a
+request flows through them.</p>
+<ul>
+<li><strong>Solution root:</strong> <code>E:\Adhir\AdWork\TrustBank.Code\TflCbsNet10Sol\</code></li>
+<li><strong>Solution file:</strong> <code>TflCbsNet10Sol.slnx</code> — <strong>36 projects</strong>.</li>
+<li><strong>All projects target <code>net10.0</code></strong> (set centrally in <code>Directory.Build.props</code>), with Central Package
+  Management (versions in <code>Directory.Packages.props</code>).</li>
+</ul>
+<p><strong>Also on disk, deliberately outside the <code>.slnx</code>:</strong> <code>TflCbs.Lab</code> / <code>TflCbs.Lab.Demo</code>
+(the proc-conversion lab — experimental, API-drifted) and <code>TflCbs.Tools.PerfProbe</code> (a measurement
+tool run directly with <code>dotnet run</code>). Plus two <strong>vendored in-house library trees</strong> with their own
+solutions — <code>libs/TflOmniDb/</code> and <code>libs/TflSecurityCrypto/</code> (§3) — the <code>TflCbs.E2E</code> Playwright
+suite (a Node project, not a .NET one), and the gitignored <code>codebase_shared/</code> handover tree (§4).</p>
+<blockquote>
+<p><strong>Last reviewed:</strong> 2026-08-21. The modular-monolith split completed on 2026-07-29 (<code>TflCbsServices</code>
+dissolved); the in-house libraries were vendored into the repo on 2026-08-19; the canonical config
+files moved to solution-level <code>config/</code> on 2026-08-21.</p>
+</blockquote>
+<hr />
+<h2 id="1-the-big-picture-why-this-shape">1. The big picture (why this shape)</h2>
+<p>This is an incremental <strong>strangler-fig</strong> migration of TrustBank CBS (core banking) from ASP.NET
+WebForms / VB.NET / .NET 4.8 to .NET 10 / C# MVC.</p>
+<p>Two architectural decisions drive the project layout:</p>
+<ul>
+<li><strong>A. HORIZONTAL split (framework vs screens).</strong> Reusable web plumbing lives in a framework library
+  that knows NOTHING about individual screens OR about any business module; screens depend on the
+  framework, never the reverse. Compiler-enforced (the framework references only
+  <code>TflCbs.Abstractions</code>) and arch-tested.</li>
+<li><strong>B. VERTICAL split (MODULAR MONOLITH).</strong> The business layer is divided into per-domain bounded
+  modules, each its OWN ASSEMBLY. A module is a bounded domain, never a per-service assembly. Steady
+  state is ONE process + ONE database, but each domain can also be hosted alone (thin hosts) behind a
+  gateway — which is what enables cross-host SSO.</li>
+</ul>
+<p>Decision B is <strong>complete</strong>. The old single business assembly <code>TflCbsServices</code> no longer exists: all 8
+domains were promoted to their own assemblies and the composition contracts moved down into
+<code>TflCbs.Abstractions</code>. Two project names still carry the historical prefix (<code>TflCbs.Tests</code> /
+<code>.Demo</code>) — they test and exercise the module assemblies, not a project called <code>TflCbsServices</code>.</p>
+<p>The result: a small host composes independently-buildable pieces. The data layer never references
+ASP.NET; screens never reach past the framework; the framework never reaches into a module.</p>
+<hr />
+<h2 id="2-layers-at-a-glance-dependency-direction-is-strictly-inward">2. Layers at a glance (dependency direction is strictly INWARD)</h2>
+<pre><code>    Hosts (compose everything)
+        |  reference
+        v
+    Web modules (RCLs: screens/controllers/views)
+        |
+        v
+    Shared Web RCL  -&gt;  Framework (web plumbing)
+        |                   |
+        |                   v
+        +-------------&gt; Service modules (per-domain, zero ASP.NET)
+                            |
+                            v
+                    TflCbs.Abstractions (dependency-free foundation)
+                            +
+                    Logging (TflOmniLog)  +  Entities (TflCbs.Entities)
+</code></pre>
+<p>Rule: hosts → web modules → framework/shared → service modules → abstractions → logging/entities.</p>
+<p><code>TflCbs.Abstractions</code> is the <strong>FLOOR</strong>. Everything above it references it; it references nothing but
+two <code>Microsoft.Extensions.*.Abstractions</code> packages. No <code>TflCbs.Entities</code>, no <code>TflOmniDb</code>, no ASP.NET.
+Keep it that way — it is what lets the framework and the modules share contracts without seeing each
+other.</p>
+<p>The framework references <strong>ONLY</strong> <code>TflCbs.Abstractions</code> (+ <code>TflOmniLog</code> / <code>TflOmniDb</code>). It CANNOT
+reference a service module — that is a compile error, not a convention. Communication runs the other
+way through the four framework <strong>PORTS</strong> in <code>TflCbs.Abstractions/FrameworkPorts.cs</code>
+(<code>IBroadcastSource</code>, <code>IBankVariableSource</code>, <code>IMenuSource</code>, <code>ISessionValidator</code>): the framework
+declares the interface, a core module implements it, the host wires them up. With no implementation
+present the framework falls back to no-op defaults, so a host runs (degraded) without General or
+Authentication.</p>
+<hr />
+<h2 id="3-external-vendored-dependencies">3. External / vendored dependencies</h2>
+<p>Two in-house libraries are consumed as <strong>bare DLLs by <code>HintPath</code></strong> rather than <code>ProjectReference</code> —
+but since <strong>2026-08-19 their source lives inside this repo</strong>, so a fresh clone builds without any
+folder outside the solution root. Before that they sat two levels above it under
+<code>_Archive\Ad.ProjectLibrary\</code>, which is why the reference style is a HintPath at all.</p>
+<table>
+<thead>
+<tr>
+<th>Library</th>
+<th>Source in repo</th>
+<th>Consumed from</th>
+<th>What it is</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>TflOmniDb.dll</code></td>
+<td><code>libs/TflOmniDb/TflOmniDb/</code></td>
+<td><code>..\libs\TflOmniDb\TflOmniDb\bin\Debug\net10.0\</code></td>
+<td>Generic multi-provider DAL: <code>Repository&lt;T&gt;</code>, <code>DataAccess</code>, <code>IUnitOfWork</code>, SQL Server / Oracle / PostgreSQL dialects. Editable in-house SOURCE, not a black box — it also ships a scaffolder, a migration tool, benchmarks and a demo (own solution under <code>libs/TflOmniDb/</code>).</td>
+</tr>
+<tr>
+<td><code>TflSecurityCrypto.dll</code></td>
+<td><code>libs/TflSecurityCrypto/TflSecurityCrypto/</code></td>
+<td><code>..\libs\TflSecurityCrypto\TflSecurityCrypto\bin\Debug\net10.0\</code></td>
+<td>PBKDF2 password storage plus a byte-for-byte port of the legacy VB.NET crypto helpers (used by login).</td>
+</tr>
+</tbody>
+</table>
+<p><code>TflCbs.Entities.dll</code> is referenced the same way (<code>..\TflCbs.Entities\bin\Debug\net10.0\</code>) but IS a
+solution project — see §4. <code>TflOmniLog</code> is a first-party solution project, referenced normally.</p>
+<p><strong>Consequence of the bare-DLL style:</strong> these references and the ADO.NET drivers do <strong>not</strong> flow
+transitively, so every project in the closure re-declares the ones it needs.</p>
+<hr />
+<h2 id="4-every-project-by-layer">4. Every project, by layer</h2>
+<h3 id="layer-foundation-dependency-free">Layer: foundation (dependency-free)</h3>
+<p><strong><code>TflCbs.Abstractions</code></strong> — class library, ns <code>TflCbs.Abstractions</code></p>
+<ul>
+<li><strong>Purpose.</strong> The shared floor every module and the framework compile against. Holds: <code>Result</code> /
+  <code>Result&lt;T&gt;</code> (the service return contract); <code>ICbsModule</code> / <code>ICoreCbsModule</code> + <code>AddCbsModules</code>
+  (composition and discovery — <code>ModuleRegistration.cs</code>); the FOUR framework ports
+  (<code>FrameworkPorts.cs</code>); the boundary DTOs <code>MenuListRow</code> / <code>BranchListItem</code> (<code>MenuModels.cs</code>); and
+  the shared service helpers <code>ServiceQuery</code> (<code>Has</code>/<code>Eq</code>/<code>Val</code>/<code>Paged</code> + page-size bounds) and
+  <code>DbErrors</code> (<code>IsDuplicate</code>/<code>IsForeignKey</code>).</li>
+<li><strong>Refs.</strong> <code>Microsoft.Extensions.DependencyInjection.Abstractions</code> + <code>.Configuration.Abstractions</code>.
+  NOTHING else — no <code>TflCbs.Entities</code>, no <code>TflOmniDb</code>, no ASP.NET, no project references.</li>
+<li><strong>Rule.</strong> NEVER re-declare a service helper privately. Consume via
+  <code>using static TflCbs.Abstractions.ServiceQuery;</code> / <code>…DbErrors;</code>. These were copy-pasted into 8
+  services before extraction, so <code>SharedServiceHelperTests</code> now FAILS THE BUILD on any private copy
+  of <code>Has</code>/<code>Eq</code>/<code>Val</code>/<code>Paged</code>/<code>IsDuplicate</code>/<code>IsForeignKey</code>/<code>DefaultPageSize</code>/<code>MaxPageSize</code>. Different
+  semantics? Different name.</li>
+</ul>
+<p><strong><code>TflCbs.Modules.General.Contracts</code></strong> — class library</p>
+<ul>
+<li><strong>Purpose.</strong> General's PUBLISHED cross-module surface, so a consumer can depend on General's
+  contract without referencing General's implementation. Two interfaces: <code>IScrollService</code> +
+  <code>ScrollSources</code> (the maker-checker scroll) and <code>IProcessBlockCheck</code>.</li>
+<li><strong>Consumed by.</strong> <code>TflCbs.Modules.RetailBanking</code>, <code>TflCbs.Core.Authentication</code>.</li>
+<li><strong>Refs.</strong> <code>TflCbs.Abstractions</code>; bare-DLL <code>TflOmniDb</code>.</li>
+</ul>
+<h3 id="layer-entities">Layer: entities</h3>
+<p><strong><code>TflCbs.Entities</code></strong> — class library</p>
+<ul>
+<li><strong>Purpose.</strong> Auto-generated persistence entities (<code>[DbTable]</code>/<code>[DbColumn]</code>, <strong>UPPERCASE</strong> nullable
+  props, varchar→<code>AnsiString</code>). The DB-shape contract every data/business project binds to.</li>
+<li><strong>Refs.</strong> bare-DLL <code>TflOmniDb</code> only.</li>
+<li><strong>Note.</strong> Consumed by HintPath, but every consumer also carries a
+  <code>ProjectReference … ReferenceOutputAssembly="false"</code> <strong>build-order edge</strong> (added 2026-08-21), so a
+  single solution build — CLI or Visual Studio's Rebuild All — sequences it correctly. The old
+  "build <code>TflCbs.Entities</code> first by hand" discipline is gone.</li>
+</ul>
+<h3 id="layer-logging-reusable-aspnet-free">Layer: logging (reusable, ASP.NET-free)</h3>
+<ul>
+<li><strong><code>TflOmniLog</code></strong> — Serilog-backed logging (<code>ITflLogger</code>): file/console/SQL sinks, category logging,
+  correlation, PII masking, audit, perf timing. Kept ASP.NET-free so the zero-ASP.NET data layer can
+  use it. Refs: none (Serilog + <code>Microsoft.Extensions.*</code> abstractions).</li>
+<li><strong><code>TflOmniLog.Demo</code></strong> — console tool exercising <code>TflOmniLog</code>.</li>
+<li><strong><code>TflOmniLog.Tests</code></strong> — xUnit unit tests for <code>TflOmniLog</code>.</li>
+</ul>
+<h3 id="layer-service-modules-per-domain-zero-aspnet">Layer: service modules (per-domain, zero ASP.NET)</h3>
+<p>Every module is its own assembly, namespace == assembly name, and each is an <code>ICbsModule</code> that
+self-registers its services. Uniform reference set: <code>TflCbs.Abstractions</code> + bare-DLL
+<code>TflCbs.Entities</code>/<code>TflOmniDb</code> + the two <code>Microsoft.Extensions</code> abstractions packages. Exceptions are
+called out per project.</p>
+<p><strong>CORE MODULES</strong> (<code>ICoreCbsModule</code> — ALWAYS registered, never gated by config):</p>
+<table>
+<thead>
+<tr>
+<th>Module</th>
+<th>Purpose</th>
+<th>Extra refs</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong><code>TflCbs.Modules.General</code></strong></td>
+<td>The platform module. Owns three of the four framework ports plus the cross-cutting mechanisms: menu (<code>MenuListService</code>), bank variables (<code>BankVariableService</code>), broadcast + alerts (<code>AlertService</code>), the maker-checker scroll (<code>ScrollService</code>), the process-block check, and <code>GeneralService</code> / <code>GeneralGrp11Service</code>.</td>
+<td><code>General.Contracts</code> (it implements them), <code>TflOmniLog</code></td>
+</tr>
+<tr>
+<td><strong><code>TflCbs.Modules.Reference</code></strong></td>
+<td>Shared master data with no domain behaviour: geography — <code>StateService</code>, <code>DistrictService</code>, <code>TalukaService</code>.</td>
+<td><code>TflOmniLog</code></td>
+</tr>
+<tr>
+<td><strong><code>TflCbs.Core.Authentication</code></strong></td>
+<td>Login/credential + session validation in its own assembly (the first Phase-B split), independent of General. <code>AuthenticationService</code>, <code>ConnectedUserService</code>, <code>ShellSessionService</code>, <code>LoginRules</code>, <code>PasswordPolicyRules</code>, and <code>LoginInfo</code> — the ONLY sanctioned parser of <code>b_UserLogTime.LoginInfo</code>. Implements <code>ISessionValidator</code>. <code>ICbsModule.Name = "Authentication"</code>.</td>
+<td><code>General.Contracts</code>; bare-DLL <code>TflSecurityCrypto</code></td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p><strong>Admission rule for <code>Reference</code>:</strong> a master belongs there only if it has NO domain behaviour (pure
+CRUD + lookup) <strong>and</strong> ≥2 domains consume it. Geography passes; <code>LockerMake</code> does NOT (Lockers-only).
+Without that test this project becomes a dumping ground.</p>
+</blockquote>
+<p><strong>DOMAIN MODULES</strong> (gated by <code>Modules:Enabled</code>; all promoted 2026-07-29):</p>
+<table>
+<thead>
+<tr>
+<th>Module</th>
+<th>Services</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>TflCbs.Modules.HR</code></td>
+<td><code>DiscipActionHistoryService</code></td>
+<td>Module name is <strong><code>HR</code></strong> (UPPERCASE) everywhere — module class, <code>Modules:Enabled</code> in every host, and <code>compose.multi.yaml</code>. The web RCL stays <code>TflCbs.Modules.Hr.Web</code> and routes stay <code>/Hr/…</code>; assembly and URL identifiers are a separate axis from the module name.</td>
+</tr>
+<tr>
+<td><code>TflCbs.Modules.Lockers</code></td>
+<td><code>LockerTypeService</code></td>
+<td>The Phase-B template and the first fully isolated vertical slice.</td>
+</tr>
+<tr>
+<td><code>TflCbs.Modules.Accounts</code></td>
+<td><code>BusinessAssessmentService</code> (+ models)</td>
+<td></td>
+</tr>
+<tr>
+<td><code>TflCbs.Modules.Clearing</code></td>
+<td><code>InwardClearingService</code> (+ models)</td>
+<td></td>
+</tr>
+<tr>
+<td><code>TflCbs.Modules.Administration</code></td>
+<td><code>ModuleService</code>, <code>RoleService</code></td>
+<td></td>
+</tr>
+<tr>
+<td><code>TflCbs.Modules.RetailBanking</code></td>
+<td><code>AccountService</code>, <code>HoldingAmountService</code></td>
+<td>+ <code>General.Contracts</code> (for <code>IScrollService</code>)</td>
+</tr>
+</tbody>
+</table>
+<h3 id="layer-framework-web-plumbing">Layer: framework / web plumbing</h3>
+<p><strong><code>TflCbs.Framework</code></strong> — class library, ns <code>TflCbs.Framework.*</code></p>
+<ul>
+<li><strong>Purpose.</strong> Reusable web infra with one-call setup <code>AddCbsFramework()</code> + <code>UseCbsFramework()</code>:
+  session/cache, <code>CbsAccessMiddleware</code> (fail-closed guard), the menu facade, the reusable search /
+  record picker / account picker / date picker support, opaque <code>RowToken</code>, <code>UrlNormalizer</code>,
+  multi-provider <code>DataAccess</code>/<code>DatabaseSelector</code> wiring, the generic <code>IReferenceCache</code>
+  (Redis-optional, fail-open), health checks, security response headers, forwarded headers, global
+  antiforgery, the <code>cbs-login</code> rate-limit policy (so every host throttles credential POSTs, not just
+  the gateway), OpenTelemetry (<code>AddCbsObservability</code>), and SSO (CbsAuth cookie + shared
+  DataProtection key ring + revocation). Owns ADO.NET driver wiring.</li>
+<li><strong>Refs.</strong> <code>TflCbs.Abstractions</code>, <code>TflOmniLog</code>; bare-DLL <code>TflOmniDb</code>; <code>FrameworkReference
+  Microsoft.AspNetCore.App</code>. Packages: SqlClient, Oracle, Npgsql, Redis + SqlServer caching,
+  OpenTelemetry (hosting, OTLP exporter, ASP.NET Core / HTTP / runtime instrumentation).</li>
+<li><strong>Note.</strong> NO reference to any service module or screen RCL — compiler-enforced and arch-tested.
+  <code>internal</code>: <code>CbsAccessMiddleware</code>, <code>UrlNormalizer</code>. Everything else public. Extension methods live
+  in <code>Microsoft.Extensions.DependencyInjection</code> / <code>Microsoft.AspNetCore.Builder</code> (the one namespace
+  exception).</li>
+</ul>
+<h3 id="layer-shared-web-rcl">Layer: shared web RCL</h3>
+<p><strong><code>TflCbs.Web.Shared</code></strong> — Razor Class Library, NO controllers</p>
+<ul>
+<li><strong>Purpose.</strong> Shared layout + shared partials (<code>_RecordPicker</code>, <code>_DatePicker</code>, <code>_AccountPicker</code>,
+  <code>_SearchModal</code>, <code>_Notification</code>, <code>_ActionBar</code>, <code>_DbSwitcher</code>…), root <code>_ViewImports</code>/<code>_ViewStart</code>,
+  and ALL shared static assets served from <code>~/_content/TflCbs.Web.Shared/</code>
+  (css/img/lib/site.js/cbs-*.js).</li>
+<li><strong>Refs.</strong> <code>TflCbs.Framework</code>; bare-DLL <code>TflOmniDb</code> (for <code>_DbSwitcher</code>).</li>
+</ul>
+<h3 id="layer-core-web-modules-rcls-always-on">Layer: core web modules (RCLs, ALWAYS ON)</h3>
+<table>
+<thead>
+<tr>
+<th>Project</th>
+<th>Marker</th>
+<th>Purpose</th>
+<th>Refs</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>TflCbs.Core.Authentication.Web</code></td>
+<td><code>AuthenticationWebModuleMarker</code></td>
+<td>Login/logout web module (<code>AccountController</code> + Login view). Every host registers it; in multi-host one host is login authority.</td>
+<td>Web.Shared, Framework, <code>Modules.General</code>, <code>Core.Authentication</code>, <code>TflCbs.Entities</code>(proj); bare-DLL <code>TflSecurityCrypto</code></td>
+</tr>
+<tr>
+<td><code>TflCbs.Core.Shell.Web</code></td>
+<td><code>ShellWebModuleMarker</code></td>
+<td>The non-auth shell every host needs: Home/menu, Modules picker, Components (dev showcase), AccessDenied, Error.</td>
+<td>Web.Shared, Framework, <code>Modules.General</code>, <code>Core.Authentication</code> (password-expiry alert), <code>TflCbs.Entities</code>(proj)</td>
+</tr>
+</tbody>
+</table>
+<h3 id="layer-domain-web-modules-rcls-gated-by-modulesenabled">Layer: domain web modules (RCLs, gated by <code>Modules:Enabled</code>)</h3>
+<p>All five are Razor Class Libraries, each with an <code>&lt;Area&gt;WebModuleMarker</code> for <code>AddApplicationPart</code>.
+Each references Web.Shared + Framework + <code>TflCbs.Entities</code>(proj), PLUS exactly the service module(s) it
+consumes — no bare DLLs, and no reference to a module it does not use. <strong>Only hosts that ENABLE a
+module reference it</strong>, so a thin host no longer ships other domains' code.</p>
+<table>
+<thead>
+<tr>
+<th>RCL</th>
+<th>Area</th>
+<th>Screens</th>
+<th>Service-module refs</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>TflCbs.Modules.Bank.Web</code></td>
+<td><code>Bank</code></td>
+<td>ReferenceCache admin (<code>/Bank/ReferenceCache</code>).</td>
+<td><strong>None</strong> — gated on the <code>General</code> service module (the one Area vs. service-module name divergence), but <code>IReferenceCache</code> lives in the framework.</td>
+</tr>
+<tr>
+<td><code>TflCbs.Modules.Hr.Web</code></td>
+<td><code>Hr</code></td>
+<td>The geographic masters State/District/Taluka + DiscipActionHistory.</td>
+<td><code>Modules.Reference</code>, <code>Modules.HR</code></td>
+</tr>
+<tr>
+<td><code>TflCbs.Modules.Lockers.Web</code></td>
+<td><code>Lockers</code></td>
+<td>Locker screens + own <code>locker-type.js</code>.</td>
+<td><code>Modules.Lockers</code></td>
+</tr>
+<tr>
+<td><code>TflCbs.Modules.RetailBanking.Web</code></td>
+<td><code>RetailBanking</code></td>
+<td>Account / Clients / AccHoldingAmount + <code>acc-holding-amount.js</code>.</td>
+<td><code>Modules.RetailBanking</code></td>
+</tr>
+<tr>
+<td><code>TflCbs.Modules.Administration.Web</code></td>
+<td><code>Administration</code></td>
+<td>Module + Role masters and ConnectedUsers (<code>/Administration/Module</code>, <code>/Role</code>, <code>/ConnectedUsers</code>).</td>
+<td><code>Modules.Administration</code>, <code>Core.Authentication</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="layer-hosts-composition-roots">Layer: hosts / composition roots</h3>
+<p><strong><code>TflCbs.Host.Main</code></strong> — ASP.NET web app, <strong>THE PRIMARY/DEFAULT HOST</strong>. Dev <code>http :5019</code> / <code>https :7225</code>.</p>
+<ul>
+<li><strong>Purpose.</strong> Thin MVC host + composition root: <code>Program.cs</code> wiring, health checks, and two utility
+  controllers (<code>DevController</code>, <code>KeepAliveController</code>). Registers core web parts always, domain web
+  parts gated by <code>Modules:Enabled</code> (which is <code>"*"</code> here). Also the login authority behind the
+  gateway. Its own <code>Views/</code> and <code>wwwroot/</code> are empty but for <code>_ViewImports.cshtml</code>.</li>
+<li><strong>Refs.</strong> all five <code>Modules.*.Web</code> + both <code>Core.*.Web</code> + Web.Shared + Framework + ALL NINE service
+  modules (General, Reference, Core.Authentication, Lockers, HR, Accounts, Clearing, Administration,
+  RetailBanking) + <code>TflOmniLog</code> + <code>TflCbs.Entities</code>(proj); bare-DLL
+  <code>TflCbs.Entities</code>/<code>TflOmniDb</code>/<code>TflSecurityCrypto</code>; SqlClient/Oracle/Npgsql.</li>
+<li><strong>Canonical config is NOT here any more</strong> (moved 2026-08-21) — see the <code>config/</code> note below.</li>
+</ul>
+<p><strong>Thin per-module hosts</strong> — same <code>Program.cs</code> shape, one domain each:</p>
+<table>
+<thead>
+<tr>
+<th>Host</th>
+<th>Ports (http/https)</th>
+<th>Composes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>TflCbs.Host.Hr</code></td>
+<td>5300 / 7300</td>
+<td><code>Modules.Hr.Web</code> + core web RCLs + framework + General/Reference/Core.Authentication/HR</td>
+</tr>
+<tr>
+<td><code>TflCbs.Host.Lockers</code></td>
+<td>5200 / 7200</td>
+<td><code>Modules.Lockers.Web</code> + <code>Modules.Lockers</code></td>
+</tr>
+<tr>
+<td><code>TflCbs.Host.RetailBanking</code></td>
+<td>5400 / 7400</td>
+<td><code>Modules.RetailBanking.Web</code> + <code>Modules.RetailBanking</code></td>
+</tr>
+<tr>
+<td><code>TflCbs.Host.Administration</code></td>
+<td>5500 / 7500</td>
+<td><code>Modules.Administration.Web</code> + <code>Modules.Administration</code></td>
+</tr>
+</tbody>
+</table>
+<p>All four set <code>Modules:Enabled = ["&lt;domain&gt;"]</code> — just the ONE domain. The core modules
+General/Reference/Authentication are <code>ICoreCbsModule</code>, so they register unconditionally and need no
+entry in the list. They run in shared-SSO mode (<code>DataProtection:KeyRing=TflOmniDb</code> +
+<code>Auth:SessionRevocation=TflOmniDb</code>) and set <code>ForwardedHeaders:Enabled</code>.</p>
+<blockquote>
+<p><strong>Canonical config lives in solution-level <code>config/</code>, owned by no host</strong> (moved out of
+<code>TflCbs.Host.Main</code> on 2026-08-21). All five hosts <code>&lt;Content Include="..\config\logmasking.json"&gt;</code>
+with <code>CopyToOutputDirectory="PreserveNewest"</code>, and load it from
+<strong><code>AppContext.BaseDirectory</code>, NOT the content root</strong>. <code>logmasking.json</code> is the PII masking config,
+loaded <code>optional: false</code> because
+<code>MaskingOptions</code> defaults <code>Patterns</code> to EMPTY — a host missing it would log PAN/Aadhaar in free text
+unredacted with nothing to notice. Guarded by <code>ArchTests/LogMaskingConfigTests</code>.</p>
+</blockquote>
+<p><strong><code>TflCbs.Gateway</code></strong> — YARP reverse proxy. Dev <code>:5100 / :7100</code>.</p>
+<ul>
+<li><strong>Purpose.</strong> Fronts all CBS hosts under ONE external origin: TLS termination, path-route
+  <code>/&lt;Area&gt;/*</code> to the owning host, load-balance/health-check, global rate limiting. One origin = one
+  cookie domain = the precondition for cross-host SSO. <strong>PURE PROXY</strong> — no CbsFramework, no screens,
+  NO project references.</li>
+<li><strong>Refs.</strong> <code>Yarp.ReverseProxy</code> + OpenTelemetry only.</li>
+</ul>
+<h3 id="layer-tests">Layer: tests</h3>
+<table>
+<thead>
+<tr>
+<th>Project</th>
+<th>Kind</th>
+<th>What it covers</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>TflCbs.Tests</code></td>
+<td>xUnit, 149 tests</td>
+<td>Cross-provider, non-destructive service tests across ALL nine service modules. (Name is historical — the <code>TflCbsServices</code> project is gone.) Also home to <code>SharedServiceHelperTests</code>, which fails the build on a privately re-declared <code>ServiceQuery</code>/<code>DbErrors</code> helper.</td>
+</tr>
+<tr>
+<td><code>TflCbs.ArchTests</code></td>
+<td>NetArchTest, 94 tests</td>
+<td>Enforces architecture boundaries: framework ⊥ screens, namespace == assembly (<code>NamespaceDisciplineTests</code>), the promoted-module list (<code>ArchBoundaries.PromotedModules</code>), the <code>BoundaryGuaranteeTests</code> meta-guard, <code>ModuleConfigTests</code> (deploy config vs code), <code>LogMaskingConfigTests</code>, and resolve-all-modules. Refs the host, every <code>*.Web</code> RCL and every service module to inspect them.</td>
+</tr>
+<tr>
+<td><code>TflCbs.IntegrationTests</code></td>
+<td>xUnit + Mvc.Testing, 74 tests</td>
+<td>Boots the REAL host pipeline in-process via <code>WebApplicationFactory</code> (<code>CbsWebAppFactory</code>) — middleware order included — and asserts runtime behaviour the unit tests cannot: the fail-closed access guard (<code>AccessGuardTests</code>), antiforgery (<code>AntiforgeryTests</code>) and authenticated access (<code>AuthenticatedAccessTests</code>). This is why <code>TflCbs.Host.Main/Program.cs</code> ends with <code>public partial class Program;</code>.</td>
+</tr>
+<tr>
+<td><code>TflCbs.E2E</code></td>
+<td>Playwright + TypeScript, 63 tests</td>
+<td><strong>Outside the <code>.slnx</code></strong> (a Node project). Browser-level coverage: JavaScript behaviour, cookies, the strict CSP actually being enforced, and the reusable components working — 10 specs across a <code>guest</code> project (access guard, no credentials needed) and an <code>app</code> project (authenticated). <code>npx playwright test</code>.</td>
+</tr>
+<tr>
+<td><code>TflOmniLog.Tests</code></td>
+<td>xUnit</td>
+<td>Unit tests for the logging library.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="layer-tools-demos">Layer: tools &amp; demos</h3>
+<table>
+<thead>
+<tr>
+<th>Project</th>
+<th>Kind</th>
+<th>What it does</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>TflCbs.Demo</code></td>
+<td>console</td>
+<td>Mirrors each service method across the nine modules against any provider. Kept in sync with Tests by the <strong>cbs-sync-test-demo</strong> agent.</td>
+</tr>
+<tr>
+<td><code>TflCbs.Tools.PasswordReset</code></td>
+<td>console</td>
+<td>One-off admin tool for the Option A clean-break password migration: resets every <code>a_User</code> row to temp password <code>a</code>, hashed with PBKDF2 (<code>TflSecurityCrypto.PasswordHash</code>) with a unique per-user salt, writing <code>PASSWORDHASH</code> and stamping <code>PASSWORDVERSION = 1</code> via the typed <code>A_USER</code> entity. Supports <code>--dry-run</code>. Requires migration 0001 applied first. SQL Server target.</td>
+</tr>
+<tr>
+<td><code>TflCbs.Tools.DbMigrator</code></td>
+<td>console</td>
+<td>The schema migration runner (DbUp). Applies the versioned DDL in <code>Migrations/&lt;provider&gt;/</code> exactly once each, in order, journalling to <code>CbsSchemaVersions</code>. Commands: <code>status</code> (read-only; exit 2 = pending), <code>preview</code>, <code>upgrade</code>, <code>baseline</code>. Reads the SAME <code>Database:*</code> config keys as every host. Deliberately references NO TflOmniDb / TflCbs.Entities / Framework: it must run against a database whose schema does not yet match the entity model. Runbook: <a href="deploy/db-migrations.html"><code>deploy/db-migrations.md</code></a>.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="not-in-the-solution-build">Not in the solution build</h3>
+<table>
+<thead>
+<tr>
+<th>Tree</th>
+<th>Why it is out</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>TflCbs.Lab</code> (ns <code>TflCbs.Services.Lab</code>)</td>
+<td>Holds EVERY converted proc; a distinct namespace avoids CS0433 collision with prod. Each proc is converted here first, then PROMOTED into the owning <code>TflCbs.Modules.&lt;Domain&gt;</code> / <code>TflCbs.Core.&lt;Area&gt;</code> assembly. Experimental, API-drifted.</td>
+</tr>
+<tr>
+<td><code>TflCbs.Lab.Demo</code></td>
+<td>Function-wise promotion harness (Roslyn extracts a single method from lab files) and the <code>perf</code> mode that times a legacy T-SQL proc against its migrated C# service.</td>
+</tr>
+<tr>
+<td><code>TflCbs.Tools.PerfProbe</code></td>
+<td>Measurement tool for the "DB-side filter/sort/page" workstream; run directly via <code>dotnet run</code>.</td>
+</tr>
+<tr>
+<td><code>libs/TflOmniDb/</code>, <code>libs/TflSecurityCrypto/</code></td>
+<td>The vendored in-house libraries (§3), each with its own solution, tests, demo and tooling. Built separately; consumed here as DLLs.</td>
+</tr>
+<tr>
+<td><code>TflCbs.E2E</code></td>
+<td>The Playwright suite — a Node project.</td>
+</tr>
+<tr>
+<td><code>codebase_shared/</code></td>
+<td>A <strong>gitignored staging copy</strong>: a self-contained tree for handing the Administration thin client to an outside team — the 3 projects they edit (<code>TflCbs.Modules.Administration{,.Web}</code>, <code>TflCbs.Host.Administration</code>) plus <code>TflCbs.Entities</code> and <code>TflCbs.Web.Shared</code> as source, and 9 platform assemblies as prebuilt DLLs in <code>refs/</code> (each with <code>.pdb</code> and <code>.xml</code>). This is why nine assemblies now set <code>GenerateDocumentationFile</code> — when an assembly ships as a DLL, IntelliSense is the only place its API semantics can travel. Repo-walking guards exclude it (<code>RepoFiles.Find</code>) so they don't see two of everything.</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="5-how-they-work-together-composition">5. How they work together (composition)</h2>
+<p>The host's <code>Program.cs</code> (<code>TflCbs.Host.Main/Program.cs</code>) composes the app:</p>
+<ol start="0">
+<li>Register the legacy code-page provider (1252) — <code>TflSecurityCrypto</code>'s password crypto needs it or
+   login throws.</li>
+<li><strong>READ THE GATE:</strong> <code>Modules:Enabled</code> from config → <code>string[]</code> (<code>"*"</code>/absent = all).
+   <code>ModuleOn(serviceModule)</code> tests membership.</li>
+<li><strong>CORE WEB PARTS ALWAYS ON:</strong>
+   <code>csharp
+   AddControllersWithViews()
+     .AddApplicationPart(AuthenticationWebModuleMarker.Assembly)
+     .AddApplicationPart(ShellWebModuleMarker.Assembly)</code></li>
+<li><strong>DOMAIN WEB PARTS GATED</strong> by their backing SERVICE-module name:
+   <code>ModuleOn("General")        -&gt; Bank.Web marker  (Area/service divergence)
+   ModuleOn("HR")             -&gt; Hr.Web
+   ModuleOn("Lockers")        -&gt; Lockers.Web
+   ModuleOn("RetailBanking")  -&gt; RetailBanking.Web
+   ModuleOn("Administration") -&gt; Administration.Web</code></li>
+<li><strong>FRAMEWORK:</strong> <code>builder.Services.AddCbsFramework(config)</code> (one call: session/cache/access
+   guard/search/DataAccess/reference cache/SSO).</li>
+<li><strong>OBSERVABILITY:</strong> <code>AddCbsObservability(config)</code> — OpenTelemetry traces + RED/runtime metrics over
+   OTLP. Config-gated on <code>Observability:Enabled</code>, OFF by default, so a local <code>dotnet run</code> emits
+   nothing.</li>
+<li><strong>LOGGING:</strong> <code>builder.Host.ConfigureTflLogging()</code> + <code>AddTflLogging(config)</code>.</li>
+<li><strong>SERVICE MODULES:</strong> <code>builder.Services.AddCbsModules(config, &lt;every module assembly by name&gt;)</code>.
+   Discovery is <strong>FULLY EXPLICIT</strong> — there is no implicit anchor assembly any more, so every host
+   must NAME every module it deploys:
+   - Core (<code>ICoreCbsModule</code>, always registered): <code>GeneralModule</code>, <code>ReferenceModule</code>,
+     <code>AuthenticationModule</code>
+   - Domains (gated by <code>Modules:Enabled</code>): <code>LockersModule</code>, <code>HrModule</code>, <code>AccountsModule</code>,
+     <code>ClearingModule</code>, <code>AdministrationModule</code>, <code>RetailBankingModule</code></li>
+</ol>
+<p>Each module's <code>AddServices</code> runs only if enabled, so controllers and their services toggle
+   together. Unknown names throw at startup.
+8. <strong>PIPELINE, in order:</strong> <code>UseCbsSecurityHeaders</code> (FIRST — CSP + X-Frame-Options + nosniff +
+   Referrer-Policy on every response, including static files and error pages) →
+   <code>UseCbsForwardedHeaders</code> (honour the gateway's <code>X-Forwarded-Proto/Host</code> so the access guard's
+   login returnUrl carries the GATEWAY origin; must precede <code>UseHttpsRedirection</code>) → exception
+   handler + HSTS (non-dev) → <code>UseHttpsRedirection</code> → <code>UseStaticFiles</code> → <code>UseRouting</code> →
+   <code>UseCbsFramework()</code> (login rate limiter, then session + fail-closed menu/auth guard; after
+   routing, before endpoints) → <code>MapControllers()</code> (attribute routing pins legacy URLs) →
+   <code>MapCbsHealthChecks()</code>.</p>
+<p>Inside <code>UseCbsFramework</code> the rate limiter is FIRST: the <code>cbs-login</code> policy (registered by
+   <code>AddCbsFramework</code>, <code>Security:LoginRateLimit</code>, per client IP + path, 10/60s) throttles the two
+   credential POSTs — <code>/Account/Login</code> and <code>/Account/ChangePassword</code>, which opt in via
+   <code>[EnableRateLimiting]</code> — so a throttled attempt is refused with 429 + <code>Retry-After</code> before the
+   session is loaded, the identity cookie is decrypted or any DB work happens. It lives in the
+   framework, so EVERY host has it, gateway or not; the gateway's own limiter is volumetric, and the
+   DB lockout policy remains the per-account control.</p>
+<p>The four thin hosts use the IDENTICAL <code>Program.cs</code> shape but register only their one domain marker,
+name only the module assemblies they deploy, and set <code>Modules:Enabled = ["&lt;domain&gt;"]</code>.</p>
+<ul>
+<li>Composition contracts: <code>TflCbs.Abstractions/ICbsModule.cs</code> + <code>ICoreCbsModule.cs</code></li>
+<li>Discovery/registration: <code>TflCbs.Abstractions/ModuleRegistration.cs</code></li>
+</ul>
+<blockquote>
+<p><strong>DEPLOYED-MODULE CROSS-CHECK.</strong> <code>AddCbsModules</code> scans the output directory at startup and THROWS
+if a <code>TflCbs.Modules.&lt;X&gt;</code> / <code>TflCbs.Core.&lt;X&gt;</code> assembly is deployed but was not passed in. Nothing
+else catches that mistake: a host on <code>Modules:Enabled="*"</code> never names a module, so the
+unknown-name check cannot fire, and a missing <code>ICoreCbsModule</code> degrades SILENTLY to the framework's
+no-op ports (empty menu). Composition TESTS that build partial sets opt out with
+<code>verifyDeployedModules: false</code>.</p>
+</blockquote>
+<hr />
+<h2 id="6-flow-among-the-projects-a-request-end-to-end">6. Flow among the projects (a request, end to end)</h2>
+<p><strong>SINGLE-HOST</strong> (default host <code>TflCbs.Host.Main</code>):</p>
+<pre><code>Browser
+  | HTTP GET /Hr/State
+  v
+TflCbs.Host.Main (host)                     - security headers, routing
+  v
+CbsAccessMiddleware (Framework)            - fail-closed: authenticated?
+  |                                          module selected? route in menu?
+  v
+StateController (Modules.Hr.Web RCL)       - bind, authorize screen, token
+  v
+StateService (TflCbs.Modules.Reference)    - business logic, returns Result&lt;T&gt;
+  v
+Repository&lt;G_STATE&gt; (TflOmniDb)            - typed CRUD
+  v
+Database (via DataAccess/DatabaseSelector) - SQL Server / Oracle / PostgreSQL
+  ^
+  | Result&lt;T&gt; flows back up
+  v
+Controller -&gt; View (Razor, using shared partials from Web.Shared)
+  v
+Notify (Framework) -&gt; _Notification partial -&gt; Browser
+</code></pre>
+<p>Static assets css/js are served from <code>~/_content/TflCbs.Web.Shared/</code> and
+<code>~/_content/TflCbs.Modules.*.Web/</code>.</p>
+<p>Note the <code>/Hr/State</code> example crosses the module boundary <strong>as designed</strong>: the SCREEN is an HR-area
+screen, but State is shared reference data, so the service comes from the Reference core module.
+Legacy menu placement is preserved on purpose (State sits under the HR menu) — menu modules and code
+modules are separate axes and are NOT realigned to match.</p>
+<p><strong>MULTI-HOST</strong> (gateway + thin hosts, with SSO):</p>
+<pre><code>Browser ---&gt; TflCbs.Gateway (:7100, one origin)
+               |  /Hr/*             -&gt; TflCbs.Host.Hr (:7300)
+               |  /Lockers/*        -&gt; TflCbs.Host.Lockers (:7200)
+               |  /RetailBanking/*  -&gt; TflCbs.Host.RetailBanking (:7400)
+               |  /Administration/* -&gt; TflCbs.Host.Administration (:7500)
+               |  everything else   -&gt; TflCbs.Host.Main (default, :7225)
+               v
+</code></pre>
+<p>Each host runs the SAME pipeline as above (each Area's <code>/_content/*</code> is routed to the owning host
+alongside its paths). Login happens ONCE on the central authority; the encrypted <code>CbsAuth</code> cookie
+(shared DataProtection key ring in the DB) is decrypted by whichever host the gateway routes to; that
+host rehydrates the session and reloads ITS OWN menu from the DB. Global logout is enforced via the
+shared revocation table. Details: <a href="single-sign-on.txt"><code>single-sign-on.txt</code></a>; port table:
+<a href="port-map.html"><code>port-map.md</code></a>.</p>
+<hr />
+<h2 id="7-why-each-layer-is-separate-the-reasoning">7. Why each layer is separate (the reasoning)</h2>
+<table>
+<thead>
+<tr>
+<th>Separation</th>
+<th>Reason</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Abstractions at the floor</strong></td>
+<td>One dependency-free assembly holds the contracts BOTH sides need (<code>Result</code>, <code>ICbsModule</code>, the ports, the shared query/error helpers), so the framework and the modules can cooperate without either referencing the other. It is also the one place a helper can live instead of being copy-pasted into every service.</td>
+</tr>
+<tr>
+<td><strong>Published contracts assembly</strong></td>
+<td>A consumer needing General's scroll takes <code>General.Contracts</code>, not General — so a cross-module dependency is a two-interface surface, not a whole domain.</td>
+</tr>
+<tr>
+<td><strong>Entities separate</strong></td>
+<td>One generated DB-shape contract, consumed as a compiled DLL so a schema regen doesn't force a source rebuild of every dependent's project graph.</td>
+</tr>
+<tr>
+<td><strong>Logging ASP.NET-free</strong></td>
+<td>So the zero-ASP.NET data layer can log without dragging in the web stack.</td>
+</tr>
+<tr>
+<td><strong>Services zero-ASP.NET</strong></td>
+<td>Business logic stays testable and host-agnostic; arch tests forbid it referencing ASP.NET.</td>
+</tr>
+<tr>
+<td><strong>Framework vs screens</strong></td>
+<td>Reusable plumbing evolves without touching 1,000 screens; screens can't reach past the framework, and the framework can't reach into a module.</td>
+</tr>
+<tr>
+<td><strong>Shared Web RCL</strong></td>
+<td>One copy of layout/partials/assets, served to every host via <code>_content</code>, so UI is consistent.</td>
+</tr>
+<tr>
+<td><strong>Web modules as RCLs</strong></td>
+<td>Each domain's screens build independently and can be composed into ANY host (full or thin).</td>
+</tr>
+<tr>
+<td><strong>Module per assembly</strong></td>
+<td>Bounded domains that self-register (<code>ICbsModule</code>), with the boundary enforced by the COMPILER rather than by folder discipline: one process + one DB in steady state, but any domain can be hosted alone and only a host that enables a module ships it.</td>
+</tr>
+<tr>
+<td><strong>Core vs domain modules</strong></td>
+<td><code>ICoreCbsModule</code> = platform plumbing and shared masters that every composition needs (menu, bank variables, login, geography), so a thin host is genuinely standalone with a one-entry <code>Modules:Enabled</code>.</td>
+</tr>
+<tr>
+<td><strong>Thin hosts + gateway</strong></td>
+<td>Prove a module runs standalone and enable horizontal scale / independent deploy behind one origin — which is what makes cross-host SSO work.</td>
+</tr>
+<tr>
+<td><strong>Gateway as pure proxy</strong></td>
+<td>No business code, so it stays a thin, replaceable edge (TLS, routing, rate limit, health).</td>
+</tr>
+<tr>
+<td><strong>Libraries vendored, not linked</strong></td>
+<td><code>libs/</code> puts <code>TflOmniDb</code>/<code>TflSecurityCrypto</code> source inside the repo boundary so a fresh clone builds, while the DLL-by-HintPath reference style keeps them substitutable and stops their transitive package graph leaking into every consumer.</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="8-build-order-conventions-that-fall-out-of-this">8. Build order &amp; conventions that fall out of this</h2>
+<ul>
+<li><strong>One solution build orders everything.</strong> <code>TflCbs.Entities</code> is referenced by bare-DLL HintPath, but
+  every consumer declares a <code>ReferenceOutputAssembly="false"</code> build-order edge, so CLI <code>dotnet build</code>
+  and Visual Studio Rebuild All both sequence it correctly. No manual pre-build step.</li>
+<li><strong>Build the app with:</strong> <code>dotnet build TflCbs.Host.Main</code> (build only). <strong>STOP a running app</strong>
+  (including one started by the VS debugger) before rebuilding to free DLL locks.</li>
+<li><strong>NAMESPACE == ASSEMBLY.</strong> Every type sits under a namespace beginning with its own assembly name,
+  so a <code>using</code> names the assembly you are coupling to. Sanctioned exception: extension-method homes
+  in <code>Microsoft.Extensions.DependencyInjection</code> / <code>Microsoft.AspNetCore.Builder</code>. Enforced by
+  <code>NamespaceDisciplineTests</code> (which also forbids two assemblies sharing a namespace). No exceptions
+  remain.</li>
+<li><strong>Every DEPLOYED module assembly must be handed to <code>AddCbsModules</code></strong> — see the cross-check in §5.
+  Adding a module means editing every host that deploys it, plus <code>ArchBoundaries.PromotedModules</code>.</li>
+<li><strong>Central Package Management:</strong> add package VERSIONS in <code>Directory.Packages.props</code>; csproj
+  <code>PackageReference</code>s are version-less.</li>
+<li><strong>Excluded from the <code>.slnx</code>:</strong> <code>TflCbs.Lab</code> / <code>.Lab.Demo</code> (experimental, API drift) and
+  <code>TflCbs.Tools.PerfProbe</code> — build them standalone only. <code>libs/*</code> and <code>TflCbs.E2E</code> build with
+  their own tooling.</li>
+<li><strong>Bare-DLL refs (<code>TflOmniDb</code>/<code>TflCbs.Entities</code>/<code>TflSecurityCrypto</code>) + ADO.NET drivers do NOT flow
+  transitively</strong> — each project in the closure re-declares them.</li>
+<li><strong>No raw SQL / stored procedures for NEW master CRUD</strong> — use <code>Repository&lt;T&gt;</code>.</li>
+<li><strong>Schema changes go through <code>TflCbs.Tools.DbMigrator</code></strong> — versioned DDL under
+  <code>Migrations/&lt;provider&gt;/</code>, applied once and journalled.</li>
+<li><strong>Arch boundaries are TESTED:</strong> <code>dotnet test TflCbs.ArchTests</code>. Service behaviour:
+  <code>dotnet test TflCbs.Tests</code>. Runtime pipeline: <code>dotnet test TflCbs.IntegrationTests</code>.
+  Browser behaviour: <code>npx playwright test</code> in <code>TflCbs.E2E</code>.</li>
+<li>After a service module's public method is added/changed/removed, run the <strong>cbs-sync-test-demo</strong>
+  agent to sync Tests + Demo.</li>
+</ul>
+<hr />
+<h2 id="9-related-docs">9. Related docs</h2>
+<table>
+<thead>
+<tr>
+<th>Doc</th>
+<th>What it covers</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a href="README.html"><code>README.md</code></a> · <a href="index.html"><code>index.html</code></a></td>
+<td>The full documentation index</td>
+</tr>
+<tr>
+<td><a href="architecture/reusable-boundary.html"><code>architecture/reusable-boundary.md</code></a></td>
+<td>The horizontal framework/screen split</td>
+</tr>
+<tr>
+<td><a href="architecture/modular-monolith.html"><code>architecture/modular-monolith.md</code></a></td>
+<td>The vertical business-layer split</td>
+</tr>
+<tr>
+<td><a href="architecture/TrustBank-CBS-Platform-Architecture.html"><code>architecture/TrustBank-CBS-Platform-Architecture.md</code></a></td>
+<td>Client-facing platform architecture</td>
+</tr>
+<tr>
+<td><a href="architecture/TrustBank-CBS-Architecture-Brief.html"><code>architecture/TrustBank-CBS-Architecture-Brief.md</code></a></td>
+<td>Management briefing note — position, risks, decisions</td>
+</tr>
+<tr>
+<td><a href="guides/day-one.html"><code>guides/day-one.md</code></a></td>
+<td>Hands-on first-day setup for a new developer</td>
+</tr>
+<tr>
+<td><a href="guides/building-a-crud-screen.html"><code>guides/building-a-crud-screen.md</code></a></td>
+<td>How to build one screen end-to-end</td>
+</tr>
+<tr>
+<td><a href="guides/screen-definition-of-done.html"><code>guides/screen-definition-of-done.md</code></a></td>
+<td>The review gate for a migrated screen</td>
+</tr>
+<tr>
+<td><a href="guides/starting-a-new-module.txt"><code>guides/starting-a-new-module.txt</code></a></td>
+<td>How to add a whole new domain module</td>
+</tr>
+<tr>
+<td><a href="guides/search-and-rowtoken-flow.html"><code>guides/search-and-rowtoken-flow.md</code></a></td>
+<td>The search + RowToken round trip</td>
+</tr>
+<tr>
+<td><a href="port-map.html"><code>port-map.md</code></a></td>
+<td>Every project's dev + deployed ports</td>
+</tr>
+<tr>
+<td><a href="single-sign-on.txt"><code>single-sign-on.txt</code></a></td>
+<td>Cross-host SSO</td>
+</tr>
+<tr>
+<td><a href="deploy/db-migrations.html"><code>deploy/db-migrations.md</code></a></td>
+<td>Versioned DDL and the migration runner</td>
+</tr>
+<tr>
+<td><a href="observability/observability-primer.html"><code>observability/observability-primer.md</code></a></td>
+<td>Logs/metrics/traces + the dev backend</td>
+</tr>
+<tr>
+<td><a href="faq-how-to.txt"><code>faq-how-to.txt</code></a></td>
+<td>Day-to-day how-tos + troubleshooting</td>
+</tr>
+<tr>
+<td><a href="FEATURES-SHOWCASE.txt"><code>FEATURES-SHOWCASE.txt</code></a></td>
+<td>One-line feature inventory</td>
+</tr>
+<tr>
+<td><a href="../CLAUDE.html"><code>../CLAUDE.md</code></a></td>
+<td>The project contract; <strong>WINS on conflict</strong></td>
+</tr>
+</tbody>
+</table>
+</div></div>
+<script>
+(function(){
+ function put(t){
+  if(navigator.clipboard&&navigator.clipboard.writeText)return navigator.clipboard.writeText(t);
+  return new Promise(function(res,rej){
+   var a=document.createElement('textarea');a.value=t;a.setAttribute('readonly','');
+   a.style.cssText='position:fixed;top:0;left:0;opacity:0';document.body.appendChild(a);
+   a.select();var ok=false;try{ok=document.execCommand('copy')}catch(e){}
+   document.body.removeChild(a);ok?res():rej()});
+ }
+ function flash(el,txt,ms){
+  var was=el.textContent;el.classList.add('done');if(txt)el.textContent=txt;
+  setTimeout(function(){el.classList.remove('done');if(txt)el.textContent=was},ms||1200);
+ }
+ function copy(text,el,okTxt){
+  put(text).then(function(){flash(el,okTxt)},function(){
+   if(okTxt){var w=el.textContent;el.textContent='Ctrl+C';setTimeout(function(){el.textContent=w},2000)}});
+ }
+ document.querySelectorAll('pre').forEach(function(pre){
+  if(pre.classList.contains('txtdoc'))return;
+  var b=document.createElement('button');
+  b.type='button';b.className='copy';b.textContent='Copy';
+  b.setAttribute('aria-label','Copy this code block to the clipboard');
+  b.addEventListener('click',function(){copy((pre.querySelector('code')||pre).innerText,b,'Copied')});
+  pre.appendChild(b);
+ });
+ document.querySelectorAll('td code').forEach(function(c){
+  if(!c.textContent.trim())return;
+  c.classList.add('cp');c.tabIndex=0;c.setAttribute('role','button');
+  c.title='Click to copy';
+  c.addEventListener('click',function(){copy(c.textContent,c)});
+  c.addEventListener('keydown',function(e){
+   if(e.key==='Enter'||e.key===' '){e.preventDefault();copy(c.textContent,c)}});
+ });
+})();
+</script>
+</body></html>

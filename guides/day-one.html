@@ -1,0 +1,300 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Day One — hands-on setup for new developers</title>
+<style>
+:root{color-scheme:light dark}
+*{box-sizing:border-box}
+body{margin:0;background:#f6f8fa;color:#1f2328;font:16px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif}
+.wrap{max-width:900px;margin:0 auto;padding:32px 24px 96px}
+.card{background:#fff;border:1px solid #d0d7de;border-radius:10px;padding:40px 48px}
+h1,h2,h3{line-height:1.25;font-weight:600}
+h1{font-size:1.9rem;margin:0 0 .3em;padding-bottom:.3em;border-bottom:1px solid #d8dee4}
+h2{font-size:1.4rem;margin:1.8em 0 .6em;padding-bottom:.25em;border-bottom:1px solid #eaeef2}
+h3{font-size:1.12rem;margin:1.4em 0 .5em}
+p,li{margin:.5em 0}
+a{color:#0969da;text-decoration:none}
+a:hover{text-decoration:underline}
+code{font-family:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;font-size:.86em;background:#eff1f3;padding:.15em .4em;border-radius:6px}
+pre{background:#f6f8fa;border:1px solid #d8dee4;border-radius:8px;padding:14px 16px;overflow:auto}
+pre code{background:none;padding:0;font-size:.85em;line-height:1.45}
+blockquote{margin:1em 0;padding:.4em 1em;color:#3d444d;border-left:4px solid #d0d7de;background:#f6f8fa;border-radius:0 6px 6px 0}
+blockquote>:first-child{margin-top:0}blockquote>:last-child{margin-bottom:0}
+table{border-collapse:collapse;width:100%;margin:1em 0;display:block;overflow:auto}
+th,td{border:1px solid #d0d7de;padding:8px 12px;text-align:left;vertical-align:top}
+th{background:#f6f8fa;font-weight:600}
+tr:nth-child(2n) td{background:#f6f8fa}
+hr{border:0;border-top:1px solid #d8dee4;margin:2em 0}
+pre{position:relative}
+pre>button.copy{position:absolute;top:8px;right:8px;padding:5px 9px;cursor:pointer;
+  font:600 .68rem/1 ui-monospace,SFMono-Regular,Consolas,monospace;letter-spacing:.03em;
+  color:#636c76;background:#fff;border:1px solid #d0d7de;border-radius:6px;
+  opacity:0;transition:opacity .12s}
+pre:hover>button.copy,pre>button.copy:focus{opacity:1}
+pre>button.copy.done{color:#0a3622;background:#dafbe1;border-color:#4ac26b}
+@media(hover:none){pre>button.copy{opacity:1}}
+td code.cp{cursor:pointer}
+td code.cp:hover,td code.cp:focus{outline:1px solid #8c959f;outline-offset:1px}
+td code.cp.done{color:#0a3622;background:#dafbe1}
+.docnav{margin:0 0 20px;font-size:.85rem;color:#636c76}
+.docnav a{color:#636c76}
+ul{padding-left:1.4em}ol{padding-left:1.4em}
+@media(max-width:640px){.card{padding:24px 18px}.wrap{padding:16px 10px 64px}}
+@media(prefers-color-scheme:dark){
+ body{background:#0d1117;color:#e6edf3}
+ .card{background:#161b22;border-color:#30363d}
+ h1{border-color:#30363d}h2{border-color:#21262d}
+ code{background:#262c34}
+ pre{background:#0d1117;border-color:#30363d}
+ blockquote{background:#161b22;border-color:#30363d;color:#9198a1}
+ th,td{border-color:#30363d}th{background:#161b22}tr:nth-child(2n) td{background:#12171e}
+ a{color:#4493f8}.docnav,.docnav a{color:#9198a1}
+ hr{border-color:#30363d}
+ pre>button.copy{color:#9198a1;background:#161b22;border-color:#30363d}
+ pre>button.copy.done{color:#aff5b4;background:#1b4721;border-color:#2ea043}
+ td code.cp.done{color:#aff5b4;background:#1b4721}
+}
+</style></head>
+<body><div class="wrap"><div class="card">
+<div class="docnav"><a href="../index.html">&#8592; All docs</a></div>
+<h1 id="day-one-hands-on-setup-for-new-developers">Day One — hands-on setup for new developers</h1>
+<blockquote>
+<p>Get the app running, see the parts catalogue, ship one screen. Everything here already exists in
+the repo — nothing to design, nothing to decide.</p>
+<p>Budget: <strong>~30 minutes to a running app</strong>, then your first screen on day two.
+Deeper reading comes later; the links at the end are for when you need them, not now.</p>
+</blockquote>
+<hr />
+<h2 id="0-before-you-start">0. Before you start</h2>
+<table>
+<thead>
+<tr>
+<th>Need</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>.NET 10 SDK</td>
+<td><code>dotnet --version</code> should print 10.x</td>
+</tr>
+<tr>
+<td>Visual Studio 2022 / VS Code / Rider</td>
+<td>any of them; the solution is <code>TflCbsNet10Sol.slnx</code></td>
+</tr>
+<tr>
+<td>SQL Server dev DB access</td>
+<td>ask for the connection string — see step 1</td>
+</tr>
+<tr>
+<td>Node (for <code>node --check</code>)</td>
+<td>only needed when you touch JavaScript</td>
+</tr>
+</tbody>
+</table>
+<p><strong>The legacy app is reference material, not a workspace.</strong> It lives outside this solution
+(<code>Trust.Bank.Publish\</code>). You read it to learn what a screen did. You never edit it.</p>
+<hr />
+<h2 id="1-get-it-running">1. Get it running</h2>
+<pre><code class="language-bash"># 1. Local DB credentials. This file is gitignored — it must NEVER be committed.
+cp TflCbs.Host.Main/appsettings.Development.json.example TflCbs.Host.Main/appsettings.Development.json
+#    then fill in the connection string (ask your lead for the dev DB credentials)
+
+# 2. Entities first — TflCbs.Entities is referenced by bare-DLL HintPath, so there is
+#    no build-order edge to make this happen automatically.
+dotnet build TflCbs.Entities
+dotnet build TflCbs.Host.Main
+
+# 3. Run
+dotnet run --project TflCbs.Host.Main          # https://localhost:7225  (http://localhost:5019)
+
+# 4. Prove the test suites run for you too
+dotnet test TflCbs.Tests              # service/DB tier
+dotnet test TflCbs.ArchTests         # architecture boundaries — see section 4
+dotnet test TflCbs.IntegrationTests  # real pipeline, in-process
+</code></pre>
+<p><strong>Log in</strong> with any <code>a_User</code> account. Every user is currently on the temporary password <code>a</code>
+(from the password-hashing migration); change-password is at <code>/Account/ChangePassword</code>.</p>
+<blockquote>
+<p><strong>Stop the app before your next build.</strong> A running instance locks the DLLs and the build fails
+with a confusing file-in-use error. This includes an instance Visual Studio's debugger launched —
+stop the debugger, don't just close the browser tab.</p>
+</blockquote>
+<p>Other runnable hosts (the thin per-module hosts and the gateway) and their ports are in
+<a href="../port-map.html"><code>port-map.md</code></a>. You do not need them on day one.</p>
+<hr />
+<h2 id="2-look-before-you-write-devcomponents">2. Look before you write — <code>/Dev/Components</code></h2>
+<p>With the app running, open <strong><code>https://localhost:7225/Dev/Components</code></strong>.</p>
+<p>That page is the parts catalogue: every reusable UI component in the system — record picker, account
+picker, date picker, search modal, notifications, action bar — rendered live on dummy data with each
+option demonstrated. It is Development-only (404s elsewhere).</p>
+<p>Spend ten minutes clicking it. Most "how do I build X?" questions in your first week are answered by
+"that component already exists and here is what it looks like". The legacy-control to new-component
+mapping is in <a href="../legacy-vs-new-components.html"><code>legacy-vs-new-components.md</code></a>.</p>
+<hr />
+<h2 id="3-your-first-screen-copy-state-and-rename-it">3. Your first screen — copy State and rename it</h2>
+<p>Read <a href="building-a-crud-screen.html"><code>building-a-crud-screen.md</code></a>. It walks the <strong>State</strong> master
+(<code>/Hr/State</code>) end to end — the cleanest full-CRUD screen in the repo — and its section 11 is a
+checklist for building a new master by renaming it. That checklist is your first task:</p>
+<ol>
+<li><strong>Entity</strong> — new table? scaffold it, then <code>dotnet build TflCbs.Entities</code> <strong>first</strong>.</li>
+<li><strong>Service</strong> — into <code>TflCbs.Modules.&lt;Domain&gt;/</code>, returning <code>Result</code>/<code>Result&lt;T&gt;</code>, shared helpers via
+   <code>using static TflCbs.Abstractions.ServiceQuery;</code> / <code>...DbErrors;</code>.</li>
+<li><strong>Register</strong> — one <code>AddScoped</code> line in that assembly's <code>&lt;Domain&gt;Module.AddServices</code>, <em>not</em> in <code>Program.cs</code>.</li>
+<li><strong>Form model</strong> — <code>YourThingForm : IRowForm</code> in the web RCL's <code>Models/&lt;Area&gt;/</code>.</li>
+<li><strong>Controller</strong> — inherit <code>CbsScreenController</code>, copy State's actions.</li>
+<li><strong>View</strong> — copy <code>Areas/Hr/Views/State/Index.cshtml</code>, adjust fields and columns.</li>
+<li><strong>Route cutover</strong> — a DbMigrator migration pointing the screen's <code>a_Menus.NavigateURL</code> at <code>/Area/YourThing</code>.</li>
+<li><strong>Build and verify</strong> (section 5 below).</li>
+</ol>
+<p>Everyone ships one Simple master this way before touching anything larger. If the guide fails you
+anywhere, that is a bug in the guide — fix it, and the next person is faster.</p>
+<hr />
+<h2 id="4-the-rules-the-build-enforces">4. The rules the build enforces</h2>
+<p>These are not style preferences — <code>TflCbs.ArchTests</code> fails the build on them. Knowing them
+now saves you an afternoon of arguing with a red test.</p>
+<ul>
+<li><strong>Namespace == assembly.</strong> Every type sits under a namespace starting with its own assembly name, so
+  a <code>using</code> tells you what you are coupling to.</li>
+<li><strong>Framework and screens stay separate.</strong> <code>TflCbs.Framework</code> never references a module or a
+  screen RCL. Modules reach the framework through the four ports in <code>TflCbs.Abstractions</code>.</li>
+<li><strong>No private copies of the shared service helpers.</strong> <code>Has</code>/<code>Eq</code>/<code>Val</code>/<code>Paged</code>/<code>IsDuplicate</code>/
+  <code>IsForeignKey</code> come from <code>TflCbs.Abstractions</code> via <code>using static</code>. Need different semantics? Give it
+  a different name.</li>
+<li><strong>No raw SQL or stored procedures for new master CRUD</strong> — use <code>Repository&lt;T&gt;</code>. Legacy raw SQL is
+  preserved only where it was already migrated that way.</li>
+<li><strong>Services return <code>Result</code>/<code>Result&lt;T&gt;</code></strong> — no throwing across the service boundary, no silent failures.</li>
+<li><strong>Access is fail-closed</strong> (<code>CbsAccessMiddleware</code>). Never widen access or bypass the menu/route guard.</li>
+<li><strong>Reusable components stay additive with safe defaults</strong> — never break an existing picker to extend it.</li>
+<li><strong>Every deployed module assembly must be handed to <code>AddCbsModules</code></strong> — startup throws otherwise.</li>
+</ul>
+<hr />
+<h2 id="5-the-verification-loop">5. The verification loop</h2>
+<table>
+<thead>
+<tr>
+<th>After you change...</th>
+<th>Run</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>C# / Razor</td>
+<td><code>dotnet build TflCbs.Host.Main</code> (stop the app first)</td>
+</tr>
+<tr>
+<td><code>TflCbs.Entities</code></td>
+<td><code>dotnet build TflCbs.Entities</code>, <strong>then</strong> the dependents</td>
+</tr>
+<tr>
+<td>JavaScript</td>
+<td><code>node --check &lt;file.js&gt;</code></td>
+</tr>
+<tr>
+<td>A service's public API</td>
+<td>the <strong><code>cbs-sync-test-demo</code></strong> agent, then <code>dotnet test TflCbs.Tests</code></td>
+</tr>
+<tr>
+<td>A shared UI component</td>
+<td>the <strong><code>component-demo</code></strong> + <strong><code>component-docs-sync</code></strong> agents</td>
+</tr>
+<tr>
+<td>UI behaviour</td>
+<td>run the app and click it</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="6-first-week-friction-all-of-it-avoidable">6. First-week friction (all of it avoidable)</h2>
+<ul>
+<li><strong>Build fails with a file-in-use error</strong> — the app is still running. Stop it, including under the debugger.</li>
+<li><strong>Entity changes don't show up</strong> — you skipped <code>dotnet build TflCbs.Entities</code> first.</li>
+<li><strong><code>appsettings.Development.json</code></strong> is gitignored and must stay that way; it holds DB credentials.
+  Every project has a committed <code>.example</code> twin — see <a href="../deploy/local-dev-secrets.html"><code>local-dev-secrets.md</code></a>.</li>
+<li><strong>Row tokens are strings.</strong> <code>CbsScreenController</code>'s token helpers hand you a <code>string</code> — parse it to
+  your service's PK type at the call site, and watch for <code>decimal</code> PKs.</li>
+<li><strong>Two people editing <code>TflCbs.Web.Shared</code> will collide.</strong> The per-module split isolates domain
+  code, not the shared layout/partials/wwwroot. Coordinate before touching it.</li>
+</ul>
+<hr />
+<h2 id="7-where-to-look-next">7. Where to look next</h2>
+<table>
+<thead>
+<tr>
+<th>Question</th>
+<th>Document</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>How is the solution laid out?</td>
+<td><a href="../architecture-overview.html"><code>architecture-overview.md</code></a></td>
+</tr>
+<tr>
+<td>What runs on which port?</td>
+<td><a href="../port-map.html"><code>port-map.md</code></a></td>
+</tr>
+<tr>
+<td>How do I build a screen?</td>
+<td><a href="building-a-crud-screen.html"><code>building-a-crud-screen.md</code></a></td>
+</tr>
+<tr>
+<td>How do search and row tokens work?</td>
+<td><a href="search-and-rowtoken-flow.html"><code>search-and-rowtoken-flow.md</code></a></td>
+</tr>
+<tr>
+<td>Which new component replaces this legacy control?</td>
+<td><a href="../legacy-vs-new-components.html"><code>legacy-vs-new-components.md</code></a></td>
+</tr>
+<tr>
+<td>I need a brand-new module</td>
+<td><a href="starting-a-new-module.txt"><code>starting-a-new-module.txt</code></a></td>
+</tr>
+<tr>
+<td>Why is the codebase split this way?</td>
+<td><a href="../architecture/modular-monolith.html"><code>architecture/modular-monolith.md</code></a></td>
+</tr>
+<tr>
+<td>Everything else</td>
+<td><a href="../README.html"><code>docs/README.md</code></a> — the full documentation index</td>
+</tr>
+</tbody>
+</table>
+</div></div>
+<script>
+(function(){
+ function put(t){
+  if(navigator.clipboard&&navigator.clipboard.writeText)return navigator.clipboard.writeText(t);
+  return new Promise(function(res,rej){
+   var a=document.createElement('textarea');a.value=t;a.setAttribute('readonly','');
+   a.style.cssText='position:fixed;top:0;left:0;opacity:0';document.body.appendChild(a);
+   a.select();var ok=false;try{ok=document.execCommand('copy')}catch(e){}
+   document.body.removeChild(a);ok?res():rej()});
+ }
+ function flash(el,txt,ms){
+  var was=el.textContent;el.classList.add('done');if(txt)el.textContent=txt;
+  setTimeout(function(){el.classList.remove('done');if(txt)el.textContent=was},ms||1200);
+ }
+ function copy(text,el,okTxt){
+  put(text).then(function(){flash(el,okTxt)},function(){
+   if(okTxt){var w=el.textContent;el.textContent='Ctrl+C';setTimeout(function(){el.textContent=w},2000)}});
+ }
+ document.querySelectorAll('pre').forEach(function(pre){
+  if(pre.classList.contains('txtdoc'))return;
+  var b=document.createElement('button');
+  b.type='button';b.className='copy';b.textContent='Copy';
+  b.setAttribute('aria-label','Copy this code block to the clipboard');
+  b.addEventListener('click',function(){copy((pre.querySelector('code')||pre).innerText,b,'Copied')});
+  pre.appendChild(b);
+ });
+ document.querySelectorAll('td code').forEach(function(c){
+  if(!c.textContent.trim())return;
+  c.classList.add('cp');c.tabIndex=0;c.setAttribute('role','button');
+  c.title='Click to copy';
+  c.addEventListener('click',function(){copy(c.textContent,c)});
+  c.addEventListener('keydown',function(e){
+   if(e.key==='Enter'||e.key===' '){e.preventDefault();copy(c.textContent,c)}});
+ });
+})();
+</script>
+</body></html>

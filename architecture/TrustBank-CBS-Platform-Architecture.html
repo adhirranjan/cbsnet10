@@ -1,0 +1,419 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>TrustBank CBS — Platform Architecture</title>
+<style>
+:root{color-scheme:light dark}
+*{box-sizing:border-box}
+body{margin:0;background:#f6f8fa;color:#1f2328;font:16px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif}
+.wrap{max-width:900px;margin:0 auto;padding:32px 24px 96px}
+.card{background:#fff;border:1px solid #d0d7de;border-radius:10px;padding:40px 48px}
+h1,h2,h3{line-height:1.25;font-weight:600}
+h1{font-size:1.9rem;margin:0 0 .3em;padding-bottom:.3em;border-bottom:1px solid #d8dee4}
+h2{font-size:1.4rem;margin:1.8em 0 .6em;padding-bottom:.25em;border-bottom:1px solid #eaeef2}
+h3{font-size:1.12rem;margin:1.4em 0 .5em}
+p,li{margin:.5em 0}
+a{color:#0969da;text-decoration:none}
+a:hover{text-decoration:underline}
+code{font-family:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;font-size:.86em;background:#eff1f3;padding:.15em .4em;border-radius:6px}
+pre{background:#f6f8fa;border:1px solid #d8dee4;border-radius:8px;padding:14px 16px;overflow:auto}
+pre code{background:none;padding:0;font-size:.85em;line-height:1.45}
+blockquote{margin:1em 0;padding:.4em 1em;color:#3d444d;border-left:4px solid #d0d7de;background:#f6f8fa;border-radius:0 6px 6px 0}
+blockquote>:first-child{margin-top:0}blockquote>:last-child{margin-bottom:0}
+table{border-collapse:collapse;width:100%;margin:1em 0;display:block;overflow:auto}
+th,td{border:1px solid #d0d7de;padding:8px 12px;text-align:left;vertical-align:top}
+th{background:#f6f8fa;font-weight:600}
+tr:nth-child(2n) td{background:#f6f8fa}
+hr{border:0;border-top:1px solid #d8dee4;margin:2em 0}
+pre{position:relative}
+pre>button.copy{position:absolute;top:8px;right:8px;padding:5px 9px;cursor:pointer;
+  font:600 .68rem/1 ui-monospace,SFMono-Regular,Consolas,monospace;letter-spacing:.03em;
+  color:#636c76;background:#fff;border:1px solid #d0d7de;border-radius:6px;
+  opacity:0;transition:opacity .12s}
+pre:hover>button.copy,pre>button.copy:focus{opacity:1}
+pre>button.copy.done{color:#0a3622;background:#dafbe1;border-color:#4ac26b}
+@media(hover:none){pre>button.copy{opacity:1}}
+td code.cp{cursor:pointer}
+td code.cp:hover,td code.cp:focus{outline:1px solid #8c959f;outline-offset:1px}
+td code.cp.done{color:#0a3622;background:#dafbe1}
+.docnav{margin:0 0 20px;font-size:.85rem;color:#636c76}
+.docnav a{color:#636c76}
+ul{padding-left:1.4em}ol{padding-left:1.4em}
+@media(max-width:640px){.card{padding:24px 18px}.wrap{padding:16px 10px 64px}}
+@media(prefers-color-scheme:dark){
+ body{background:#0d1117;color:#e6edf3}
+ .card{background:#161b22;border-color:#30363d}
+ h1{border-color:#30363d}h2{border-color:#21262d}
+ code{background:#262c34}
+ pre{background:#0d1117;border-color:#30363d}
+ blockquote{background:#161b22;border-color:#30363d;color:#9198a1}
+ th,td{border-color:#30363d}th{background:#161b22}tr:nth-child(2n) td{background:#12171e}
+ a{color:#4493f8}.docnav,.docnav a{color:#9198a1}
+ hr{border-color:#30363d}
+ pre>button.copy{color:#9198a1;background:#161b22;border-color:#30363d}
+ pre>button.copy.done{color:#aff5b4;background:#1b4721;border-color:#2ea043}
+ td code.cp.done{color:#aff5b4;background:#1b4721}
+}
+</style></head>
+<body><div class="wrap"><div class="card">
+<div class="docnav"><a href="../index.html">&#8592; All docs</a></div>
+<h1 id="trustbank-cbs-platform-architecture">TrustBank CBS — Platform Architecture</h1>
+<p><strong>A secure, modern, modular core banking platform.</strong></p>
+<p><em>Prepared for institutions evaluating TrustBank CBS. This document describes how the platform is built, why it is dependable, and how it adapts to your institution's needs.</em></p>
+<hr />
+<h2 id="1-executive-summary">1. Executive Summary</h2>
+<p>TrustBank CBS is a <strong>core banking platform</strong> built on <strong>.NET 10</strong>, the current long-term technology foundation from Microsoft. It is engineered around the priorities that matter most to a financial institution:</p>
+<ul>
+<li><strong>Security first.</strong> Access is denied by default and granted only where explicitly authorized — on <strong>every</strong> request, enforced on the server, never trusted to the browser.</li>
+<li><strong>Correctness over convenience.</strong> Every business operation reports an explicit success or failure. There are no silent errors, and multi-step money movements either complete fully or not at all.</li>
+<li><strong>Your database, your choice.</strong> The same platform runs on <strong>Microsoft SQL Server, Oracle, or PostgreSQL</strong> — no vendor lock-in, no separate codebase per database.</li>
+<li><strong>Modular by design.</strong> The system is organized into clearly bounded business capabilities (core banking, retail banking, accounts, lockers, clearing, HR), so it is simple to operate today and able to grow without a rewrite.</li>
+<li><strong>Consistent, productive experience.</strong> A unified toolkit of screen components gives every operator a familiar, fast, error-resistant workflow.</li>
+</ul>
+<p>The result is a platform that is <strong>dependable to run, safe to operate, and economical to evolve</strong> — designed for the realities of banking rather than retrofitted to them.</p>
+<hr />
+<h2 id="2-architecture-at-a-glance">2. Architecture at a Glance</h2>
+<p>The platform is organized in clear layers, each with a single responsibility:</p>
+<pre><code>        ┌──────────────────────────────────────────────────────┐
+        │                  Operators / Branch Staff             │
+        └───────────────────────────┬──────────────────────────┘
+                                     │  (web browser)
+        ┌───────────────────────────▼──────────────────────────┐
+        │   PRESENTATION   Screens, forms, reusable components   │
+        │                  Consistent, validated, productive UI  │
+        └───────────────────────────┬──────────────────────────┘
+        ┌───────────────────────────▼──────────────────────────┐
+        │   SECURITY GATE  Fail-closed access guard (every call) │
+        │                  Server-side, menu-driven authorization│
+        └───────────────────────────┬──────────────────────────┘
+        ┌───────────────────────────▼──────────────────────────┐
+        │   BUSINESS       Domain services &amp; rules               │
+        │                  Explicit success/failure on every op  │
+        └───────────────────────────┬──────────────────────────┘
+        ┌───────────────────────────▼──────────────────────────┐
+        │   DATA ACCESS    Safe, parameterized, transactional    │
+        │                  SQL Server · Oracle · PostgreSQL       │
+        └──────────────────────────────────────────────────────┘
+</code></pre>
+<p><strong>What happens on a single request, in plain terms:</strong> an operator opens a screen or submits a form → the platform confirms they are logged in, have selected their working module, and are authorized for that exact screen → the relevant business rules run and report a clear result → any data changes are written safely within a transaction → the operator receives a clear confirmation or a clear, actionable error. Every step is deliberate; nothing is assumed.</p>
+<h3 id="21-deployment-tiers-web-tier-app-tier-database-tier">2.1 Deployment tiers (web tier / app tier / database tier)</h3>
+<p>The layers above describe the <em>code</em>. Deployment maps those layers onto <strong>network security zones</strong>, which is what an infrastructure or information-security review is usually asking about when it asks "what runs on the web server and what runs on the application server?"</p>
+<pre><code>   DMZ                    Trusted zone                Restricted
+┌──────────────┐      ┌──────────────────────┐      ┌──────────┐
+│ TflCbs       │─────►│ TflCbs.Host.Main      │─────►│ SQL /    │
+│ .Gateway     │      │ TflCbs.Host.Hr       │      │ Oracle   │
+│ (YARP)       │      │ TflCbs.Host.Lockers  │      │          │
+│              │      │ TflCbs.Host.Retail   │      │          │
+│ TLS term     │      │ TflCbs.Host.Admin    │      └──────────┘
+│ rate limit   │      │                      │
+│ routing      │      │                      │
+│ NO db creds  │      │ business + DB creds  │
+└──────────────┘      └──────────────────────┘
+</code></pre>
+<ul>
+<li><strong>Web tier (DMZ)</strong> — the reverse proxy / gateway. TLS termination, rate limiting, routing, and a place to sit a WAF. It holds <strong>no business logic and no database connectivity</strong>, so a compromise of the internet-facing box does not yield database credentials.</li>
+<li><strong>App tier (trusted zone)</strong> — the application hosts. Business logic and the <strong>only</strong> database credentials in the estate. Reachable only from the web tier.</li>
+<li><strong>Database tier (restricted zone)</strong> — reachable only from the app tier.</li>
+</ul>
+<p>Two points that commonly come up:</p>
+<ul>
+<li><strong>This is a network-zoning question, not a product question.</strong> "Application server" originates from the Java container era (WebLogic / WebSphere / JBoss); .NET has no equivalent product — the host process <em>is</em> the application server. Confirm whether the requirement is a zone or a named product before answering.</li>
+<li><strong>A "frontend on the web server, API on the app server" split requires a single-page application</strong>, where the frontend is static files. The migrated screens are server-rendered, so presentation and business logic share a process by design; the zoning requirement is met by the gateway instead.</li>
+</ul>
+<p>The Docker multi-host shape already implements this: only the gateway publishes a port and all backends are internal-only. The single-host shape places the application directly in the app tier and expects an existing reverse proxy in front where the zoning is mandated.</p>
+<hr />
+<h2 id="3-guiding-principles">3. Guiding Principles</h2>
+<p>These principles are not aspirations — they are enforced in the platform's structure and verified automatically.</p>
+<table>
+<thead>
+<tr>
+<th>Principle</th>
+<th>What it means for your institution</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Fail-closed security</strong></td>
+<td>Nothing is accessible unless explicitly permitted. A missing or unknown permission results in denial, not exposure.</td>
+</tr>
+<tr>
+<td><strong>Explicit outcomes</strong></td>
+<td>Every operation returns a clear success or failure with a traceable reference — no operation fails quietly.</td>
+</tr>
+<tr>
+<td><strong>All-or-nothing writes</strong></td>
+<td>Multi-step changes run inside a transaction; a partial failure rolls everything back, protecting balance integrity.</td>
+</tr>
+<tr>
+<td><strong>Database independence</strong></td>
+<td>One codebase runs on SQL Server, Oracle, or PostgreSQL — your infrastructure choice, not ours.</td>
+</tr>
+<tr>
+<td><strong>Modular boundaries</strong></td>
+<td>Business domains are separated by enforced internal boundaries, keeping the system maintainable as it grows.</td>
+</tr>
+<tr>
+<td><strong>Safe, additive change</strong></td>
+<td>New features and components extend the platform without breaking existing screens and workflows.</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="4-business-capability-modules">4. Business Capability Modules</h2>
+<p>The platform is divided into <strong>bounded business capabilities</strong>. Each owns its own rules and data access, and communicates with others only through well-defined contracts — so a change in one capability cannot destabilize another.</p>
+<table>
+<thead>
+<tr>
+<th>Capability</th>
+<th>Scope</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Core Banking</strong></td>
+<td>Menu and navigation, institutional parameters, broadcast and alerts, and the maker-checker authorization scroll — the platform services every other capability depends on.</td>
+</tr>
+<tr>
+<td><strong>Reference Data</strong></td>
+<td>Bank-wide master data with no domain behaviour: geography (state / district / taluka). Shared, so it is present in every deployment.</td>
+</tr>
+<tr>
+<td><strong>Authentication</strong></td>
+<td>Login, credential policy, password lifecycle, and session validation, including single-active-session enforcement.</td>
+</tr>
+<tr>
+<td><strong>Administration</strong></td>
+<td>Users, roles, module permissions, and oversight of currently connected users.</td>
+</tr>
+<tr>
+<td><strong>Accounts</strong></td>
+<td>Account servicing, account inquiry, holdings, business assessment.</td>
+</tr>
+<tr>
+<td><strong>Retail Banking</strong></td>
+<td>Customer-facing retail banking operations.</td>
+</tr>
+<tr>
+<td><strong>Lockers</strong></td>
+<td>Safe-deposit locker administration and servicing.</td>
+</tr>
+<tr>
+<td><strong>Clearing</strong></td>
+<td>Cheque clearing and settlement processing.</td>
+</tr>
+<tr>
+<td><strong>Human Resources</strong></td>
+<td>Staff and HR administration for the institution.</td>
+</tr>
+</tbody>
+</table>
+<p>One platform, one deployment — with clean internal separation that keeps each capability independently understandable, testable, and evolvable. Each capability is a <strong>separately built component</strong>, and the deployment configuration decides which are present: the full institution, or a focused subset.</p>
+<hr />
+<h2 id="5-security-access-control">5. Security &amp; Access Control</h2>
+<p>Security in TrustBank CBS is <strong>structural</strong>, not an add-on. The platform assumes a hostile environment and protects accordingly.</p>
+<ul>
+<li><strong>Fail-closed access guard on every request.</strong> Before any screen or action runs, a central guard confirms the user is authenticated, has selected a working module, and is authorized for that specific screen. Anything unrecognized is denied.</li>
+<li><strong>Server-side, menu-driven authorization.</strong> What a user may access is decided on the server from their assigned permissions. The browser is never trusted to make or carry that decision, so it cannot be manipulated by the client.</li>
+<li><strong>Tamper-proof record handling.</strong> When a record is handed from a list to a form, it is referenced by an <strong>encrypted, single-use token</strong> rather than a raw identifier. This prevents tampering, prevents reuse, and blocks attempts to reach records the operator was never shown.</li>
+<li><strong>Managed sessions with single-active-session enforcement.</strong> Each user's session is tracked server-side; if a user is signed in elsewhere or force-logged-out, active sessions are invalidated immediately.</li>
+<li><strong>Encryption of sensitive identifiers</strong> and protected data, with key management handled by the platform.</li>
+<li><strong>No credentials in code.</strong> Connection details and secrets come from secured configuration — never hard-coded, never logged.</li>
+<li><strong>Segregation-ready workflows.</strong> The permission model supports separating who can initiate from who can authorize, aligning with banking control requirements.</li>
+</ul>
+<hr />
+<h2 id="6-reliability-data-integrity">6. Reliability &amp; Data Integrity</h2>
+<p>Banking software is judged on whether the numbers are always right. The platform is built so they are.</p>
+<ul>
+<li><strong>Explicit success/failure on every operation.</strong> Business operations return a structured result indicating success or failure, the reason, and a <strong>correlation reference</strong> for traceability. Failures cannot be silently ignored.</li>
+<li><strong>All-or-nothing transactions.</strong> Operations that touch multiple records run as a single unit of work. If any step fails, the entire change is rolled back — there is no partial state.</li>
+<li><strong>Safe data access only.</strong> All database access is parameterized, eliminating injection risks. New data operations use a controlled, typed access layer rather than ad-hoc queries.</li>
+<li><strong>Structured, traceable audit logging.</strong> Outcomes are recorded with timestamps, severity, and correlation references in rolling daily logs — supporting investigation, audit, and regulatory inquiry.</li>
+<li><strong>Clear operator feedback.</strong> Successful changes produce an explicit confirmation the operator must acknowledge; preventable mistakes are caught early with immediate, specific guidance.</li>
+</ul>
+<hr />
+<h2 id="7-technology-foundation">7. Technology Foundation</h2>
+<table>
+<thead>
+<tr>
+<th>Area</th>
+<th>Choice</th>
+<th>Why it matters</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Platform</strong></td>
+<td>.NET 10 (current long-term-support generation)</td>
+<td>Modern, supported, high-performance, with a long maintenance horizon.</td>
+</tr>
+<tr>
+<td><strong>Application model</strong></td>
+<td>ASP.NET Core MVC</td>
+<td>A mature, well-understood, widely-supported web architecture.</td>
+</tr>
+<tr>
+<td><strong>Databases</strong></td>
+<td>SQL Server, Oracle, PostgreSQL</td>
+<td>Run on your existing database investment — no lock-in, one codebase.</td>
+</tr>
+<tr>
+<td><strong>Composition</strong></td>
+<td>Modern dependency injection</td>
+<td>Components are wired centrally and cleanly, keeping the system testable and maintainable.</td>
+</tr>
+<tr>
+<td><strong>Logging</strong></td>
+<td>Structured logging with daily rolling files, with sensitive-field masking applied centrally</td>
+<td>Operational visibility and an audit-friendly record out of the box; personal identifiers are redacted before they reach a log file.</td>
+</tr>
+<tr>
+<td><strong>Observability</strong></td>
+<td>OpenTelemetry traces and metrics over the standard OTLP protocol</td>
+<td>Plugs into whatever monitoring stack you already run — no proprietary agent. Off by default; enabled by configuration.</td>
+</tr>
+<tr>
+<td><strong>Schema management</strong></td>
+<td>Versioned, journalled database migrations</td>
+<td>Every schema change is applied exactly once, in order, and recorded — with a read-only <code>status</code> check for a change-advisory board.</td>
+</tr>
+<tr>
+<td><strong>Configuration</strong></td>
+<td>Externalized, secrets kept out of code</td>
+<td>Safe, environment-specific deployment without code changes.</td>
+</tr>
+</tbody>
+</table>
+<p>The platform builds on standard, mainstream Microsoft technology — meaning a wide talent pool, long-term supportability, and no dependence on niche or proprietary frameworks.</p>
+<hr />
+<h2 id="8-modularity-future-readiness">8. Modularity &amp; Future-Readiness</h2>
+<p>TrustBank CBS uses a <strong>modular-monolith</strong> architecture — widely regarded as the soundest starting point for a core banking system.</p>
+<p><strong>Why this is the right model for banking:</strong></p>
+<ul>
+<li><strong>Simple and reliable to operate today.</strong> One application, one database, and strong transactional consistency — exactly what money movement requires. There is no distributed-systems complexity to manage or to get wrong.</li>
+<li><strong>Cleanly bounded inside.</strong> Each business capability is separated by enforced boundaries, so the system stays maintainable and understandable even as it grows.</li>
+<li><strong>Ready to scale without a rewrite.</strong> Because the boundaries are real and enforced, individual capabilities can be scaled out independently <strong>if and when</strong> transaction volumes justify it — an evolution, not a re-platforming.</li>
+<li><strong>Configurable footprint.</strong> The same software can run the full bank or a single capability, governed by configuration — useful for phased rollouts, specialized deployments, and testing.</li>
+</ul>
+<p>This gives your institution the <strong>operational simplicity of a monolith now</strong> and the <strong>flexibility of a modular system later</strong>, on your timeline and your terms.</p>
+<hr />
+<h2 id="9-consistent-user-experience">9. Consistent User Experience</h2>
+<p>Operator productivity and accuracy come from consistency. The platform ships with a <strong>unified component toolkit</strong> used across every screen:</p>
+<ul>
+<li><strong>Record and account pickers</strong> — fast, validated selection of customers, accounts, and master data, with built-in search.</li>
+<li><strong>Search dialogs</strong> — a consistent way to find records across the system.</li>
+<li><strong>Guided date selection</strong> — structured date entry that prevents common input errors.</li>
+<li><strong>Standardized notifications</strong> — clear, consistent confirmations for completed actions and immediate, specific guidance for mistakes.</li>
+<li><strong>Consistent action bars</strong> — the same controls in the same place on every screen.</li>
+</ul>
+<p>Because every screen is built from the same toolkit, operators learn the system once and apply that knowledge everywhere — reducing training time and operational error.</p>
+<hr />
+<h2 id="10-quality-engineering">10. Quality Engineering</h2>
+<p>Quality is built into the development process, not inspected in afterwards.</p>
+<p>Verification runs in <strong>four independent tiers</strong>, each catching what the others cannot:</p>
+<table>
+<thead>
+<tr>
+<th>Tier</th>
+<th>What it proves</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Cross-database business tests</strong></td>
+<td>The platform's business logic is verified automatically against SQL Server, Oracle, and PostgreSQL — so behaviour is consistent regardless of your database choice.</td>
+</tr>
+<tr>
+<td><strong>Architecture boundary tests</strong></td>
+<td>Automated checks fail the build if a developer accidentally crosses a module or layer boundary — including a meta-check that verifies each boundary is still genuinely being enforced rather than passing vacuously.</td>
+</tr>
+<tr>
+<td><strong>In-process pipeline tests</strong></td>
+<td>The real application is started in-process and exercised over HTTP, so the security guard, the anti-forgery protection and authenticated access are proven in their true running order — not in a simulation of it.</td>
+</tr>
+<tr>
+<td><strong>Browser end-to-end tests</strong></td>
+<td>A real browser drives the live application, confirming what only a browser can see: the strict content-security policy actually being enforced, session and cookie behaviour, and every reusable screen component working.</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li><strong>Non-destructive, repeatable verification.</strong> Tests are designed to run safely and consistently, independent of specific data.</li>
+<li><strong>Performance measured, not assumed.</strong> Rewritten database logic is timed against the original it replaces, and the comparison is recorded as a dated report.</li>
+</ul>
+<p>This means the architectural guarantees in this document are not just promises — they are continuously and automatically verified.</p>
+<hr />
+<h2 id="appendix-technical-overview">Appendix — Technical Overview</h2>
+<p><em>For the evaluating institution's architects and technical reviewers. This section summarizes the engineering structure behind the platform.</em></p>
+<h3 id="layered-structure">Layered structure</h3>
+<p>The platform separates <strong>reusable foundation</strong> from <strong>business screens</strong> at the assembly level:</p>
+<ul>
+<li><strong>Contracts layer</strong> — a single dependency-free assembly holding the result contract, the module contract, and the interfaces (<em>ports</em>) through which the framework obtains business data. Everything else compiles against it, which is what lets the framework and the business modules cooperate without either one referencing the other.</li>
+<li><strong>Framework layer</strong> — web plumbing, security guard, session management, search infrastructure, and the reusable component models. Self-contained and reusable; it has <strong>no dependency on screen code and no dependency on any business module</strong> — both separations are compiler-enforced, not merely conventional, and are additionally covered by automated architecture tests.</li>
+<li><strong>Business/services layer</strong> — domain services that encapsulate banking rules and data access. Each business capability is its <strong>own assembly</strong> with zero web-framework dependency, so it is testable and host-agnostic.</li>
+<li><strong>Presentation layer</strong> — screens ship as self-contained component libraries, one per business capability, plus one shared library holding the common layout, partials and client assets. A host loads exactly the screen libraries its configuration enables.</li>
+<li><strong>Hosts</strong> — thin composition roots. One full host runs the whole institution; optional per-capability hosts run a single capability behind a reverse-proxy gateway when independent deployment or scaling is wanted.</li>
+<li><strong>Entities</strong> — typed representations of database tables, shared across the platform.</li>
+</ul>
+<h3 id="composition-and-module-boundaries">Composition and module boundaries</h3>
+<ul>
+<li>Each business module exposes a single registration entry point that wires its own services; the application composes the full system by registering each module once, in one place.</li>
+<li><strong>Cross-module communication is contract-only.</strong> A module depends on another module's published interface and data shapes — never on its internal implementation. This is enforced by automated architecture tests, keeping the modules genuinely decoupled and independently evolvable.</li>
+<li>Internal database representations are not exposed across module boundaries; modules exchange purpose-built data shapes, so each capability can evolve its internals freely.</li>
+</ul>
+<h3 id="data-access">Data access</h3>
+<ul>
+<li>A typed repository model (<code>Repository&lt;T&gt;</code>) provides standard read/write operations without hand-written SQL for routine work.</li>
+<li>Joins, projections, and aggregations use <strong>parameterized</strong> queries — never string-concatenated SQL.</li>
+<li>Multi-step writes run through a <strong>transactional unit-of-work</strong>, guaranteeing all-or-nothing semantics.</li>
+<li>A provider-selection layer lets the identical codebase target SQL Server, Oracle, or PostgreSQL; database-dialect differences are handled centrally, not scattered through business code.</li>
+</ul>
+<h3 id="explicit-results">Explicit results</h3>
+<ul>
+<li>Every service operation returns a <code>Result</code> / <code>Result&lt;T&gt;</code> envelope carrying success/failure status, an error reason, and a correlation reference. Exceptions are not thrown across the service boundary, and failures cannot be silently dropped by callers.</li>
+</ul>
+<h3 id="verification-strategy">Verification strategy</h3>
+<ul>
+<li><strong>Cross-provider functional tests</strong> validate business behavior against each supported database.</li>
+<li><strong>Architecture boundary tests</strong> enforce the layer and module separation described above, failing the build on any violation.</li>
+</ul>
+<hr />
+<p><em>TrustBank CBS — engineered for the realities of banking: secure by default, correct by construction, and ready to grow.</em></p>
+<p><em>Document reviewed against the platform as built on 21 August 2026.</em></p>
+</div></div>
+<script>
+(function(){
+ function put(t){
+  if(navigator.clipboard&&navigator.clipboard.writeText)return navigator.clipboard.writeText(t);
+  return new Promise(function(res,rej){
+   var a=document.createElement('textarea');a.value=t;a.setAttribute('readonly','');
+   a.style.cssText='position:fixed;top:0;left:0;opacity:0';document.body.appendChild(a);
+   a.select();var ok=false;try{ok=document.execCommand('copy')}catch(e){}
+   document.body.removeChild(a);ok?res():rej()});
+ }
+ function flash(el,txt,ms){
+  var was=el.textContent;el.classList.add('done');if(txt)el.textContent=txt;
+  setTimeout(function(){el.classList.remove('done');if(txt)el.textContent=was},ms||1200);
+ }
+ function copy(text,el,okTxt){
+  put(text).then(function(){flash(el,okTxt)},function(){
+   if(okTxt){var w=el.textContent;el.textContent='Ctrl+C';setTimeout(function(){el.textContent=w},2000)}});
+ }
+ document.querySelectorAll('pre').forEach(function(pre){
+  if(pre.classList.contains('txtdoc'))return;
+  var b=document.createElement('button');
+  b.type='button';b.className='copy';b.textContent='Copy';
+  b.setAttribute('aria-label','Copy this code block to the clipboard');
+  b.addEventListener('click',function(){copy((pre.querySelector('code')||pre).innerText,b,'Copied')});
+  pre.appendChild(b);
+ });
+ document.querySelectorAll('td code').forEach(function(c){
+  if(!c.textContent.trim())return;
+  c.classList.add('cp');c.tabIndex=0;c.setAttribute('role','button');
+  c.title='Click to copy';
+  c.addEventListener('click',function(){copy(c.textContent,c)});
+  c.addEventListener('keydown',function(e){
+   if(e.key==='Enter'||e.key===' '){e.preventDefault();copy(c.textContent,c)}});
+ });
+})();
+</script>
+</body></html>

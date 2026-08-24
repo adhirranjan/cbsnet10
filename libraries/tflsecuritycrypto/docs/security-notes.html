@@ -1,0 +1,331 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>TflSecurityCrypto — Security Notes</title>
+<style>
+:root{color-scheme:light dark}
+*{box-sizing:border-box}
+body{margin:0;background:#f6f8fa;color:#1f2328;font:16px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif}
+.wrap{max-width:900px;margin:0 auto;padding:32px 24px 96px}
+.card{background:#fff;border:1px solid #d0d7de;border-radius:10px;padding:40px 48px}
+h1,h2,h3{line-height:1.25;font-weight:600}
+h1{font-size:1.9rem;margin:0 0 .3em;padding-bottom:.3em;border-bottom:1px solid #d8dee4}
+h2{font-size:1.4rem;margin:1.8em 0 .6em;padding-bottom:.25em;border-bottom:1px solid #eaeef2}
+h3{font-size:1.12rem;margin:1.4em 0 .5em}
+p,li{margin:.5em 0}
+a{color:#0969da;text-decoration:none}
+a:hover{text-decoration:underline}
+code{font-family:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;font-size:.86em;background:#eff1f3;padding:.15em .4em;border-radius:6px}
+pre{background:#f6f8fa;border:1px solid #d8dee4;border-radius:8px;padding:14px 16px;overflow:auto}
+pre code{background:none;padding:0;font-size:.85em;line-height:1.45}
+blockquote{margin:1em 0;padding:.4em 1em;color:#3d444d;border-left:4px solid #d0d7de;background:#f6f8fa;border-radius:0 6px 6px 0}
+blockquote>:first-child{margin-top:0}blockquote>:last-child{margin-bottom:0}
+table{border-collapse:collapse;width:100%;margin:1em 0;display:block;overflow:auto}
+th,td{border:1px solid #d0d7de;padding:8px 12px;text-align:left;vertical-align:top}
+th{background:#f6f8fa;font-weight:600}
+tr:nth-child(2n) td{background:#f6f8fa}
+hr{border:0;border-top:1px solid #d8dee4;margin:2em 0}
+pre{position:relative}
+pre>button.copy{position:absolute;top:8px;right:8px;padding:5px 9px;cursor:pointer;
+  font:600 .68rem/1 ui-monospace,SFMono-Regular,Consolas,monospace;letter-spacing:.03em;
+  color:#636c76;background:#fff;border:1px solid #d0d7de;border-radius:6px;
+  opacity:0;transition:opacity .12s}
+pre:hover>button.copy,pre>button.copy:focus{opacity:1}
+pre>button.copy.done{color:#0a3622;background:#dafbe1;border-color:#4ac26b}
+@media(hover:none){pre>button.copy{opacity:1}}
+td code.cp{cursor:pointer}
+td code.cp:hover,td code.cp:focus{outline:1px solid #8c959f;outline-offset:1px}
+td code.cp.done{color:#0a3622;background:#dafbe1}
+.docnav{margin:0 0 20px;font-size:.85rem;color:#636c76}
+.docnav a{color:#636c76}
+ul{padding-left:1.4em}ol{padding-left:1.4em}
+@media(max-width:640px){.card{padding:24px 18px}.wrap{padding:16px 10px 64px}}
+@media(prefers-color-scheme:dark){
+ body{background:#0d1117;color:#e6edf3}
+ .card{background:#161b22;border-color:#30363d}
+ h1{border-color:#30363d}h2{border-color:#21262d}
+ code{background:#262c34}
+ pre{background:#0d1117;border-color:#30363d}
+ blockquote{background:#161b22;border-color:#30363d;color:#9198a1}
+ th,td{border-color:#30363d}th{background:#161b22}tr:nth-child(2n) td{background:#12171e}
+ a{color:#4493f8}.docnav,.docnav a{color:#9198a1}
+ hr{border-color:#30363d}
+ pre>button.copy{color:#9198a1;background:#161b22;border-color:#30363d}
+ pre>button.copy.done{color:#aff5b4;background:#1b4721;border-color:#2ea043}
+ td code.cp.done{color:#aff5b4;background:#1b4721}
+}
+</style></head>
+<body><div class="wrap"><div class="card">
+<div class="docnav"><a href="../../../index.html">&#8592; All docs</a></div>
+<h1 id="tflsecuritycrypto-security-notes">TflSecurityCrypto — Security Notes</h1>
+<p>What each primitive in this library is actually good for, why the weak ones are still here, and what to do when
+you meet them in code. Companion to <a href="../README.html">../README.md</a> and <a href="api-reference.html">api-reference.md</a>.</p>
+<p>The short version:</p>
+<blockquote>
+<p><strong><code>PasswordHash</code> is the only member of this library appropriate for new security work.</strong> Everything else exists
+to read data the legacy VB.NET library wrote. Reaching for <code>Cryptography</code> or <code>RC4</code> in a new design is a defect,
+not a shortcut.</p>
+</blockquote>
+<hr />
+<h2 id="1-decision-table">1. Decision table</h2>
+<table>
+<thead>
+<tr>
+<th>I need to…</th>
+<th>Use</th>
+<th>Do <strong>not</strong> use</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Store a user password</td>
+<td><code>PasswordHash.Create</code> / <code>Verify</code></td>
+<td><code>Cryptography.Encrypt</code> (either overload), <code>RC4</code></td>
+</tr>
+<tr>
+<td>Check a password at login</td>
+<td><code>PasswordHash.Verify</code></td>
+<td>anything that decrypts a stored password</td>
+</tr>
+<tr>
+<td>Read a password stored by the legacy system</td>
+<td><code>Cryptography.Decrypt(…, true)</code> <strong>once</strong>, then immediately re-store via <code>PasswordHash.Create</code></td>
+<td>leaving it reversible</td>
+</tr>
+<tr>
+<td>Encrypt data at rest (new)</td>
+<td>ASP.NET Core Data Protection, or AES-GCM via <code>System.Security.Cryptography</code></td>
+<td><code>Cryptography.Encrypt(…, true)</code> (3DES-ECB)</td>
+</tr>
+<tr>
+<td>Protect a config secret</td>
+<td>environment variables / secret store / <code>ProtectedData</code></td>
+<td><code>AppConfigSectionProtector</code> (throws on .NET 10)</td>
+</tr>
+<tr>
+<td>Random number for a security decision</td>
+<td><code>RandomNumberGenerator</code>, or <code>RNGCSP.RollDice</code> for a small die</td>
+<td><code>System.Random</code></td>
+</tr>
+<tr>
+<td>Obfuscate a value in transit to match the legacy web UI</td>
+<td><code>RC4</code> + <code>GetJsModuleScript()</code></td>
+<td><em>(nothing new should need this)</em></td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="2-primitive-by-primitive">2. Primitive-by-primitive</h2>
+<h3 id="pbkdf2-passwordhash">PBKDF2 — <code>PasswordHash</code> ✅</h3>
+<p><strong>Sound.</strong> PBKDF2-HMAC-SHA256, 600,000 iterations (OWASP guidance for this PRF), 128-bit per-password random salt,
+256-bit derived key, constant-time comparison, self-describing versioned format so cost can rise without breaking
+stored values.</p>
+<p>Properties worth knowing:</p>
+<ul>
+<li><strong>Per-password salt</strong> — identical passwords produce different hashes, so a stolen table shows no duplicates and
+  rainbow tables are useless.</li>
+<li><strong>Adaptive cost</strong> — raise <code>CurrentIterations</code>, deploy, and <code>NeedsRehash</code> upgrades each account silently at its
+  next successful login. No mass reset, no downtime.</li>
+<li><strong>Fails closed, never throws</strong> — malformed or tampered stored values verify as <code>false</code>. A corrupted column cannot
+  turn into an exception path that a caller might mishandle into a successful login.</li>
+<li><strong>Not a KDF for encryption keys.</strong> It is sized and formatted for password <em>verification</em>. If you need a key from
+  a passphrase, derive it explicitly with your own parameters.</li>
+</ul>
+<p>Residual considerations: PBKDF2 is memory-cheap, so it is weaker against GPU/ASIC attackers than Argon2id or
+scrypt. That is a known, accepted trade-off — it ships in the BCL with no extra dependency. The <code>v1</code> version tag
+is the migration path if that trade-off is ever revisited.</p>
+<h3 id="md5-cryptographyencryptstring">MD5 — <code>Cryptography.Encrypt(string)</code> ⛔</h3>
+<p>Unsalted MD5. Collision-broken since 2004 and, being fast and unsalted, trivially reversible for passwords via
+rainbow tables. Present only to reproduce legacy digests byte-for-byte. Never use it for passwords, integrity, or
+signatures. (It is also used internally to <em>stretch the 3DES key</em>, below — that usage is not a security claim,
+just key-length arithmetic.)</p>
+<h3 id="triple-des-ecb-cryptographyencryptdecryptstring-bool">Triple-DES ECB — <code>Cryptography.Encrypt/Decrypt(string, bool)</code> ⛔</h3>
+<p>Three compounding weaknesses:</p>
+<ol>
+<li><strong>ECB mode</strong> — identical plaintext blocks produce identical ciphertext blocks. Structure leaks; the classic
+   "ECB penguin". There is no IV.</li>
+<li><strong>Triple-DES</strong> — 64-bit block cipher, deprecated by NIST (SP 800-131A) and vulnerable to Sweet32 birthday
+   attacks on long-lived keys.</li>
+<li><strong>The key is not secret.</strong> It comes from the <code>SecurityKey</code> app setting <em>if one exists</em>; otherwise a hard-coded
+   literal compiled into the assembly. On any ASP.NET Core host there is no <code>app.config</code>, so
+   <code>ConfigurationManager.AppSettings["SecurityKey"]</code> returns <code>null</code> and the compiled-in default is always used.</li>
+</ol>
+<p>Consequence: <strong>treat every value protected this way as obfuscated, not encrypted.</strong> Anyone with the DLL can
+decrypt it. That is exactly why the CBS password migration to <code>PasswordHash</code> mattered — it moved credentials out of
+a reversible scheme whose key ships with the application.</p>
+<p>Keep using <code>Decrypt</code> to read existing data. Do not encrypt anything new with it.</p>
+<h3 id="salted-sha-256-cryptographyencryptstring-string">Salted SHA-256 — <code>Cryptography.Encrypt(string, string)</code> ⚠️</h3>
+<p>Better than MD5, still unsuitable for passwords: a <strong>single</strong> SHA-256 round is designed to be fast, so an attacker
+tests billions of candidates per second. The salt defeats precomputation but not brute force. Also note the legacy
+quirks documented in the API reference — the salt suffix is a fixed literal, and <code>VerifyHash</code> checks
+self-consistency rather than comparing against a stored value.</p>
+<p>Acceptable for non-secret checksums; not for credentials.</p>
+<h3 id="rc4-rc4">RC4 — <code>RC4</code> ⛔</h3>
+<p>Prohibited for TLS since RFC 7465; biases in the keystream permit plaintext recovery. This implementation also
+carries a shared, compiled-in key suffix (<code>mHexKey</code>) that is mirrored in the JavaScript twin returned by
+<code>GetJsModuleScript()</code> — so the "key" is published to every browser that loads the login page.</p>
+<p>Its only legitimate use is reproducing what the legacy WebForms screens did on the wire. It is <strong>not</strong> a substitute
+for TLS: if the transport is HTTPS, RC4 adds nothing; if it is not, RC4 does not save you.</p>
+<h3 id="machine-identity-licensing-machineidentity-machineidentityvalidator">Machine identity &amp; licensing — <code>MachineIdentity</code>, <code>MachineIdentityValidator</code> ⚠️</h3>
+<p>A licensing/anti-copy mechanism, not a security boundary:</p>
+<ul>
+<li>The machine key is Triple-DES with the same non-secret key as everything else, so a licence file can be forged by
+  anyone holding the DLL.</li>
+<li><code>ValidateMachineIdentity</code> <strong>returns <code>true</code> when it cannot read the hardware at all</strong> (fail-open). On a locked-down
+  service account or a non-Windows host, validation silently passes.</li>
+<li>WMI values (baseboard serial, volume serial) are frequently blank or duplicated on virtual machines and cloned
+  images, so it is unreliable even as licensing.</li>
+</ul>
+<p>Preserved for compatibility with existing deployments. Do not extend it, and do not treat a passing validation as
+an authorisation decision.</p>
+<h3 id="rng-rngcsprolldice">RNG — <code>RNGCSP.RollDice</code> ✅</h3>
+<p>Correct: seeded from the OS CSPRNG and rejection-sampled so the modulo does not bias the distribution. Fine for
+what it does. For anything wider than a byte, call <code>RandomNumberGenerator.GetInt32</code> / <code>GetBytes</code> directly.</p>
+<h3 id="config-protection-appconfigsectionprotector-configfileprotection-inert">Config protection — <code>AppConfigSectionProtector</code>, <code>ConfigFileProtection</code> ⛔ (inert)</h3>
+<p>Both throw <code>PlatformNotSupportedException</code> on .NET 10. This is honest behaviour — the alternative (silently doing
+nothing) would leave a caller believing a section was encrypted when it was plaintext. If you hit one of these
+exceptions, the fix is to move the secret out of the config file, not to reimplement the provider.</p>
+<hr />
+<h2 id="3-key-management-as-it-actually-stands">3. Key management, as it actually stands</h2>
+<table>
+<thead>
+<tr>
+<th>Key</th>
+<th>Where it lives</th>
+<th>Secret?</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Triple-DES key</td>
+<td><code>SecurityKey</code> app setting if present, else a literal in <code>Cryptography.cs</code></td>
+<td><strong>No</strong> — compiled into the assembly on .NET Core hosts</td>
+</tr>
+<tr>
+<td>RC4 key suffix</td>
+<td><code>RC4.mHexKey</code>, also emitted into the browser by <code>GetJsModuleScript()</code></td>
+<td><strong>No</strong> — published to every client</td>
+</tr>
+<tr>
+<td>PBKDF2 salt</td>
+<td>Generated per password, stored inside the hash string</td>
+<td>N/A — salts are not secret by design</td>
+</tr>
+</tbody>
+</table>
+<p>There is no key rotation story for the legacy keys, because rotating them would make every existing ciphertext and
+licence file unreadable. The migration path is not "rotate the key", it is <strong>"stop using the primitive"</strong> — which is
+what <code>PasswordHash</code> is for.</p>
+<hr />
+<h2 id="4-migrating-a-legacy-value">4. Migrating a legacy value</h2>
+<p>The pattern used for the CBS user table, and the one to repeat:</p>
+<pre><code class="language-csharp">// At login, with the submitted plaintext in hand — the only moment you legitimately have it.
+if (LooksLikeLegacyValue(stored))
+{
+    string legacyPlain = Cryptography.Decrypt(stored, useHashing: true);
+    if (!FixedTimeEquals(legacyPlain, submitted)) return Unauthorized();
+
+    stored = PasswordHash.Create(submitted);   // upgrade in place
+    Save(stored);
+}
+else if (!PasswordHash.Verify(submitted, stored))
+{
+    return Unauthorized();
+}
+</code></pre>
+<p>Points that matter:</p>
+<ul>
+<li>Upgrade <strong>at login</strong>, when the plaintext is legitimately present. A bulk migration cannot work — the whole point
+  of a one-way hash is that you cannot derive it from a stored digest without the password.</li>
+<li>Once every row is migrated, delete the legacy branch. Leaving it in place keeps the weak path reachable, and an
+  attacker who can influence the "looks like legacy" test gets to choose which one runs.</li>
+<li>Compare the legacy plaintext in constant time; a naive <code>==</code> on strings leaks length and prefix by timing.</li>
+</ul>
+<p>CBS completed this for all 1,731 user records; the legacy branch there now exists only for data that predates the
+migration.</p>
+<hr />
+<h2 id="5-reviewing-code-that-uses-this-library">5. Reviewing code that uses this library</h2>
+<p>Flag in review:</p>
+<ul>
+<li><code>Cryptography.Encrypt</code> on <strong>any new</strong> write path — especially into a password, token, or key column.</li>
+<li><code>RC4</code> anywhere outside the legacy login screen's compatibility shim.</li>
+<li>A <code>catch</code> around <code>PasswordHash.Verify</code> — it does not throw, so the catch is either dead code or hiding a
+  different bug.</li>
+<li>A <code>ValidateMachineIdentity</code> result treated as an authorisation decision rather than a licensing hint.</li>
+<li>Any new call to the config-protection types — they throw, so the code path has never run.</li>
+</ul>
+<p>Safe and expected:</p>
+<ul>
+<li><code>PasswordHash.Create</code> / <code>Verify</code> / <code>NeedsRehash</code> anywhere credentials are handled.</li>
+<li><code>Cryptography.Decrypt</code> on a <strong>read</strong> path for legacy data, ideally paired with an upgrade-on-read.</li>
+<li><code>RNGCSP.RollDice</code>, <code>CharSetUtil.Chr</code>.</li>
+</ul>
+<hr />
+<h2 id="6-assurance">6. Assurance</h2>
+<table>
+<thead>
+<tr>
+<th>Property</th>
+<th>Evidence</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Port is byte-for-byte identical to the legacy VB library</td>
+<td><code>GoldenVectorTests.cs</code> — frozen vectors captured from the original <code>.vb</code> source, covering MD5, 3DES (both key modes), RC4, salted SHA-256, and all six <code>SimpleHash</code> algorithm branches</td>
+</tr>
+<tr>
+<td>Legacy and new interoperate both directions</td>
+<td><code>Demo/Program.cs</code> — cross-decrypts ciphertext and cross-validates licences between the two assemblies, exit code non-zero on any mismatch</td>
+</tr>
+<tr>
+<td>PBKDF2 invariants hold</td>
+<td><code>PasswordHashTests.cs</code> — verify/reject, per-call salt randomness, format shape (4 fields, 16-byte salt, 32-byte key), tampered-key rejection, malformed input returns false without throwing, <code>NeedsRehash</code> on missing/malformed/low-iteration values</td>
+</tr>
+<tr>
+<td>Failure modes match legacy</td>
+<td>Tests assert 3DES-with-unhashed-key throws and RC4-with-empty-key throws <code>DivideByZeroException</code>, exactly as the original did</td>
+</tr>
+</tbody>
+</table>
+<p>What is <strong>not</strong> covered: there has been no external cryptographic review, no side-channel analysis beyond using
+<code>FixedTimeEquals</code>, and no fuzzing of the licence-file parser (which does index arithmetic on attacker-supplied
+content — a hardening candidate if licence files ever arrive from an untrusted source).</p>
+</div></div>
+<script>
+(function(){
+ function put(t){
+  if(navigator.clipboard&&navigator.clipboard.writeText)return navigator.clipboard.writeText(t);
+  return new Promise(function(res,rej){
+   var a=document.createElement('textarea');a.value=t;a.setAttribute('readonly','');
+   a.style.cssText='position:fixed;top:0;left:0;opacity:0';document.body.appendChild(a);
+   a.select();var ok=false;try{ok=document.execCommand('copy')}catch(e){}
+   document.body.removeChild(a);ok?res():rej()});
+ }
+ function flash(el,txt,ms){
+  var was=el.textContent;el.classList.add('done');if(txt)el.textContent=txt;
+  setTimeout(function(){el.classList.remove('done');if(txt)el.textContent=was},ms||1200);
+ }
+ function copy(text,el,okTxt){
+  put(text).then(function(){flash(el,okTxt)},function(){
+   if(okTxt){var w=el.textContent;el.textContent='Ctrl+C';setTimeout(function(){el.textContent=w},2000)}});
+ }
+ document.querySelectorAll('pre').forEach(function(pre){
+  if(pre.classList.contains('txtdoc'))return;
+  var b=document.createElement('button');
+  b.type='button';b.className='copy';b.textContent='Copy';
+  b.setAttribute('aria-label','Copy this code block to the clipboard');
+  b.addEventListener('click',function(){copy((pre.querySelector('code')||pre).innerText,b,'Copied')});
+  pre.appendChild(b);
+ });
+ document.querySelectorAll('td code').forEach(function(c){
+  if(!c.textContent.trim())return;
+  c.classList.add('cp');c.tabIndex=0;c.setAttribute('role','button');
+  c.title='Click to copy';
+  c.addEventListener('click',function(){copy(c.textContent,c)});
+  c.addEventListener('keydown',function(e){
+   if(e.key==='Enter'||e.key===' '){e.preventDefault();copy(c.textContent,c)}});
+ });
+})();
+</script>
+</body></html>

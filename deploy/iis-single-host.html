@@ -1,0 +1,263 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Deploy to IIS — Single Host (TflCbs.Host.Main only)</title>
+<style>
+:root{color-scheme:light dark}
+*{box-sizing:border-box}
+body{margin:0;background:#f6f8fa;color:#1f2328;font:16px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif}
+.wrap{max-width:900px;margin:0 auto;padding:32px 24px 96px}
+.card{background:#fff;border:1px solid #d0d7de;border-radius:10px;padding:40px 48px}
+h1,h2,h3{line-height:1.25;font-weight:600}
+h1{font-size:1.9rem;margin:0 0 .3em;padding-bottom:.3em;border-bottom:1px solid #d8dee4}
+h2{font-size:1.4rem;margin:1.8em 0 .6em;padding-bottom:.25em;border-bottom:1px solid #eaeef2}
+h3{font-size:1.12rem;margin:1.4em 0 .5em}
+p,li{margin:.5em 0}
+a{color:#0969da;text-decoration:none}
+a:hover{text-decoration:underline}
+code{font-family:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;font-size:.86em;background:#eff1f3;padding:.15em .4em;border-radius:6px}
+pre{background:#f6f8fa;border:1px solid #d8dee4;border-radius:8px;padding:14px 16px;overflow:auto}
+pre code{background:none;padding:0;font-size:.85em;line-height:1.45}
+blockquote{margin:1em 0;padding:.4em 1em;color:#3d444d;border-left:4px solid #d0d7de;background:#f6f8fa;border-radius:0 6px 6px 0}
+blockquote>:first-child{margin-top:0}blockquote>:last-child{margin-bottom:0}
+table{border-collapse:collapse;width:100%;margin:1em 0;display:block;overflow:auto}
+th,td{border:1px solid #d0d7de;padding:8px 12px;text-align:left;vertical-align:top}
+th{background:#f6f8fa;font-weight:600}
+tr:nth-child(2n) td{background:#f6f8fa}
+hr{border:0;border-top:1px solid #d8dee4;margin:2em 0}
+pre{position:relative}
+pre>button.copy{position:absolute;top:8px;right:8px;padding:5px 9px;cursor:pointer;
+  font:600 .68rem/1 ui-monospace,SFMono-Regular,Consolas,monospace;letter-spacing:.03em;
+  color:#636c76;background:#fff;border:1px solid #d0d7de;border-radius:6px;
+  opacity:0;transition:opacity .12s}
+pre:hover>button.copy,pre>button.copy:focus{opacity:1}
+pre>button.copy.done{color:#0a3622;background:#dafbe1;border-color:#4ac26b}
+@media(hover:none){pre>button.copy{opacity:1}}
+td code.cp{cursor:pointer}
+td code.cp:hover,td code.cp:focus{outline:1px solid #8c959f;outline-offset:1px}
+td code.cp.done{color:#0a3622;background:#dafbe1}
+.docnav{margin:0 0 20px;font-size:.85rem;color:#636c76}
+.docnav a{color:#636c76}
+ul{padding-left:1.4em}ol{padding-left:1.4em}
+@media(max-width:640px){.card{padding:24px 18px}.wrap{padding:16px 10px 64px}}
+@media(prefers-color-scheme:dark){
+ body{background:#0d1117;color:#e6edf3}
+ .card{background:#161b22;border-color:#30363d}
+ h1{border-color:#30363d}h2{border-color:#21262d}
+ code{background:#262c34}
+ pre{background:#0d1117;border-color:#30363d}
+ blockquote{background:#161b22;border-color:#30363d;color:#9198a1}
+ th,td{border-color:#30363d}th{background:#161b22}tr:nth-child(2n) td{background:#12171e}
+ a{color:#4493f8}.docnav,.docnav a{color:#9198a1}
+ hr{border-color:#30363d}
+ pre>button.copy{color:#9198a1;background:#161b22;border-color:#30363d}
+ pre>button.copy.done{color:#aff5b4;background:#1b4721;border-color:#2ea043}
+ td code.cp.done{color:#aff5b4;background:#1b4721}
+}
+</style></head>
+<body><div class="wrap"><div class="card">
+<div class="docnav"><a href="../index.html">&#8592; All docs</a></div>
+<h1 id="deploy-to-iis-single-host-tflcbshostmain-only">Deploy to IIS — Single Host (<code>TflCbs.Host.Main</code> only)</h1>
+<p>The simplest production shape: <strong>one IIS website</strong> running the full host (<code>TflCbs.Host.Main</code>, all modules on). No gateway, no thin hosts. For the scale-out shape see <a href="iis-multi-host.html">iis-multi-host.md</a>.</p>
+<blockquote>
+<p>The repo ships no <code>web.config</code> / publish profile — <code>dotnet publish</code> generates the <code>web.config</code>; this doc is the recipe.</p>
+</blockquote>
+<h2 id="deployment-checklist-run-in-order">Deployment checklist (run in order)</h2>
+<ol>
+<li>☐ <strong>Prerequisites</strong> (§1) — IIS role installed; <strong>.NET 10 ASP.NET Core Hosting Bundle (ANCM)</strong> installed <em>after</em> IIS; an HTTPS certificate; the DB reachable from the server.</li>
+<li>☐ <strong>Publish</strong> (§2) — <code>dotnet build TflCbs.Entities</code> → <code>dotnet publish TflCbs.Host.Main -c Release -o C:\publish\cbs</code>.</li>
+<li>☐ <strong>Production config</strong> (§3) — override the dev connection string; set <code>ASPNETCORE_ENVIRONMENT=Production</code> in <code>web.config</code> (per-app, never machine-wide); ensure the Data Protection key folder survives redeploys.</li>
+<li>☐ <strong>Create the IIS site</strong> (§4) — app pool (<strong>No Managed Code</strong>, <strong>Max Worker Processes = 1</strong>, Load User Profile) + website (https binding + cert) + folder ACLs (Read on all, Modify on <code>Logs\</code>/<code>App_Data\</code>) for <code>IIS AppPool\&lt;pool&gt;</code>.</li>
+<li>☐ <strong>Verify</strong> (§5) — <code>/health</code> → 200, <code>/health/ready</code> → 200 (DB), <code>/</code> → login → open a migrated screen (e.g. <code>/Hr/State</code>).</li>
+<li>☐ <strong>Redeploys</strong> (§6) — drop <code>app_offline.htm</code>, copy new output, remove it — keep <code>Logs\</code> + the DP key folder out of the wiped path.</li>
+</ol>
+<p>Each step links to its detailed section below.</p>
+<h2 id="1-prerequisites-on-the-iis-server">1. Prerequisites (on the IIS server)</h2>
+<ul>
+<li>Windows Server with the <strong>IIS role</strong> (W3SVC) installed.</li>
+<li>The <strong>.NET 10 ASP.NET Core Hosting Bundle</strong> (installs the ASP.NET Core Module V2 for IIS + the runtime). Install it <strong>after</strong> IIS, then restart IIS (<code>net stop was /y &amp;&amp; net start w3svc</code>). Without it the site throws <code>500.19</code> / <code>502.5</code>.</li>
+<li>No URL Rewrite / ARR needed (single host, no proxying).</li>
+<li>Network line-of-sight from this server to the database (SQL Server or Oracle) named in <code>Database:ConnectionStrings</code>.</li>
+<li>An HTTPS certificate for the site binding.</li>
+</ul>
+<h2 id="2-publish">2. Publish</h2>
+<p>On the build machine (framework-dependent publish, the default):</p>
+<pre><code class="language-bash">dotnet build TflCbs.Entities                       # only if entities changed
+dotnet publish TflCbs.Host.Main -c Release -o C:\publish\cbs
+</code></pre>
+<p>What lands in the folder automatically:</p>
+<ul>
+<li><code>TflCbs.Host.Main.dll</code> (the host / composition root) <strong>plus every referenced assembly</strong>. Those references are:</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>Layer</th>
+<th>Assembly (dll)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Composition root</td>
+<td><code>TflCbs.Host.Main.dll</code></td>
+</tr>
+<tr>
+<td>Framework / plumbing</td>
+<td><code>TflCbs.Framework.dll</code></td>
+</tr>
+<tr>
+<td>Logging</td>
+<td><code>TflOmniLog.dll</code></td>
+</tr>
+<tr>
+<td>Business / data</td>
+<td><code>TflCbsServices.dll</code>, <code>TflCbs.Core.Authentication.dll</code></td>
+</tr>
+<tr>
+<td>Shared web RCL</td>
+<td><code>TflCbs.Web.Shared.dll</code></td>
+</tr>
+<tr>
+<td>Core web RCLs (always on)</td>
+<td><code>TflCbs.Core.Authentication.Web.dll</code>, <code>TflCbs.Core.Shell.Web.dll</code></td>
+</tr>
+<tr>
+<td>Domain web RCLs (module screens)</td>
+<td><code>TflCbs.Modules.Bank.Web.dll</code>, <code>TflCbs.Modules.Hr.Web.dll</code>, <code>TflCbs.Modules.Lockers.Web.dll</code>, <code>TflCbs.Modules.RetailBanking.Web.dll</code>, <code>TflCbs.Modules.Administration.Web.dll</code></td>
+</tr>
+<tr>
+<td>Entities</td>
+<td><code>TflCbs.Entities.dll</code></td>
+</tr>
+</tbody>
+</table>
+<p>Each <code>.Web</code> RCL carries its <strong>Razor views compiled into the assembly</strong> and ships its static assets (css/js/img) under <code>wwwroot\_content\&lt;RclName&gt;\</code> — e.g. <code>wwwroot\_content\TflCbs.Web.Shared\</code> (layout, <code>cbs-*.js</code>) and <code>wwwroot\_content\TflCbs.Modules.Lockers.Web\</code> (<code>locker-type.js</code>).
+- The <strong>bare-DLL references</strong> — <code>TflOmniDb.dll</code>, <code>TflCbs.Entities.dll</code>, <code>TflSecurityCrypto.dll</code> — publish copies HintPath references. (<code>TflCbs.Entities</code> is also a project reference; its DLL is the one bare-referenced.)
+- The <strong>ADO.NET driver assemblies</strong> pulled in as NuGet packages: <code>Microsoft.Data.SqlClient.dll</code>, <code>Oracle.ManagedDataAccess.dll</code>, <code>Npgsql.dll</code> (+ their native/runtime dependencies under <code>runtimes\</code>).
+- <code>logmasking.json</code>, <code>appsettings*.json</code>, <code>wwwroot\</code>.
+- A generated <code>web.config</code> pointing ANCM at <code>TflCbs.Host.Main.dll</code> (in-process hosting — the default, and what we want).</p>
+<blockquote>
+<p>Self-contained publish also works — add <code>-r win-x64 --self-contained</code>. Then the server doesn't need the runtime, only the hosting-bundle module.</p>
+</blockquote>
+<h2 id="3-production-config-before-first-run">3. Production config (before first run)</h2>
+<p><code>ASPNETCORE_ENVIRONMENT</code> will be <code>Production</code>, so <code>appsettings.Development.json</code> is <strong>not</strong> loaded — every dev-only override disappears. Provide prod values in an <code>appsettings.Production.json</code> next to the dll (or as environment variables in <code>web.config</code>). Minimum to review:</p>
+<pre><code class="language-json">{
+  &quot;Database&quot;: {
+    &quot;Provider&quot;: &quot;SqlServer&quot;,
+    &quot;ConnectionStrings&quot;: {
+      &quot;SqlServer&quot;: &quot;&lt;PROD connection string — never the dev sa/sql@2019&gt;&quot;
+    }
+  },
+  &quot;Auth&quot;: {
+    &quot;Cookie&quot;: { &quot;SecurePolicy&quot;: &quot;Always&quot; }
+  },
+  &quot;DataProtection&quot;: {
+    &quot;ApplicationName&quot;: &quot;TrustBankCBS&quot;,     // already set in appsettings.json; just keep it stable
+    &quot;KeyRing&quot;: &quot;FileSystem&quot;                // single host: FileSystem is fine — see the note below
+  },
+  &quot;Cbs&quot;: { &quot;Broadcast&quot;: &quot;...&quot; }
+}
+</code></pre>
+<ul>
+<li><strong>Connection strings</strong> — the checked-in <code>appsettings.json</code> carries dev creds; override them. Prefer a least-privilege SQL login. (Env-var alternative: <code>Database__ConnectionStrings__SqlServer=...</code>.)</li>
+<li><strong>Data Protection keys</strong> — with the default <code>KeyRing=FileSystem</code>, keys are written to <code>App_Data\DataProtection-Keys</code> under the content root. Those keys encrypt every <code>CbsAuth</code> cookie and row token, so <strong>losing them logs everyone out</strong>. For a single host this is fine <strong>as long as that folder survives redeploys</strong> — you do <strong>not</strong> need the shared DB key ring here (that's a <em>multi-host</em> concern; one process has nothing to share with). You only need to act <strong>if your deploy process wipes the key folder</strong>:</li>
+<li>(a) point <code>KeyRingPath</code> at a folder <strong>outside</strong> the deployment path and grant the app-pool identity write access, so a clean redeploy can't delete it (lightest option), <strong>or</strong></li>
+<li>(b) switch to <code>KeyRing=TflOmniDb</code> (keys in the <code>CBS_DATAPROTECTIONKEYS</code> table — create it once; DDL in <code>Framework\Infrastructure\DataProtectionKeyEntity.cs</code>) if you'd rather have DB-managed keys or expect to grow into multi-host.</li>
+</ul>
+<p>If your redeploy <strong>preserves <code>App_Data\</code></strong>, plain FileSystem needs no change at all. <code>ApplicationName</code> is already <code>"TrustBankCBS"</code> in <code>appsettings.json</code>; keep it stable (if it changes, or if the content-root path changes with <code>ApplicationName</code> unset, existing keys stop decrypting).
+- <code>Auth:LoginUrl</code> stays <code>/Account/Login</code> (relative) — the single host serves its own login. <code>Auth:SessionRevocation=InMemory</code> is correct for one process (the revoked-session list lives in this process's memory). Note it resets on an app restart — but a restart also drops the in-memory sessions themselves, so this only matters for a forced/admin revocation racing a restart. Use <code>TflOmniDb</code> <strong>only</strong> for multi-host.
+- <code>ForwardedHeaders:Enabled=true</code> is harmless here (no proxy sends the headers) — leave as-is.
+- <code>Modules:Enabled</code> stays <code>"*"</code> (full host).</p>
+<h2 id="4-create-the-iis-site">4. Create the IIS site</h2>
+<ol>
+<li><strong>App pool</strong> <code>TrustBankCBS</code>:
+   - .NET CLR version: <strong>"No Managed Code"</strong> (ANCM hosts the .NET 10 app)
+   - Pipeline: Integrated
+   - Identity: ApplicationPoolIdentity (default)
+   - Advanced → <strong>Maximum Worker Processes = 1</strong> (<strong>required</strong> — <code>CbsSessionStore</code> and row-token single-use nonces are in-memory per process; a web garden would randomly bounce users between memory spaces)
+   - Load User Profile = True (needed if using FileSystem DP keys)</li>
+<li><strong>Website</strong> <code>TrustBankCBS</code>:
+   - Physical path: <code>C:\publish\cbs</code>
+   - Binding: <code>https</code> / 443 / your hostname / the certificate (optionally an <code>http</code>/80 binding — <code>UseHttpsRedirection</code> will bounce it)
+   - Application pool: <code>TrustBankCBS</code></li>
+<li><strong>Environment</strong> — publish's <code>web.config</code> already targets Production by default; to be explicit add inside <code>&lt;aspNetCore&gt;</code>:
+   <code>xml
+   &lt;environmentVariables&gt;
+     &lt;environmentVariable name="ASPNETCORE_ENVIRONMENT" value="Production" /&gt;
+   &lt;/environmentVariables&gt;</code>
+   Set it <strong>here, in this app's <code>web.config</code></strong> — ANCM applies it to this app's worker process only, so it never collides with other ASP.NET Core apps on the server. Do <strong>not</strong> set <code>ASPNETCORE_ENVIRONMENT</code> as a machine-wide/system environment variable: that would flip <em>every</em> ASP.NET Core app on the box to the same environment.</li>
+<li><strong>Permissions</strong> on <code>C:\publish\cbs</code> for the app-pool identity (<code>IIS AppPool\TrustBankCBS</code>): Read on everything, plus <strong>write</strong> on:
+   - <code>Logs\</code> (TflLog rolling files — <code>TflLog:File:Directory</code>)
+   - <code>App_Data\</code> (only if FileSystem DP keys stay under the site)</li>
+</ol>
+<h2 id="5-first-run-verification">5. First-run verification</h2>
+<ol>
+<li>Browse <code>https://&lt;host&gt;/health</code> → <strong>200</strong> "Healthy" (process is up).</li>
+<li>Browse <code>https://&lt;host&gt;/health/ready</code> → <strong>200</strong> (DB reachable; a <strong>503</strong> here means the connection string / firewall / DB login is wrong).</li>
+<li>Browse <code>https://&lt;host&gt;/</code> → login page; sign in; open a migrated screen (e.g. <code>/Hr/State</code>) from the menu.</li>
+<li>Logs: check <code>Logs\*.log</code> next to the site. If the site won't start at all, enable stdout in <code>web.config</code> (<code>stdoutLogEnabled="true"</code>, <code>stdoutLogFile=".\logs\stdout"</code>) and check <strong>Event Viewer → Application</strong> for ANCM events.</li>
+</ol>
+<h2 id="6-redeploying-a-new-version">6. Redeploying a new version</h2>
+<ol>
+<li>Drop <code>app_offline.htm</code> into the site folder to cleanly stop the app (releases file locks) — or stop the app pool.</li>
+<li>Copy the new publish output.</li>
+<li>Remove <code>app_offline.htm</code> / start the pool.</li>
+</ol>
+<p>Notes:</p>
+<ul>
+<li>An app restart drops in-memory sessions, but users holding a valid <code>CbsAuth</code> cookie are transparently re-established by the middleware (session rehydration + menu reload) — <strong>provided the Data Protection keys survived</strong> (§3). In-flight row tokens are lost; users reopen the record.</li>
+<li>Keep <code>Logs\</code> and the DP key folder out of the wiped path.</li>
+</ul>
+<h2 id="7-operational-notes">7. Operational notes</h2>
+<ul>
+<li><strong>App-pool recycling</strong> — the default daily recycle is tolerable (cookie rehydration), but prefer a fixed off-hours time. Disable overlapped recycle if you see duplicate-process oddities (in-memory stores).</li>
+<li><strong>Idle timeout</strong> — set to 0 (banking users expect the app warm), or enable Application Initialization (preload) so <code>/health</code> warms it.</li>
+<li><strong>Scaling</strong> — this shape is one process by design. To scale, move to the <a href="iis-multi-host.html">multi-host shape</a> and scale by module.</li>
+<li><strong>Monitoring</strong> — poll <code>/health/ready</code> from your monitoring tool.</li>
+<li><strong>Never expose the dev DB switcher or dev screens</strong> — they are Development-environment gated; keep <code>ASPNETCORE_ENVIRONMENT=Production</code>.</li>
+</ul>
+<h2 id="8-related-docs">8. Related docs</h2>
+<ul>
+<li><a href="iis-multi-host.html">iis-multi-host.md</a> — gateway + thin hosts on IIS</li>
+<li><a href="docker-single-host.html">docker-single-host.md</a> — same app in a container</li>
+<li><a href="../port-map.html">../port-map.md</a> — ports &amp; project map (dev + deploy)</li>
+<li><a href="../architecture-overview.html">../architecture-overview.md</a> — what gets deployed</li>
+</ul>
+</div></div>
+<script>
+(function(){
+ function put(t){
+  if(navigator.clipboard&&navigator.clipboard.writeText)return navigator.clipboard.writeText(t);
+  return new Promise(function(res,rej){
+   var a=document.createElement('textarea');a.value=t;a.setAttribute('readonly','');
+   a.style.cssText='position:fixed;top:0;left:0;opacity:0';document.body.appendChild(a);
+   a.select();var ok=false;try{ok=document.execCommand('copy')}catch(e){}
+   document.body.removeChild(a);ok?res():rej()});
+ }
+ function flash(el,txt,ms){
+  var was=el.textContent;el.classList.add('done');if(txt)el.textContent=txt;
+  setTimeout(function(){el.classList.remove('done');if(txt)el.textContent=was},ms||1200);
+ }
+ function copy(text,el,okTxt){
+  put(text).then(function(){flash(el,okTxt)},function(){
+   if(okTxt){var w=el.textContent;el.textContent='Ctrl+C';setTimeout(function(){el.textContent=w},2000)}});
+ }
+ document.querySelectorAll('pre').forEach(function(pre){
+  if(pre.classList.contains('txtdoc'))return;
+  var b=document.createElement('button');
+  b.type='button';b.className='copy';b.textContent='Copy';
+  b.setAttribute('aria-label','Copy this code block to the clipboard');
+  b.addEventListener('click',function(){copy((pre.querySelector('code')||pre).innerText,b,'Copied')});
+  pre.appendChild(b);
+ });
+ document.querySelectorAll('td code').forEach(function(c){
+  if(!c.textContent.trim())return;
+  c.classList.add('cp');c.tabIndex=0;c.setAttribute('role','button');
+  c.title='Click to copy';
+  c.addEventListener('click',function(){copy(c.textContent,c)});
+  c.addEventListener('keydown',function(e){
+   if(e.key==='Enter'||e.key===' '){e.preventDefault();copy(c.textContent,c)}});
+ });
+})();
+</script>
+</body></html>

@@ -1,0 +1,333 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Deploy with Docker — Multi Host (gateway + default host + thin hosts)</title>
+<style>
+:root{color-scheme:light dark}
+*{box-sizing:border-box}
+body{margin:0;background:#f6f8fa;color:#1f2328;font:16px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif}
+.wrap{max-width:900px;margin:0 auto;padding:32px 24px 96px}
+.card{background:#fff;border:1px solid #d0d7de;border-radius:10px;padding:40px 48px}
+h1,h2,h3{line-height:1.25;font-weight:600}
+h1{font-size:1.9rem;margin:0 0 .3em;padding-bottom:.3em;border-bottom:1px solid #d8dee4}
+h2{font-size:1.4rem;margin:1.8em 0 .6em;padding-bottom:.25em;border-bottom:1px solid #eaeef2}
+h3{font-size:1.12rem;margin:1.4em 0 .5em}
+p,li{margin:.5em 0}
+a{color:#0969da;text-decoration:none}
+a:hover{text-decoration:underline}
+code{font-family:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;font-size:.86em;background:#eff1f3;padding:.15em .4em;border-radius:6px}
+pre{background:#f6f8fa;border:1px solid #d8dee4;border-radius:8px;padding:14px 16px;overflow:auto}
+pre code{background:none;padding:0;font-size:.85em;line-height:1.45}
+blockquote{margin:1em 0;padding:.4em 1em;color:#3d444d;border-left:4px solid #d0d7de;background:#f6f8fa;border-radius:0 6px 6px 0}
+blockquote>:first-child{margin-top:0}blockquote>:last-child{margin-bottom:0}
+table{border-collapse:collapse;width:100%;margin:1em 0;display:block;overflow:auto}
+th,td{border:1px solid #d0d7de;padding:8px 12px;text-align:left;vertical-align:top}
+th{background:#f6f8fa;font-weight:600}
+tr:nth-child(2n) td{background:#f6f8fa}
+hr{border:0;border-top:1px solid #d8dee4;margin:2em 0}
+pre{position:relative}
+pre>button.copy{position:absolute;top:8px;right:8px;padding:5px 9px;cursor:pointer;
+  font:600 .68rem/1 ui-monospace,SFMono-Regular,Consolas,monospace;letter-spacing:.03em;
+  color:#636c76;background:#fff;border:1px solid #d0d7de;border-radius:6px;
+  opacity:0;transition:opacity .12s}
+pre:hover>button.copy,pre>button.copy:focus{opacity:1}
+pre>button.copy.done{color:#0a3622;background:#dafbe1;border-color:#4ac26b}
+@media(hover:none){pre>button.copy{opacity:1}}
+td code.cp{cursor:pointer}
+td code.cp:hover,td code.cp:focus{outline:1px solid #8c959f;outline-offset:1px}
+td code.cp.done{color:#0a3622;background:#dafbe1}
+.docnav{margin:0 0 20px;font-size:.85rem;color:#636c76}
+.docnav a{color:#636c76}
+ul{padding-left:1.4em}ol{padding-left:1.4em}
+@media(max-width:640px){.card{padding:24px 18px}.wrap{padding:16px 10px 64px}}
+@media(prefers-color-scheme:dark){
+ body{background:#0d1117;color:#e6edf3}
+ .card{background:#161b22;border-color:#30363d}
+ h1{border-color:#30363d}h2{border-color:#21262d}
+ code{background:#262c34}
+ pre{background:#0d1117;border-color:#30363d}
+ blockquote{background:#161b22;border-color:#30363d;color:#9198a1}
+ th,td{border-color:#30363d}th{background:#161b22}tr:nth-child(2n) td{background:#12171e}
+ a{color:#4493f8}.docnav,.docnav a{color:#9198a1}
+ hr{border-color:#30363d}
+ pre>button.copy{color:#9198a1;background:#161b22;border-color:#30363d}
+ pre>button.copy.done{color:#aff5b4;background:#1b4721;border-color:#2ea043}
+ td code.cp.done{color:#aff5b4;background:#1b4721}
+}
+</style></head>
+<body><div class="wrap"><div class="card">
+<div class="docnav"><a href="../index.html">&#8592; All docs</a></div>
+<h1 id="deploy-with-docker-multi-host-gateway-default-host-thin-hosts">Deploy with Docker — Multi Host (gateway + default host + thin hosts)</h1>
+<p>One container per host, wired together with docker-compose. The <strong>gateway container is the only published port</strong>; the browser only ever talks to it.</p>
+<blockquote>
+<p>Read <a href="docker-single-host.html">docker-single-host.md</a> first (Dockerfile pattern, config, Data Protection, the <code>docker/vendor/</code> DLLs). This doc adds the multi-container specifics. See also <a href="../single-sign-on.txt">single-sign-on.txt</a> and <a href="../port-map.html">port-map.md</a>.</p>
+</blockquote>
+<p>The repo <strong>ships <code>compose.multi.yaml</code></strong> + the same parameterized Dockerfile (verified: the default host, a thin host, and the gateway all build).</p>
+<h2 id="deployment-checklist-run-in-order">Deployment checklist (run in order)</h2>
+<ol>
+<li>☐ <strong>Prerequisites</strong> — Docker + compose; the DB reachable from the container network; <strong>create the two shared SSO tables once</strong> — <code>CBS_DATAPROTECTIONKEYS</code>, <code>CBS_SESSIONREVOCATIONS</code> (§3).</li>
+<li>☐ <strong>Secrets</strong> — <code>.env</code> at the solution root: <code>CBS_SQLSERVER_CONNSTRING=…</code> <strong>and</strong> <code>CBS_PUBLIC_HOST=&lt;gateway hostname&gt;</code> (§5).</li>
+<li>☐ <strong>Confirm the three SSO preconditions</strong> (§3) — every app service <code>KeyRing=TflOmniDb</code> + <code>SessionRevocation=TflOmniDb</code> (same DB, same <code>ApplicationName</code>); only the gateway publishes a port.</li>
+<li>☐ <strong>Gateway routing</strong> (§4) — cluster Destinations point at the compose <strong>service names</strong> (<code>http://default:8080/</code>, …), already wired in <code>compose.multi.yaml</code> (§5).</li>
+<li>☐ <strong>Production hardening</strong> (§5) — proxy trust is now on by default (<code>ForwardedHeaders__KnownNetworks</code> = the bridge pool); optionally tighten it to a <strong>static gateway IP</strong> via <code>KnownProxies</code>; terminate real TLS at an edge in front of the gateway; trim services you don't run.</li>
+<li>☐ <strong>Build + up + verify</strong> (§6) — <code>docker compose -f compose.multi.yaml up -d --build</code>; <code>… ps</code> all Up; each backend <code>/health/ready</code>; gateway <code>/gateway/health</code>; unauth area → 302 login on gateway origin; login once → cross areas no re-login → global logout.</li>
+</ol>
+<p>Each step links to its detailed section below.</p>
+<h2 id="1-topology-containers-on-one-compose-network">1. Topology (containers on one compose network)</h2>
+<pre><code>browser --HTTPS--&gt; [TLS edge] --HTTP--&gt; [gateway] --HTTP--&gt; default   (login authority, all else)
+                                                 \--HTTP--&gt; hr        (/Hr/*)
+                                                 \--HTTP--&gt; lockers   (/Lockers/*)
+                                                 \--HTTP--&gt; retail    (/RetailBanking/*)
+                                                 \--HTTP--&gt; admin     (/Administration/*)
+</code></pre>
+<ul>
+<li>The <strong>TLS edge</strong> (cloud LB / nginx / Caddy / an IIS-hosted YARP) terminates HTTPS and forwards HTTP to the gateway; the gateway container itself speaks <strong>HTTP</strong> on 8080 (no cert baked in). See §5 for the edge + <code>X-Forwarded-Proto</code> wiring.</li>
+<li>Containers reach each other by <strong>service name</strong> on the compose network (<code>default</code>, <code>hr</code>, …), so the gateway's cluster Destinations become <code>http://&lt;service&gt;:8080/</code> — no host ports needed for the backends.</li>
+<li><strong>Only the gateway publishes a port</strong> to the host.</li>
+<li>Deploy any subset: minimum is gateway + default. Add thin hosts to peel modules off.</li>
+</ul>
+<h2 id="2-one-parameterized-dockerfile-for-all-hosts">2. One parameterized Dockerfile for all hosts</h2>
+<p>The committed Dockerfile (see <a href="docker-single-host.html">docker-single-host.md</a>) is parameterized by a build <code>ARG PROJECT</code>, so the <strong>same</strong> Dockerfile builds every container — just pass a different <code>PROJECT</code>:</p>
+<pre><code class="language-bash">docker build --build-arg PROJECT=TflCbs.Gateway              -t cbs-gateway:latest .
+docker build --build-arg PROJECT=TflCbs.Host.Main             -t trustbank-cbs:latest .
+docker build --build-arg PROJECT=TflCbs.Host.Hr             -t cbs-hr:latest .
+docker build --build-arg PROJECT=TflCbs.Host.Administration -t cbs-admin:latest .
+# ...
+</code></pre>
+<p><code>compose.multi.yaml</code> passes <code>PROJECT</code> per service, so <code>docker compose -f compose.multi.yaml up -d --build</code> builds them all. No separate Dockerfiles. (linux/amd64 aspnet image; the app doesn't hit TflSecurityCrypto's Windows-only paths at runtime.)</p>
+<p><strong>Each image carries a different payload</strong> (the publish output baked into it):</p>
+<table>
+<thead>
+<tr>
+<th>Image (<code>PROJECT</code>)</th>
+<th>Domain web RCL(s)</th>
+<th>Rest of the image</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>TflCbs.Host.Main</code> (default)</td>
+<td><strong>all five</strong> <code>TflCbs.Modules.*.Web.dll</code></td>
+<td>full stack — Framework, Web.Shared, Services, Core.Authentication, both core <code>.Web</code> RCLs, TflOmniLog, TflCbs.Entities + bare <code>TflOmniDb</code>/<code>TflSecurityCrypto</code> + ADO.NET drivers</td>
+</tr>
+<tr>
+<td><code>TflCbs.Host.Hr</code> / <code>.Lockers</code> / <code>.RetailBanking</code> / <code>.Administration</code></td>
+<td><strong>only that one</strong> domain RCL (e.g. <code>TflCbs.Modules.Hr.Web.dll</code>)</td>
+<td>same full stack as the default</td>
+</tr>
+<tr>
+<td><code>TflCbs.Gateway</code></td>
+<td><strong>none</strong></td>
+<td>minimal — <code>TflCbs.Gateway.dll</code> + <code>Yarp.ReverseProxy.dll</code> only; no CbsFramework, services, domain RCLs, bare DLLs, or DB drivers</td>
+</tr>
+</tbody>
+</table>
+<p>(Full assembly breakdown of the "full stack": <a href="iis-single-host.html">iis-single-host.md §2</a>. This is why the gateway image is ~349 MB vs ~429 MB for a full host.)</p>
+<h2 id="3-the-three-sso-preconditions-same-as-iis-multi-host">3. The three SSO preconditions (same as IIS multi-host)</h2>
+<ul>
+<li><strong>A. Shared DP key ring</strong> — <code>DataProtection__ApplicationName=TrustBankCBS</code> + <code>DataProtection__KeyRing=TflOmniDb</code> on <strong>every</strong> app container (keys in <code>CBS_DATAPROTECTIONKEYS</code>). This is what makes one container's cookie readable by another — no shared volume needed.</li>
+<li><strong>B. Shared revocation</strong> — <code>Auth__SessionRevocation=TflOmniDb</code> on every app container (<code>CBS_SESSIONREVOCATIONS</code>) — global logout.</li>
+<li><strong>C. One origin</strong> — only the gateway is published; the browser sees one host.</li>
+</ul>
+<p>Create the two shared tables <strong>once</strong> (DDL in <code>Framework\Infrastructure\DataProtectionKeyEntity.cs</code> and <code>Framework\Auth\SessionRevocation.cs</code>).</p>
+<p>Because keys live in the DB, <strong>none</strong> of the app containers need a persistent volume for Data Protection — they're stateless and restart-safe.</p>
+<h2 id="4-gateway-config-for-container-networking">4. Gateway config for container networking</h2>
+<p>Point each YARP cluster at the compose <strong>service name</strong>. The gateway image ships <code>appsettings.json</code> with the clusters aimed at <code>http://localhost:5xxx/</code> (dev ports) — override the destination <strong>addresses</strong> for the compose network.</p>
+<blockquote>
+<p><strong>Use a mounted JSON file, not environment variables.</strong> The cluster + destination keys contain hyphens (<code>cbs-default</code>, <code>hr-host</code>, … / <code>default-host</code>, <code>hr-thin</code>, …), so an env override like <code>ReverseProxy__Clusters__cbs-default__Destinations__default-host__Address</code> has a <strong>hyphen in its name</strong> — an invalid POSIX env-var name that the <strong>container runtime drops before the app process starts</strong>. (It still shows in <code>docker inspect</code> / <code>docker exec … env</code>, but never reaches <code>/proc/1/environ</code>, so .NET never binds it and YARP keeps the <code>localhost:5xxx</code> addresses → <strong>every proxied request 502s</strong>.) JSON keys have no such restriction. <em>(Verified: a non-hyphen env override like <code>RateLimit__PermitPerWindow</code> binds fine; the hyphenated <code>ReverseProxy__…</code> ones do not.)</em></p>
+</blockquote>
+<p>Mount a small <code>appsettings.Production.json</code> (Production env loads it; it merges over the image's <code>appsettings.json</code> by key) — exactly what <code>compose.multi.yaml</code> does via <code>docker/gateway.multi.appsettings.json</code>:</p>
+<pre><code class="language-json">{
+  &quot;ReverseProxy&quot;: {
+    &quot;Clusters&quot;: {
+      &quot;cbs-default&quot;:         { &quot;Destinations&quot;: { &quot;default-host&quot;:         { &quot;Address&quot;: &quot;http://default:8080/&quot; } } },
+      &quot;hr-host&quot;:             { &quot;Destinations&quot;: { &quot;hr-thin&quot;:              { &quot;Address&quot;: &quot;http://hr:8080/&quot; } } },
+      &quot;lockers-host&quot;:        { &quot;Destinations&quot;: { &quot;lockers-thin&quot;:         { &quot;Address&quot;: &quot;http://lockers:8080/&quot; } } },
+      &quot;retailbanking-host&quot;:  { &quot;Destinations&quot;: { &quot;retailbanking-thin&quot;:   { &quot;Address&quot;: &quot;http://retail:8080/&quot; } } },
+      &quot;administration-host&quot;: { &quot;Destinations&quot;: { &quot;administration-thin&quot;:  { &quot;Address&quot;: &quot;http://admin:8080/&quot; } } }
+    }
+  }
+}
+</code></pre>
+<pre><code class="language-yaml"># gateway service in compose.multi.yaml
+volumes:
+  - ./docker/gateway.multi.appsettings.json:/app/appsettings.Production.json:ro
+</code></pre>
+<p>Keep the destination <strong>keys</strong> identical to the image's <code>appsettings.json</code> (<code>default-host</code>, <code>hr-thin</code>, …) so this <strong>replaces</strong> each address (one destination per cluster). Drop the clusters/routes for hosts you don't deploy.</p>
+<h2 id="5-composemultiyaml-committed-at-the-solution-root">5. <code>compose.multi.yaml</code> (committed at the solution root)</h2>
+<p>The repo ships <code>compose.multi.yaml</code> with all six services (gateway + default + hr/lockers/retail/admin), each using the parameterized Dockerfile with its <code>PROJECT</code> arg. The load-bearing bits already wired in it:</p>
+<ul>
+<li><strong>gateway</strong> — the only published port (<code>8091:8080</code> — host 8091 avoids the IIS ports 8080/8081 + 81xx and the single-host container's 8090; put a TLS edge in front for real HTTPS — see below); its ReverseProxy cluster destinations are overridden to the service names (<code>http://default:8080/</code>, <code>http://hr:8080/</code>, …) via a <strong>mounted <code>appsettings.Production.json</code></strong> (<code>docker/gateway.multi.appsettings.json</code>, §4).</li>
+<li><strong>default</strong> — <code>Auth__LoginUrl=/Account/Login</code> (relative — the login authority); <code>Modules__Enabled=*</code>.</li>
+<li><strong>each thin host</strong> — <code>Auth__LoginUrl=https://${CBS_PUBLIC_HOST}/Account/Login</code> (absolute — defers to the gateway); <code>Modules__Enabled</code> = its domain + <code>General</code> + <code>Authentication</code> + <code>Misc</code> + <code>Accounts</code>.</li>
+<li><strong>every app service</strong> — <code>DataProtection__KeyRing=TflOmniDb</code>, <code>Auth__SessionRevocation=TflOmniDb</code>, <code>Auth__Cookie__SecurePolicy=Always</code>, <code>ForwardedHeaders__Enabled=true</code> + <code>ForwardedHeaders__KnownNetworks__0=172.16.0.0/12</code> (so the gateway's <code>X-Forwarded-*</code> is actually trusted — see §5), <code>Auth__AllowedReturnHosts__0=${CBS_PUBLIC_HOST}</code> (shared via a YAML anchor). <strong><code>CBS_PUBLIC_HOST</code> must include the port</strong> (<code>localhost:8091</code>) — it feeds both <code>Auth__LoginUrl</code>, which needs a full origin, and the return-host allowlist, which is matched against <code>Uri.Authority</code>. Until 2026-08-01 the allowlist was compared against <code>Uri.Host</code>, so the ported value never matched and <strong>every cross-host deep link silently landed on <code>/Modules</code> after login</strong>; the comparison now uses the authority, which makes this variable correct for both uses.</li>
+</ul>
+<blockquote>
+<p><strong>Plain-HTTP testing caveat.</strong> Every app service ships <code>Auth__Cookie__SecurePolicy=Always</code>, so the auth cookie is only ever returned over HTTPS. Over a bare <code>http://localhost:8091</code> you can verify health and the unauthenticated <strong>302 → login</strong> redirect, but <strong>not a full login round-trip</strong> — the browser won't send the <code>Secure</code> cookie back over http. For a real login you need TLS in front of the gateway (below), or temporarily set <code>Auth__Cookie__SecurePolicy=SameAsRequest</code> for the http test.</p>
+</blockquote>
+<p>Set two things before <code>up</code> (via a <code>.env</code> file at the solution root):</p>
+<pre><code class="language-bash">CBS_SQLSERVER_CONNSTRING=&lt;prod connection string&gt;
+CBS_PUBLIC_HOST=&lt;the hostname browsers use for the gateway&gt;
+</code></pre>
+<p><strong>Production hardening to add:</strong></p>
+<ul>
+<li><strong>Tighten proxy trust from a subnet to an address (optional).</strong> Since 2026-07-31 the compose file <strong>already trusts the gateway</strong> — <code>ForwardedHeaders__KnownNetworks__0=172.16.0.0/12</code> (Docker's default bridge pool) in the shared anchor, because a compose service's IP is <strong>dynamic</strong> and there is no stable address to pin. That is safe here (only the gateway publishes a port, so the only peers in range are this stack's own services) but a range trusts <em>every</em> peer in it. Where you can give the gateway a <strong>static IP</strong> on a user-defined network (<code>networks.ipam</code>), prefer pinning exactly that peer: set <code>ForwardedHeaders__KnownProxies__0=&lt;gateway-static-ip&gt;</code> and blank the range with <code>ForwardedHeaders__KnownNetworks__0=""</code> (an empty entry is skipped, not a parse error). <code>compose.multi.https.yaml</code> does exactly this. If your daemon uses custom <code>default-address-pools</code>, adjust the CIDR to match.</li>
+<li><strong>Without <em>some</em> trust, the backend ignores the gateway's <code>X-Forwarded-Proto</code>/<code>-Host</code></strong> — it trusts only loopback, and the gateway is a <strong>peer container</strong>, not loopback — so redirects and returnUrls carry the internal <code>service:8080</code> origin.</li>
+<li><strong>It also decides whose IP every per-client control sees.</strong> <code>Connection.RemoteIpAddress</code> stays the
+    <em>gateway's</em> without it, which collapses three things onto one identity: the <strong>login rate limiter</strong>
+    (<code>Security:LoginRateLimit</code>) throttles the whole bank as a single bucket rather than per workstation;
+    the same-workstation force-logout (which lets a user reclaim their own stale <code>b_UserLogTime</code> row after
+    a crash) can no longer tell workstations apart; and if the bank ever sets
+    <code>b_LoginPolicy.RemoteHostLoginAttempt &gt; 0</code>, the IP lockout would count every user's failed attempts
+    against one shared "host" and could block <strong>everyone at once</strong>.</li>
+<li><strong>A malformed entry fails the host at startup</strong> (both lists), rather than being skipped — a silently
+    dropped entry would leave you reading a trust list that isn't in force.</li>
+<li><strong>A <em>missing</em> entry is detected at runtime.</strong> If an <code>X-Forwarded-For</code> arrives from a peer this host
+    doesn't trust, the header is discarded and the host logs one <code>Security</code>-category warning per start
+    (<code>grep</code> for <code>X-Forwarded-For arrived</code>). It stays silent when the trust is correct, and when nothing is
+    proxying to the host at all — so seeing it means the trust list needs fixing, not tuning.</li>
+<li><strong>TLS</strong> — two shapes (see below): put an <strong>edge proxy in front</strong> of the gateway (extra hop), or <strong>terminate TLS on the gateway itself</strong> (single hop — recommended, since the gateway is already the one entry proxy).</li>
+<li>Trim services you don't run (and the matching gateway routes/clusters).</li>
+</ul>
+<h3 id="51-https-on-the-gateway-single-hop-tls-verified">5.1 HTTPS on the gateway (single-hop TLS — verified)</h3>
+<p>The cleanest HTTPS: give the <strong>gateway</strong> container a cert so TLS terminates at the one entry proxy; it then forwards <code>X-Forwarded-Proto=https</code> to the backends in the single internal hop. No second proxy, no forwarded-header chain to untangle.</p>
+<p>A local overlay (<code>compose.multi.https.yaml</code>, passed as a 2nd <code>-f</code>) that does this:</p>
+<pre><code class="language-yaml">networks:
+  cbsmulti: { ipam: { config: [ { subnet: 172.30.0.0/16 } ] } }
+services:
+  gateway:
+    networks: { cbsmulti: { ipv4_address: 172.30.0.10 } }   # static IP so backends can trust exactly this peer
+    ports: !override [ &quot;8091:8443&quot; ]                          # publish the https port (replace, don't append)
+    environment:
+      ASPNETCORE_URLS: &quot;http://+:8080;https://+:8443&quot;          # keep http 8080 for the internal healthcheck
+      Kestrel__Certificates__Default__Path: /certs/gw.pfx
+      Kestrel__Certificates__Default__Password: &quot;${CBS_GW_CERT_PASSWORD}&quot;
+    volumes: [ &quot;./certs/gw.pfx:/certs/gw.pfx:ro&quot; ]
+  # Pin exactly this peer and blank the base's subnet trust (an empty entry is skipped, not an error).
+  default: { networks: [cbsmulti], environment: { ForwardedHeaders__KnownProxies__0: &quot;172.30.0.10&quot;, ForwardedHeaders__KnownNetworks__0: &quot;&quot; } }
+  hr:      { networks: [cbsmulti], environment: { ForwardedHeaders__KnownProxies__0: &quot;172.30.0.10&quot;, ForwardedHeaders__KnownNetworks__0: &quot;&quot; } }
+  # …lockers / retail / admin the same…
+</code></pre>
+<p>Prereqs: a PKCS#12 <code>certs/gw.pfx</code> (a self-signed cert with an <strong>exportable</strong> key works locally — <code>New-SelfSignedCertificate … -KeyExportPolicy Exportable</code> then <code>Export-PfxCertificate</code>) and, in <code>.env</code>, <code>CBS_GW_CERT_PASSWORD=&lt;pfx pw&gt;</code> + <code>CBS_PUBLIC_HOST=localhost:8091</code>. Keep <code>SecurePolicy=Always</code> (do <strong>not</strong> also apply the plain-http overlay). Then:</p>
+<pre><code class="language-bash">docker compose -f compose.multi.yaml -f compose.multi.https.yaml up -d
+curl -k https://localhost:8091/gateway/health          # 200 over TLS
+</code></pre>
+<p>Verified end-to-end: browse <code>https://localhost:8091</code>; the auth cookie comes back <code>Secure</code>; an unauth <code>GET /Hr/State</code> → <strong>302</strong> to <code>…/Account/Login?returnUrl=https%3A%2F%2Flocalhost%3A8091%2FHr%2FState</code> (thin-host https deferral + the backend building the <strong>public https</strong> returnUrl — proof the <code>KnownProxies</code> trust works); login once → cross containers → global logout, all over HTTPS.</p>
+<p><strong>Alternative — edge proxy in front (double hop).</strong> An IIS-hosted YARP (the reserved <strong>8093</strong>, reuses your existing cert) or nginx / Caddy / a cloud LB terminates TLS and forwards HTTP to the gateway on 8091. Functionally equivalent; pick by environment (IIS on this Windows box, Caddy/nginx for Linux/cloud). Costs an extra hop and needs the <code>X-Forwarded-*</code> chain handled at each proxy, which is why single-hop TLS on the gateway is preferred.</p>
+<h2 id="6-build-run-verify">6. Build, run, verify</h2>
+<pre><code class="language-bash">docker compose -f compose.multi.yaml build
+docker compose -f compose.multi.yaml up -d
+docker compose -f compose.multi.yaml ps      # all services Up
+</code></pre>
+<p>Verify (same sequence as IIS multi-host, through the gateway only):</p>
+<ol>
+<li><code>docker compose -f compose.multi.yaml exec hr curl -f http://localhost:8080/health/ready</code> — each backend healthy.</li>
+<li><code>curl -f https://&lt;public-host&gt;/gateway/health</code> — gateway healthy.</li>
+<li>Unauth GET <code>https://&lt;public-host&gt;/Administration/Module</code> → <strong>302</strong> to login with returnUrl on the <strong>gateway</strong> origin (not a backend).</li>
+<li>Log in once → screen renders, <strong>no re-login</strong>.</li>
+<li>Cross to <code>/Hr/State</code>, <code>/Lockers/...</code> → no re-login (shared key ring).</li>
+<li>Global logout → re-hit any area → 302 to login (revocation works).</li>
+</ol>
+<blockquote>
+<p>Steps 1–3 also work over a bare <code>http://localhost:8091</code>. Steps 4–6 (login) need real TLS in front of the gateway — or a temporary <code>Auth__Cookie__SecurePolicy=SameAsRequest</code> — because <code>Always</code> won't return the auth cookie over http (§5 caveat). The verify URLs above assume the TLS edge is in place.</p>
+</blockquote>
+<h2 id="7-troubleshooting-container-specific-see-iis-multi-host-for-the-rest">7. Troubleshooting (container-specific; see IIS multi-host for the rest)</h2>
+<table>
+<thead>
+<tr>
+<th>Symptom</th>
+<th>Fix</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Re-login on every host jump</td>
+<td>Missing shared key ring: every app container needs the <strong>same</strong> <code>DataProtection__ApplicationName</code> and <code>KeyRing=TflOmniDb</code> → same DB. (Container FileSystem keys are per-container and ephemeral — never use FileSystem for multi-host.)</td>
+</tr>
+<tr>
+<td>502 from the gateway for one area</td>
+<td>Wrong cluster destination service name/port, or that container is down. <code>docker compose logs &lt;service&gt;</code>; curl its <code>/health/ready</code> from inside.</td>
+</tr>
+<tr>
+<td><strong>Every</strong> proxied area 502s (gateway + backends all healthy)</td>
+<td>The gateway's destination overrides aren't binding, so YARP still targets the baked-in <code>http://localhost:5xxx/</code>. Almost always because they were set as <strong>env vars</strong> — the hyphenated names (<code>ReverseProxy__Clusters__cbs-default__…</code>) are dropped before the app starts (invalid POSIX names; visible in <code>docker inspect</code> but not <code>/proc/1/environ</code>). Use the <strong>mounted <code>appsettings.Production.json</code></strong> instead (§4). Check the gateway logs for <code>Connection refused (localhost:5019)</code>.</td>
+</tr>
+<tr>
+<td>returnUrl shows an internal <code>service:8080</code> address</td>
+<td>The backend isn't trusting the gateway: <code>ForwardedHeaders__Enabled</code> off, or neither <code>KnownNetworks</code> (CIDR range — the compose default, §5) nor <code>KnownProxies</code> (exact IP) covers the gateway's actual address. Check it with <code>docker network inspect</code> and confirm it falls inside the configured range.</td>
+</tr>
+<tr>
+<td>Login throttles the whole stack at once (429s for everyone)</td>
+<td>Same root cause as the row above — an untrusted proxy leaves every backend seeing the <em>gateway's</em> IP, so the login rate limiter's per-client partition becomes one shared bucket. Fix the trust, not the limit.</td>
+</tr>
+<tr>
+<td>A host won't start: "ForwardedHeaders:KnownNetworks contains …"</td>
+<td>A malformed trust entry now fails startup by design. CIDR needs <code>address/prefixLength</code>, and the address must be the <strong>network</strong> (<code>172.30.0.0/16</code>, not <code>172.30.0.10/16</code> — the message names the correction; to trust one address use <code>KnownProxies</code>).</td>
+</tr>
+<tr>
+<td>Login never completes / loops over plain http</td>
+<td><code>SecurePolicy=Always</code> won't return the auth cookie over http. Put TLS in front, or use <code>SameAsRequest</code> for the test (§5 caveat).</td>
+</tr>
+<tr>
+<td>Default host login redirects to itself forever (Linux only)</td>
+<td>Stale image from before the <code>AccountController</code> URI-scheme fix: a relative <code>Auth:LoginUrl</code> parsed as <code>file://</code> on Linux and deferred to itself. Rebuild from current source (the fix requires an http/https scheme to defer).</td>
+</tr>
+<tr>
+<td>Everyone logged out after <code>docker compose up</code> redeploy</td>
+<td>You were on FileSystem keys without a volume. Switch to <code>KeyRing=TflOmniDb</code>.</td>
+</tr>
+<tr>
+<td>Thin host 500 on <code>/Modules</code> or login</td>
+<td>Missing <code>Misc</code>/<code>Accounts</code> in that service's <code>Modules__Enabled</code>.</td>
+</tr>
+<tr>
+<td>DB unreachable from containers</td>
+<td>Add the DB to the compose network, or use <code>host.docker.internal</code> / a real server reachable from the container network.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="8-related-docs">8. Related docs</h2>
+<ul>
+<li><a href="docker-single-host.html">docker-single-host.md</a> — the Dockerfile/config basics</li>
+<li><a href="iis-multi-host.html">iis-multi-host.md</a> — same topology on IIS/Windows</li>
+<li><a href="../single-sign-on.txt">single-sign-on.txt</a> — the SSO mechanism in depth</li>
+<li><a href="../port-map.html">port-map.md</a> — ports &amp; routing table (dev + deploy)</li>
+</ul>
+</div></div>
+<script>
+(function(){
+ function put(t){
+  if(navigator.clipboard&&navigator.clipboard.writeText)return navigator.clipboard.writeText(t);
+  return new Promise(function(res,rej){
+   var a=document.createElement('textarea');a.value=t;a.setAttribute('readonly','');
+   a.style.cssText='position:fixed;top:0;left:0;opacity:0';document.body.appendChild(a);
+   a.select();var ok=false;try{ok=document.execCommand('copy')}catch(e){}
+   document.body.removeChild(a);ok?res():rej()});
+ }
+ function flash(el,txt,ms){
+  var was=el.textContent;el.classList.add('done');if(txt)el.textContent=txt;
+  setTimeout(function(){el.classList.remove('done');if(txt)el.textContent=was},ms||1200);
+ }
+ function copy(text,el,okTxt){
+  put(text).then(function(){flash(el,okTxt)},function(){
+   if(okTxt){var w=el.textContent;el.textContent='Ctrl+C';setTimeout(function(){el.textContent=w},2000)}});
+ }
+ document.querySelectorAll('pre').forEach(function(pre){
+  if(pre.classList.contains('txtdoc'))return;
+  var b=document.createElement('button');
+  b.type='button';b.className='copy';b.textContent='Copy';
+  b.setAttribute('aria-label','Copy this code block to the clipboard');
+  b.addEventListener('click',function(){copy((pre.querySelector('code')||pre).innerText,b,'Copied')});
+  pre.appendChild(b);
+ });
+ document.querySelectorAll('td code').forEach(function(c){
+  if(!c.textContent.trim())return;
+  c.classList.add('cp');c.tabIndex=0;c.setAttribute('role','button');
+  c.title='Click to copy';
+  c.addEventListener('click',function(){copy(c.textContent,c)});
+  c.addEventListener('keydown',function(e){
+   if(e.key==='Enter'||e.key===' '){e.preventDefault();copy(c.textContent,c)}});
+ });
+})();
+</script>
+</body></html>

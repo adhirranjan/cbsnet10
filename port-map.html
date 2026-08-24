@@ -1,0 +1,365 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>TrustBank CBS — Port &amp;amp; Project Map</title>
+<style>
+:root{color-scheme:light dark}
+*{box-sizing:border-box}
+body{margin:0;background:#f6f8fa;color:#1f2328;font:16px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif}
+.wrap{max-width:900px;margin:0 auto;padding:32px 24px 96px}
+.card{background:#fff;border:1px solid #d0d7de;border-radius:10px;padding:40px 48px}
+h1,h2,h3{line-height:1.25;font-weight:600}
+h1{font-size:1.9rem;margin:0 0 .3em;padding-bottom:.3em;border-bottom:1px solid #d8dee4}
+h2{font-size:1.4rem;margin:1.8em 0 .6em;padding-bottom:.25em;border-bottom:1px solid #eaeef2}
+h3{font-size:1.12rem;margin:1.4em 0 .5em}
+p,li{margin:.5em 0}
+a{color:#0969da;text-decoration:none}
+a:hover{text-decoration:underline}
+code{font-family:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;font-size:.86em;background:#eff1f3;padding:.15em .4em;border-radius:6px}
+pre{background:#f6f8fa;border:1px solid #d8dee4;border-radius:8px;padding:14px 16px;overflow:auto}
+pre code{background:none;padding:0;font-size:.85em;line-height:1.45}
+blockquote{margin:1em 0;padding:.4em 1em;color:#3d444d;border-left:4px solid #d0d7de;background:#f6f8fa;border-radius:0 6px 6px 0}
+blockquote>:first-child{margin-top:0}blockquote>:last-child{margin-bottom:0}
+table{border-collapse:collapse;width:100%;margin:1em 0;display:block;overflow:auto}
+th,td{border:1px solid #d0d7de;padding:8px 12px;text-align:left;vertical-align:top}
+th{background:#f6f8fa;font-weight:600}
+tr:nth-child(2n) td{background:#f6f8fa}
+hr{border:0;border-top:1px solid #d8dee4;margin:2em 0}
+pre{position:relative}
+pre>button.copy{position:absolute;top:8px;right:8px;padding:5px 9px;cursor:pointer;
+  font:600 .68rem/1 ui-monospace,SFMono-Regular,Consolas,monospace;letter-spacing:.03em;
+  color:#636c76;background:#fff;border:1px solid #d0d7de;border-radius:6px;
+  opacity:0;transition:opacity .12s}
+pre:hover>button.copy,pre>button.copy:focus{opacity:1}
+pre>button.copy.done{color:#0a3622;background:#dafbe1;border-color:#4ac26b}
+@media(hover:none){pre>button.copy{opacity:1}}
+td code.cp{cursor:pointer}
+td code.cp:hover,td code.cp:focus{outline:1px solid #8c959f;outline-offset:1px}
+td code.cp.done{color:#0a3622;background:#dafbe1}
+.docnav{margin:0 0 20px;font-size:.85rem;color:#636c76}
+.docnav a{color:#636c76}
+ul{padding-left:1.4em}ol{padding-left:1.4em}
+@media(max-width:640px){.card{padding:24px 18px}.wrap{padding:16px 10px 64px}}
+@media(prefers-color-scheme:dark){
+ body{background:#0d1117;color:#e6edf3}
+ .card{background:#161b22;border-color:#30363d}
+ h1{border-color:#30363d}h2{border-color:#21262d}
+ code{background:#262c34}
+ pre{background:#0d1117;border-color:#30363d}
+ blockquote{background:#161b22;border-color:#30363d;color:#9198a1}
+ th,td{border-color:#30363d}th{background:#161b22}tr:nth-child(2n) td{background:#12171e}
+ a{color:#4493f8}.docnav,.docnav a{color:#9198a1}
+ hr{border-color:#30363d}
+ pre>button.copy{color:#9198a1;background:#161b22;border-color:#30363d}
+ pre>button.copy.done{color:#aff5b4;background:#1b4721;border-color:#2ea043}
+ td code.cp.done{color:#aff5b4;background:#1b4721}
+}
+</style></head>
+<body><div class="wrap"><div class="card">
+<div class="docnav"><a href="index.html">&#8592; All docs</a></div>
+<h1 id="trustbank-cbs-port-project-map">TrustBank CBS — Port &amp; Project Map</h1>
+<blockquote>
+<p><strong>Last updated:</strong> 2026-08-01
+One page: which project runs where, what the gateway routes to it, and the everyday commands. See <a href="architecture-overview.txt">architecture-overview.txt</a> for the full picture.</p>
+<p><strong>NOTE:</strong> §1–2 are the DEV <code>dotnet run</code> ports (5xxx/7xxx). For the DEPLOYED IIS + Docker ports (different, so they all coexist), see §5.</p>
+</blockquote>
+<h2 id="1-runnable-hosts-dev-dotnet-run-ports">1. Runnable hosts (dev <code>dotnet run</code> ports)</h2>
+<table>
+<thead>
+<tr>
+<th>Project</th>
+<th>Role</th>
+<th>HTTP</th>
+<th>HTTPS</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>TflCbs.Gateway</code></td>
+<td>YARP front door — <strong>the entry point</strong> for the multi-host setup</td>
+<td>5100</td>
+<td>7100</td>
+</tr>
+<tr>
+<td><code>TflCbs.Host.Main</code></td>
+<td>Default/full host — all modules; <strong>login authority</strong>; catch-all backend behind the gateway</td>
+<td>5019</td>
+<td>7225</td>
+</tr>
+<tr>
+<td><code>TflCbs.Host.Lockers</code></td>
+<td>Thin host — Lockers only</td>
+<td>5200</td>
+<td>7200</td>
+</tr>
+<tr>
+<td><code>TflCbs.Host.Hr</code></td>
+<td>Thin host — Hr only (State/District/Taluka, DiscipAction)</td>
+<td>5300</td>
+<td>7300</td>
+</tr>
+<tr>
+<td><code>TflCbs.Host.RetailBanking</code></td>
+<td>Thin host — RetailBanking only</td>
+<td>5400</td>
+<td>7400</td>
+</tr>
+<tr>
+<td><code>TflCbs.Host.Administration</code></td>
+<td>Thin host — Administration only (Module/Role masters)</td>
+<td>5500</td>
+<td>7500</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Port pattern:</strong> HTTP = <code>5x00</code>, HTTPS = <code>7x00</code>, paired per host (gateway x=1, Lockers 2, Hr 3, RetailBanking 4, Administration 5; the default host predates the pattern at 5019/7225).</p>
+<h2 id="2-gateway-routing-tflcbsgatewayappsettingsjson">2. Gateway routing (<code>TflCbs.Gateway/appsettings.json</code>)</h2>
+<table>
+<thead>
+<tr>
+<th>Path prefix</th>
+<th>Backend</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>/Lockers/*</code> + <code>/_content/TflCbs.Modules.Lockers.Web/*</code></td>
+<td>Lockers host (5200/7200)</td>
+</tr>
+<tr>
+<td><code>/Hr/*</code> + <code>/_content/TflCbs.Modules.Hr.Web/*</code></td>
+<td>Hr host (5300/7300)</td>
+</tr>
+<tr>
+<td><code>/RetailBanking/*</code> + <code>/_content/TflCbs.Modules.RetailBanking.Web/*</code></td>
+<td>RetailBanking host (5400/7400)</td>
+</tr>
+<tr>
+<td><code>/Administration/*</code> + <code>/_content/TflCbs.Modules.Administration.Web/*</code></td>
+<td>Administration host (5500/7500)</td>
+</tr>
+<tr>
+<td>everything else (<code>/Account</code>, <code>/Modules</code>, <code>/Home</code>, <code>/Bank/*</code>, shared <code>/_content</code>, …)</td>
+<td>default host (5019/7225)</td>
+</tr>
+</tbody>
+</table>
+<p>Base config targets the HTTP backends; <code>appsettings.Development.json</code> overrides every cluster to the HTTPS ports (+ dev-cert trust), so a plain <code>dotnet run</code> fronts the whole topology over HTTPS.</p>
+<h2 id="3-libraries-no-ports-compiled-into-the-hosts">3. Libraries (no ports — compiled into the hosts)</h2>
+<table>
+<thead>
+<tr>
+<th>Layer</th>
+<th>Projects</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Domain web RCLs (screens)</td>
+<td><code>TflCbs.Modules.{Bank,Hr,Lockers,RetailBanking,Administration}.Web</code></td>
+</tr>
+<tr>
+<td>Core web RCLs</td>
+<td><code>TflCbs.Core.Authentication.Web</code> (login/logout), <code>TflCbs.Core.Shell.Web</code> (Home/Modules/Error)</td>
+</tr>
+<tr>
+<td>Shared web assets</td>
+<td><code>TflCbs.Web.Shared</code> (layout, partials, <code>wwwroot</code> → <code>/_content/TflCbs.Web.Shared/</code>)</td>
+</tr>
+<tr>
+<td>Framework</td>
+<td><code>TflCbs.Framework</code> (session, tokens, access guard, search, DataAccess wiring)</td>
+</tr>
+<tr>
+<td>Services (business modules)</td>
+<td>Core, always registered: <code>TflCbs.Modules.General</code>, <code>TflCbs.Modules.Reference</code>, <code>TflCbs.Core.Authentication</code> · Domains, gated by <code>Modules:Enabled</code>: <code>TflCbs.Modules.{Accounts,Administration,Clearing,HR,Lockers,RetailBanking}</code> · Shared: <code>TflCbs.Abstractions</code>, <code>TflCbs.Modules.General.Contracts</code></td>
+</tr>
+<tr>
+<td>Data / logging</td>
+<td><code>TflCbs.Entities</code>, <code>TflOmniDb</code> (bare DLL), <code>TflOmniLog</code></td>
+</tr>
+<tr>
+<td>Tests / demos</td>
+<td><code>TflCbs.Tests</code>, <code>TflCbs.Demo</code>, <code>TflCbs.ArchTests</code>, <code>TflOmniLog.*</code></td>
+</tr>
+</tbody>
+</table>
+<h2 id="4-quick-reference">4. Quick reference</h2>
+<table>
+<thead>
+<tr>
+<th></th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Use the app (multi-host)</strong></td>
+<td>Browse <code>https://localhost:7100</code> (gateway), log in, jump modules freely — one login (SSO).</td>
+</tr>
+<tr>
+<td><strong>Everyday solo dev</strong></td>
+<td>Run only <code>TflCbs.Host.Main</code> ("https" profile) → <code>https://localhost:7225</code>. No other processes.</td>
+</tr>
+<tr>
+<td><strong>Full cluster</strong></td>
+<td><code>scripts\start-cbs-hosts.bat</code> — stops leftovers, builds once, launches all 6 hosts (default host on the "https (shared-sso)" profile, thin hosts + gateway on "https"), waits for every health endpoint. Manual equivalent: run each project with those profiles in any order (the gateway health-checks and recovers).</td>
+</tr>
+<tr>
+<td><strong>Health endpoints</strong></td>
+<td>every host: <code>/health</code> (live), <code>/health/ready</code> (DB); gateway: <code>/gateway/health</code>.</td>
+</tr>
+<tr>
+<td><strong>STOP BEFORE BUILDING</strong></td>
+<td><code>scripts\stop-cbs-hosts.bat</code> — stops every CBS host on the ports above (only processes matching our names), then confirms all ports are free.</td>
+</tr>
+<tr>
+<td><strong>Login authority rule</strong></td>
+<td>A host whose <code>Auth:LoginUrl</code> is an absolute URL on another origin defers login there (thin hosts → gateway); relative <code>LoginUrl</code> = serves login itself (the default host). See <a href="single-sign-on.txt">single-sign-on.txt</a>.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="5-deployment-ports-iis-docker-distinct-from-the-dev-ports-above">5. Deployment ports (IIS &amp; Docker) — distinct from the dev ports above</h2>
+<p>The dev <code>dotnet run</code> ports (§1–2, 5xxx/7xxx) are for local dev only. The deployed hosts use different, non-clashing ports so IIS and Docker can run side by side. (Redis dev container: 6379.)</p>
+<h3 id="iis-this-machine">IIS (this machine)</h3>
+<table>
+<thead>
+<tr>
+<th>Deployment</th>
+<th>Site</th>
+<th>Entry / port(s)</th>
+<th>Path</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Single host</td>
+<td><code>cbs-single</code></td>
+<td>http 8080 / https 8081</td>
+<td><code>D:\publish\single</code></td>
+</tr>
+<tr>
+<td>Multi host</td>
+<td><code>cbs-gateway</code></td>
+<td>http 8100 / <strong>https 8101 (PUBLIC)</strong></td>
+<td><code>D:\publish\multi\gateway</code></td>
+</tr>
+<tr>
+<td></td>
+<td><code>cbs-default</code></td>
+<td>http 8110 / https 8111</td>
+<td><code>D:\publish\multi\default</code></td>
+</tr>
+<tr>
+<td></td>
+<td><code>cbs-hr</code></td>
+<td>http 8120 / https 8121</td>
+<td><code>D:\publish\multi\hr</code></td>
+</tr>
+<tr>
+<td></td>
+<td><code>cbs-lockers</code></td>
+<td>http 8130 / https 8131</td>
+<td><code>D:\publish\multi\lockers</code></td>
+</tr>
+<tr>
+<td></td>
+<td><code>cbs-retail</code></td>
+<td>http 8140 / https 8141</td>
+<td><code>D:\publish\multi\retail</code></td>
+</tr>
+<tr>
+<td></td>
+<td><code>cbs-admin</code></td>
+<td>http 8150 / https 8151</td>
+<td><code>D:\publish\multi\admin</code></td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p><strong>Both</strong> ports are bound on every site: <code>deploy-cbs-iis.ps1</code> always creates the site on its http port and <em>adds</em> the https binding when <code>-CertThumbprint</code> is passed (without it you get http only). The gateway proxies to the backends over <strong>https</strong> — the scheme it writes into the gateway's <code>appsettings.Production.json</code> follows whether the cert was supplied. The http backend ports stay reachable directly, so treat them as a bring-up/diagnostic path, not a route anyone should use: only <code>cbs-gateway</code> is meant to be public.</p>
+</blockquote>
+<h3 id="iis-gateways-fronting-docker">IIS gateways fronting Docker</h3>
+<table>
+<thead>
+<tr>
+<th>Site</th>
+<th>Entry / port(s)</th>
+<th>Fronts</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>cbs-docker-gw</code></td>
+<td><strong>https 8092 (PUBLIC)</strong></td>
+<td>Docker single-host container (<code>http://localhost:8090</code>) — a 2nd YARP instance, one catch-all route, reuses the <code>TrustBankCBS-SelfSigned</code> cert. Standalone (its own DP key ring) — no SSO with the IIS farm. See <a href="deploy/docker-single-host.html">deploy/docker-single-host.md</a>.</td>
+</tr>
+<tr>
+<td><em>(RESERVED)</em></td>
+<td>https 8093</td>
+<td>Future: IIS YARP fronting the Docker multi-host gateway (host 8091). Pattern = one IIS gateway per Docker deployment (single → 8092, multi → 8093). Not built yet; port held so nothing claims it.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="docker-host-port-container-8080">Docker (host port → container 8080)</h3>
+<table>
+<thead>
+<tr>
+<th>Deployment</th>
+<th>Published</th>
+<th>File</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Single host</td>
+<td>host 8090 → 8080</td>
+<td><code>compose.yaml</code> — browse <code>http://localhost:8090</code> (direct HTTP), or <code>https://localhost:8092</code> via <code>cbs-docker-gw</code></td>
+</tr>
+<tr>
+<td>Multi host</td>
+<td>gateway (ONLY published) host 8091 → 8080</td>
+<td><code>compose.multi.yaml</code> — browse <code>http://localhost:8091</code> (plain HTTP; local <code>compose.multi.local.yaml</code> overlay sets <code>SecurePolicy=SameAsRequest</code>). Backends have <strong>no</strong> host ports; the gateway reaches them by compose service name at <code>http://&lt;service&gt;:8080/</code> (destinations set via the mounted <code>docker/gateway.multi.appsettings.json</code>, <strong>not</strong> env vars — hyphenated <code>ReverseProxy__…</code> names get dropped). <strong>HTTPS:</strong> terminate TLS <strong>on the gateway</strong> (single hop — <code>compose.multi.https.yaml</code>, browse <code>https://localhost:8091</code>; verified), or front with a TLS edge / the reserved <strong>8093</strong> IIS gateway (double hop).</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Why these numbers:</strong> Docker 8090/8091 and IIS 80xx/81xx are all picked to avoid each other AND the dev 5xxx/7xxx — so single+multi and IIS+Docker never clash. (Docker single = 8090; Docker multi gateway = 8091.) The Docker containers are HTTP-only — TLS terminates outside them — so IIS-hosted YARP gateways in the 809x band put HTTPS in front: 8092 fronts the single-host container (built), 8093 reserved for the multi-host gateway (future).</p>
+<p>Detail: <a href="deploy/iis-single-host.html">deploy/iis-single-host.md</a>, <a href="deploy/iis-multi-host.html">deploy/iis-multi-host.md</a>, <a href="deploy/docker-single-host.html">deploy/docker-single-host.md</a>, <a href="deploy/docker-multi-host.html">deploy/docker-multi-host.md</a>.</p>
+</div></div>
+<script>
+(function(){
+ function put(t){
+  if(navigator.clipboard&&navigator.clipboard.writeText)return navigator.clipboard.writeText(t);
+  return new Promise(function(res,rej){
+   var a=document.createElement('textarea');a.value=t;a.setAttribute('readonly','');
+   a.style.cssText='position:fixed;top:0;left:0;opacity:0';document.body.appendChild(a);
+   a.select();var ok=false;try{ok=document.execCommand('copy')}catch(e){}
+   document.body.removeChild(a);ok?res():rej()});
+ }
+ function flash(el,txt,ms){
+  var was=el.textContent;el.classList.add('done');if(txt)el.textContent=txt;
+  setTimeout(function(){el.classList.remove('done');if(txt)el.textContent=was},ms||1200);
+ }
+ function copy(text,el,okTxt){
+  put(text).then(function(){flash(el,okTxt)},function(){
+   if(okTxt){var w=el.textContent;el.textContent='Ctrl+C';setTimeout(function(){el.textContent=w},2000)}});
+ }
+ document.querySelectorAll('pre').forEach(function(pre){
+  if(pre.classList.contains('txtdoc'))return;
+  var b=document.createElement('button');
+  b.type='button';b.className='copy';b.textContent='Copy';
+  b.setAttribute('aria-label','Copy this code block to the clipboard');
+  b.addEventListener('click',function(){copy((pre.querySelector('code')||pre).innerText,b,'Copied')});
+  pre.appendChild(b);
+ });
+ document.querySelectorAll('td code').forEach(function(c){
+  if(!c.textContent.trim())return;
+  c.classList.add('cp');c.tabIndex=0;c.setAttribute('role','button');
+  c.title='Click to copy';
+  c.addEventListener('click',function(){copy(c.textContent,c)});
+  c.addEventListener('keydown',function(e){
+   if(e.key==='Enter'||e.key===' '){e.preventDefault();copy(c.textContent,c)}});
+ });
+})();
+</script>
+</body></html>

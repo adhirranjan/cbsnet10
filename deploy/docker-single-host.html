@@ -1,0 +1,254 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Deploy with Docker — Single Host (TflCbs.Host.Main only)</title>
+<style>
+:root{color-scheme:light dark}
+*{box-sizing:border-box}
+body{margin:0;background:#f6f8fa;color:#1f2328;font:16px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif}
+.wrap{max-width:900px;margin:0 auto;padding:32px 24px 96px}
+.card{background:#fff;border:1px solid #d0d7de;border-radius:10px;padding:40px 48px}
+h1,h2,h3{line-height:1.25;font-weight:600}
+h1{font-size:1.9rem;margin:0 0 .3em;padding-bottom:.3em;border-bottom:1px solid #d8dee4}
+h2{font-size:1.4rem;margin:1.8em 0 .6em;padding-bottom:.25em;border-bottom:1px solid #eaeef2}
+h3{font-size:1.12rem;margin:1.4em 0 .5em}
+p,li{margin:.5em 0}
+a{color:#0969da;text-decoration:none}
+a:hover{text-decoration:underline}
+code{font-family:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;font-size:.86em;background:#eff1f3;padding:.15em .4em;border-radius:6px}
+pre{background:#f6f8fa;border:1px solid #d8dee4;border-radius:8px;padding:14px 16px;overflow:auto}
+pre code{background:none;padding:0;font-size:.85em;line-height:1.45}
+blockquote{margin:1em 0;padding:.4em 1em;color:#3d444d;border-left:4px solid #d0d7de;background:#f6f8fa;border-radius:0 6px 6px 0}
+blockquote>:first-child{margin-top:0}blockquote>:last-child{margin-bottom:0}
+table{border-collapse:collapse;width:100%;margin:1em 0;display:block;overflow:auto}
+th,td{border:1px solid #d0d7de;padding:8px 12px;text-align:left;vertical-align:top}
+th{background:#f6f8fa;font-weight:600}
+tr:nth-child(2n) td{background:#f6f8fa}
+hr{border:0;border-top:1px solid #d8dee4;margin:2em 0}
+pre{position:relative}
+pre>button.copy{position:absolute;top:8px;right:8px;padding:5px 9px;cursor:pointer;
+  font:600 .68rem/1 ui-monospace,SFMono-Regular,Consolas,monospace;letter-spacing:.03em;
+  color:#636c76;background:#fff;border:1px solid #d0d7de;border-radius:6px;
+  opacity:0;transition:opacity .12s}
+pre:hover>button.copy,pre>button.copy:focus{opacity:1}
+pre>button.copy.done{color:#0a3622;background:#dafbe1;border-color:#4ac26b}
+@media(hover:none){pre>button.copy{opacity:1}}
+td code.cp{cursor:pointer}
+td code.cp:hover,td code.cp:focus{outline:1px solid #8c959f;outline-offset:1px}
+td code.cp.done{color:#0a3622;background:#dafbe1}
+.docnav{margin:0 0 20px;font-size:.85rem;color:#636c76}
+.docnav a{color:#636c76}
+ul{padding-left:1.4em}ol{padding-left:1.4em}
+@media(max-width:640px){.card{padding:24px 18px}.wrap{padding:16px 10px 64px}}
+@media(prefers-color-scheme:dark){
+ body{background:#0d1117;color:#e6edf3}
+ .card{background:#161b22;border-color:#30363d}
+ h1{border-color:#30363d}h2{border-color:#21262d}
+ code{background:#262c34}
+ pre{background:#0d1117;border-color:#30363d}
+ blockquote{background:#161b22;border-color:#30363d;color:#9198a1}
+ th,td{border-color:#30363d}th{background:#161b22}tr:nth-child(2n) td{background:#12171e}
+ a{color:#4493f8}.docnav,.docnav a{color:#9198a1}
+ hr{border-color:#30363d}
+ pre>button.copy{color:#9198a1;background:#161b22;border-color:#30363d}
+ pre>button.copy.done{color:#aff5b4;background:#1b4721;border-color:#2ea043}
+ td code.cp.done{color:#aff5b4;background:#1b4721}
+}
+</style></head>
+<body><div class="wrap"><div class="card">
+<div class="docnav"><a href="../index.html">&#8592; All docs</a></div>
+<h1 id="deploy-with-docker-single-host-tflcbshostmain-only">Deploy with Docker — Single Host (<code>TflCbs.Host.Main</code> only)</h1>
+<p>One container running the full host (all modules on). No gateway, no thin hosts. For the multi-container shape see <a href="docker-multi-host.html">docker-multi-host.md</a>.</p>
+<p>The repo <strong>ships the build files</strong> (verified: image builds + boots):</p>
+<table>
+<thead>
+<tr>
+<th>File</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>Dockerfile</code></td>
+<td>parameterized by <code>PROJECT</code> (serves every host)</td>
+</tr>
+<tr>
+<td><code>Dockerfile.dockerignore</code></td>
+<td>trims the context</td>
+</tr>
+<tr>
+<td><code>compose.yaml</code></td>
+<td>this single-host service</td>
+</tr>
+<tr>
+<td><code>compose.multi.yaml</code></td>
+<td>the multi-host topology</td>
+</tr>
+<tr>
+<td><code>docker/vendor/</code></td>
+<td>the 2 vendored external DLLs (see §1)</td>
+</tr>
+</tbody>
+</table>
+<h2 id="deployment-checklist-run-in-order">Deployment checklist (run in order)</h2>
+<ol>
+<li>☐ <strong>Prerequisites</strong> — Docker installed; the DB <strong>reachable from a Linux container</strong> (host DB via <code>host.docker.internal</code>+static port, or a container/server DB); decide DP-key persistence (<code>KeyRing=TflOmniDb</code> + its table, or FileSystem + a volume — §3).</li>
+<li>☐ <strong>Secrets</strong> — put the prod connection string in a <code>.env</code> at the solution root (<code>CBS_SQLSERVER_CONNSTRING=…</code>); never bake it into the image (§3).</li>
+<li>☐ <strong>Build + run</strong> (§4) — from the solution root: <code>docker compose up -d --build</code> (or <code>docker build --build-arg PROJECT=TflCbs.Host.Main …</code> then <code>docker run</code>). Pick <code>Auth__Cookie__SecurePolicy</code> = <code>Always</code> behind a TLS proxy, <code>SameAsRequest</code> for bare-http testing (§3).</li>
+<li>☐ <strong>Verify</strong> (§5) — <code>docker logs -f cbs</code>; <code>/health</code> → 200, <code>/health/ready</code> → 200 (DB); browse → login → a screen.</li>
+<li>☐ <strong>Operate</strong> (§6) — one replica only (in-memory session/nonces); orchestrator liveness→<code>/health</code>, readiness→<code>/health/ready</code>.</li>
+</ol>
+<p>Each step links to its detailed section below.</p>
+<h2 id="1-why-dockervendor-exists-the-one-non-obvious-thing">1. Why <code>docker/vendor/</code> exists (the one non-obvious thing)</h2>
+<p>The host csprojs link two <strong>prebuilt external DLLs</strong> by HintPath:</p>
+<pre><code>TflOmniDb.dll, TflSecurityCrypto.dll  at  ..\..\..\_Archive\...\bin\Debug\net10.0\
+</code></pre>
+<p>That <code>_Archive</code> path is <strong>above</strong> the repo root (<code>E:\Adhir\AdWork\_Archive</code>) <strong>and is ~6 GB</strong> — so it can't be the Docker build context. Instead those two DLLs (~0.5 MB) are <strong>vendored</strong> into the repo:</p>
+<pre><code>docker/vendor/TflOmniDb/         (TflOmniDb.dll + .deps.json)
+docker/vendor/TflSecurityCrypto/ (TflSecurityCrypto.dll + .deps.json)
+</code></pre>
+<p>and the Dockerfile stages them into the image at the exact <code>_Archive</code> path the HintPaths expect. <strong>Build context stays the solution root.</strong></p>
+<blockquote>
+<p>If <code>TflOmniDb</code> / <code>TflSecurityCrypto</code> are rebuilt, refresh <code>docker/vendor/</code> from their <code>bin\Debug\net10.0</code> output.</p>
+</blockquote>
+<h2 id="2-the-dockerfile-already-in-the-repo-project-parameterized">2. The Dockerfile (already in the repo; PROJECT-parameterized)</h2>
+<p>Multi-stage: SDK image builds, ASP.NET runtime image runs. Kestrel serves directly (no IIS). One <code>ARG PROJECT</code> selects which host — so the <strong>same</strong> Dockerfile builds the default host, any thin host, or the gateway. Shape:</p>
+<pre><code class="language-dockerfile">ARG PROJECT=TflCbs.Host.Main
+FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
+ARG PROJECT
+WORKDIR /src
+# stage the vendored DLLs at the depth the HintPaths resolve to (/src/_Archive/...)
+COPY docker/vendor/TflOmniDb/         /src/_Archive/.../TflOmniDb/.../net10.0/
+COPY docker/vendor/TflSecurityCrypto/ /src/_Archive/.../TflSecurityCrypto/.../net10.0/
+COPY . /src/TrustBank.Code/TflCbsNet10Sol/
+WORKDIR /src/TrustBank.Code/TflCbsNet10Sol
+RUN dotnet build TflCbs.Entities                       # bare-DLL dep — build FIRST
+RUN dotnet publish &quot;${PROJECT}&quot; -c Release -o /app --no-self-contained
+
+FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS runtime
+ARG PROJECT
+RUN apt-get update &amp;&amp; apt-get install -y --no-install-recommends curl \
+    &amp;&amp; rm -rf /var/lib/apt/lists/*                  # for the compose healthcheck
+WORKDIR /app
+COPY --from=build /app ./
+ENV ASPNETCORE_HTTP_PORTS=8080 ASPNETCORE_ENVIRONMENT=Production APP_DLL=${PROJECT}.dll
+EXPOSE 8080
+ENTRYPOINT [&quot;sh&quot;,&quot;-c&quot;,&quot;exec dotnet \&quot;$APP_DLL\&quot;&quot;]
+</code></pre>
+<ul>
+<li>Base image is <code>linux/amd64</code>. TflSecurityCrypto's machine-fingerprint / licensing paths are Windows-only, but the CBS app doesn't hit them at runtime, so the Linux ASP.NET image is fine. <strong>Verified: the image boots and <code>/health</code> returns 200 on <code>linux/amd64</code>.</strong></li>
+<li>The image bakes the full-host publish output — <code>TflCbs.Host.Main.dll</code> + all five domain <code>.Web</code> RCLs + the Framework/Shared/Services/Core stack + <code>TflCbs.Entities</code> + the bare <code>TflOmniDb</code>/<code>TflSecurityCrypto</code> DLLs + ADO.NET drivers. See the full per-assembly list in <a href="iis-single-host.html">iis-single-host.md §2</a>. (For per-image differences across hosts, see <a href="docker-multi-host.html">docker-multi-host.md §2</a>.)</li>
+</ul>
+<p><code>Dockerfile.dockerignore</code> (context = solution root) trims outputs:</p>
+<pre><code>**/bin
+**/obj
+**/Logs
+**/App_Data
+**/.git
+</code></pre>
+<h2 id="3-config-do-not-bake-secrets-into-the-image">3. Config (do <strong>not</strong> bake secrets into the image)</h2>
+<p>TLS terminates <strong>outside</strong> the container (a reverse proxy / load balancer / cloud LB). Inside, the app speaks plain HTTP on 8080. Pass production settings as environment variables (double-underscore = config nesting):</p>
+<pre><code class="language-bash">Database__Provider=SqlServer
+Database__ConnectionStrings__SqlServer=&lt;prod connection string&gt;
+DataProtection__ApplicationName=TrustBankCBS
+DataProtection__KeyRing=TflOmniDb            # keys survive container restarts
+Auth__SessionRevocation=InMemory             # one process = fine
+Auth__Cookie__SecurePolicy=Always
+ForwardedHeaders__Enabled=true               # if a proxy/LB fronts it
+ForwardedHeaders__KnownProxies__0=&lt;proxy-ip&gt;
+Modules__Enabled=*
+</code></pre>
+<p><strong>Data Protection — the container-critical point:</strong> the default <code>KeyRing=FileSystem</code> writes to <code>App_Data/DataProtection-Keys</code> <strong>inside</strong> the container, which is ephemeral — every redeploy/restart mints a new key and invalidates all <code>CbsAuth</code> cookies + row tokens. Fix by <strong>either</strong>:</p>
+<ul>
+<li>(a) <code>KeyRing=TflOmniDb</code> — keys in the <strong><code>CBS_DATAPROTECTIONKEYS</code></strong> table. <strong>Create it once</strong> first (DDL in <code>TflCbs.Framework/Infrastructure/DataProtectionKeyEntity.cs</code>); no volume needed, but it does need the DB. Pick this if you already run multi-host or want DB-managed keys.</li>
+<li>(b) <code>KeyRing=FileSystem</code> + a persistent <strong>volume / bind mount</strong> at <code>DataProtection__KeyRingPath</code>. <strong>This is what the committed <code>compose.yaml</code> uses:</strong> <code>KeyRing=FileSystem</code>, <code>KeyRingPath=/keys</code>, and a <strong>bind mount</strong> <code>./docker-data/dpkeys:/keys</code> (host folder ↔ container path) — so the keys live on the host and survive <code>docker compose down</code>/redeploy, with no DB dependency for keys.</li>
+</ul>
+<p><strong>Connection strings:</strong> never the checked-in dev <code>sa/sql@2019</code>. Inject at runtime. The DB must be reachable from the container network (a container DB, a host DB via <code>host.docker.internal</code>, or a real server).</p>
+<h3 id="https-redirects-the-secure-cookie-read-this-it-bites">HTTPS, redirects &amp; the <code>Secure</code> cookie (read this — it bites)</h3>
+<p>The app runs <code>UseCbsForwardedHeaders</code> → <code>UseHttpsRedirection</code>. Inside the container it listens on <strong>plain HTTP:8080 with no HTTPS port</strong>, so <code>UseHttpsRedirection</code> can't find a target port and <strong>no-ops</strong> — HTTP passes straight through (that's why <code>/health</code> and the app answer over http). <em>If</em> you ever give the container an HTTPS port, http would then 307-redirect.</p>
+<p>Because TLS terminates <strong>at a proxy in front</strong>, the app only knows the original request was HTTPS if the proxy tells it:</p>
+<ul>
+<li>
+<p>Set <code>ForwardedHeaders__Enabled=true</code> <strong>and trust the proxy</strong> — <code>ForwardedHeaders__KnownProxies__0=&lt;proxy IP&gt;</code> (or a <code>KnownNetworks</code> subnet). In Docker the immediate peer is the bridge/proxy container IP, <strong>not loopback</strong>, so the framework's default loopback trust is <strong>not</strong> enough — an unset <code>KnownProxies</code> means <code>X-Forwarded-Proto</code> is ignored and the app thinks every request is http.</p>
+</li>
+<li>
+<p><strong><code>Auth__Cookie__SecurePolicy=Always</code></strong> marks <code>CbsAuth</code> <code>Secure</code>, so browsers send it only over HTTPS. Correct <strong>behind a TLS proxy</strong>. But hit the container <strong>directly over plain HTTP</strong> (e.g. <code>http://localhost:8090</code>, no proxy) and the browser <strong>drops the Secure cookie → login loops</strong>. For plain-HTTP local testing use <code>Auth__Cookie__SecurePolicy=SameAsRequest</code>. <em>(The committed <code>compose.yaml</code> sets <code>Always</code>, assuming a TLS proxy — override it for bare-http testing.)</em></p>
+</li>
+</ul>
+<h2 id="4-build-run">4. Build &amp; run</h2>
+<p>From the <strong>solution root</strong> (context = <code>.</code>):</p>
+<pre><code class="language-bash">docker build --build-arg PROJECT=TflCbs.Host.Main -t trustbank-cbs:latest .
+
+docker run -d --name cbs -p 8090:8080 \
+  -e Database__ConnectionStrings__SqlServer=&quot;&lt;prod&gt;&quot; \
+  -e DataProtection__KeyRing=FileSystem -e DataProtection__KeyRingPath=/keys \
+  -v &quot;$PWD/docker-data/dpkeys:/keys&quot; \
+  -e Auth__Cookie__SecurePolicy=SameAsRequest \
+  trustbank-cbs:latest
+# ^ host 8090 (avoids the IIS 8080/8081 + 81xx ports) -&gt; container 8080.
+#   FileSystem DP keys on a bind mount so they persist across restarts.
+#   SameAsRequest so login works over plain http://localhost:8090;
+#   behind a TLS proxy use Always + ForwardedHeaders (see §3).
+</code></pre>
+<p>Or with compose (<code>compose.yaml</code> is in the repo; set the connection string via a <code>.env</code> file — it reads <code>${CBS_SQLSERVER_CONNSTRING}</code>):</p>
+<pre><code class="language-bash">docker compose up -d --build
+</code></pre>
+<p>The committed <code>compose.yaml</code> publishes <strong>host port 8090</strong> (→ container 8080, so it doesn't clash with the IIS sites on 8080/8081 + 81xx), and wires <code>ASPNETCORE_ENVIRONMENT=Production</code>, <code>DataProtection__KeyRing=FileSystem</code> + <code>KeyRingPath=/keys</code> on a <strong>bind mount</strong> (<code>./docker-data/dpkeys:/keys</code>), <code>Auth__Cookie__SecurePolicy=Always</code>, and a curl <code>/health/ready</code> healthcheck (curl is in the runtime image). <code>Always</code> assumes a TLS proxy fronts the container — for bare-http <code>docker compose up</code> + browsing <code>http://localhost:8090</code>, override <code>Auth__Cookie__SecurePolicy=SameAsRequest</code> (see §3) or login will loop.</p>
+<h2 id="5-verify">5. Verify</h2>
+<pre><code class="language-bash">docker logs -f cbs                      # watch startup
+curl http://localhost:8090/health       # 200 Healthy (liveness)   [host port 8090]
+curl http://localhost:8090/health/ready # 200 (DB reachable; 503 = DB config)
+</code></pre>
+<p>Then browse <code>http://localhost:8090/</code> → login → a migrated screen (<code>/Hr/State</code>). <strong>Login over plain http needs <code>SecurePolicy=SameAsRequest</code></strong> (see §3) — with <code>Always</code> the browser drops the <code>Secure</code> cookie and login loops.</p>
+<p>App logs also stream to stdout (<code>docker logs</code>) and to <code>/app/Logs</code> inside the container — mount a volume there if you want them on the host.</p>
+<h2 id="6-scaling-limits">6. Scaling &amp; limits</h2>
+<ul>
+<li>Run <strong>one replica</strong> of this image. <code>CbsSessionStore</code> + row-token nonces are in-memory per process, so two replicas behind a naive LB would bounce a user between two memory spaces (broken sessions) unless you add sticky sessions. To scale properly, move to the <a href="docker-multi-host.html">multi-host shape</a> and scale per module.</li>
+<li>Persisted Data Protection keys (FileSystem on a bind mount — as the committed compose does — or <code>KeyRing=TflOmniDb</code>) mean even a single replica survives restarts without logging everyone out.</li>
+<li>Health: point your orchestrator's liveness at <code>/health</code> and readiness at <code>/health/ready</code>.</li>
+</ul>
+<h2 id="7-related-docs">7. Related docs</h2>
+<ul>
+<li><a href="docker-multi-host.html">docker-multi-host.md</a> — gateway + thin hosts with compose</li>
+<li><a href="iis-single-host.html">iis-single-host.md</a> — same app on IIS/Windows</li>
+<li><a href="../port-map.html">../port-map.md</a> — ports &amp; project map</li>
+<li><a href="../architecture-overview.html">../architecture-overview.md</a> — what gets deployed</li>
+</ul>
+</div></div>
+<script>
+(function(){
+ function put(t){
+  if(navigator.clipboard&&navigator.clipboard.writeText)return navigator.clipboard.writeText(t);
+  return new Promise(function(res,rej){
+   var a=document.createElement('textarea');a.value=t;a.setAttribute('readonly','');
+   a.style.cssText='position:fixed;top:0;left:0;opacity:0';document.body.appendChild(a);
+   a.select();var ok=false;try{ok=document.execCommand('copy')}catch(e){}
+   document.body.removeChild(a);ok?res():rej()});
+ }
+ function flash(el,txt,ms){
+  var was=el.textContent;el.classList.add('done');if(txt)el.textContent=txt;
+  setTimeout(function(){el.classList.remove('done');if(txt)el.textContent=was},ms||1200);
+ }
+ function copy(text,el,okTxt){
+  put(text).then(function(){flash(el,okTxt)},function(){
+   if(okTxt){var w=el.textContent;el.textContent='Ctrl+C';setTimeout(function(){el.textContent=w},2000)}});
+ }
+ document.querySelectorAll('pre').forEach(function(pre){
+  if(pre.classList.contains('txtdoc'))return;
+  var b=document.createElement('button');
+  b.type='button';b.className='copy';b.textContent='Copy';
+  b.setAttribute('aria-label','Copy this code block to the clipboard');
+  b.addEventListener('click',function(){copy((pre.querySelector('code')||pre).innerText,b,'Copied')});
+  pre.appendChild(b);
+ });
+ document.querySelectorAll('td code').forEach(function(c){
+  if(!c.textContent.trim())return;
+  c.classList.add('cp');c.tabIndex=0;c.setAttribute('role','button');
+  c.title='Click to copy';
+  c.addEventListener('click',function(){copy(c.textContent,c)});
+  c.addEventListener('keydown',function(e){
+   if(e.key==='Enter'||e.key===' '){e.preventDefault();copy(c.textContent,c)}});
+ });
+})();
+</script>
+</body></html>

@@ -1,0 +1,561 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>TflOmniDb</title>
+<style>
+:root{color-scheme:light dark}
+*{box-sizing:border-box}
+body{margin:0;background:#f6f8fa;color:#1f2328;font:16px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif}
+.wrap{max-width:900px;margin:0 auto;padding:32px 24px 96px}
+.card{background:#fff;border:1px solid #d0d7de;border-radius:10px;padding:40px 48px}
+h1,h2,h3{line-height:1.25;font-weight:600}
+h1{font-size:1.9rem;margin:0 0 .3em;padding-bottom:.3em;border-bottom:1px solid #d8dee4}
+h2{font-size:1.4rem;margin:1.8em 0 .6em;padding-bottom:.25em;border-bottom:1px solid #eaeef2}
+h3{font-size:1.12rem;margin:1.4em 0 .5em}
+p,li{margin:.5em 0}
+a{color:#0969da;text-decoration:none}
+a:hover{text-decoration:underline}
+code{font-family:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;font-size:.86em;background:#eff1f3;padding:.15em .4em;border-radius:6px}
+pre{background:#f6f8fa;border:1px solid #d8dee4;border-radius:8px;padding:14px 16px;overflow:auto}
+pre code{background:none;padding:0;font-size:.85em;line-height:1.45}
+blockquote{margin:1em 0;padding:.4em 1em;color:#3d444d;border-left:4px solid #d0d7de;background:#f6f8fa;border-radius:0 6px 6px 0}
+blockquote>:first-child{margin-top:0}blockquote>:last-child{margin-bottom:0}
+table{border-collapse:collapse;width:100%;margin:1em 0;display:block;overflow:auto}
+th,td{border:1px solid #d0d7de;padding:8px 12px;text-align:left;vertical-align:top}
+th{background:#f6f8fa;font-weight:600}
+tr:nth-child(2n) td{background:#f6f8fa}
+hr{border:0;border-top:1px solid #d8dee4;margin:2em 0}
+pre{position:relative}
+pre>button.copy{position:absolute;top:8px;right:8px;padding:5px 9px;cursor:pointer;
+  font:600 .68rem/1 ui-monospace,SFMono-Regular,Consolas,monospace;letter-spacing:.03em;
+  color:#636c76;background:#fff;border:1px solid #d0d7de;border-radius:6px;
+  opacity:0;transition:opacity .12s}
+pre:hover>button.copy,pre>button.copy:focus{opacity:1}
+pre>button.copy.done{color:#0a3622;background:#dafbe1;border-color:#4ac26b}
+@media(hover:none){pre>button.copy{opacity:1}}
+td code.cp{cursor:pointer}
+td code.cp:hover,td code.cp:focus{outline:1px solid #8c959f;outline-offset:1px}
+td code.cp.done{color:#0a3622;background:#dafbe1}
+.docnav{margin:0 0 20px;font-size:.85rem;color:#636c76}
+.docnav a{color:#636c76}
+ul{padding-left:1.4em}ol{padding-left:1.4em}
+@media(max-width:640px){.card{padding:24px 18px}.wrap{padding:16px 10px 64px}}
+@media(prefers-color-scheme:dark){
+ body{background:#0d1117;color:#e6edf3}
+ .card{background:#161b22;border-color:#30363d}
+ h1{border-color:#30363d}h2{border-color:#21262d}
+ code{background:#262c34}
+ pre{background:#0d1117;border-color:#30363d}
+ blockquote{background:#161b22;border-color:#30363d;color:#9198a1}
+ th,td{border-color:#30363d}th{background:#161b22}tr:nth-child(2n) td{background:#12171e}
+ a{color:#4493f8}.docnav,.docnav a{color:#9198a1}
+ hr{border-color:#30363d}
+ pre>button.copy{color:#9198a1;background:#161b22;border-color:#30363d}
+ pre>button.copy.done{color:#aff5b4;background:#1b4721;border-color:#2ea043}
+ td code.cp.done{color:#aff5b4;background:#1b4721}
+}
+</style></head>
+<body><div class="wrap"><div class="card">
+<div class="docnav"><a href="../../index.html">&#8592; All docs</a></div>
+<h1 id="tflomnidb">TflOmniDb</h1>
+<p><strong>Provider-agnostic data-access layer for banking applications.</strong> One attribute-mapped entity model, one
+repository API, three engines — <strong>SQL Server, Oracle, PostgreSQL</strong> — with every value bound as a parameter and
+no ORM machinery to surprise you.</p>
+<table>
+<thead>
+<tr>
+<th>Leg</th>
+<th>Projects</th>
+<th>TFM</th>
+<th>Status</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Net10</strong> (active)</td>
+<td><code>TflOmniDb*</code></td>
+<td><code>net10.0</code></td>
+<td>521 / 521 live tests green. Adds streaming, partial/set-based updates, scalar aggregates, per-scope command timeout</td>
+</tr>
+<tr>
+<td><strong>Fx</strong> (frozen)</td>
+<td><code>TflOmniDbFx*</code></td>
+<td><code>net48</code></td>
+<td>332 / 332 live tests green. Production-shipped; <strong>do not modify</strong></td>
+</tr>
+</tbody>
+</table>
+<p>Both legs are verified end-to-end against live SQL Server, PostgreSQL and Oracle instances. They are independent
+assemblies (<code>TflOmniDb.dll</code> / <code>TflOmniDbFx.dll</code>) sharing one solution. The outer folder name
+(<code>AdDataAccessComponent</code>) is historical and does not match the namespaces.</p>
+<blockquote>
+<p><strong>New work targets the Net10 leg only.</strong> The Fx projects are frozen — no features, no fixes, no mirroring —
+unless explicitly requested.</p>
+</blockquote>
+<hr />
+<h2 id="contents">Contents</h2>
+<ul>
+<li><a href="#why-this-exists">Why this exists</a></li>
+<li><a href="#quick-start">Quick start</a></li>
+<li><a href="#referencing-the-library">Referencing the library</a></li>
+<li><a href="#feature-map">Feature map</a></li>
+<li><a href="#components">Components</a></li>
+<li><a href="#tooling">Tooling</a></li>
+<li><a href="#design-rules-you-should-know-before-writing-code">Design rules you should know before writing code</a></li>
+<li><a href="#security-guarantees">Security guarantees</a></li>
+<li><a href="#performance">Performance</a></li>
+<li><a href="#build--test">Build &amp; test</a></li>
+<li><a href="#documentation-index">Documentation index</a></li>
+</ul>
+<hr />
+<h2 id="why-this-exists">Why this exists</h2>
+<p>The product must run on whichever engine the customer bank already owns. That forces one requirement above all
+others: <strong>the same C# has to work on SQL Server, Oracle and PostgreSQL</strong>, without per-engine branches scattered
+through the business layer.</p>
+<p>TflOmniDb solves that with a deliberately small surface:</p>
+<ul>
+<li><strong>Attribute-mapped entities.</strong> <code>[DbTable]</code> / <code>[DbColumn]</code> on plain classes. No fluent configuration, no
+  convention magic, no migrations engine.</li>
+<li><strong>A neutral type system.</strong> <code>CoreDataType</code> maps to each engine's native type through a per-dialect type mapper,
+  with per-provider escape hatches on the column attribute.</li>
+<li><strong>Generated, cached, parameterised SQL.</strong> <code>SqlGenerator</code> builds the statement set per (entity, dialect, schema)
+  once; <code>ExpressionTranslator</code> turns LINQ predicates into bound WHERE clauses.</li>
+<li><strong>An explicit escape hatch.</strong> Joins, GROUP BY, sub-queries and CTEs are <em>not</em> generated — you drop to raw SQL or
+  the <code>SqlQuery</code> composer. This is the design, not a gap: it is what prevents N+1 and cartesian explosions.</li>
+</ul>
+<p>What it deliberately is <strong>not</strong>: an ORM. No change tracking, no lazy loading, no navigation properties, no
+identity map, no migrations.</p>
+<hr />
+<h2 id="quick-start">Quick start</h2>
+<pre><code class="language-csharp">using TflOmniDb.Core;
+using TflOmniDb.Providers;
+using TflOmniDb.Repository;
+
+// 1 ── the entity: attributes only, properties virtual and nullable
+[DbTable(TableName = &quot;WIDGET&quot;)]
+public class Widget : Entity
+{
+    [DbColumn(ColumnName = &quot;ID&quot;, CoreType = CoreDataType.Int64,
+              IsPrimaryKey = true, KeyGeneration = KeyGenerationStrategy.Identity)]
+    public virtual long? Id { get; set; }
+
+    [DbColumn(ColumnName = &quot;NAME&quot;, CoreType = CoreDataType.UnicodeString, Size = 100)]
+    public virtual string? Name { get; set; }
+
+    [DbColumn(ColumnName = &quot;PRICE&quot;, CoreType = CoreDataType.Money)]
+    public virtual decimal? Price { get; set; }
+
+    [DbColumn(ColumnName = &quot;ROWVER&quot;, CoreType = CoreDataType.Int32, IsRowVersion = true)]
+    public virtual int? RowVer { get; set; }
+}
+
+// 2 ── one DataAccess per connection, typically a singleton
+var data = new DataAccess(new DataAccessOptions
+{
+    Provider         = DbProvider.SqlServer,     // required
+    ConnectionString = connectionString,          // required
+    DefaultSchema    = &quot;dbo&quot;,
+});
+
+// 3 ── CRUD
+var repo = data.Repository&lt;Widget&gt;();
+
+var w = new Widget { Name = &quot;Sprocket&quot;, Price = 49.95m, RowVer = 0 };
+await repo.InsertAsync(w);                        // identity written back into w.Id
+
+w.Price = 39.95m;
+await repo.UpdateAsync(w);                        // row-version checked + incremented
+
+Widget? found  = await repo.GetAsync([w.Id!]);
+var      cheap = await repo.WhereAsync(x =&gt; x.Price &lt; 50m, orderBy: x =&gt; x.Name!, take: 20);
+long     total = await repo.CountAsync(x =&gt; x.Price != null);
+
+await repo.DeleteAsync(w);
+
+// 4 ── multi-write atomicity
+await using (var uow = await data.BeginTransactionAsync())
+{
+    await uow.Repository&lt;Widget&gt;().InsertAsync(new Widget { Name = &quot;A&quot;, RowVer = 0 });
+    await uow.Repository&lt;Widget&gt;().InsertAsync(new Widget { Name = &quot;B&quot;, RowVer = 0 });
+    await uow.CommitAsync();                      // dispose without commit ⇒ rollback
+}
+</code></pre>
+<p>Task-oriented recipes for everything else — paging, projections, aggregates, bulk insert, streaming, stored
+procedures, retry, dirty reads, timeouts — are in <a href="docs/usage-guide.html">docs/usage-guide.md</a>.</p>
+<hr />
+<h2 id="referencing-the-library">Referencing the library</h2>
+<p>No NuGet feed; consumers reference the built DLL. TrustBank CBS does this:</p>
+<pre><code class="language-xml">&lt;Reference Include=&quot;TflOmniDb&quot;&gt;
+  &lt;HintPath&gt;..\..\..\_Archive\Ad.ProjectLibrary\AdDataAccessComponent\TflOmniDb\TflOmniDb\bin\Debug\net10.0\TflOmniDb.dll&lt;/HintPath&gt;
+&lt;/Reference&gt;
+</code></pre>
+<p>Bare-DLL references carry <strong>no build-order edge</strong> — build <code>TflOmniDb</code> first whenever it changes, then the
+consumers. Entity assemblies generated by the scaffolder (e.g. <code>TflCbs.Entities</code>) reference it the same way, so the
+order is: <code>TflOmniDb</code> → entities → business layer → host.</p>
+<p><strong>Runtime packages</strong> (net10 leg): <code>Microsoft.Data.SqlClient</code> 6.0.2 · <code>Oracle.ManagedDataAccess.Core</code> 23.7.0 ·
+<code>Npgsql</code> 9.0.2 · <code>Microsoft.Extensions.Logging.Abstractions</code> 9.0.4.</p>
+<hr />
+<h2 id="feature-map">Feature map</h2>
+<table>
+<thead>
+<tr>
+<th>Area</th>
+<th>Capability</th>
+<th>Legs</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>CRUD</strong></td>
+<td><code>GetAsync</code> / <code>GetAllAsync</code> / <code>InsertAsync</code> / <code>UpdateAsync</code> / <code>DeleteAsync</code></td>
+<td>both</td>
+</tr>
+<tr>
+<td></td>
+<td>Identity write-back on insert (<code>SCOPE_IDENTITY</code> / <code>RETURNING</code> / sequence)</td>
+<td>both</td>
+</tr>
+<tr>
+<td></td>
+<td>App-managed optimistic concurrency via <code>IsRowVersion</code> → <code>ConcurrencyException</code></td>
+<td>both</td>
+</tr>
+<tr>
+<td><strong>Reads</strong></td>
+<td><code>WhereAsync</code> — predicate, ordering, paging (OFFSET/FETCH, LIMIT/OFFSET)</td>
+<td>both</td>
+</tr>
+<tr>
+<td></td>
+<td><code>CountAsync</code> (returns <code>long</code>)</td>
+<td>both</td>
+</tr>
+<tr>
+<td></td>
+<td>Column projection on <code>GetAsync</code> / <code>GetAllAsync</code></td>
+<td>both</td>
+</tr>
+<tr>
+<td></td>
+<td>Projected <code>WhereAsync</code></td>
+<td>net10</td>
+</tr>
+<tr>
+<td></td>
+<td><code>IAsyncEnumerable</code> streaming: <code>StreamAllAsync</code> / <code>StreamWhereAsync</code> / <code>StreamQueryAsync</code></td>
+<td>net10</td>
+</tr>
+<tr>
+<td><strong>Writes</strong></td>
+<td><code>BulkInsertAsync</code> — <code>SqlBulkCopy</code> / binary <code>COPY</code> / <code>OracleBulkCopy</code></td>
+<td>both</td>
+</tr>
+<tr>
+<td></td>
+<td>Partial-column <code>UpdateAsync(entity, cols)</code></td>
+<td>net10</td>
+</tr>
+<tr>
+<td></td>
+<td>Set-based <code>UpdateWhereAsync</code> / <code>DeleteWhereAsync</code></td>
+<td>net10</td>
+</tr>
+<tr>
+<td><strong>Aggregates</strong></td>
+<td><code>MaxAsync</code> / <code>MinAsync</code> / <code>SumAsync</code> / <code>AvgAsync</code> / <code>MaxKeyAsync</code> / <code>AnyAsync</code></td>
+<td>net10</td>
+</tr>
+<tr>
+<td><strong>Procedures</strong></td>
+<td><code>ExecuteProcedureAsync</code> (+ scalar / non-query), OUT / INOUT / return value, multiple result sets, TVP / array / PL-SQL table params, Oracle REF CURSOR</td>
+<td>both</td>
+</tr>
+<tr>
+<td></td>
+<td><code>StreamProcedureAsync</code> — first result set as <code>IAsyncEnumerable&lt;T&gt;</code></td>
+<td>net10</td>
+</tr>
+<tr>
+<td><strong>Raw SQL</strong></td>
+<td><code>QueryAsync&lt;T&gt;</code> (POCO) / <code>QueryAsync</code> (untyped) / <code>ExecuteScalarAsync</code> / <code>ExistsAsync</code> / <code>ExecuteNonQueryAsync</code></td>
+<td>both</td>
+</tr>
+<tr>
+<td><strong>Composition</strong></td>
+<td><code>SqlQuery</code> fluent builder + <code>Fn</code> cross-dialect scalar functions + typed <code>Col</code> / <code>Agg</code> tokens</td>
+<td>both</td>
+</tr>
+<tr>
+<td><strong>Row access</strong></td>
+<td><code>RowAccess</code> null-safe accessors over untyped rows and stored-proc result sets</td>
+<td>both</td>
+</tr>
+<tr>
+<td><strong>Resiliency</strong></td>
+<td>Opt-in transient-fault retry; <code>ExecuteInTransactionAsync</code> retries a whole unit of work</td>
+<td>both</td>
+</tr>
+<tr>
+<td><strong>Operational</strong></td>
+<td><code>UseDirtyReads()</code>, <code>UseCommandTimeout()</code> (net10), <code>PushCorrelation()</code>, <code>SuppressLogging()</code> / <code>EnableLogging()</code></td>
+<td>both / net10</td>
+</tr>
+<tr>
+<td><strong>Logging</strong></td>
+<td>Every command through <code>CommandLogger</code>; <code>IsSensitive</code> columns and sensitive params redacted</td>
+<td>both</td>
+</tr>
+<tr>
+<td><strong>Tooling</strong></td>
+<td>Entity scaffolder (CLI + web, connected or air-gapped), cross-provider table migration, BenchmarkDotNet suite</td>
+<td>net10</td>
+</tr>
+</tbody>
+</table>
+<p>Full signatures in <a href="docs/api-reference.html">docs/api-reference.md</a>.</p>
+<hr />
+<h2 id="components">Components</h2>
+<pre><code>TflOmniDb/                    (the net10 library)
+├── Core/          Entity, [DbTable], [DbColumn], CoreDataType, KeyGenerationStrategy, DefaultValueKind
+├── Metadata/      EntityDescriptor, ColumnDescriptor, MetadataReader  — reflection once per type, cached
+├── Dialect/       ISqlDialect + SqlServer/Oracle/Postgres dialects and their type mappers
+├── Sql/           SqlGenerator (cached StatementSets), ExpressionTranslator, ColumnSelector, EntityDataReader
+├── Providers/     DbProvider, IProviderRuntime, one runtime per engine, FrozenDictionary registry
+├── Repository/    DataAccess, Repository&lt;T&gt;, IUnitOfWork, stored-procedure stack, retry, logging, RowAccess
+├── Query/         SqlQuery composer, SqlFunctions (Fn), Col / Agg tokens
+├── Scaffolding/   schema reading (live + air-gap dump), reverse type mapping, entity emitters
+└── Migration/     MigrationFacade, CreateTableEmitter, MigrationColumn — cross-provider table copy
+</code></pre>
+<p>A single <code>GetAsync</code> call travels: <code>Repository&lt;T&gt;</code> → <code>MetadataReader</code> (cached descriptor) → <code>SqlGenerator</code> (cached
+statement set for this dialect + schema) → <code>IProviderRuntime</code> (connection, parameter binding) → <code>CommandLogger</code> →
+ADO.NET. How each layer works, what it caches, and where the extension points are: <a href="docs/components.html">docs/components.md</a>.</p>
+<hr />
+<h2 id="tooling">Tooling</h2>
+<p>Three console/web front-ends, all thin shells over library code:</p>
+<table>
+<thead>
+<tr>
+<th>Tool</th>
+<th>Project</th>
+<th>What it does</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Entity scaffolder</strong></td>
+<td><code>TflOmniDb.Scaffold</code> (CLI), <code>TflOmniDb.Scaffold.Web</code> (Minimal API + page)</td>
+<td>Reverse-engineers a schema into <code>[DbTable]</code>/<code>[DbColumn]</code> C# or VB entities. Works <strong>connected</strong> or <strong>air-gapped</strong> (emit a script for the DBA, paste their output back). Run the CLI with no arguments for an interactive wizard.</td>
+</tr>
+<tr>
+<td><strong>Table migration</strong></td>
+<td><code>TflOmniDbMigration</code></td>
+<td>Copies a table's structure and/or data between databases, across providers. Dry-run preview → confirm → copy → row-count verification.</td>
+</tr>
+<tr>
+<td><strong>Benchmarks</strong></td>
+<td><code>TflOmniDb.Benchmarks</code></td>
+<td>BenchmarkDotNet: metadata cache, SQL generation, streaming vs buffered, bulk insert vs loop.</td>
+</tr>
+</tbody>
+</table>
+<p>Flags, config sections, naming axes and worked commands: <a href="docs/tooling.html">docs/tooling.md</a>.</p>
+<hr />
+<h2 id="design-rules-you-should-know-before-writing-code">Design rules you should know before writing code</h2>
+<p>These are not style preferences — violating them produces wrong results or unportable SQL.</p>
+<ol>
+<li><strong>Async only.</strong> The repository exposes <code>*Async</code> methods and nothing else. No sync overloads exist.</li>
+<li><strong>Schema is connection-level</strong>, not per table — <code>DataAccessOptions.DefaultSchema</code>. Table names must be
+   identical across all three databases.</li>
+<li><strong>Identifiers are always quoted</strong>, so casing is preserved on Oracle and PostgreSQL. Create objects with
+   <strong>uppercase</strong> names (quoted, on PostgreSQL) to stay portable.</li>
+<li><strong>Entity properties are <code>Nullable&lt;T&gt;</code> and <code>virtual</code>.</strong> Nullable so partial rows materialise; virtual to leave
+   the door open for proxy-based change tracking.</li>
+<li><strong>Transactions opt in.</strong> <code>data.Repository&lt;T&gt;()</code> opens a fresh connection per call. For atomicity use
+   <code>BeginTransactionAsync()</code> and <code>uow.Repository&lt;T&gt;()</code>. Disposing without <code>CommitAsync</code> rolls back.</li>
+<li><strong>Optimistic concurrency is app-managed.</strong> An <code>IsRowVersion</code> integer column is auto-incremented on UPDATE and
+   checked in the WHERE clause; zero rows matched ⇒ <code>ConcurrencyException</code>. Identical on all three engines — no
+   <code>ROWVERSION</code> / <code>xmin</code> / <code>ORA_ROWSCN</code> dependency.</li>
+<li><strong>No joins are generated.</strong> Drop to raw SQL or <code>SqlQuery</code> for joins, GROUP BY, sub-queries, UNION, CTEs.</li>
+<li><strong>Logging is opt-in</strong> (<code>LoggerFactory</code>), and <strong>parameter values are off by default</strong> (<code>LogParameterValues</code>) —
+   banking data is sensitive.</li>
+<li><strong>Dirty reads are opt-in and scoped</strong>: <code>using (data.UseDirtyReads()) { … }</code> applies <code>WITH(NOLOCK)</code> on SQL
+   Server, no-op on the MVCC engines.</li>
+<li><strong>Retry is off by default.</strong> Set <code>DataAccessOptions.Retry</code> to enable it, and understand which paths are
+    excluded (see the usage guide) before you do.</li>
+</ol>
+<hr />
+<h2 id="security-guarantees">Security guarantees</h2>
+<p>Every caller-influenced value reaches the database as a bound <code>DbParameter</code>, never as inlined text:</p>
+<table>
+<thead>
+<tr>
+<th>Path</th>
+<th>How values are bound</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>CRUD (<code>Insert</code>/<code>Update</code>/<code>Delete</code>/<code>Get</code>)</td>
+<td>Entity property reads via <code>BuildParameter</code></td>
+</tr>
+<tr>
+<td><code>WhereAsync</code> / <code>CountAsync</code> / <code>Stream*Async</code> predicates</td>
+<td>Every constant, captured local, closure and IN-list item via <code>ExpressionTranslator.AppendParameter</code>. LIKE patterns escape <code>%</code>, <code>_</code>, <code>[</code>, <code>]</code> and bind the result</td>
+</tr>
+<tr>
+<td><code>QueryAsync</code> / raw SQL</td>
+<td>The parameter dictionary becomes <code>DbParameter</code>s. <strong>The SQL text itself is the caller's responsibility</strong> — this is the documented escape hatch</td>
+</tr>
+<tr>
+<td>Identifiers (table / column / schema)</td>
+<td>From compile-time attributes or constructor-time config, then <code>QuoteIdentifier</code>. Never from request data</td>
+</tr>
+<tr>
+<td>Paging integers</td>
+<td><code>int?</code> — the CLR type system precludes string content</td>
+</tr>
+</tbody>
+</table>
+<p><code>SqlInjectionTests.cs</code> (8 tests per leg) pins this with malicious payloads across all three dialects. Column
+values marked <code>[DbColumn(IsSensitive = true)]</code>, and stored-procedure inputs passed with <code>sensitive: true</code>, are
+redacted in command logs.</p>
+<hr />
+<h2 id="performance">Performance</h2>
+<p><strong>Cached</strong> (cheap on repeat use): <code>EntityDescriptor</code> per type (AppDomain lifetime) · <code>StatementSet</code> per
+(descriptor, dialect, schema, dirty-reads).</p>
+<p><strong>Per call</strong>: <code>WhereAsync</code> / <code>CountAsync</code> SQL translation (~10–50 μs — predicates are dynamic) · closure
+evaluation inside predicates (~5 μs via a manual fast path, falling back to compiled lambdas only for shapes it
+cannot resolve).</p>
+<p><strong>Deliberately absent</strong>, and the reason the profile stays flat: no N+1 (no navigation properties or lazy
+loading), no cartesian explosions (no join generation), no change tracking (the repository is stateless), no
+materialisation proxies (<code>PropertyInfo.SetValue</code> writes directly).</p>
+<p>The dominant cost of any call is the network round-trip; DAL CPU overhead is low microseconds per operation.
+<code>TflOmniDb.Benchmarks</code> measures the claims — including the O(1)-vs-O(n) memory difference between
+<code>StreamAllAsync</code> and <code>GetAllAsync</code>, and bulk insert vs a loop at 100 and 1,000 rows.</p>
+<hr />
+<h2 id="build-test">Build &amp; test</h2>
+<p>The solution hosts both legs, so <strong>build it with Visual Studio MSBuild</strong> — the Fx library is a legacy non-SDK
+csproj using <code>PackageReference</code>, and <code>dotnet build</code> does not inject NuGet's target wiring for it:</p>
+<pre><code class="language-powershell">$mb = 'C:\Program Files\Microsoft Visual Studio\18\Enterprise\MSBuild\Current\Bin\MSBuild.exe'
+&amp; $mb TflOmniDb.slnx /t:Restore
+&amp; $mb TflOmniDb.slnx /p:Configuration=Debug
+</code></pre>
+<p>The Net10 projects build fine with <code>dotnet build</code> in isolation.</p>
+<pre><code class="language-powershell"># Connection strings — the same keys serve both legs
+$env:TFLOMNIDB_SQLSERVER_CONN = '...'
+$env:TFLOMNIDB_ORACLE_CONN    = '...'
+$env:TFLOMNIDB_POSTGRES_CONN  = '...'
+
+# Net10 — 521 tests
+dotnet test TflOmniDb.Tests\TflOmniDb.Tests.csproj --logger 'console;verbosity=minimal'
+
+# Fx — 332 tests, via vstest
+&amp; '...\vstest.console.exe' TflOmniDbFx.Tests\bin\Debug\net48\TflOmniDbFx.Tests.dll
+</code></pre>
+<p>Connection strings resolve <strong>env var first</strong>, then <code>App.config</code> <code>&lt;appSettings&gt;</code> in the test project.</p>
+<p><strong>Every feature ships with a test and a demo.</strong> When you change the library, update <code>TflOmniDb.Tests</code> (unit +
+live-3-DB as appropriate) <em>and</em> add or extend a <code>TflOmniDb.Demo/Demos/*</code> entry wired into <code>Program.cs</code>. The demo
+runs every entry against each configured provider in turn and prints a demo × provider matrix; a provider with an
+unreachable connection is skipped, not failed.</p>
+<hr />
+<h2 id="documentation-index">Documentation index</h2>
+<h3 id="written-for-this-library">Written for this library</h3>
+<table>
+<thead>
+<tr>
+<th>Document</th>
+<th>What it covers</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a href="docs/api-reference.html">docs/api-reference.md</a></td>
+<td>Every public type and member: <code>DataAccess</code>, <code>IRepository&lt;T&gt;</code>, <code>IUnitOfWork</code>, options, attributes, enums, stored-procedure stack, <code>SqlQuery</code> / <code>Fn</code> / <code>Col</code> / <code>Agg</code>, <code>RowAccess</code></td>
+</tr>
+<tr>
+<td><a href="docs/usage-guide.html">docs/usage-guide.md</a></td>
+<td>Task-oriented recipes: CRUD, transactions, paging, projections, aggregates, bulk insert, streaming, procedures, raw SQL, retry, dirty reads, timeouts, concurrency, logging</td>
+</tr>
+<tr>
+<td><a href="docs/components.html">docs/components.md</a></td>
+<td>Internal architecture: the layers, what each caches, how a call flows end to end, extension points, what is intentionally missing</td>
+</tr>
+<tr>
+<td><a href="docs/tooling.html">docs/tooling.md</a></td>
+<td>Scaffolder (CLI + web, connected + air-gap), table migration, benchmarks</td>
+</tr>
+</tbody>
+</table>
+<h3 id="pre-existing-references">Pre-existing references</h3>
+<table>
+<thead>
+<tr>
+<th>Document</th>
+<th>What it covers</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a href="docs/AdDataAccessComponent-vs-TflOmniDb.html">docs/AdDataAccessComponent-vs-TflOmniDb.md</a> · <a href="docs/AdDataAccessComponent-vs-TflOmniDb.html">html</a></td>
+<td>Side-by-side comparison with the legacy Enterprise-Library-based component</td>
+</tr>
+<tr>
+<td><a href="docs/Migration-from-AdDataAccessComponent.html">docs/Migration-from-AdDataAccessComponent.md</a></td>
+<td>Idiom-by-idiom porting cheat-sheet off the legacy DAL</td>
+</tr>
+<tr>
+<td><a href="docs/CommandTimeout-and-AdDataAccessOptions.html">docs/CommandTimeout-and-AdDataAccessOptions.md</a></td>
+<td>Deep-dive on the timeout and the options bag: legacy mechanics, exact precedence, the full <code>DataAccessOptions</code> reference, config binding, worked examples</td>
+</tr>
+<tr>
+<td><a href="docs/StoredProcMigration.html">docs/StoredProcMigration.md</a></td>
+<td>Strategy for converting stored procedures to provider-agnostic C#</td>
+</tr>
+<tr>
+<td><code>docs/datatype-mapping-*.txt</code> / <code>.pdf</code></td>
+<td>Schema-conversion tables: <code>CoreDataType</code> ↔ CLR ↔ SQL Server ↔ Oracle ↔ PostgreSQL, in several column arrangements (SQL-Server-primary, core-type-primary, with/without PostgreSQL, and a condensed team sheet). Generated by <code>docs/gen_datatype_mapping.py</code> and <code>gen_datatype_mapping_sqlserver.py</code></td>
+</tr>
+<tr>
+<td><a href="CLAUDE.html">CLAUDE.md</a></td>
+<td>The working contract for this repository — status, standing rules, per-feature detail</td>
+</tr>
+</tbody>
+</table>
+</div></div>
+<script>
+(function(){
+ function put(t){
+  if(navigator.clipboard&&navigator.clipboard.writeText)return navigator.clipboard.writeText(t);
+  return new Promise(function(res,rej){
+   var a=document.createElement('textarea');a.value=t;a.setAttribute('readonly','');
+   a.style.cssText='position:fixed;top:0;left:0;opacity:0';document.body.appendChild(a);
+   a.select();var ok=false;try{ok=document.execCommand('copy')}catch(e){}
+   document.body.removeChild(a);ok?res():rej()});
+ }
+ function flash(el,txt,ms){
+  var was=el.textContent;el.classList.add('done');if(txt)el.textContent=txt;
+  setTimeout(function(){el.classList.remove('done');if(txt)el.textContent=was},ms||1200);
+ }
+ function copy(text,el,okTxt){
+  put(text).then(function(){flash(el,okTxt)},function(){
+   if(okTxt){var w=el.textContent;el.textContent='Ctrl+C';setTimeout(function(){el.textContent=w},2000)}});
+ }
+ document.querySelectorAll('pre').forEach(function(pre){
+  if(pre.classList.contains('txtdoc'))return;
+  var b=document.createElement('button');
+  b.type='button';b.className='copy';b.textContent='Copy';
+  b.setAttribute('aria-label','Copy this code block to the clipboard');
+  b.addEventListener('click',function(){copy((pre.querySelector('code')||pre).innerText,b,'Copied')});
+  pre.appendChild(b);
+ });
+ document.querySelectorAll('td code').forEach(function(c){
+  if(!c.textContent.trim())return;
+  c.classList.add('cp');c.tabIndex=0;c.setAttribute('role','button');
+  c.title='Click to copy';
+  c.addEventListener('click',function(){copy(c.textContent,c)});
+  c.addEventListener('keydown',function(e){
+   if(e.key==='Enter'||e.key===' '){e.preventDefault();copy(c.textContent,c)}});
+ });
+})();
+</script>
+</body></html>

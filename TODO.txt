@@ -1,0 +1,20 @@
+//DONE - actual menus from a_menus (no routecutover.json) -> DbMigrator 0004_menu_routes_cutover.sql; RouteCutover deleted
+- create 2 docs : 1) //DONE why not microservice -> docs/architecture/Why-Modular-Monolith-Not-Microservices.md  2) //DONE is ours a 3 tiers application -> docs/architecture/Is-CBS-A-Multi-Tier-Application.md
+- Avoid paging or less than 100 rows (configurable) 
+- Why stoping hr module still showing hr pages (iis -multi)
+//DONe - Add calender to datetime picker
+
+***handover-checklist***
+- End-to-End check with Oracle before handover
+
+ //DONE TflCbsServices - module wise
+================================================
+- RC4 Login
+- MFA_AD_LOGIN_ENABLED
+- MFA_QR_AT_LOGIN_ENABLED
+- MFA_OTP_AT_LOGIN_ENABLED
+- Login.aspx (Tag: new code for payroll)
+- PR_G_GETLOGINOUTTIME
+================================================
+
+ 

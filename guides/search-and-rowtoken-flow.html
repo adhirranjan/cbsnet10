@@ -1,0 +1,233 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Search modal + RowToken — visual reference</title>
+<style>
+:root{color-scheme:light dark}
+*{box-sizing:border-box}
+body{margin:0;background:#f6f8fa;color:#1f2328;font:16px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif}
+.wrap{max-width:900px;margin:0 auto;padding:32px 24px 96px}
+.card{background:#fff;border:1px solid #d0d7de;border-radius:10px;padding:40px 48px}
+h1,h2,h3{line-height:1.25;font-weight:600}
+h1{font-size:1.9rem;margin:0 0 .3em;padding-bottom:.3em;border-bottom:1px solid #d8dee4}
+h2{font-size:1.4rem;margin:1.8em 0 .6em;padding-bottom:.25em;border-bottom:1px solid #eaeef2}
+h3{font-size:1.12rem;margin:1.4em 0 .5em}
+p,li{margin:.5em 0}
+a{color:#0969da;text-decoration:none}
+a:hover{text-decoration:underline}
+code{font-family:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;font-size:.86em;background:#eff1f3;padding:.15em .4em;border-radius:6px}
+pre{background:#f6f8fa;border:1px solid #d8dee4;border-radius:8px;padding:14px 16px;overflow:auto}
+pre code{background:none;padding:0;font-size:.85em;line-height:1.45}
+blockquote{margin:1em 0;padding:.4em 1em;color:#3d444d;border-left:4px solid #d0d7de;background:#f6f8fa;border-radius:0 6px 6px 0}
+blockquote>:first-child{margin-top:0}blockquote>:last-child{margin-bottom:0}
+table{border-collapse:collapse;width:100%;margin:1em 0;display:block;overflow:auto}
+th,td{border:1px solid #d0d7de;padding:8px 12px;text-align:left;vertical-align:top}
+th{background:#f6f8fa;font-weight:600}
+tr:nth-child(2n) td{background:#f6f8fa}
+hr{border:0;border-top:1px solid #d8dee4;margin:2em 0}
+pre{position:relative}
+pre>button.copy{position:absolute;top:8px;right:8px;padding:5px 9px;cursor:pointer;
+  font:600 .68rem/1 ui-monospace,SFMono-Regular,Consolas,monospace;letter-spacing:.03em;
+  color:#636c76;background:#fff;border:1px solid #d0d7de;border-radius:6px;
+  opacity:0;transition:opacity .12s}
+pre:hover>button.copy,pre>button.copy:focus{opacity:1}
+pre>button.copy.done{color:#0a3622;background:#dafbe1;border-color:#4ac26b}
+@media(hover:none){pre>button.copy{opacity:1}}
+td code.cp{cursor:pointer}
+td code.cp:hover,td code.cp:focus{outline:1px solid #8c959f;outline-offset:1px}
+td code.cp.done{color:#0a3622;background:#dafbe1}
+.docnav{margin:0 0 20px;font-size:.85rem;color:#636c76}
+.docnav a{color:#636c76}
+ul{padding-left:1.4em}ol{padding-left:1.4em}
+@media(max-width:640px){.card{padding:24px 18px}.wrap{padding:16px 10px 64px}}
+@media(prefers-color-scheme:dark){
+ body{background:#0d1117;color:#e6edf3}
+ .card{background:#161b22;border-color:#30363d}
+ h1{border-color:#30363d}h2{border-color:#21262d}
+ code{background:#262c34}
+ pre{background:#0d1117;border-color:#30363d}
+ blockquote{background:#161b22;border-color:#30363d;color:#9198a1}
+ th,td{border-color:#30363d}th{background:#161b22}tr:nth-child(2n) td{background:#12171e}
+ a{color:#4493f8}.docnav,.docnav a{color:#9198a1}
+ hr{border-color:#30363d}
+ pre>button.copy{color:#9198a1;background:#161b22;border-color:#30363d}
+ pre>button.copy.done{color:#aff5b4;background:#1b4721;border-color:#2ea043}
+ td code.cp.done{color:#aff5b4;background:#1b4721}
+}
+</style></head>
+<body><div class="wrap"><div class="card">
+<div class="docnav"><a href="../index.html">&#8592; All docs</a></div>
+<h1 id="search-modal-rowtoken-visual-reference">Search modal + RowToken — visual reference</h1>
+<p>How the reusable search modal round-trips data, and how <code>RowToken</code> keeps real primary keys off
+the client. Diagrams are <a href="https://mermaid.js.org/">Mermaid</a> — they render in VS Code (Markdown
+Preview / "Markdown Preview Mermaid Support" extension) and on GitHub.</p>
+<p>Source of truth:
+- Client: <a href="../../TflCbs.Web.Shared/wwwroot/js/cbs-search.js"><code>cbs-search.js</code></a> (shared RCL — served from <code>~/_content/TflCbs.Web.Shared/js/</code>)
+- Endpoint: <a href="../../TflCbs.Framework/Services/SearchEndpoint.cs"><code>SearchEndpoint.cs</code></a>
+- Token: <a href="../../TflCbs.Framework/Infrastructure/RowToken.cs"><code>RowToken.cs</code></a> · single-use set in <a href="../../TflCbs.Framework/Services/CbsSessionStore.cs"><code>CbsSessionStore.cs</code></a>
+- Worked example: <a href="../../TflCbs.Modules.Hr.Web/Areas/Hr/Controllers/StateController.cs"><code>StateController.cs</code></a> (screen <code>Hr/State</code>, backed by <code>StateService</code> in <code>TflCbs.Modules.Reference</code>)</p>
+<hr />
+<h2 id="1-search-flow-end-to-end-sequence">1. Search flow — end to end (sequence)</h2>
+<pre><code class="language-mermaid">sequenceDiagram
+    autonumber
+    actor U as User
+    participant JS as cbs-search.js&lt;br/&gt;(modal)
+    participant MW as CbsAccessMiddleware&lt;br/&gt;(fail-closed)
+    participant C as StateController.SearchData
+    participant SE as SearchEndpoint
+    participant SVC as StateService&lt;br/&gt;(TflCbs.Modules.Reference)
+    participant RT as RowToken
+    participant DB as SQL
+
+    U-&gt;&gt;JS: click [data-cbs-search] trigger
+    JS-&gt;&gt;JS: open() → renderFilters / renderHead, show #cbs-search
+    U-&gt;&gt;JS: type filters + press Search
+    JS-&gt;&gt;JS: load() builds search.Q / Filters[] / Sort / Page / PageSize
+    JS-&gt;&gt;MW: GET /Hr/State/search?search.*  (X-Requested-With: fetch)
+    MW-&gt;&gt;MW: screen &quot;Hr/State&quot; in user's menu?
+    Note over MW: not authorized → 403 (fail-closed)
+    MW-&gt;&gt;C: authorized → invoke action
+    C-&gt;&gt;SE: RunAsync(fetch, idKey=&quot;Id&quot;, screen=&quot;Hr/State&quot;, req)
+    SE-&gt;&gt;SE: Normalize(page, pageSize)
+    SE-&gt;&gt;SVC: fetch → SearchStatesAsync(q, name, code, cersai, sort, desc, page, size)
+    SVC-&gt;&gt;DB: Repository&lt;G_STATE&gt; (GetAllAsync) / QueryAsync
+    DB--&gt;&gt;SVC: rows + total
+    SVC--&gt;&gt;SE: Result&lt;(rows, total)&gt;  → dictionaries
+    loop each row
+        SE-&gt;&gt;RT: Protect(id, &quot;Hr/State&quot;)
+        RT--&gt;&gt;SE: opaque token → row[&quot;Id&quot;] = token
+    end
+    SE--&gt;&gt;C: SearchResponse { Rows, Total, Page, TotalPages }
+    C--&gt;&gt;JS: return Json(resp)  → 200 application/json
+    Note over JS: on !ok → parse {error} → throw → status() message
+    JS-&gt;&gt;JS: r.json() → state.rows / totalPages
+    JS-&gt;&gt;JS: renderRows() → #cbs-search-body · renderPager() → #cbs-search-pager
+    U-&gt;&gt;JS: pick a row
+    alt navigateTemplate (State screen)
+        JS-&gt;&gt;C: GET /Hr/State?row=&lt;token&gt;  (Index resolves → edit form)
+    else callback (input picker)
+        JS-&gt;&gt;JS: applyPick() → fill hidden id + text, lock box
+    end
+</code></pre>
+<p><strong>Read it as:</strong> the browser owns rendering (no Razor view for <code>/search</code>); the server only
+filters/pages, swaps each raw PK for a token, and returns JSON. The picked token round-trips back
+to <code>Index</code> (diagram 3) or fills a form field.</p>
+<hr />
+<h2 id="2-rowtoken-payload-whats-inside-the-opaque-string">2. RowToken payload (what's inside the opaque string)</h2>
+<pre><code class="language-mermaid">flowchart LR
+    subgraph plain[&quot;plaintext payload (joined with '|')&quot;]
+        direction LR
+        S[&quot;screen&lt;br/&gt;'Hr/State'&quot;] --- SID[&quot;sid&lt;br/&gt;session GUID&quot;] --- J[&quot;jti&lt;br/&gt;Guid.NewGuid()&quot;] --- ID[&quot;id&lt;br/&gt;real PK (LAST)&quot;]
+    end
+    plain --&gt;|&quot;_protector.Protect()&lt;br/&gt;AES encrypt + sign&quot;| TOK[&quot;opaque token&lt;br/&gt;(to client)&quot;]
+
+    S -.guards.-&gt; G1[&quot;no cross-screen reuse&quot;]
+    SID -.guards.-&gt; G2[&quot;dies on logout / rotation&quot;]
+    J -.guards.-&gt; G3[&quot;single-use nonce (writes)&quot;]
+    ID -.hidden.-&gt; G4[&quot;PK never leaves server&quot;]
+</code></pre>
+<p><code>id</code> is placed <strong>last</strong> so a string id may itself contain <code>|</code> (split limit 4); <code>screen</code>/<code>sid</code>/<code>jti</code>
+never contain <code>|</code>.</p>
+<hr />
+<h2 id="3-rowtoken-lifecycle-mint-resolve-consume-state">3. RowToken lifecycle — mint → resolve → consume (state)</h2>
+<pre><code class="language-mermaid">stateDiagram-v2
+    direction TB
+    [*] --&gt; Minted: search Build()&lt;br/&gt;tokens.Protect(id, screen)
+    Minted --&gt; Client: embedded in row[&quot;Id&quot;] → JSON
+
+    state &quot;READ — TryResolve (validate only)&quot; as Resolve
+    state &quot;WRITE — TryConsume (single-use)&quot; as Consume
+
+    Client --&gt; Resolve: GET ?row=token&lt;br/&gt;(Index / reopen)
+    Client --&gt; Consume: POST Form.Row=token&lt;br/&gt;(Update / Delete)
+
+    Resolve --&gt; Loaded: decrypt ok · screen ok · sid ok
+    Resolve --&gt; Rejected: tampered / wrong-key /&lt;br/&gt;cross-screen / expired session
+    Loaded --&gt; Minted: edit form re-mints a fresh token
+    note right of Loaded
+        reads never spend the nonce →
+        a record can be reopened repeatedly
+    end note
+
+    Consume --&gt; CheckNonce: TryRead ok
+    Consume --&gt; Rejected: invalid token
+    CheckNonce --&gt; Spent: ConsumedRowTokens.Add(jti)==true&lt;br/&gt;→ perform write
+    CheckNonce --&gt; Replayed: Add==false&lt;br/&gt;(already submitted / double-click)
+    Replayed --&gt; Rejected
+
+    Rejected --&gt; [*]: NotifyError → reopen / search again
+    Spent --&gt; [*]: write succeeds
+</code></pre>
+<p><strong>Key distinction:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Path</th>
+<th>Method</th>
+<th>Touches nonce?</th>
+<th>Why</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Read (<code>Index</code>, reopen)</td>
+<td><code>TryResolve</code></td>
+<td>No</td>
+<td>record can be reopened any number of times</td>
+</tr>
+<tr>
+<td>Write (<code>Update</code>, <code>Delete</code>)</td>
+<td><code>TryConsume</code></td>
+<td>Yes — <code>jti</code> added to session set</td>
+<td>single-use: blocks replay + accidental double-submit</td>
+</tr>
+</tbody>
+</table>
+<p><code>Update</code> deliberately validates the token <strong>first</strong> via <code>TryBeginWrite</code> (so a <code>ModelState</code> failure
+re-renders the form without burning it) and only <code>TryConsume</code>s once the write actually proceeds — see
+<a href="../../TflCbs.Modules.Hr.Web/Areas/Hr/Controllers/StateController.cs#L89"><code>StateController.cs:89</code></a> and
+<a href="../../TflCbs.Modules.Hr.Web/Areas/Hr/Controllers/StateController.cs#L94"><code>:94</code></a>. <code>TryBeginWrite</code> /
+<code>TryOpenRecord</code> are the <code>CbsScreenController</code> wrappers over <code>RowToken.TryResolve</code>.</p>
+<blockquote>
+<p><strong>Not access control.</strong> Tokens secure the <em>handoff</em> (PK confidentiality + integrity + single-use).
+Authorization is still enforced separately by <code>CbsAccessMiddleware</code> (menu/route guard) and the
+scoped service calls. A valid token is never a substitute for being allowed on the screen.</p>
+</blockquote>
+</div></div>
+<script>
+(function(){
+ function put(t){
+  if(navigator.clipboard&&navigator.clipboard.writeText)return navigator.clipboard.writeText(t);
+  return new Promise(function(res,rej){
+   var a=document.createElement('textarea');a.value=t;a.setAttribute('readonly','');
+   a.style.cssText='position:fixed;top:0;left:0;opacity:0';document.body.appendChild(a);
+   a.select();var ok=false;try{ok=document.execCommand('copy')}catch(e){}
+   document.body.removeChild(a);ok?res():rej()});
+ }
+ function flash(el,txt,ms){
+  var was=el.textContent;el.classList.add('done');if(txt)el.textContent=txt;
+  setTimeout(function(){el.classList.remove('done');if(txt)el.textContent=was},ms||1200);
+ }
+ function copy(text,el,okTxt){
+  put(text).then(function(){flash(el,okTxt)},function(){
+   if(okTxt){var w=el.textContent;el.textContent='Ctrl+C';setTimeout(function(){el.textContent=w},2000)}});
+ }
+ document.querySelectorAll('pre').forEach(function(pre){
+  if(pre.classList.contains('txtdoc'))return;
+  var b=document.createElement('button');
+  b.type='button';b.className='copy';b.textContent='Copy';
+  b.setAttribute('aria-label','Copy this code block to the clipboard');
+  b.addEventListener('click',function(){copy((pre.querySelector('code')||pre).innerText,b,'Copied')});
+  pre.appendChild(b);
+ });
+ document.querySelectorAll('td code').forEach(function(c){
+  if(!c.textContent.trim())return;
+  c.classList.add('cp');c.tabIndex=0;c.setAttribute('role','button');
+  c.title='Click to copy';
+  c.addEventListener('click',function(){copy(c.textContent,c)});
+  c.addEventListener('keydown',function(e){
+   if(e.key==='Enter'||e.key===' '){e.preventDefault();copy(c.textContent,c)}});
+ });
+})();
+</script>
+</body></html>

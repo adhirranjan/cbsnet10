@@ -1,0 +1,384 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Why TrustBank CBS is a Modular Monolith, not Microservices</title>
+<style>
+:root{color-scheme:light dark}
+*{box-sizing:border-box}
+body{margin:0;background:#f6f8fa;color:#1f2328;font:16px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif}
+.wrap{max-width:900px;margin:0 auto;padding:32px 24px 96px}
+.card{background:#fff;border:1px solid #d0d7de;border-radius:10px;padding:40px 48px}
+h1,h2,h3{line-height:1.25;font-weight:600}
+h1{font-size:1.9rem;margin:0 0 .3em;padding-bottom:.3em;border-bottom:1px solid #d8dee4}
+h2{font-size:1.4rem;margin:1.8em 0 .6em;padding-bottom:.25em;border-bottom:1px solid #eaeef2}
+h3{font-size:1.12rem;margin:1.4em 0 .5em}
+p,li{margin:.5em 0}
+a{color:#0969da;text-decoration:none}
+a:hover{text-decoration:underline}
+code{font-family:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;font-size:.86em;background:#eff1f3;padding:.15em .4em;border-radius:6px}
+pre{background:#f6f8fa;border:1px solid #d8dee4;border-radius:8px;padding:14px 16px;overflow:auto}
+pre code{background:none;padding:0;font-size:.85em;line-height:1.45}
+blockquote{margin:1em 0;padding:.4em 1em;color:#3d444d;border-left:4px solid #d0d7de;background:#f6f8fa;border-radius:0 6px 6px 0}
+blockquote>:first-child{margin-top:0}blockquote>:last-child{margin-bottom:0}
+table{border-collapse:collapse;width:100%;margin:1em 0;display:block;overflow:auto}
+th,td{border:1px solid #d0d7de;padding:8px 12px;text-align:left;vertical-align:top}
+th{background:#f6f8fa;font-weight:600}
+tr:nth-child(2n) td{background:#f6f8fa}
+hr{border:0;border-top:1px solid #d8dee4;margin:2em 0}
+pre{position:relative}
+pre>button.copy{position:absolute;top:8px;right:8px;padding:5px 9px;cursor:pointer;
+  font:600 .68rem/1 ui-monospace,SFMono-Regular,Consolas,monospace;letter-spacing:.03em;
+  color:#636c76;background:#fff;border:1px solid #d0d7de;border-radius:6px;
+  opacity:0;transition:opacity .12s}
+pre:hover>button.copy,pre>button.copy:focus{opacity:1}
+pre>button.copy.done{color:#0a3622;background:#dafbe1;border-color:#4ac26b}
+@media(hover:none){pre>button.copy{opacity:1}}
+td code.cp{cursor:pointer}
+td code.cp:hover,td code.cp:focus{outline:1px solid #8c959f;outline-offset:1px}
+td code.cp.done{color:#0a3622;background:#dafbe1}
+.docnav{margin:0 0 20px;font-size:.85rem;color:#636c76}
+.docnav a{color:#636c76}
+ul{padding-left:1.4em}ol{padding-left:1.4em}
+@media(max-width:640px){.card{padding:24px 18px}.wrap{padding:16px 10px 64px}}
+@media(prefers-color-scheme:dark){
+ body{background:#0d1117;color:#e6edf3}
+ .card{background:#161b22;border-color:#30363d}
+ h1{border-color:#30363d}h2{border-color:#21262d}
+ code{background:#262c34}
+ pre{background:#0d1117;border-color:#30363d}
+ blockquote{background:#161b22;border-color:#30363d;color:#9198a1}
+ th,td{border-color:#30363d}th{background:#161b22}tr:nth-child(2n) td{background:#12171e}
+ a{color:#4493f8}.docnav,.docnav a{color:#9198a1}
+ hr{border-color:#30363d}
+ pre>button.copy{color:#9198a1;background:#161b22;border-color:#30363d}
+ pre>button.copy.done{color:#aff5b4;background:#1b4721;border-color:#2ea043}
+ td code.cp.done{color:#aff5b4;background:#1b4721}
+}
+</style></head>
+<body><div class="wrap"><div class="card">
+<div class="docnav"><a href="../index.html">&#8592; All docs</a></div>
+<h1 id="why-trustbank-cbs-is-a-modular-monolith-not-microservices">Why TrustBank CBS is a Modular Monolith, not Microservices</h1>
+<p>Decision record. Companion to <a href="modular-monolith.html">modular-monolith.md</a> (what the modular
+architecture <em>is</em>) and <a href="reusable-boundary.html">reusable-boundary.md</a> (the horizontal
+framework/screen split). This document answers the question those two assume:
+<strong>why did we not go to microservices?</strong></p>
+<blockquote>
+<p><strong>Decision.</strong> TrustBank CBS runs as a <strong>modular monolith</strong> — one process, one database, hard
+code-level module boundaries that are enforced by the build. Microservices were considered and
+rejected for this application, not for architecture in general. The rejection is about <em>this</em>
+workload: a core banking system whose fundamental unit of work is a multi-module ACID
+transaction. Last reviewed 24 August 2026.</p>
+</blockquote>
+<hr />
+<h2 id="1-what-this-application-actually-is">1. What this application actually is</h2>
+<p>Any "monolith vs microservices" argument that ignores the workload is decoration. So, the workload:</p>
+<ul>
+<li><strong>Core banking.</strong> Deposits, withdrawals, transfers, clearing, holds, GL posting, interest runs, day-end. The unit of work is a <strong>balanced set of ledger entries</strong> — it either all lands or none of it does.</li>
+<li><strong>One bank, one ledger.</strong> Not a multi-tenant SaaS with per-tenant scaling curves. Volumes are a regional/co-operative bank's, not a payment network's.</li>
+<li><strong>A migration in flight.</strong> ~1,458 legacy screens and ~5,317 stored procedures moving from ASP.NET WebForms / VB.NET / .NET 4.8 to .NET 10 / C# MVC, strangler-fig style, while the legacy system keeps running.</li>
+<li><strong>Regulated and audited.</strong> Every posting must be explicable after the fact. "The compensating transaction had not yet run" is not an acceptable answer to an auditor.</li>
+<li><strong>A small team.</strong> Not eight independent teams each wanting their own release cadence.</li>
+</ul>
+<p>Every point below follows from that list.</p>
+<hr />
+<h2 id="2-the-core-argument-in-one-paragraph">2. The core argument in one paragraph</h2>
+<p>Microservices buy <strong>independent deployability and independent scaling</strong>, and they pay for it with
+<strong>the loss of the ACID transaction across service boundaries</strong>. In most business applications that
+trade is fine, because the operations that span services are not strictly atomic. In core banking
+it is exactly inverted: the operations that span modules — a posting, a clearing settlement, day-end
+— are <em>precisely</em> the ones that must be atomic, and the scaling pressure that would justify the
+trade does not exist at our volumes. We would be paying the highest price in the catalogue for the
+benefit we need least.</p>
+<hr />
+<h2 id="3-why-microservices-are-the-wrong-fit-here">3. Why microservices are the wrong fit here</h2>
+<h3 id="31-the-transaction-boundary-is-the-whole-product">3.1 The transaction boundary is the whole product</h3>
+<p>A single posting in TflCbs touches multiple modules: <code>RetailBanking</code> (account, holding amount),
+<code>Accounts</code>, <code>Clearing</code>, <code>General</code> (maker-checker scroll, process-block check) and the GL. Today that
+is one <code>DataAccess.ExecuteInTransactionAsync</code> — one connection, one transaction, real ACID
+semantics, and a rollback that leaves no trace.</p>
+<p>Split those modules into services and the same operation becomes a <strong>saga</strong>: a sequence of local
+transactions with compensating actions. The consequences are not theoretical.</p>
+<ul>
+<li><strong>A compensation is not a rollback.</strong> You cannot un-debit an account. You post a second, visible, reversing entry. The customer's statement now shows a debit and a credit that never should have existed. Multiply by every partial failure.</li>
+<li><strong>Intermediate states become externally visible.</strong> Between the debit and the credit there is a real window where the books do not balance. Someone will query a balance inside that window.</li>
+<li><strong>Reconciliation becomes permanent engineering.</strong> Every saga needs a reconciler, an alerting path for stuck sagas, and an operational runbook for manual repair.</li>
+<li><strong>Idempotency everywhere.</strong> Every service call needs a deduplication key and a store to hold it, because a retried "credit 10,000" that lands twice is a real loss.</li>
+</ul>
+<p>That is a large, permanent, correctness-critical body of code — written to solve a problem we do not
+have, created purely by the decision to distribute.</p>
+<h3 id="32-one-ledger-cannot-be-sharded-per-module">3.2 One ledger cannot be sharded per module</h3>
+<p>"Microservices with a shared database" is not microservices; it is a distributed monolith with all
+the costs and none of the benefits. Real microservices means a database per service — and here that
+collides with the domain:</p>
+<ul>
+<li><code>TflCbs.Entities</code> is a <strong>generated contract over shared tables</strong>. The account master is read by nearly every domain.</li>
+<li>Splitting it means either duplicating master data (and then reconciling the copies) or synchronous cross-service reads (and then you have a distributed monolith with network latency).</li>
+<li>Balances would become eventually consistent. For a ledger, that is not a performance trade-off; it is a correctness defect.</li>
+</ul>
+<p>Our own architecture doc already draws this line explicitly: <em>process separation is not data
+separation</em>. A thin per-module host still reaches the shared database through the same
+<code>DatabaseSelector</code>, and that is intended.</p>
+<h3 id="33-it-would-mean-two-simultaneous-rewrites">3.3 It would mean two simultaneous rewrites</h3>
+<p>We are already performing one high-risk transformation: WebForms/VB.NET to .NET 10 MVC, screen by
+screen, with the legacy system live beside it. Adding "and also decompose into distributed services"
+means the team is simultaneously changing the <strong>UI stack</strong>, the <strong>language</strong>, the <strong>data access
+layer</strong> <em>and</em> the <strong>consistency model</strong>. When something breaks in that arrangement, nobody can say
+which change caused it. Sequencing risk is the cheapest risk control available, and we took it.</p>
+<h3 id="34-the-operational-bill-has-no-matching-benefit">3.4 The operational bill has no matching benefit</h3>
+<p>Distribution is not free at rest. It adds, permanently: service discovery, per-service pipelines and
+versioning, contract/compatibility testing between services, distributed tracing (because a stack
+trace no longer explains anything), network partition handling, per-service secrets and certificate
+rotation, and N sets of dashboards and alerts.</p>
+<p>For a payment network processing millions of transactions a second, that bill is worth paying. For
+one bank's core system, it buys nothing. <strong>We would be adding a full-time platform-operations
+workload to a team that should be migrating 1,458 screens.</strong></p>
+<h3 id="35-new-failure-modes-in-the-worst-place">3.5 New failure modes, in the worst place</h3>
+<p>In-process, a call between modules cannot time out, cannot be partially applied, and cannot fail
+because of a DNS change. Over a network, every one of those becomes possible — and the failure
+surface grows with the number of hops. Rendering the menu, evaluating the fail-closed access guard
+and validating the session are currently ordinary method calls behind <code>IMenuSource</code>,
+<code>IBankVariableSource</code>, <code>IBroadcastSource</code> and <code>ISessionValidator</code>. As remote calls they become
+things that can be <em>slow</em> or <em>down</em> on the login path of a bank's core system.</p>
+<p>Fail-closed access control has a specific implication here: if the authorization service is
+unreachable, the correct behaviour is to <strong>deny</strong>. Distributing the guard therefore converts a
+network blip into an outage for everyone — which is the right behaviour, and an excellent reason not
+to create the blip in the first place.</p>
+<h3 id="36-conways-law-points-the-other-way">3.6 Conway's Law points the other way</h3>
+<p>Microservice boundaries pay off when they match <strong>team</strong> boundaries: separate teams that must ship
+without coordinating. We have one team. Splitting one team's codebase across nine deployable
+services does not remove coordination — it converts cheap in-repo coordination (a compiler error)
+into expensive cross-version coordination (a runtime contract break found in staging, or worse).</p>
+<h3 id="37-diagnosis-and-audit-get-materially-harder">3.7 Diagnosis and audit get materially harder</h3>
+<p>At 3am, with a bank's operations blocked, "one stack trace through one process" versus "correlate
+nine services' logs by request id and hope the clocks agree" is not a stylistic preference. The same
+applies to the regulator's question six months later: <em>show me exactly what happened to this
+transaction</em>. One transaction log in one database answers it. Nine event streams and a saga history
+answer it too — eventually, with effort, and with room for doubt.</p>
+<hr />
+<h2 id="4-why-the-modular-monolith-is-the-right-fit">4. Why the modular monolith is the right fit</h2>
+<p>The decisive point is that <strong>almost every genuine benefit of microservices comes from the
+boundaries, not from the network.</strong> We took the boundaries and declined the network.</p>
+<h3 id="41-the-boundaries-are-real-and-the-build-enforces-them">4.1 The boundaries are real — and the build enforces them</h3>
+<p>This is the difference between a modular monolith and the legacy monolith it replaces. A
+conventional monolith degrades because nothing stops a shortcut. Here, something does:</p>
+<table>
+<thead>
+<tr>
+<th>Rule</th>
+<th>Mechanism</th>
+<th>If violated</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Modules never reference each other's implementation</td>
+<td><code>TflCbs.Abstractions</code> floor + published <code>*.Contracts</code> assemblies</td>
+<td>Compiler error</td>
+</tr>
+<tr>
+<td>Framework never references a screen or a service module</td>
+<td>Project graph + NetArchTest</td>
+<td>Build fails</td>
+</tr>
+<tr>
+<td>Namespace == assembly (so a <code>using</code> names what you couple to)</td>
+<td><code>NamespaceDisciplineTests</code></td>
+<td>Build fails</td>
+</tr>
+<tr>
+<td>Framework talks to modules only via the four ports</td>
+<td><code>IBroadcastSource</code>, <code>IBankVariableSource</code>, <code>IMenuSource</code>, <code>ISessionValidator</code></td>
+<td>Build fails</td>
+</tr>
+<tr>
+<td>Promoted modules stay isolated</td>
+<td><code>ArchBoundaries.PromotedModules</code></td>
+<td>Build fails</td>
+</tr>
+<tr>
+<td>No private copies of shared service helpers</td>
+<td><code>SharedServiceHelperTests</code></td>
+<td>Build fails</td>
+</tr>
+<tr>
+<td>Every deployed module is composed explicitly</td>
+<td><code>AddCbsModules</code> startup cross-check</td>
+<td>Startup throws</td>
+</tr>
+</tbody>
+</table>
+<p><strong>94 architecture tests</strong> run on every build, and the suite guards <em>itself</em>: a meta-check verifies
+each boundary rule is still genuinely capable of failing, so a rule cannot quietly go green by
+becoming impossible to violate. That is the property people actually want from microservices —
+"the boundary cannot be crossed by accident" — obtained without a network in the middle.</p>
+<h3 id="42-acid-is-preserved-for-free">4.2 ACID is preserved, for free</h3>
+<p>Cross-module flows stay in one <code>ExecuteInTransactionAsync</code>. No saga, no compensation, no reconciler,
+no idempotency store, no partial-failure runbook. The strongest correctness guarantee available is
+also, here, the cheapest option.</p>
+<h3 id="43-independent-deployment-is-available-and-already-demonstrated">4.3 Independent deployment is available — and already demonstrated</h3>
+<p>This is the part that removes the usual "but we might need to scale out" objection. Because the
+boundaries are enforced, we already ship <strong>four thin per-module hosts</strong> (<code>TflCbs.Host.Hr</code>,
+<code>TflCbs.Host.Lockers</code>, <code>TflCbs.Host.RetailBanking</code>, <code>TflCbs.Host.Administration</code>) behind a <strong>YARP
+gateway</strong> (<code>TflCbs.Gateway</code>), composed by configuration (<code>Modules:Enabled</code>) from the same codebase,
+in <strong>four deployment shapes</strong>: IIS single-host, IIS multi-host, Docker single-host, Docker
+multi-host.</p>
+<p>The trigger for building that was not scale — it was <strong>proof</strong>. Each thin host's build output was
+measured to contain exactly one domain module. That measurement is the evidence that the modules are
+genuinely separable. So the capability microservices would have been bought for is already in hand,
+and it did not cost us the transaction.</p>
+<h3 id="44-one-thing-to-operate">4.4 One thing to operate</h3>
+<p>One application to deploy, monitor, back up and restore. One connection pool. One log stream. One
+process to attach a debugger to. For a bank running its own core system, that is not laziness — it is
+a smaller surface for the operations team that has to keep it up.</p>
+<h3 id="45-the-door-stays-open">4.5 The door stays open</h3>
+<p>Rejecting microservices today is not a permanent vow. Because boundaries are enforced and contracts
+are explicit, extraction later is a <strong>refactor with a known cost</strong>, not a rewrite. The documented
+promotion triggers are: the module must run and deploy on its own; a team needs hard ownership and
+internal hiding; monolith build time hurts; the module ships as a package; cross-module calls must be
+constrained to a contract. We promote when a trigger fires — never all at once, and never on
+fashion.</p>
+<hr />
+<h2 id="5-head-to-head-for-this-application">5. Head to head, for this application</h2>
+<table>
+<thead>
+<tr>
+<th>Concern</th>
+<th>Legacy monolith</th>
+<th>Microservices</th>
+<th>Modular monolith (chosen)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Cross-module posting</td>
+<td>Atomic</td>
+<td>Saga + compensation</td>
+<td><strong>Atomic</strong></td>
+</tr>
+<tr>
+<td>Boundary enforcement</td>
+<td>None — erodes silently</td>
+<td>Network + separate repos</td>
+<td><strong>Compiler + 94 arch tests</strong></td>
+</tr>
+<tr>
+<td>Consistency of balances</td>
+<td>Strong</td>
+<td>Eventual</td>
+<td><strong>Strong</strong></td>
+</tr>
+<tr>
+<td>Deploy units</td>
+<td>1, all-or-nothing</td>
+<td>N, independent</td>
+<td><strong>1 by default; N thin hosts available</strong></td>
+</tr>
+<tr>
+<td>Failure modes</td>
+<td>In-process only</td>
+<td>+ partition, timeout, partial write</td>
+<td><strong>In-process only</strong></td>
+</tr>
+<tr>
+<td>Operational load</td>
+<td>Low</td>
+<td>High and permanent</td>
+<td><strong>Low</strong></td>
+</tr>
+<tr>
+<td>Diagnosis</td>
+<td>One stack trace</td>
+<td>Distributed tracing required</td>
+<td><strong>One stack trace</strong></td>
+</tr>
+<tr>
+<td>Fits a single team</td>
+<td>Yes</td>
+<td>Poorly</td>
+<td><strong>Yes</strong></td>
+</tr>
+<tr>
+<td>Scale-out path</td>
+<td>Rewrite</td>
+<td>Native</td>
+<td><strong>Config change (proven)</strong></td>
+</tr>
+<tr>
+<td>Migration risk added</td>
+<td>—</td>
+<td>High (two rewrites at once)</td>
+<td><strong>None (sequenced)</strong></td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="6-what-we-gave-up-honestly">6. What we gave up, honestly</h2>
+<p>A decision record that lists only advantages is marketing. The real costs of this choice:</p>
+<ul>
+<li><strong>One runtime blast radius in the default shape.</strong> A bad release affects every module. Mitigated by the thin-host shape, and by the test suites gating the build; not eliminated.</li>
+<li><strong>One language and runtime for the business layer.</strong> No per-module technology choice. We consider that a benefit today; it is still a constraint.</li>
+<li><strong>Deployment couples modules by default.</strong> Shipping an HR fix redeploys the process. The multi-host shape exists precisely for the day this stops being acceptable.</li>
+<li><strong>Schema coupling is real.</strong> Shared tables and a generated <code>TflCbs.Entities</code> mean schema changes are a whole-system concern, managed by the versioned migration runner rather than by per-service ownership.</li>
+<li><strong>Build time grows with the codebase.</strong> It is on the promotion-trigger list for a reason.</li>
+</ul>
+<p>None of these costs money that a distributed design would not also charge, plus interest.</p>
+<hr />
+<h2 id="7-when-we-would-revisit-this">7. When we would revisit this</h2>
+<p>Concrete triggers, so this stays a decision rather than a dogma. Revisit if <strong>any</strong> of these become
+true:</p>
+<ul>
+<li>A single module's load genuinely outgrows one process, and the thin-host + gateway shape is no longer enough.</li>
+<li>The organisation grows into multiple independent teams needing independent release cadence, and in-repo coordination measurably blocks delivery.</li>
+<li>A regulatory or data-residency requirement forces true data isolation for a domain. (Note this is a <em>database</em> decision, which is a bigger and separate question from process separation.)</li>
+<li>A module must ship to third parties as a standalone product.</li>
+</ul>
+<p>Absent one of those, distributing this system adds cost and removes a correctness guarantee. That is
+the whole case.</p>
+<hr />
+<h2 id="8-summary">8. Summary</h2>
+<ul>
+<li>Microservices trade <strong>atomicity</strong> for <strong>independent deployability and scaling</strong>.</li>
+<li>In core banking the atomicity is the product, and the scaling pressure is not there.</li>
+<li>The valuable half of microservices is the <strong>boundary discipline</strong> — and we obtained that with enforced code boundaries that fail the build, not with a network.</li>
+<li>The other half, <strong>independent deployment</strong>, we already have on demand: four thin hosts behind a gateway, four deployment shapes, one codebase.</li>
+<li>So the modular monolith gives us the benefits we want, at a fraction of the cost, while keeping ACID — and keeps the microservices door open as a costed refactor rather than a rewrite.</li>
+</ul>
+<p><strong>See also:</strong> <a href="modular-monolith.html">modular-monolith.md</a> · <a href="reusable-boundary.html">reusable-boundary.md</a> · <a href="TrustBank-CBS-Architecture-Brief.html">TrustBank-CBS-Architecture-Brief.md</a> · <a href="../architecture-overview.html">../architecture-overview.md</a></p>
+</div></div>
+<script>
+(function(){
+ function put(t){
+  if(navigator.clipboard&&navigator.clipboard.writeText)return navigator.clipboard.writeText(t);
+  return new Promise(function(res,rej){
+   var a=document.createElement('textarea');a.value=t;a.setAttribute('readonly','');
+   a.style.cssText='position:fixed;top:0;left:0;opacity:0';document.body.appendChild(a);
+   a.select();var ok=false;try{ok=document.execCommand('copy')}catch(e){}
+   document.body.removeChild(a);ok?res():rej()});
+ }
+ function flash(el,txt,ms){
+  var was=el.textContent;el.classList.add('done');if(txt)el.textContent=txt;
+  setTimeout(function(){el.classList.remove('done');if(txt)el.textContent=was},ms||1200);
+ }
+ function copy(text,el,okTxt){
+  put(text).then(function(){flash(el,okTxt)},function(){
+   if(okTxt){var w=el.textContent;el.textContent='Ctrl+C';setTimeout(function(){el.textContent=w},2000)}});
+ }
+ document.querySelectorAll('pre').forEach(function(pre){
+  if(pre.classList.contains('txtdoc'))return;
+  var b=document.createElement('button');
+  b.type='button';b.className='copy';b.textContent='Copy';
+  b.setAttribute('aria-label','Copy this code block to the clipboard');
+  b.addEventListener('click',function(){copy((pre.querySelector('code')||pre).innerText,b,'Copied')});
+  pre.appendChild(b);
+ });
+ document.querySelectorAll('td code').forEach(function(c){
+  if(!c.textContent.trim())return;
+  c.classList.add('cp');c.tabIndex=0;c.setAttribute('role','button');
+  c.title='Click to copy';
+  c.addEventListener('click',function(){copy(c.textContent,c)});
+  c.addEventListener('keydown',function(e){
+   if(e.key==='Enter'||e.key===' '){e.preventDefault();copy(c.textContent,c)}});
+ });
+})();
+</script>
+</body></html>

@@ -1,0 +1,624 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>AdDataAccessComponent → TflOmniDb — Feature Comparison &amp;amp; Migration Guide</title>
+<style>
+:root{color-scheme:light dark}
+*{box-sizing:border-box}
+body{margin:0;background:#f6f8fa;color:#1f2328;font:16px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif}
+.wrap{max-width:900px;margin:0 auto;padding:32px 24px 96px}
+.card{background:#fff;border:1px solid #d0d7de;border-radius:10px;padding:40px 48px}
+h1,h2,h3{line-height:1.25;font-weight:600}
+h1{font-size:1.9rem;margin:0 0 .3em;padding-bottom:.3em;border-bottom:1px solid #d8dee4}
+h2{font-size:1.4rem;margin:1.8em 0 .6em;padding-bottom:.25em;border-bottom:1px solid #eaeef2}
+h3{font-size:1.12rem;margin:1.4em 0 .5em}
+p,li{margin:.5em 0}
+a{color:#0969da;text-decoration:none}
+a:hover{text-decoration:underline}
+code{font-family:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;font-size:.86em;background:#eff1f3;padding:.15em .4em;border-radius:6px}
+pre{background:#f6f8fa;border:1px solid #d8dee4;border-radius:8px;padding:14px 16px;overflow:auto}
+pre code{background:none;padding:0;font-size:.85em;line-height:1.45}
+blockquote{margin:1em 0;padding:.4em 1em;color:#3d444d;border-left:4px solid #d0d7de;background:#f6f8fa;border-radius:0 6px 6px 0}
+blockquote>:first-child{margin-top:0}blockquote>:last-child{margin-bottom:0}
+table{border-collapse:collapse;width:100%;margin:1em 0;display:block;overflow:auto}
+th,td{border:1px solid #d0d7de;padding:8px 12px;text-align:left;vertical-align:top}
+th{background:#f6f8fa;font-weight:600}
+tr:nth-child(2n) td{background:#f6f8fa}
+hr{border:0;border-top:1px solid #d8dee4;margin:2em 0}
+pre{position:relative}
+pre>button.copy{position:absolute;top:8px;right:8px;padding:5px 9px;cursor:pointer;
+  font:600 .68rem/1 ui-monospace,SFMono-Regular,Consolas,monospace;letter-spacing:.03em;
+  color:#636c76;background:#fff;border:1px solid #d0d7de;border-radius:6px;
+  opacity:0;transition:opacity .12s}
+pre:hover>button.copy,pre>button.copy:focus{opacity:1}
+pre>button.copy.done{color:#0a3622;background:#dafbe1;border-color:#4ac26b}
+@media(hover:none){pre>button.copy{opacity:1}}
+td code.cp{cursor:pointer}
+td code.cp:hover,td code.cp:focus{outline:1px solid #8c959f;outline-offset:1px}
+td code.cp.done{color:#0a3622;background:#dafbe1}
+.docnav{margin:0 0 20px;font-size:.85rem;color:#636c76}
+.docnav a{color:#636c76}
+ul{padding-left:1.4em}ol{padding-left:1.4em}
+@media(max-width:640px){.card{padding:24px 18px}.wrap{padding:16px 10px 64px}}
+@media(prefers-color-scheme:dark){
+ body{background:#0d1117;color:#e6edf3}
+ .card{background:#161b22;border-color:#30363d}
+ h1{border-color:#30363d}h2{border-color:#21262d}
+ code{background:#262c34}
+ pre{background:#0d1117;border-color:#30363d}
+ blockquote{background:#161b22;border-color:#30363d;color:#9198a1}
+ th,td{border-color:#30363d}th{background:#161b22}tr:nth-child(2n) td{background:#12171e}
+ a{color:#4493f8}.docnav,.docnav a{color:#9198a1}
+ hr{border-color:#30363d}
+ pre>button.copy{color:#9198a1;background:#161b22;border-color:#30363d}
+ pre>button.copy.done{color:#aff5b4;background:#1b4721;border-color:#2ea043}
+ td code.cp.done{color:#aff5b4;background:#1b4721}
+}
+</style></head>
+<body><div class="wrap"><div class="card">
+<div class="docnav"><a href="../../../index.html">&#8592; All docs</a></div>
+<h1 id="addataaccesscomponent-tflomnidb-feature-comparison-migration-guide">AdDataAccessComponent → TflOmniDb — Feature Comparison &amp; Migration Guide</h1>
+<p><code>TflOmniDb</code> is the modern reimplementation of the legacy VB.NET data-access
+component <strong><code>AdDataAccessComponent</code></strong>
+(<code>_Archive\Ad.ProjectLibrary\AdDataAccessComponent\AdDataAccessComponent</code>).</p>
+<p>This document compares the two so a team migrating off the old component knows:</p>
+<ol>
+<li><strong>What carries over</strong> (present in both)</li>
+<li><strong>What is gone / changed</strong> (legacy idioms with no 1:1 — with pros, cons, and a verdict)</li>
+<li><strong>How each old idiom is expressed</strong> in the new API (code mapping)</li>
+<li><strong>What is net-new</strong> in TflOmniDb</li>
+</ol>
+<blockquote>
+<p>Read sections in order, or jump to the <strong>idiom → equivalent</strong> table in §3 if you
+just need the porting cheat-sheet.</p>
+</blockquote>
+<hr />
+<h2 id="0-at-a-glance">0. At a glance</h2>
+<table>
+<thead>
+<tr>
+<th></th>
+<th><strong>AdDataAccessComponent</strong> (legacy)</th>
+<th><strong>TflOmniDb</strong> (new)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Language</td>
+<td>VB.NET</td>
+<td>C# (net10 leg) + VB output for the scaffolder</td>
+</tr>
+<tr>
+<td>Runtime</td>
+<td>.NET Framework (EntLib 5.0)</td>
+<td>.NET 10 (<code>TflOmniDb</code>) <strong>and</strong> net48 (<code>TflOmniDbFx</code>)</td>
+</tr>
+<tr>
+<td>Engine</td>
+<td>Microsoft Enterprise Library 5.0 Data Block + EntLibContrib (Oracle)</td>
+<td>Hand-written dialect layer over <code>Microsoft.Data.SqlClient</code> / <code>Npgsql</code> / <code>Oracle.ManagedDataAccess</code></td>
+</tr>
+<tr>
+<td>API shape</td>
+<td><strong>Static methods</strong> on <code>AdDataAccessComponent</code> (<code>Shared</code>)</td>
+<td><strong>Instance</strong> <code>DataAccess</code> + <code>IRepository&lt;T&gt;</code> + <code>IUnitOfWork</code></td>
+</tr>
+<tr>
+<td>Sync/async</td>
+<td><strong>Synchronous only</strong></td>
+<td><strong>Async-only</strong> (<code>*Async</code>, no sync overloads)</td>
+</tr>
+<tr>
+<td>Providers</td>
+<td><strong>SQL Server, Oracle</strong> (2 client flavors)</td>
+<td><strong>SQL Server, Oracle, PostgreSQL</strong></td>
+</tr>
+<tr>
+<td>Entity model</td>
+<td><code>AdEntity</code> base + <code>AdDbColumnInfoAttribute</code>; <strong>table = class name</strong></td>
+<td><code>Entity</code> base + <code>[DbTable]</code> + <code>[DbColumn]</code>; table name explicit</td>
+</tr>
+<tr>
+<td>Result shape</td>
+<td><code>DataTable</code> / <code>DataSet</code> / <code>DataRow</code> / <code>List(Of entity)</code> (reflection)</td>
+<td>Strongly-typed <code>T</code> / <code>IReadOnlyList&lt;T&gt;</code> / <code>IAsyncEnumerable&lt;T&gt;</code> / dictionaries</td>
+</tr>
+<tr>
+<td>Filtering</td>
+<td><strong>Raw string <code>criteria</code></strong> WHERE clause</td>
+<td><strong>LINQ predicate</strong> <code>Expression&lt;Func&lt;T,bool&gt;&gt;</code> (parameterized) + raw-SQL escape hatch</td>
+</tr>
+<tr>
+<td>Dependencies</td>
+<td>EntLib 5.0, EntLibContrib, <code>Tssipl.Practices</code></td>
+<td>Modern ADO.NET providers + <code>M.E.Logging.Abstractions</code></td>
+</tr>
+<tr>
+<td>Tests</td>
+<td><code>AdDataAccessComponentTest</code> (manual)</td>
+<td>521 (net10) / 332 (fx) live + unit tests, 3 live DBs</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Legacy public surface</strong> (all <code>Shared</code> on <code>AdDataAccessComponent</code>):
+<code>Insert</code> · <code>Update</code> · <code>Delete</code> · <code>Truncate</code> · <code>Retrieve</code> · <code>RetrieveByKey</code> ·
+<code>RetrieveDataTable</code> · <code>RetrieveDataRowByKey</code> · <code>Select</code> · <code>Count</code> · <code>Max</code> ·
+<code>Min</code> · <code>MaxPrimaryKeyValue</code> · <code>Execute</code> (SP→DataSet) · <code>ExecuteNonQuery</code> /
+<code>ExecuteNonQuerySP</code> · <code>ToListOfEntity</code> / <code>ToEntity</code> / <code>ToDataTable</code>, plus the
+support types <code>AdConnectionInfo</code>, <code>AdDataAccessOptions</code>, <code>TransactionManager</code>.</p>
+<hr />
+<h2 id="1-what-is-there-in-both-carried-over-modernized">1. What is there in BOTH (carried over, modernized)</h2>
+<table>
+<thead>
+<tr>
+<th>Capability</th>
+<th>Legacy</th>
+<th>TflOmniDb</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Insert single row</td>
+<td><code>Insert(entity[, newId])</code></td>
+<td><code>repo.InsertAsync(entity)</code> (generated identity written back into the entity)</td>
+</tr>
+<tr>
+<td>Update by PK</td>
+<td><code>Update(entity)</code></td>
+<td><code>repo.UpdateAsync(entity)</code></td>
+</tr>
+<tr>
+<td>Update by criteria</td>
+<td><code>Update(entity, criteria)</code></td>
+<td><code>repo.UpdateWhereAsync(pred, assignments)</code></td>
+</tr>
+<tr>
+<td>Delete by PK</td>
+<td><code>Delete(entity)</code></td>
+<td><code>repo.DeleteAsync(entity)</code></td>
+</tr>
+<tr>
+<td>Delete by criteria</td>
+<td><code>Delete(entity, criteria)</code></td>
+<td><code>repo.DeleteWhereAsync(pred)</code></td>
+</tr>
+<tr>
+<td>Get by key</td>
+<td><code>RetrieveByKey(type, id)</code></td>
+<td><code>repo.GetAsync(new object[] { id })</code></td>
+</tr>
+<tr>
+<td>Get all / filtered list</td>
+<td><code>Retrieve(type[, criteria])</code></td>
+<td><code>repo.GetAllAsync()</code> / <code>repo.WhereAsync(pred, …)</code></td>
+</tr>
+<tr>
+<td>Count</td>
+<td><code>Count(type[, criteria])</code></td>
+<td><code>repo.CountAsync([pred])</code></td>
+</tr>
+<tr>
+<td>Truncate</td>
+<td><code>Truncate(type)</code></td>
+<td>raw <code>data.ExecuteNonQueryAsync("TRUNCATE …")</code></td>
+</tr>
+<tr>
+<td>Raw SQL → rows</td>
+<td><code>Select(query)</code> → <code>DataSet</code></td>
+<td><code>data.QueryAsync&lt;T&gt;(sql)</code> / <code>QueryAsync(sql)</code> / <code>StreamQueryAsync</code></td>
+</tr>
+<tr>
+<td>Stored procedure</td>
+<td><code>Execute(spName, dict)</code> → <code>DataSet</code></td>
+<td><code>data.ExecuteProcedureAsync(StoredProcedureCall)</code></td>
+</tr>
+<tr>
+<td>SP non-query</td>
+<td><code>ExecuteNonQuerySP</code></td>
+<td><code>data.ExecuteNonQueryProcedureAsync</code></td>
+</tr>
+<tr>
+<td>Transactions</td>
+<td><code>TransactionManager</code> / pass <code>DbTransaction</code></td>
+<td><code>using uow = await data.BeginTransactionAsync()</code></td>
+</tr>
+<tr>
+<td>Per-column metadata</td>
+<td><code>AdDbColumnInfoAttribute</code></td>
+<td><code>[DbColumn]</code> (richer)</td>
+</tr>
+<tr>
+<td>Configurable timeout</td>
+<td><code>AdDataAccessOptions.CommandTimeout</code> (per-call)</td>
+<td><code>DataAccessOptions.CommandTimeoutSeconds</code> (per-instance) + <code>data.UseCommandTimeout(n)</code> ambient scope (per-call)</td>
+</tr>
+<tr>
+<td>Connection by name/string</td>
+<td><code>AdConnectionInfo</code></td>
+<td><code>DataAccessOptions.ConnectionString</code> + <code>Provider</code></td>
+</tr>
+<tr>
+<td>SQL Server + Oracle</td>
+<td>yes</td>
+<td>yes (+ PostgreSQL)</td>
+</tr>
+<tr>
+<td>Identity / Oracle sequence</td>
+<td><code>scope_identity()</code> + <code>&lt;table&gt;_seq</code> convention</td>
+<td>dialect <code>SCOPE_IDENTITY()</code> / <code>RETURNING</code> / <code>KeyGenerationStrategy.Sequence</code></td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="2-what-is-missing-changed-legacy-idioms-with-no-11-in-tflomnidb">2. What is MISSING / changed (legacy idioms with no 1:1 in TflOmniDb)</h2>
+<p>Each item lists what changed, the <strong>pro</strong>, the <strong>con</strong>, and a <strong>Verdict — who wins
+and why</strong>.</p>
+<blockquote>
+<p><strong>Scorecard: TflOmniDb wins 9, legacy "wins" 0, situational 1.</strong>
+<em>(#5 closed — typed <code>MaxAsync</code>/<code>MinAsync</code>/<code>SumAsync</code>/<code>AvgAsync</code>/<code>MaxKeyAsync</code>/<code>AnyAsync</code> now ship.)</em></p>
+</blockquote>
+<h3 id="1-static-method-facade-instance-dataaccess-repositoryt">1. Static-method facade → instance <code>DataAccess</code> + <code>Repository&lt;T&gt;</code></h3>
+<ul>
+<li><strong>Pro:</strong> testable/mockable (<code>IRepository&lt;T&gt;</code>), DI-friendly, per-instance config; no hidden global state.</li>
+<li><strong>Con:</strong> every call site changes; callers must obtain/inject a <code>DataAccess</code>.</li>
+<li><strong>Verdict — TflOmniDb wins.</strong> Testability + no global state outweigh a one-time, mechanical call-site edit.</li>
+</ul>
+<h3 id="2-synchronous-api-async-only-async">2. Synchronous API → async-only (<code>*Async</code>)</h3>
+<ul>
+<li><strong>Pro:</strong> non-blocking I/O, scales under load, first-class cancellation.</li>
+<li><strong>Con:</strong> forces <code>async</code>/<code>await</code> up the chain; blocking with <code>.GetAwaiter().GetResult()</code> risks deadlock.</li>
+<li><strong>Verdict — TflOmniDb wins</strong> for any server/web workload (the target here). <em>Legacy is only simpler for a throwaway sync console app</em> — not this product.</li>
+</ul>
+<h3 id="3-datatabledatasetdatarow-shapes-typed-t-dict-rows">3. <code>DataTable</code>/<code>DataSet</code>/<code>DataRow</code> shapes → typed <code>T</code> / dict rows</h3>
+<p>(<code>RetrieveDataTable</code>, <code>RetrieveDataRowByKey</code>, <code>Select</code>→<code>DataSet</code>, <code>ToDataTable</code>, <code>ToListOfEntity</code>, <code>ToEntity</code> removed.)
+- <strong>Pro:</strong> compile-time typed results, lower memory, no <code>DataTable</code> overhead; dictionaries + <code>RowAccess</code> cover the untyped case.
+- <strong>Con:</strong> grid/<code>DataSet</code>-bound code must be rewritten; no drop-in <code>DataTable</code> return.
+- <strong>Verdict — Situational.</strong> TflOmniDb wins on safety/perf/clarity, <strong>but legacy wins for legacy UI</strong> that data-binds straight to <code>DataTable</code>/<code>DataSet</code> — those call sites carry real rewrite cost and are the main migration friction.</p>
+<h3 id="4-raw-string-criteria-where-parameterized-linq-predicates">4. Raw-string <code>criteria</code> WHERE → parameterized LINQ predicates</h3>
+<p>(Legacy concatenates <code>where {criteria}</code> / <code>{pk} = {id}</code> directly — a SQL-injection vector.)
+- <strong>Pro:</strong> injection-safe (everything bound), compile-checked columns, provider-portable.
+- <strong>Con:</strong> handwritten SQL fragments must be re-expressed; exotic SQL drops to the raw escape hatch.
+- <strong>Verdict — TflOmniDb wins decisively.</strong> The legacy string-concat path is an active SQL-injection hole; safety is non-negotiable in a banking DAL.</p>
+<h3 id="5-maxminmaxprimarykeyvalue-helpers-typed-repomaxasynccol-raw-scalar-sqlquery-agg">5. <code>Max</code>/<code>Min</code>/<code>MaxPrimaryKeyValue</code> helpers → typed <code>repo.MaxAsync(col)</code> (+ raw scalar / <code>SqlQuery</code> <code>Agg</code>)</h3>
+<ul>
+<li><strong>Pro:</strong> thin typed aggregate helpers now exist on <code>IRepository&lt;T&gt;</code> —
+  <code>MaxAsync</code> / <code>MinAsync</code> / <code>SumAsync</code> / <code>AvgAsync</code> / <code>MaxKeyAsync</code> (the
+  <code>MaxPrimaryKeyValue</code> shortcut) / <code>AnyAsync</code>, each with an optional LINQ
+  predicate (the <code>Max(type, "criteria")</code> form). Built on the same
+  <code>ExpressionTranslator</code> + dialect-quoting as <code>CountAsync</code>, so they're
+  injection-safe and provider-portable; the general raw-scalar / <code>SqlQuery</code> <code>Agg</code>
+  path remains for any aggregate the helpers don't cover.</li>
+<li><strong>Con:</strong> none material — the one-liner gap is closed.</li>
+<li><strong>Verdict — TflOmniDb wins (gap closed).</strong> Was the one mild legacy ergonomic
+  edge; the typed helpers match the terse legacy call (<code>repo.MaxAsync&lt;decimal&gt;(x =&gt; x.Bal, x =&gt; x.Status == 1)</code>)
+  while staying parameterized. See the <strong>Scalar aggregates</strong> section in <code>CLAUDE.md</code>.</li>
+</ul>
+<h3 id="6-table-name-class-name-explicit-dbtablename">6. Table name = class name → explicit <code>[DbTable("NAME")]</code></h3>
+<ul>
+<li><strong>Pro:</strong> decouples C# class name from DB table; rename either side independently.</li>
+<li><strong>Con:</strong> every entity must be re-annotated.</li>
+<li><strong>Verdict — TflOmniDb wins.</strong> Explicit mapping avoids breakage when a class is renamed/refactored; the re-annotation cost is absorbed by the scaffolder.</li>
+</ul>
+<h3 id="7-addbcolumninfoattribute-fkordinaluniqueprecision-metadata-not-carried">7. <code>AdDbColumnInfoAttribute</code> FK/ordinal/unique/precision metadata not carried</h3>
+<p>(<code>IsForeignKey</code>/<code>FkColumnName</code>/<code>FkTableName</code>, <code>ColumnOrdinal</code>, <code>IsUnique</code>, <code>NumericPrecision/Scale</code>, <code>ColumnDescription</code>, <code>ProviderSpecificDataType</code>.)
+- <strong>Pro:</strong> leaner attribute focused on what the DAL actually uses; adds <code>IsRowVersion</code> (concurrency) + <code>IsSensitive</code> (security) instead.
+- <strong>Con:</strong> code/tools reading FK/ordinal/unique metadata off the attribute lose it.
+- <strong>Verdict — TflOmniDb wins</strong> for the DAL's job (it never used FK/ordinal at runtime). <em>Legacy wins only if you used the attribute as a schema-metadata catalog</em> — rare; move that to the scaffolder's schema model.</p>
+<h3 id="8-systemdataoracleclient-legacy-client-dropped-oraclemanageddataaccess-only">8. <code>System.Data.OracleClient</code> legacy client dropped → <code>Oracle.ManagedDataAccess</code> only</h3>
+<ul>
+<li><strong>Pro:</strong> supported, managed (no native OCI install), modern Oracle features.</li>
+<li><strong>Con:</strong> environments pinned to the old unmanaged client must switch drivers.</li>
+<li><strong>Verdict — TflOmniDb wins.</strong> <code>System.Data.OracleClient</code> is Microsoft-deprecated; staying on it was already a liability.</li>
+</ul>
+<h3 id="9-entlib-auto-discoverparameters-for-sps-explicit-storedprocedurecall-params">9. EntLib auto <code>DiscoverParameters</code> for SPs → explicit <code>StoredProcedureCall</code> params</h3>
+<ul>
+<li><strong>Pro:</strong> removes a per-call metadata round-trip; explicit, fast, uniform across all 3 providers.</li>
+<li><strong>Con:</strong> caller declares each parameter (name/type/direction) in order — more upfront code.</li>
+<li><strong>Verdict — TflOmniDb wins on correctness/perf</strong> (no hidden round-trip, no reliance on <code>DiscoverParameters</code> quirks). <em>Legacy wins purely on brevity</em> for quick, low-volume SP calls.</li>
+</ul>
+<h3 id="10-implicit-entlib-config-explicit-dataaccessoptions-appsettingsjson">10. Implicit EntLib config → explicit <code>DataAccessOptions</code> / <code>appsettings.json</code></h3>
+<p>(<code>ConfigManager.ConnectionStringName</code> / <code>CommandTimeOut</code> DAAB section gone.)
+- <strong>Pro:</strong> no EntLib/DAAB dependency; modern config + env-var resolution; explicit per-instance connection.
+- <strong>Con:</strong> existing <code>app.config</code> DAAB sections must be migrated.
+- <strong>Verdict — TflOmniDb wins.</strong> Dropping the EntLib dependency is a core goal of the rewrite; config migration is one-time.</p>
+<blockquote>
+<p><strong>Note:</strong> the legacy <code>TransactionManager.Rollback()</code> actually calls <code>Commit()</code> (a
+real bug). TflOmniDb's <code>IUnitOfWork</code> rolls back correctly on
+dispose-without-commit — a behavioral fix, not just a rename.</p>
+</blockquote>
+<p><strong>Bottom line:</strong> TflOmniDb is the stronger component on every axis that matters for a
+multi-provider banking DAL (safety, async scale, testability, supported drivers). With</p>
+<h1 id="5-closed-typed-aggregate-helpers-now-ship-the-only-remaining-places-the-legacy-idiom">5 closed (typed aggregate helpers now ship), the only remaining places the legacy idiom</h1>
+<p>is <em>more convenient</em> are direct <code>DataTable</code> UI binding (#3) and one-line SP calls (#9) —
+neither a capability gap.</p>
+<hr />
+<h2 id="3-how-each-addataaccesscomponent-idiom-is-achieved-in-tflomnidb">3. How each AdDataAccessComponent idiom is achieved in TflOmniDb</h2>
+<p><strong>Setup once:</strong></p>
+<pre><code class="language-csharp">var data = new DataAccess(new DataAccessOptions
+{
+    Provider = DbProvider.SqlServer,
+    ConnectionString = cs,
+    DefaultSchema = &quot;dbo&quot;,
+});
+var repo = data.Repository&lt;Account&gt;();
+</code></pre>
+<table>
+<thead>
+<tr>
+<th>Legacy call</th>
+<th>TflOmniDb equivalent</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>Insert(acct, newId)</code></td>
+<td><code>await repo.InsertAsync(acct);</code> <em>(generated PK written back into <code>acct</code>)</em></td>
+</tr>
+<tr>
+<td><code>Update(acct)</code></td>
+<td><code>await repo.UpdateAsync(acct);</code></td>
+</tr>
+<tr>
+<td><code>Update(acct, "STATUS=1")</code> (criteria)</td>
+<td><code>await repo.UpdateWhereAsync(x =&gt; x.Status == 1, [ (x =&gt; x.Col, val) ]);</code></td>
+</tr>
+<tr>
+<td>partial-column update</td>
+<td><code>await repo.UpdateAsync(acct, x =&gt; x.Name);</code> <em>(net10 partial-column)</em></td>
+</tr>
+<tr>
+<td><code>Delete(acct)</code></td>
+<td><code>await repo.DeleteAsync(acct);</code></td>
+</tr>
+<tr>
+<td><code>Delete(acct, "AGE&gt;90")</code></td>
+<td><code>await repo.DeleteWhereAsync(x =&gt; x.Age &gt; 90);</code></td>
+</tr>
+<tr>
+<td><code>RetrieveByKey(GetType(Account), id)</code></td>
+<td><code>var a = await repo.GetAsync(new object[] { id });</code></td>
+</tr>
+<tr>
+<td><code>Retrieve(GetType(Account))</code></td>
+<td><code>var all = await repo.GetAllAsync();</code></td>
+</tr>
+<tr>
+<td><code>Retrieve(type, "BAL&gt;100")</code></td>
+<td><code>var rows = await repo.WhereAsync(x =&gt; x.Bal &gt; 100);</code></td>
+</tr>
+<tr>
+<td><code>Count(type, "BAL&gt;100")</code></td>
+<td><code>await repo.CountAsync(x =&gt; x.Bal &gt; 100);</code></td>
+</tr>
+<tr>
+<td><code>Max(type, "BAL")</code></td>
+<td><code>await repo.MaxAsync&lt;decimal&gt;(x =&gt; x.Bal);</code> <em>(+ optional predicate; <code>MinAsync</code>/<code>SumAsync</code>/<code>AvgAsync</code> too)</em>. Raw <code>data.ExecuteScalarAsync&lt;decimal&gt;("SELECT MAX(\"BAL\") FROM …")</code> / <code>SqlQuery…Select(Agg.Max(col))</code> stay for other aggregates</td>
+</tr>
+<tr>
+<td><code>Max(type, "BAL", "STATUS=1")</code></td>
+<td><code>await repo.MaxAsync&lt;decimal&gt;(x =&gt; x.Bal, x =&gt; x.Status == 1);</code> <em>(parameterized predicate)</em></td>
+</tr>
+<tr>
+<td><code>MaxPrimaryKeyValue(type)</code></td>
+<td><code>await repo.MaxKeyAsync&lt;long&gt;();</code> <em>(single-PK shortcut)</em></td>
+</tr>
+<tr>
+<td><code>Count(type) &gt; 0</code> / existence</td>
+<td><code>await repo.AnyAsync(x =&gt; x.Status == 1);</code> <em>(short-circuits; cheaper than <code>CountAsync(...) &gt; 0</code>)</em></td>
+</tr>
+<tr>
+<td><code>Truncate(type)</code></td>
+<td><code>await data.ExecuteNonQueryAsync("TRUNCATE TABLE …");</code></td>
+</tr>
+<tr>
+<td><code>Select("SELECT …")</code> → <code>DataSet</code></td>
+<td><code>await data.QueryAsync&lt;Poco&gt;(sql, pars)</code> (typed) or <code>QueryAsync(sql, pars)</code> (dict rows)</td>
+</tr>
+<tr>
+<td>read into <code>DataTable</code> / loop rows</td>
+<td><code>QueryAsync(...)</code> + <code>row.GetString("COL")</code> / <code>row.GetInt32(...)</code> (<code>RowAccess</code>)</td>
+</tr>
+<tr>
+<td><code>Execute(spName, dict)</code> → <code>DataSet</code> + OUT back</td>
+<td><code>var r = await data.ExecuteProcedureAsync(new StoredProcedureCall(sp).Input(...).Output(...)); r.GetOutput&lt;T&gt;(name); r.FirstResultSet;</code></td>
+</tr>
+<tr>
+<td><code>ExecuteNonQuerySP(options)</code></td>
+<td><code>await data.ExecuteNonQueryProcedureAsync(call);</code></td>
+</tr>
+<tr>
+<td><code>Dim tx = tm.BeginTran(ci)</code> … pass <code>tx</code></td>
+<td><code>using var uow = await data.BeginTransactionAsync(); var r = uow.Repository&lt;T&gt;(); … await uow.CommitAsync();</code></td>
+</tr>
+<tr>
+<td><code>AdConnectionInfo("Name")</code> (config conn)</td>
+<td><code>DataAccessOptions { ConnectionString = …, Provider = … }</code> from <code>appsettings.json</code></td>
+</tr>
+<tr>
+<td><code>&lt;AdDbColumnInfo(IsPrimaryKey:=True, DbType:=…)&gt;</code></td>
+<td><code>[DbColumn("ID", IsPrimaryKey = true, …)]</code></td>
+</tr>
+<tr>
+<td>entity class <code>Account</code> (table = name)</td>
+<td><code>[DbTable("ACCOUNT")] public class Account : Entity { … }</code> <em>(scaffolder generates)</em></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Re-annotating entities.</strong> The legacy <code>AdEntity</code> + <code>AdDbColumnInfoAttribute</code> classes
+can be regenerated automatically by <strong><code>TflOmniDb.Scaffold</code></strong> (reverse-engineers a live
+DB or a pasted schema dump into <code>[DbTable]</code>/<code>[DbColumn]</code> entities, C# or VB). This is
+the recommended path rather than hand-porting each entity.</p>
+<p><strong>Identity round-trip preserved.</strong> Legacy <code>Insert(entity, ByRef newId)</code> →
+<code>InsertAsync</code> writes the generated key back into the entity (so the <code>newId</code> pattern
+maps cleanly). For Oracle, the legacy <code>&lt;table&gt;_seq</code> convention maps to
+<code>[DbColumn(KeyGeneration = KeyGenerationStrategy.Sequence, SequenceName = "…")]</code>.</p>
+<h3 id="3a-addataaccessoptions-split-by-concern-no-god-options-bag">3a. <code>AdDataAccessOptions</code> → split by concern (no god-options bag)</h3>
+<p>Legacy <code>AdDataAccessOptions</code> was a single mutable bag carrying <strong>everything</strong> a call
+might need — <code>Entity</code> / <code>EntityType</code>, <code>Criteria</code>, <code>PkValue</code>, <code>Query</code>, <code>ColumnName</code>,
+<code>StoredProcedureName</code> + <code>StoredProcedureParamList</code>, <code>ConnectionInfo</code>, <code>Transaction</code>,
+<code>CommandTimeout</code>, and the <code>NewPkValue</code> out-param — and the same class was reused by
+<code>Insert</code> / <code>Update</code> / <code>Delete</code> / <code>Select</code> / <code>Count</code> / <code>Max</code> / <code>Execute</code>. TflOmniDb has
+<strong>no equivalent single object</strong>; it decomposes the bag along its real seams:</p>
+<table>
+<thead>
+<tr>
+<th><code>AdDataAccessOptions</code> field</th>
+<th>Where it lives in TflOmniDb</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>ConnectionInfo</code>, <code>CommandTimeout</code> (durable, per-connection config)</td>
+<td><code>DataAccessOptions</code> (built once, passed to <code>new DataAccess(...)</code>)</td>
+</tr>
+<tr>
+<td><code>Entity</code> / <code>EntityType</code></td>
+<td>the <code>Repository&lt;T&gt;</code> type parameter + the entity argument</td>
+</tr>
+<tr>
+<td><code>Criteria</code> (string WHERE)</td>
+<td>a typed <code>Expression&lt;Func&lt;T,bool&gt;&gt;</code> predicate argument</td>
+</tr>
+<tr>
+<td><code>PkValue</code></td>
+<td><code>repo.GetAsync(new object[] { id })</code> key argument</td>
+</tr>
+<tr>
+<td><code>Query</code> (raw SQL)</td>
+<td>the <code>sql</code> argument to <code>QueryAsync</code> / <code>ExecuteNonQueryAsync</code></td>
+</tr>
+<tr>
+<td><code>ColumnName</code> (for <code>Max</code>/<code>Min</code>)</td>
+<td>the <code>x =&gt; x.Col</code> selector on <code>MaxAsync</code> / <code>MinAsync</code></td>
+</tr>
+<tr>
+<td><code>StoredProcedureName</code> + <code>StoredProcedureParamList</code></td>
+<td>a fluent <code>StoredProcedureCall</code> (in) + <code>StoredProcedureResult</code> (out)</td>
+</tr>
+<tr>
+<td><code>Transaction</code></td>
+<td>an <code>IUnitOfWork</code> from <code>BeginTransactionAsync</code> (not a field you pass)</td>
+</tr>
+<tr>
+<td><code>NewPkValue</code> (out)</td>
+<td>written back into the entity by <code>InsertAsync</code></td>
+</tr>
+<tr>
+<td>(bulk-copy tuning)</td>
+<td><code>BulkInsertOptions</code></td>
+</tr>
+</tbody>
+</table>
+<p>The net effect: <strong>durable config is set once</strong> on <code>DataAccessOptions</code>; <strong>per-call inputs
+are strongly-typed method arguments</strong> instead of properties poked onto a shared bag.</p>
+<h3 id="3b-commandtimeout-dataaccessoptionscommandtimeoutseconds">3b. <code>CommandTimeout</code> → <code>DataAccessOptions.CommandTimeoutSeconds</code></h3>
+<blockquote>
+<p>Full treatment (legacy mechanics, precedence, worked examples):
+<a href="CommandTimeout-and-AdDataAccessOptions.html">CommandTimeout-and-AdDataAccessOptions.md</a></p>
+</blockquote>
+<pre><code class="language-csharp">var data = new DataAccess(new DataAccessOptions
+{
+    Provider = DbProvider.SqlServer,
+    ConnectionString = cs,
+    CommandTimeoutSeconds = 60,   // legacy AdDataAccessOptions.CommandTimeout = 60
+});
+</code></pre>
+<ul>
+<li><strong>Applied to every command</strong> the DAL issues — CRUD (<code>Repository.ApplyTimeout</code>),
+  raw SQL (<code>RawQueryExecutor</code>), and stored procedures (<code>StoredProcedureExecutor</code>) all
+  set <code>DbCommand.CommandTimeout</code> from this value. <code>null</code> ⇒ the provider default (30 s on
+  SqlClient).</li>
+<li><strong>Bindable from config</strong> instead of the EntLib <code>ConfigManager.CommandTimeOut</code>: the
+  key <code>TflOmniDb:CommandTimeoutSeconds</code> in <code>appsettings.json</code> is read by
+  <code>DataAccessOptionsBuilder</code>.</li>
+<li><strong>Bulk insert</strong> has its own knob — <code>BulkInsertOptions.TimeoutSeconds</code> — because the
+  bulk-copy APIs use a separate <code>BulkCopyTimeout</code>.</li>
+<li><strong>Per-call override (<code>UseCommandTimeout</code>):</strong> the instance <code>CommandTimeoutSeconds</code> is
+  connection-level (one setting covers every operation, like <code>DefaultSchema</code> / <code>Retry</code> /
+  logging), but the legacy <strong>per-call</strong> timeout maps directly onto an ambient scope —
+  <code>data.UseCommandTimeout(seconds)</code> (mirrors <code>UseDirtyReads()</code>):</li>
+</ul>
+<p><code>csharp
+  using (data.UseCommandTimeout(300))      // 5 min, just this block
+      await data.QueryAsync&lt;Summary&gt;(heavyReportSql);   // reverts on dispose</code></p>
+<p>It overrides the instance value for CRUD, filtered reads, scalar aggregates, raw SQL,
+  and stored procedures inside the scope (async-flow-local; nested scopes shadow then
+  restore; <code>0</code> = no timeout). This is the <strong>server-side</strong> command timeout, distinct from a
+  client-side <code>CancellationToken</code> deadline — every async method also takes a <code>CancellationToken</code>,
+  so <code>new CancellationTokenSource(timeout).Token</code> gives a per-call client cancel when that's what
+  you want. Constructing a second <code>DataAccess</code> still works for durable two-tier configs; bulk
+  insert keeps its own <code>BulkInsertOptions.TimeoutSeconds</code>.</p>
+<hr />
+<h2 id="4-what-is-extra-in-tflomnidb-net-new-no-legacy-equivalent">4. What is EXTRA in TflOmniDb (net-new, no legacy equivalent)</h2>
+<p><strong>Provider &amp; platform</strong>
+- <strong>PostgreSQL</strong> support (3rd engine); dual runtime legs (net10 + net48).
+- Hand-written dialect layer (no EntLib dependency) with per-provider type mappers.</p>
+<p><strong>Query / read</strong>
+- <strong>LINQ predicates</strong> with full parameterization + LIKE-escaping + a SQL-injection test suite.
+- <strong>Filtered paging &amp; ordering</strong> (<code>WhereAsync(pred, orderBy, descending, skip, take)</code>).
+- <strong>Column projection</strong> on <code>GetAsync</code> / <code>GetAllAsync</code> / <code>WhereAsync</code> (read only the needed columns).
+- <strong><code>IAsyncEnumerable&lt;T&gt;</code> streaming</strong> reads (<code>StreamAllAsync</code> / <code>StreamWhereAsync</code> / <code>StreamQueryAsync</code>) — net10.
+- <strong>Raw-SQL helpers</strong>: typed <code>QueryAsync&lt;T&gt;</code> (POCO mapping), untyped dict rows, <code>ExecuteScalarAsync&lt;T&gt;</code>, <code>ExistsAsync</code>, <code>ExecuteNonQueryAsync</code>.
+- <strong>Typed scalar aggregates</strong> (net10): <code>MaxAsync</code> / <code>MinAsync</code> / <code>MaxKeyAsync</code> reach parity with legacy <code>Max</code> / <code>Min</code> / <code>MaxPrimaryKeyValue</code>; <strong><code>SumAsync</code> / <code>AvgAsync</code> / <code>AnyAsync</code> are net-new</strong> (legacy had no SUM/AVG/EXISTS helper) — each with an optional parameterized predicate.
+- <strong><code>Fn</code> + <code>SqlQuery</code> composer</strong> — cross-dialect function vocabulary + fluent SELECT/JOIN/WHERE/<code>WhereIf</code>/GROUP BY/HAVING/paging with typed <code>Col</code>/<code>Agg</code> tokens.
+- <strong><code>RowAccess</code></strong> null-safe typed accessors for untyped rows / SP result sets.</p>
+<p><strong>Write / safety</strong>
+- <strong>Bulk insert</strong> fast path (<code>SqlBulkCopy</code> / Npgsql binary COPY / <code>OracleBulkCopy</code>).
+- <strong>Set-based &amp; partial-column updates</strong> (<code>UpdateWhereAsync</code>, <code>UpdateAsync(entity, cols)</code>).
+- <strong>Optimistic concurrency</strong> via an <code>IsRowVersion</code> integer token → <code>ConcurrencyException</code>.
+- <strong>Transient-fault retry / resiliency</strong> (<code>RetryOptions</code>, <code>ExecuteInTransactionAsync</code>).
+- <strong><code>UseDirtyReads()</code></strong> scope (<code>WITH(NOLOCK)</code> on SQL Server; no-op on MVCC engines).
+- <strong><code>UseCommandTimeout(seconds)</code></strong> scope (net10) — per-operation server-side timeout override
+  (async-flow-local, mirrors <code>UseDirtyReads</code>); restores the legacy per-call timeout ergonomics
+  on top of the connection-level <code>CommandTimeoutSeconds</code>.
+- <strong>Sensitive-column redaction</strong> (<code>IsSensitive</code>) in command logs.</p>
+<p><strong>Stored procedures (richer than legacy <code>Execute</code>)</strong>
+- Typed OUT/INOUT/return-value, multiple result sets, Oracle REF CURSOR, TVP /
+  PL/SQL assoc array / PG native array params, provider-aware <code>DbType</code> binding,
+  <code>StreamProcedureAsync</code> (net10).</p>
+<p><strong>Tooling</strong>
+- <strong><code>TflOmniDb.Scaffold</code></strong> (CLI + Web UI) — reverse-engineer schema → entities (the migration accelerator for legacy <code>AdEntity</code> classes).
+- <strong><code>TflOmniDbMigration</code></strong> — cross-provider single-table structure/data copy.
+- <strong><code>TflOmniDb.Benchmarks</code></strong> — BenchmarkDotNet perf suite.</p>
+<p><strong>Engineering</strong>
+- Structured logging (<code>CommandLogger</code>, correlation ids), descriptor/SQL caching,
+  records / <code>required init</code> / <code>FrozenDictionary</code> / NRT / AOT-trim flags (net10),
+  521/332 live-verified tests across 3 engines.</p>
+</div></div>
+<script>
+(function(){
+ function put(t){
+  if(navigator.clipboard&&navigator.clipboard.writeText)return navigator.clipboard.writeText(t);
+  return new Promise(function(res,rej){
+   var a=document.createElement('textarea');a.value=t;a.setAttribute('readonly','');
+   a.style.cssText='position:fixed;top:0;left:0;opacity:0';document.body.appendChild(a);
+   a.select();var ok=false;try{ok=document.execCommand('copy')}catch(e){}
+   document.body.removeChild(a);ok?res():rej()});
+ }
+ function flash(el,txt,ms){
+  var was=el.textContent;el.classList.add('done');if(txt)el.textContent=txt;
+  setTimeout(function(){el.classList.remove('done');if(txt)el.textContent=was},ms||1200);
+ }
+ function copy(text,el,okTxt){
+  put(text).then(function(){flash(el,okTxt)},function(){
+   if(okTxt){var w=el.textContent;el.textContent='Ctrl+C';setTimeout(function(){el.textContent=w},2000)}});
+ }
+ document.querySelectorAll('pre').forEach(function(pre){
+  if(pre.classList.contains('txtdoc'))return;
+  var b=document.createElement('button');
+  b.type='button';b.className='copy';b.textContent='Copy';
+  b.setAttribute('aria-label','Copy this code block to the clipboard');
+  b.addEventListener('click',function(){copy((pre.querySelector('code')||pre).innerText,b,'Copied')});
+  pre.appendChild(b);
+ });
+ document.querySelectorAll('td code').forEach(function(c){
+  if(!c.textContent.trim())return;
+  c.classList.add('cp');c.tabIndex=0;c.setAttribute('role','button');
+  c.title='Click to copy';
+  c.addEventListener('click',function(){copy(c.textContent,c)});
+  c.addEventListener('keydown',function(e){
+   if(e.key==='Enter'||e.key===' '){e.preventDefault();copy(c.textContent,c)}});
+ });
+})();
+</script>
+</body></html>

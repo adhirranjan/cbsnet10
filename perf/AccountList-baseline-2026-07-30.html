@@ -1,0 +1,461 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Step 1 baseline — account list (DB-side filter/sort/page)</title>
+<style>
+:root{color-scheme:light dark}
+*{box-sizing:border-box}
+body{margin:0;background:#f6f8fa;color:#1f2328;font:16px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif}
+.wrap{max-width:900px;margin:0 auto;padding:32px 24px 96px}
+.card{background:#fff;border:1px solid #d0d7de;border-radius:10px;padding:40px 48px}
+h1,h2,h3{line-height:1.25;font-weight:600}
+h1{font-size:1.9rem;margin:0 0 .3em;padding-bottom:.3em;border-bottom:1px solid #d8dee4}
+h2{font-size:1.4rem;margin:1.8em 0 .6em;padding-bottom:.25em;border-bottom:1px solid #eaeef2}
+h3{font-size:1.12rem;margin:1.4em 0 .5em}
+p,li{margin:.5em 0}
+a{color:#0969da;text-decoration:none}
+a:hover{text-decoration:underline}
+code{font-family:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;font-size:.86em;background:#eff1f3;padding:.15em .4em;border-radius:6px}
+pre{background:#f6f8fa;border:1px solid #d8dee4;border-radius:8px;padding:14px 16px;overflow:auto}
+pre code{background:none;padding:0;font-size:.85em;line-height:1.45}
+blockquote{margin:1em 0;padding:.4em 1em;color:#3d444d;border-left:4px solid #d0d7de;background:#f6f8fa;border-radius:0 6px 6px 0}
+blockquote>:first-child{margin-top:0}blockquote>:last-child{margin-bottom:0}
+table{border-collapse:collapse;width:100%;margin:1em 0;display:block;overflow:auto}
+th,td{border:1px solid #d0d7de;padding:8px 12px;text-align:left;vertical-align:top}
+th{background:#f6f8fa;font-weight:600}
+tr:nth-child(2n) td{background:#f6f8fa}
+hr{border:0;border-top:1px solid #d8dee4;margin:2em 0}
+pre{position:relative}
+pre>button.copy{position:absolute;top:8px;right:8px;padding:5px 9px;cursor:pointer;
+  font:600 .68rem/1 ui-monospace,SFMono-Regular,Consolas,monospace;letter-spacing:.03em;
+  color:#636c76;background:#fff;border:1px solid #d0d7de;border-radius:6px;
+  opacity:0;transition:opacity .12s}
+pre:hover>button.copy,pre>button.copy:focus{opacity:1}
+pre>button.copy.done{color:#0a3622;background:#dafbe1;border-color:#4ac26b}
+@media(hover:none){pre>button.copy{opacity:1}}
+td code.cp{cursor:pointer}
+td code.cp:hover,td code.cp:focus{outline:1px solid #8c959f;outline-offset:1px}
+td code.cp.done{color:#0a3622;background:#dafbe1}
+.docnav{margin:0 0 20px;font-size:.85rem;color:#636c76}
+.docnav a{color:#636c76}
+ul{padding-left:1.4em}ol{padding-left:1.4em}
+@media(max-width:640px){.card{padding:24px 18px}.wrap{padding:16px 10px 64px}}
+@media(prefers-color-scheme:dark){
+ body{background:#0d1117;color:#e6edf3}
+ .card{background:#161b22;border-color:#30363d}
+ h1{border-color:#30363d}h2{border-color:#21262d}
+ code{background:#262c34}
+ pre{background:#0d1117;border-color:#30363d}
+ blockquote{background:#161b22;border-color:#30363d;color:#9198a1}
+ th,td{border-color:#30363d}th{background:#161b22}tr:nth-child(2n) td{background:#12171e}
+ a{color:#4493f8}.docnav,.docnav a{color:#9198a1}
+ hr{border-color:#30363d}
+ pre>button.copy{color:#9198a1;background:#161b22;border-color:#30363d}
+ pre>button.copy.done{color:#aff5b4;background:#1b4721;border-color:#2ea043}
+ td code.cp.done{color:#aff5b4;background:#1b4721}
+}
+</style></head>
+<body><div class="wrap"><div class="card">
+<div class="docnav"><a href="../index.html">&#8592; All docs</a></div>
+<h1 id="step-1-baseline-account-list-db-side-filtersortpage">Step 1 baseline — account list (DB-side filter/sort/page)</h1>
+<p><strong>Date:</strong> 2026-07-30 · <strong>Item:</strong> "Performance — DB-side filter/sort/page on large lists (replace
+load-all-then-filter)", road-to-100 §9 in
+<a href="../architecture-review/REMEDIATION-PLAN.html">REMEDIATION-PLAN.md</a>.</p>
+<p>Measured before any code change, per the "measure first" step. Harness:
+<code>TflCbs.Tools.PerfProbe</code> (read-only; not in <code>TflCbsNet10Sol.slnx</code>).</p>
+<pre><code>dotnet run --project TflCbs.Tools.PerfProbe -- [iterations] [nameTerm] [reverse]
+</code></pre>
+<p>Raw runs: <a href="AccountList-baseline-20260730-163745.html"><code>AccountList-baseline-20260730-163745.md</code></a>
+(large→small) and <a href="AccountList-baseline-20260730-163918.html"><code>AccountList-baseline-20260730-163918.md</code></a>
+(small→large, confirms the numbers are not an artefact of measurement order). Post-change runs:
+<a href="AccountList-baseline-20260730-postchange-sqlserver.html"><code>…-postchange-sqlserver.md</code></a> and
+<a href="AccountList-baseline-20260730-postchange-oracle.html"><code>…-postchange-oracle.md</code></a>.</p>
+<h2 id="environment">Environment</h2>
+<p>Dev SQL Server <code>TSSADSRV\TSSIPL2019</code>, database <code>Trustbank_MDCC_TEST</code> — <strong>already at production
+scale, so no seeding was needed</strong>:</p>
+<table>
+<thead>
+<tr>
+<th>Table</th>
+<th style="text-align: right;">Rows</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>B_ACCOUNT</code></td>
+<td style="text-align: right;">1,790,315 (478,179 open)</td>
+</tr>
+<tr>
+<td><code>G_GLOBALCLIENT</code></td>
+<td style="text-align: right;">1,325,437</td>
+</tr>
+<tr>
+<td><code>G_ACCOUNTHEAD</code></td>
+<td style="text-align: right;">1,695</td>
+</tr>
+<tr>
+<td><code>B_CODE</code></td>
+<td style="text-align: right;">872</td>
+</tr>
+<tr>
+<td><code>G_TITLE</code></td>
+<td style="text-align: right;">22</td>
+</tr>
+</tbody>
+</table>
+<p>55 branches hold open accounts. Three bands measured — branch <strong>14</strong> (20,480 open, the largest),
+<strong>43</strong> (7,516, median), <strong>53</strong> (1,392, small).</p>
+<h2 id="results-one-15-row-page-10-iterations-warmup-2-median-ms">Results — one 15-row page, 10 iterations, warmup 2, median ms</h2>
+<table>
+<thead>
+<tr>
+<th>Target</th>
+<th style="text-align: right;">Round-trips</th>
+<th style="text-align: right;">14 (20,480)</th>
+<th style="text-align: right;">43 (7,516)</th>
+<th style="text-align: right;">53 (1,392)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1 <code>SearchAccountsAsync</code> (current)</td>
+<td style="text-align: right;">24 / 14 / 7</td>
+<td style="text-align: right;">501</td>
+<td style="text-align: right;">196</td>
+<td style="text-align: right;">65</td>
+</tr>
+<tr>
+<td>2 …with a <code>CustomerName</code> filter</td>
+<td style="text-align: right;">24 / 14 / 7</td>
+<td style="text-align: right;">469</td>
+<td style="text-align: right;">200</td>
+<td style="text-align: right;">61</td>
+</tr>
+<tr>
+<td>3 Legacy <code>pr_b_GetAccountList</code> (full list, no paging)</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;"><strong>417</strong></td>
+<td style="text-align: right;"><strong>134</strong></td>
+<td style="text-align: right;"><strong>41</strong></td>
+</tr>
+<tr>
+<td>4 DB-paged prototype (<code>SqlQuery</code>, 4 joins + OFFSET/FETCH + COUNT)</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">436</td>
+<td style="text-align: right;">715</td>
+<td style="text-align: right;">715</td>
+</tr>
+<tr>
+<td>5 …with the filter</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">481</td>
+<td style="text-align: right;">724</td>
+<td style="text-align: right;">712</td>
+</tr>
+</tbody>
+</table>
+<p>Round-trip counts come from a counting logger; <code>CommandLogger</code> emits two entries per command
+(<code>LogStarting</code> + <code>LogSuccess</code>), so the raw count is halved.</p>
+<h2 id="findings">Findings</h2>
+<p><strong>1. The load-all diagnosis is confirmed, and it scales with branch size.</strong> Round-trips are
+<code>4 + ceil(distinctClients / 500)</code> — 24 on the largest branch — and median latency tracks branch
+size almost linearly (65 → 196 → 501 ms). One 15-row page materializes the branch's entire open-
+account set plus every referenced client.</p>
+<p><strong>2. The filter is free, which is the tell.</strong> Targets 1 and 2 are within noise of each other even
+though the filter cuts the result from 20,364 to 6,488 rows. Filtering after materialization costs
+nothing <em>because the expensive work already happened</em>. A DB-side filter is what makes a filter pay.</p>
+<p><strong>3. The legacy stored procedure beats the C# port at every branch size</strong> — 417 vs 501 ms, 134 vs
+196, 41 vs 65 — <em>while returning the full list</em> (20,364 rows against the port's 15). Per row
+delivered the proc is over a thousand times cheaper. It wins on shape: one <code>EXEC</code>, one server-side
+join, versus 7–24 client round-trips and an in-memory join. This is the single most actionable
+number here, and it points at <strong>round-trip consolidation</strong> rather than paging per se.</p>
+<p><strong>4. The naive DB-paged rewrite is a regression at typical branch sizes.</strong> 1.15× faster on the
+largest branch, but <strong>3.6× slower on the median branch and 11× slower on the small one</strong> (715 vs
+196/65 ms) — and it is <em>size-independent</em>, which is the giveaway. Reversing the measurement order
+reproduces it, so it is not plan-cache order or parameter sniffing.</p>
+<p>Root cause, from <code>SET STATISTICS IO</code>:</p>
+<table>
+<thead>
+<tr>
+<th>Query</th>
+<th style="text-align: right;"><code>g_GlobalClient</code> logical reads</th>
+<th style="text-align: right;">CPU</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>the <code>COUNT(*)</code> half</td>
+<td style="text-align: right;">2,589</td>
+<td style="text-align: right;">93 ms</td>
+</tr>
+<tr>
+<td>the <code>ORDER BY … OFFSET/FETCH 15</code> half</td>
+<td style="text-align: right;"><strong>166,404</strong></td>
+<td style="text-align: right;">390 ms</td>
+</tr>
+</tbody>
+</table>
+<p>166,404 reads is a full scan of the 1.32 M-row clustered index — to return 15 rows. The paged
+query cannot restrict <code>g_GlobalClient</code> before joining, and the optimizer drives from it. Attempted
+remedies that <strong>did not</strong> work: <code>OPTION (RECOMPILE)</code>, <code>OPTION (FAST 15)</code>, and paging the driving
+table in a derived table first (all still 166,404). Forcing <code>OPTION (LOOP JOIN, MAXDOP 1)</code> is far
+worse — 6.9 s and 4 M worktable reads.</p>
+<p>Why the legacy proc escapes this: it builds its SQL with <code>EXEC(@query)</code> and <strong>literal</strong> predicate
+values, so the optimizer gets exact statistics and picks a good join order. The parameterized
+equivalent gets a generic estimate. (Its <code>@p_criteria</code> string is concatenated straight into dynamic
+SQL — a SQL-injection sink, and good reason the C# port dropped the parameter rather than copying it.)</p>
+<p><strong>5. Paging cannot be done on <code>B_ACCOUNT</code> alone.</strong> The current code's four in-memory <code>continue</code>
+guards are load-bearing: on branch 53, <strong>30 of 1,392 open accounts (2.2%)</strong> have a client whose
+<code>TITLEID</code> has no <code>G_TITLE</code> row, and they are dropped <em>before</em> paging — which is exactly why <code>Total</code>
+reads 1,362, not 1,392. Any rewrite must apply the client+title join before the page, so the
+"DB-page the single driving table, keep joins in memory" option is off the table on correctness
+grounds, not just aesthetics.</p>
+<p><strong>6. Semantics survived the rewrite.</strong> All six prototype cases returned <code>Total</code> identical to the
+current path (20,364 / 6,488 / 7,392 / 3,252 / 1,362 / 562), including the filtered ones — so
+<code>UPPER(expr) LIKE UPPER(@q)</code> reproduced C#'s <code>OrdinalIgnoreCase</code> on this database. Note SQL Server's
+default collation is already case-insensitive, so this confirms the SQL Server leg only; Oracle and
+PostgreSQL remain unverified.</p>
+<p><strong>7. <code>SqlQuery</code>-in-a-service is already established.</strong> <code>TflCbs.Core.Authentication.AuthenticationService</code>
+uses <code>SqlQuery.From&lt;T&gt;</code> with <code>InnerJoin&lt;T&gt;</code>, <code>SelectCols</code>, <code>OrderBy</code>, <code>Page</code> and <code>ExistsAsync</code> in
+production code today. Step 0's decision is less open than the plan implies.</p>
+<h2 id="follow-up-the-no-ddl-option-measured-after-the-index-was-ruled-out">Follow-up: the no-DDL option (measured after the index was ruled out)</h2>
+<p>With the index off the table, the paged rewrite is dead — but the 166k-page scan is caused
+specifically by <code>ORDER BY … OFFSET/FETCH</code>, not by the joins. Target 6 keeps <strong>one server-side join</strong>
+for the branch list (what the proc does) and leaves today's in-memory filter/sort/page untouched.</p>
+<table>
+<thead>
+<tr>
+<th>Target</th>
+<th style="text-align: right;">Round-trips</th>
+<th style="text-align: right;">14 (20,480)</th>
+<th style="text-align: right;">43 (7,516)</th>
+<th style="text-align: right;">53 (1,392)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1 current</td>
+<td style="text-align: right;">24 / 14 / 7</td>
+<td style="text-align: right;">526</td>
+<td style="text-align: right;">239</td>
+<td style="text-align: right;">70</td>
+</tr>
+<tr>
+<td>3 legacy proc (full list)</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">357</td>
+<td style="text-align: right;">146</td>
+<td style="text-align: right;">49</td>
+</tr>
+<tr>
+<td>4 DB-paged prototype</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">431</td>
+<td style="text-align: right;">691</td>
+<td style="text-align: right;">693</td>
+</tr>
+<tr>
+<td><strong>6 one join + in-memory page</strong></td>
+<td style="text-align: right;"><strong>1</strong></td>
+<td style="text-align: right;"><strong>263</strong></td>
+<td style="text-align: right;"><strong>114</strong></td>
+<td style="text-align: right;"><strong>45</strong></td>
+</tr>
+<tr>
+<td>7 …with the filter</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">259</td>
+<td style="text-align: right;">112</td>
+<td style="text-align: right;">45</td>
+</tr>
+</tbody>
+</table>
+<p><strong>It wins everywhere: ~2× faster than the current path at every branch size (2.0× / 2.1× / 1.5×),
+and faster than the legacy stored procedure too.</strong> Round-trips drop from 24/14/7 to <strong>1</strong>. Totals
+match the current path exactly in all cases (20,364 / 6,488 / 7,392 / 3,252 / 1,362 / 562), so the
+INNER-JOIN semantics — including the 30 title-orphan drops — are preserved. A reverse-order run
+reproduces it (44 / 140 / 270 ms), with one 1,038 ms outlier on the median branch that did not
+recur; worth re-checking under load.</p>
+<p><strong>What it does not fix:</strong> the memory profile. This still materializes the branch's whole result set
+per request, so the allocation/LOH concern in §8 of the review stands. It removes the round-trips
+and the in-memory join, not the load-all. Genuine DB-side paging still needs the index.</p>
+<h2 id="shipped-2026-07-30">Shipped (2026-07-30)</h2>
+<p><code>AccountService.LoadAccountsAsync</code> was converted to the target-6 shape. Post-change measurement of
+the <strong>real service method</strong> (probe target 1 now exercises the new code):</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th style="text-align: right;">Round-trips</th>
+<th style="text-align: right;">14 (20,480)</th>
+<th style="text-align: right;">43 (7,516)</th>
+<th style="text-align: right;">53 (1,392)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>before</td>
+<td style="text-align: right;">24 / 14 / 7</td>
+<td style="text-align: right;">526</td>
+<td style="text-align: right;">239</td>
+<td style="text-align: right;">70</td>
+</tr>
+<tr>
+<td><strong>after</strong></td>
+<td style="text-align: right;"><strong>1</strong></td>
+<td style="text-align: right;"><strong>330</strong></td>
+<td style="text-align: right;"><strong>125</strong></td>
+<td style="text-align: right;"><strong>48</strong></td>
+</tr>
+<tr>
+<td>legacy proc, for reference</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">366</td>
+<td style="text-align: right;">153</td>
+<td style="text-align: right;">46</td>
+</tr>
+</tbody>
+</table>
+<p>1.6× / 1.9× / 1.5× faster, and at or ahead of the stored procedure. <code>Total</code> came back byte-identical
+to the pre-change values in all six cases (20,364 / 6,488 / 7,392 / 3,252 / 1,362 / 562), confirming
+the join semantics — including the 30 title-orphan drops — survived. 149 service + 90 arch + 23
+integration tests pass.</p>
+<p>The residual gap to target 6 (330 vs 265 ms on the largest branch) is the extra dictionary re-shaping
+pass that preserves the output contract exactly. Worth revisiting only if callers are ever migrated
+to a typed row.</p>
+<h2 id="cross-provider-verification">Cross-provider verification</h2>
+<p><code>CBS_PROVIDER=Oracle</code> runs the whole probe against the Oracle leg (the T-SQL proc target is skipped).</p>
+<p><strong>Oracle — verified equivalent.</strong> Branch 14, same data (20,480 open accounts):</p>
+<table>
+<thead>
+<tr>
+<th>Target</th>
+<th style="text-align: right;">Round-trips</th>
+<th style="text-align: right;">Oracle</th>
+<th style="text-align: right;">SQL Server</th>
+<th>Total (both)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>shipped <code>SearchAccountsAsync</code></td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">6,400 ms</td>
+<td style="text-align: right;">330 ms</td>
+<td>20,364</td>
+</tr>
+<tr>
+<td>…filtered</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">6,275 ms</td>
+<td style="text-align: right;">320 ms</td>
+<td>6,488</td>
+</tr>
+<tr>
+<td>DB-paged prototype</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">7,890 ms</td>
+<td style="text-align: right;">431 ms</td>
+<td>20,364</td>
+</tr>
+<tr>
+<td>…filtered</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">9,876 ms</td>
+<td style="text-align: right;">481 ms</td>
+<td>6,488</td>
+</tr>
+</tbody>
+</table>
+<p>Totals match SQL Server exactly, so the shipped implementation is correct on Oracle. It is also the
+fastest option there, and the DB-paged prototype shows the <em>same</em> regression pattern (worse, not
+better) — so parking DB paging holds on Oracle too.</p>
+<p>Oracle is ~20× slower in absolute terms across every target including the untouched ones, so this is
+the remote test instance (network + missing indexes), not the change. Worth its own look; unrelated
+to this item.</p>
+<p><strong>PostgreSQL — not verified.</strong> No PostgreSQL connection string exists in any config in the
+repository, so there is nothing to run against. Two things are known from code inspection:</p>
+<ul>
+<li>The shipped implementation routes <strong>every</strong> identifier through <code>Col</code>, which quotes per dialect, so
+  it carries no case-folding hazard of its own.</li>
+<li><code>SqlQuery.From&lt;TEntity&gt;</code> emits the <strong>table</strong> name unquoted and verbatim by design. PostgreSQL folds
+  unquoted identifiers to lower case while the scaffolded tables are upper case. This affects every
+  <code>SqlQuery</code> caller — including <code>TflCbs.Core.Authentication.AuthenticationService</code> — and predates
+  this change, but it means "provider-portable" is unproven on PostgreSQL generally, not just here.</li>
+</ul>
+<h3 id="the-oracle-is-null-trap-found-during-this-verification">The Oracle <code>''</code>-is-NULL trap (found during this verification)</h3>
+<p>The first version of the change computed the customer name server-side as
+<code>CASE WHEN COALESCE(c.TITLE,'') = '' THEN …</code>. Oracle treats <code>''</code> as NULL, so that test evaluates
+<code>NULL = NULL</code> → false, the <code>ELSE</code> branch returns NULL, and every untitled client silently loses its
+name. It was measurable: the filtered Total came back <strong>2,848 instead of 6,488</strong>.</p>
+<p>The shipped version computes the name in C# from the joined name parts, which is immune to this. The
+same bug was present in the probe's own prototypes and is now fixed there
+(<code>c.TITLE IS NULL OR TRIM(c.TITLE) = ''</code>), which is why targets 4–7 above read 6,488.</p>
+<p>Two independent reasons, then, not to build that expression in SQL: PostgreSQL case folding and
+Oracle NULL semantics. Both would have shipped as silent wrong answers on a provider nobody was
+testing.</p>
+<h2 id="what-this-changes-about-the-plan">What this changes about the plan</h2>
+<ul>
+<li><strong>Step 5 (indexes) must move ahead of Step 4 (conversion), not after it.</strong> Converting first would
+  ship a regression on 54 of 55 branches. The plan's own premise — that DB paging is faster — does
+  not hold on this schema without index/plan work.</li>
+<li><strong>The target index</strong> is on <code>B_ACCOUNT(ORGELEMENTID, ACCOUNTSTATUSCODE, ACCOUNTNUMBERFORDISPLAY)</code>
+  covering <code>CLIENTID, ACCOUNTHEADID, BALANCE, OLDACCOUNTNUMBER, ACCOUNTID</code>, so the filter and the
+  sort become one ordered range scan with a real row goal and the lookups become 15 key seeks.
+  <code>B_ACCOUNT</code> is clustered on <code>OrgElementId</code> alone today, so the sort is unsupported. <strong>Not created
+  — DDL on the shared dev DB needs sign-off</strong>, and it belongs with the versioned-migration item.</li>
+<li><strong>A cheaper win exists and is worth pricing first:</strong> the gap between target 1 and target 3 is
+  round-trips, not paging. Batching the 20 chunked client lookups (or driving them from one join)
+  would close most of the 501 → 417 ms gap without touching the paging model or needing any DDL.</li>
+<li><strong><code>+1.5</code> is not collectable from paging alone</strong>, and on this evidence paging is the <em>hardest</em>
+  third of the Performance 5→8 bundle. Reference-data caching (<code>G_TITLE</code> 22 rows, <code>B_CODE</code> 872,
+  <code>G_ACCOUNTHEAD</code> 1,695 — all re-read on every single page view) is far cheaper and removes 3 of
+  the 7–24 round-trips outright.</li>
+</ul>
+<h2 id="incidental">Incidental</h2>
+<p><code>Col.Render</code> is <code>internal</code>, so service code cannot build a dialect-quoted expression string for a
+computed column — the prototype's <code>CustomerName</code> expression falls back to unquoted <code>c.NAME1</code>. Fine
+for the unquoted-uppercase convention, but a real implementation wants a public render helper.
+<code>ExpressionTranslator</code> also has no <code>ToUpper</code>/<code>ToLower</code> translation, so case-insensitive contains is
+only expressible through <code>SqlQuery</code>, never a <code>Repository&lt;T&gt;</code> predicate.</p>
+<hr />
+<p><em>Generated from <code>TflCbs.Tools.PerfProbe</code> plus <code>SET STATISTICS IO, TIME</code> sessions. Read-only
+throughout; nothing was written to the database and no index was created.</em></p>
+</div></div>
+<script>
+(function(){
+ function put(t){
+  if(navigator.clipboard&&navigator.clipboard.writeText)return navigator.clipboard.writeText(t);
+  return new Promise(function(res,rej){
+   var a=document.createElement('textarea');a.value=t;a.setAttribute('readonly','');
+   a.style.cssText='position:fixed;top:0;left:0;opacity:0';document.body.appendChild(a);
+   a.select();var ok=false;try{ok=document.execCommand('copy')}catch(e){}
+   document.body.removeChild(a);ok?res():rej()});
+ }
+ function flash(el,txt,ms){
+  var was=el.textContent;el.classList.add('done');if(txt)el.textContent=txt;
+  setTimeout(function(){el.classList.remove('done');if(txt)el.textContent=was},ms||1200);
+ }
+ function copy(text,el,okTxt){
+  put(text).then(function(){flash(el,okTxt)},function(){
+   if(okTxt){var w=el.textContent;el.textContent='Ctrl+C';setTimeout(function(){el.textContent=w},2000)}});
+ }
+ document.querySelectorAll('pre').forEach(function(pre){
+  if(pre.classList.contains('txtdoc'))return;
+  var b=document.createElement('button');
+  b.type='button';b.className='copy';b.textContent='Copy';
+  b.setAttribute('aria-label','Copy this code block to the clipboard');
+  b.addEventListener('click',function(){copy((pre.querySelector('code')||pre).innerText,b,'Copied')});
+  pre.appendChild(b);
+ });
+ document.querySelectorAll('td code').forEach(function(c){
+  if(!c.textContent.trim())return;
+  c.classList.add('cp');c.tabIndex=0;c.setAttribute('role','button');
+  c.title='Click to copy';
+  c.addEventListener('click',function(){copy(c.textContent,c)});
+  c.addEventListener('keydown',function(e){
+   if(e.key==='Enter'||e.key===' '){e.preventDefault();copy(c.textContent,c)}});
+ });
+})();
+</script>
+</body></html>

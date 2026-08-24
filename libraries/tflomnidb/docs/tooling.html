@@ -1,0 +1,441 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>TflOmniDb — Tooling</title>
+<style>
+:root{color-scheme:light dark}
+*{box-sizing:border-box}
+body{margin:0;background:#f6f8fa;color:#1f2328;font:16px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif}
+.wrap{max-width:900px;margin:0 auto;padding:32px 24px 96px}
+.card{background:#fff;border:1px solid #d0d7de;border-radius:10px;padding:40px 48px}
+h1,h2,h3{line-height:1.25;font-weight:600}
+h1{font-size:1.9rem;margin:0 0 .3em;padding-bottom:.3em;border-bottom:1px solid #d8dee4}
+h2{font-size:1.4rem;margin:1.8em 0 .6em;padding-bottom:.25em;border-bottom:1px solid #eaeef2}
+h3{font-size:1.12rem;margin:1.4em 0 .5em}
+p,li{margin:.5em 0}
+a{color:#0969da;text-decoration:none}
+a:hover{text-decoration:underline}
+code{font-family:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;font-size:.86em;background:#eff1f3;padding:.15em .4em;border-radius:6px}
+pre{background:#f6f8fa;border:1px solid #d8dee4;border-radius:8px;padding:14px 16px;overflow:auto}
+pre code{background:none;padding:0;font-size:.85em;line-height:1.45}
+blockquote{margin:1em 0;padding:.4em 1em;color:#3d444d;border-left:4px solid #d0d7de;background:#f6f8fa;border-radius:0 6px 6px 0}
+blockquote>:first-child{margin-top:0}blockquote>:last-child{margin-bottom:0}
+table{border-collapse:collapse;width:100%;margin:1em 0;display:block;overflow:auto}
+th,td{border:1px solid #d0d7de;padding:8px 12px;text-align:left;vertical-align:top}
+th{background:#f6f8fa;font-weight:600}
+tr:nth-child(2n) td{background:#f6f8fa}
+hr{border:0;border-top:1px solid #d8dee4;margin:2em 0}
+pre{position:relative}
+pre>button.copy{position:absolute;top:8px;right:8px;padding:5px 9px;cursor:pointer;
+  font:600 .68rem/1 ui-monospace,SFMono-Regular,Consolas,monospace;letter-spacing:.03em;
+  color:#636c76;background:#fff;border:1px solid #d0d7de;border-radius:6px;
+  opacity:0;transition:opacity .12s}
+pre:hover>button.copy,pre>button.copy:focus{opacity:1}
+pre>button.copy.done{color:#0a3622;background:#dafbe1;border-color:#4ac26b}
+@media(hover:none){pre>button.copy{opacity:1}}
+td code.cp{cursor:pointer}
+td code.cp:hover,td code.cp:focus{outline:1px solid #8c959f;outline-offset:1px}
+td code.cp.done{color:#0a3622;background:#dafbe1}
+.docnav{margin:0 0 20px;font-size:.85rem;color:#636c76}
+.docnav a{color:#636c76}
+ul{padding-left:1.4em}ol{padding-left:1.4em}
+@media(max-width:640px){.card{padding:24px 18px}.wrap{padding:16px 10px 64px}}
+@media(prefers-color-scheme:dark){
+ body{background:#0d1117;color:#e6edf3}
+ .card{background:#161b22;border-color:#30363d}
+ h1{border-color:#30363d}h2{border-color:#21262d}
+ code{background:#262c34}
+ pre{background:#0d1117;border-color:#30363d}
+ blockquote{background:#161b22;border-color:#30363d;color:#9198a1}
+ th,td{border-color:#30363d}th{background:#161b22}tr:nth-child(2n) td{background:#12171e}
+ a{color:#4493f8}.docnav,.docnav a{color:#9198a1}
+ hr{border-color:#30363d}
+ pre>button.copy{color:#9198a1;background:#161b22;border-color:#30363d}
+ pre>button.copy.done{color:#aff5b4;background:#1b4721;border-color:#2ea043}
+ td code.cp.done{color:#aff5b4;background:#1b4721}
+}
+</style></head>
+<body><div class="wrap"><div class="card">
+<div class="docnav"><a href="../../../index.html">&#8592; All docs</a></div>
+<h1 id="tflomnidb-tooling">TflOmniDb — Tooling</h1>
+<p>Three front-ends ship with the library, all <strong>net10 only</strong> and all thin shells over library code
+(<code>Scaffolding/</code>, <code>Migration/</code>) so the logic is testable without a UI.</p>
+<table>
+<thead>
+<tr>
+<th>Tool</th>
+<th>Project</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a href="#1-entity-scaffolder">Entity scaffolder</a></td>
+<td><code>TflOmniDb.Scaffold</code> (CLI) · <code>TflOmniDb.Scaffold.Web</code> (web UI)</td>
+<td>Reverse-engineer a schema into <code>[DbTable]</code> / <code>[DbColumn]</code> entities</td>
+</tr>
+<tr>
+<td><a href="#2-table-migration">Table migration</a></td>
+<td><code>TflOmniDbMigration</code></td>
+<td>Copy a table's structure and/or data between databases, across providers</td>
+</tr>
+<tr>
+<td><a href="#3-benchmarks">Benchmarks</a></td>
+<td><code>TflOmniDb.Benchmarks</code></td>
+<td>BenchmarkDotNet suite</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="1-entity-scaffolder">1. Entity scaffolder</h2>
+<p>Generates entity classes for SQL Server, Oracle and PostgreSQL. <strong>All logic lives in the <code>TflOmniDb</code> library</strong>
+under <code>Scaffolding/</code>; both front-ends call one <code>ScaffoldFacade</code>.</p>
+<h3 id="two-acquisition-modes">Two acquisition modes</h3>
+<table>
+<thead>
+<tr>
+<th>Mode</th>
+<th>How it works</th>
+<th>When</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Connected</strong> (web UI: <em>Direct connection</em>)</td>
+<td>Opens a live <code>DbConnection</code>, queries catalog views (<code>CatalogSql</code>), maps rows to <code>ColumnSchema</code></td>
+<td>You can reach the database</td>
+</tr>
+<tr>
+<td><strong>Air-gap</strong> (web UI: <em>Script &amp; paste</em>)</td>
+<td><code>SchemaScriptEmitter</code> writes a provider SQL script; the DBA runs it on the locked-down server and pastes the pipe-delimited output back; <code>SchemaDumpParser</code> reads it</td>
+<td>Production databases you cannot connect to</td>
+</tr>
+</tbody>
+</table>
+<p>Both converge on one provider-neutral <code>SchemaModel</code>, so the generator is written once. Integration tests assert
+the connected reader and the dump parser produce <strong>byte-identical</strong> output. The Oracle script prefixes the
+SQL*Plus session settings, PostgreSQL uses <code>\pset</code>, and both NULL-guard their concatenation.</p>
+<h3 id="cli-tflomnidbscaffold">CLI — <code>TflOmniDb.Scaffold</code></h3>
+<p>Commands: <strong><code>generate</code></strong> · <strong><code>emit-script</code></strong> · <strong><code>list-tables</code></strong>.</p>
+<pre><code class="language-powershell"># Interactive wizard — run with NO arguments
+dotnet run --project TflOmniDb.Scaffold
+
+# Air-gap: emit a script for the DBA, then generate from their pasted output
+dotnet run --project TflOmniDb.Scaffold -- emit-script --provider oracle --schema OMNIDB --out dump.oracle.sql
+dotnet run --project TflOmniDb.Scaffold -- generate --provider oracle --from-dump dump.txt --out ./Entities --target fx
+
+# Connected
+dotnet run --project TflOmniDb.Scaffold -- generate --provider sqlserver `
+    --conn env:TFLOMNIDB_SQLSERVER_CONN --schema dbo --out ./Entities --namespace Bank.Entities
+</code></pre>
+<p>The interactive wizard asks for command, provider, source (live connection / dump), schema, all-tables-vs-single,
+output folder and namespace, offering numbered menus for every enum and Y/N for the flags.</p>
+<h4 id="key-options">Key options</h4>
+<table>
+<thead>
+<tr>
+<th>Option</th>
+<th>Default</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>--provider</code></td>
+<td>—</td>
+<td><code>sqlserver</code> / <code>oracle</code> / <code>postgres</code></td>
+</tr>
+<tr>
+<td><code>--conn</code></td>
+<td>—</td>
+<td>Connection string; <code>env:VAR</code> is resolved from the environment</td>
+</tr>
+<tr>
+<td><code>--from-dump</code></td>
+<td>—</td>
+<td>Air-gap input file instead of <code>--conn</code></td>
+</tr>
+<tr>
+<td><code>--schema</code></td>
+<td>—</td>
+<td>Source schema</td>
+</tr>
+<tr>
+<td><code>--table</code></td>
+<td><em>(all)</em></td>
+<td>Single table; omit for whole-schema</td>
+</tr>
+<tr>
+<td><code>--out</code></td>
+<td>—</td>
+<td>Output directory</td>
+</tr>
+<tr>
+<td><code>--namespace</code></td>
+<td><code>TflEntities</code></td>
+<td>Generated namespace</td>
+</tr>
+<tr>
+<td><code>--lang</code></td>
+<td><code>csharp</code></td>
+<td><code>csharp</code> / <code>vbnet</code> — VB emits <code>Imports</code>, <code>&lt;DbColumn(...)&gt;</code>, <code>Public Overridable Property … As T?</code> into <code>.vb</code> files</td>
+</tr>
+<tr>
+<td><code>--target</code></td>
+<td><code>net10</code></td>
+<td><code>net10</code> (file-scoped namespace, nullable strings) / <code>fx</code> (braced namespace, non-nullable)</td>
+</tr>
+<tr>
+<td><code>--case</code></td>
+<td><code>upper</code></td>
+<td>Casing of the <strong>DB identifier</strong> written into the attribute</td>
+</tr>
+<tr>
+<td><code>--naming</code></td>
+<td><code>upper</code></td>
+<td>Casing of the <strong>C#/VB class and member</strong> names: <code>upper</code> (verbatim), <code>pascal</code>, <code>verbatim</code></td>
+</tr>
+<tr>
+<td><code>--no-partial</code></td>
+<td><em>(partial on)</em></td>
+<td>Classes are <code>partial</code> by default so hand-written members live in a sibling file the generator never overwrites</td>
+</tr>
+<tr>
+<td><code>--no-column-tokens</code></td>
+<td><em>(tokens on)</em></td>
+<td>Suppress the nested <code>Cols</code> class (net10 target only)</td>
+</tr>
+<tr>
+<td><code>--sensitive</code></td>
+<td>—</td>
+<td>Mark columns <code>IsSensitive</code> — the catalog cannot infer this</td>
+</tr>
+<tr>
+<td><code>--rowversion-pattern</code></td>
+<td>—</td>
+<td>Mark a column <code>IsRowVersion</code> — likewise</td>
+</tr>
+<tr>
+<td><code>--skip-table-prefix</code></td>
+<td><code>_</code></td>
+<td>CSV of prefixes skipped in whole-schema mode</td>
+</tr>
+<tr>
+<td><code>--include-all-tables</code></td>
+<td>—</td>
+<td>Opt out of the prefix filter</td>
+</tr>
+</tbody>
+</table>
+<h4 id="the-two-naming-axes">The two naming axes</h4>
+<p>They are independent, and confusing them causes runtime "table not found" errors:</p>
+<ul>
+<li><strong><code>--case</code></strong> controls the <strong>database identifier</strong> inside the attribute. The DAL always quotes, so this is
+  casing-critical. Default <code>upper</code> is the most portable: Oracle folds unquoted DDL to uppercase and SQL Server is
+  case-insensitive — so <strong>create PostgreSQL tables with quoted uppercase names</strong> to match.</li>
+<li><strong><code>--naming</code></strong> controls the <strong>C#/VB identifier</strong>, which is cosmetic. Default <code>upper</code> mirrors the DB name
+  verbatim (<code>B_ACCOUNT</code> → class <code>B_ACCOUNT</code>, <code>ACCOUNT_ID</code> → property <code>ACCOUNT_ID</code>); <code>pascal</code> gives
+  <code>ACCOUNT_BALANCE</code> → <code>AccountBalance</code>.</li>
+</ul>
+<p>The generated <strong>file name is the DB table name</strong> (<code>B_ACCOUNT</code> → <code>B_ACCOUNT.cs</code> / <code>.vb</code>), not the PascalCase class.</p>
+<h4 id="generated-output">Generated output</h4>
+<p>net10 files are self-contained: the <code>// &lt;auto-generated&gt;</code> header turns Roslyn's nullable context off, so the
+emitter writes <code>#nullable enable</code> (otherwise nullable strings fail with CS8669) plus <code>using System;</code> so
+<code>DateTime</code> / <code>Guid</code> resolve without the project's <code>ImplicitUsings</code>.</p>
+<p>net10 entities also carry a nested <strong><code>public static class Cols</code></strong> of <code>TflOmniDb.Query.Col</code> tokens
+(<code>B_ACCOUNT.Cols.ACCOUNT_ID</code>, plus a <code>Cols.Table</code> constant) for the <code>SqlQuery</code> composer — the token field name
+follows <code>--naming</code>, the <code>new Col("…")</code> argument follows <code>--case</code>. On by default; <strong>net10 target only</strong> (<code>--target
+fx</code> never emits it — the Fx library has no <code>Col</code>).</p>
+<p>Ambiguous reverse mappings resolve by documented heuristic and emit a <code>// note:</code> for the reviewer — e.g.
+<code>NVARCHAR(MAX)</code> → <code>NClob</code>, Oracle <code>RAW(16)</code> → <code>Binary</code>, <code>NUMBER(1,0)</code> → <code>Boolean</code>, <code>NUMBER(19,4)</code> → <code>Money</code>.
+<strong>Read the notes</strong>; they are exactly the decisions a human should confirm.</p>
+<h4 id="config-seeded-defaults">Config-seeded defaults</h4>
+<p>An optional <code>appsettings.json</code> <code>"Scaffold"</code> section seeds the <strong>interactive path only</strong> — the flag-driven CLI is
+unchanged. Keys: <code>Command</code>, <code>Provider</code>, <code>Source</code>, <code>Tables</code>, <code>Namespace</code>, <code>OutputDir</code>, <code>Language</code>, <code>Target</code>,
+<code>Casing</code>, <code>Naming</code>, <code>Partial</code>, <code>SkipUnderscoreColumns</code>, <code>SkipUnderscoreTables</code>, <code>Advanced</code>, <code>SkipTablePrefix</code>,
+<code>EmitColumnTokens</code>, plus a per-provider <code>Connections</code> block keyed <code>SqlServer</code> / <code>Oracle</code> / <code>PostgreSql</code> with
+<code>ConnectionString</code> (<code>env:VAR</code> supported) and <code>Schema</code>.</p>
+<p>The wizard shows the configured value as each prompt's default — <strong>Enter accepts it, typing overrides it for that
+run</strong>; the file is never rewritten. A missing file or section means all-null defaults, i.e. the original
+hard-coded fallbacks. Binding lives in <code>ScaffoldDefaults.FromConfiguration</code>, unit-tested without a database.</p>
+<h3 id="web-ui-tflomnidbscaffoldweb">Web UI — <code>TflOmniDb.Scaffold.Web</code></h3>
+<pre><code class="language-powershell">dotnet run --project TflOmniDb.Scaffold.Web    # then open the printed localhost URL
+</code></pre>
+<p>Minimal API + a static page. <strong>Bind to localhost</strong> — connected mode takes a connection string (nothing is
+persisted). The <em>Script &amp; paste</em> box is the primary UX. The UI exposes only Provider / Language / Schema / Table;
+everything else uses the defaults above.</p>
+<p><code>Scaffold:RequireTable</code> in <code>appsettings.json</code> (default <code>true</code>) makes the table name mandatory — single-table
+generation by default; set it <code>false</code> to allow whole-schema. A single generated file downloads directly; multiple
+files use per-file or <code>.zip</code> download. The <strong>List tables</strong> button (CLI: <code>list-tables</code>) enumerates base tables from
+a live connection or a pasted dump to drive autocomplete on large schemas.</p>
+<hr />
+<h2 id="2-table-migration">2. Table migration</h2>
+<p>Copies a single table's <strong>structure and/or data</strong> from one database to another — possibly across providers
+(SQL Server → Oracle, say). Logic lives in the library under <code>Migration/</code>; <code>TflOmniDbMigration</code> is a thin
+interactive shell mirroring the scaffold wizard. It reuses the existing schema reader, reverse type mappers,
+raw-SQL helpers and bulk-copy path.</p>
+<pre><code class="language-powershell">dotnet run --project TflOmniDbMigration        # wizard → preview → confirm → copy + verify
+</code></pre>
+<h3 id="flow">Flow</h3>
+<ol>
+<li><strong><code>PrepareAsync(request)</code></strong> — reads the source schema, maps columns, emits the CREATE TABLE DDL and counts
+   source rows <strong>without writing anything</strong>. This powers the dry-run preview (DDL + column mapping + row count +
+   warnings).</li>
+<li><strong>Confirm.</strong></li>
+<li><strong><code>ExecuteAsync(request, plan)</code></strong> — applies the destination-exists behaviour, creates the table, bulk-copies
+   the rows, and verifies the destination row count.</li>
+</ol>
+<p><code>RunAsync</code> does both in one call.</p>
+<h3 id="migrationrequest"><code>MigrationRequest</code></h3>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Source / destination</td>
+<td>provider + connection + schema + table</td>
+</tr>
+<tr>
+<td><code>What</code></td>
+<td><code>Structure</code> / <code>Data</code> / <code>Both</code></td>
+</tr>
+<tr>
+<td><code>WhereCriteria</code> (+ params)</td>
+<td>Subset a big table</td>
+</tr>
+<tr>
+<td><code>ExistsBehaviour</code></td>
+<td><code>Fail</code> / <code>CreateIfMissing</code> / <code>DropAndRecreate</code> / <code>TruncateThenLoad</code></td>
+</tr>
+<tr>
+<td><code>OracleUppercase</code></td>
+<td>Default <code>true</code></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Identity and PK values are preserved</strong> — <code>KeepIdentities</code> is forced on, and destination identity columns are
+emitted <code>GENERATED BY DEFAULT</code> / <code>IDENTITY(1,1)</code>.</p>
+<h3 id="supporting-types">Supporting types</h3>
+<ul>
+<li><strong><code>CreateTableEmitter</code></strong> (public) — the general-purpose CREATE TABLE generator: columns, nullability, preserved
+  identity, table-level PK, best-effort <code>DEFAULT</code> translation (<code>DefaultTranslator</code>), dialect quoting, and
+  <strong>Oracle identifiers uppercased</strong> so <code>OracleBulkCopy</code> can reach the table.
+  <strong>v1 does not copy</strong> indexes, foreign keys, check constraints or computed columns.</li>
+<li><strong><code>MigrationColumn</code></strong> + <strong><code>MigrationColumnFactory</code></strong> — a runtime column with no <code>[DbColumn]</code> entity behind it,
+  built from a <code>TableSchema</code> via the source provider's reverse type mapper. Ambiguous mappings surface as warnings.</li>
+<li><strong><code>DataAccess.BulkCopyAsync(schema, table, IReadOnlyList&lt;MigrationColumn&gt;, rows, options)</code></strong> — the non-generic
+  bulk entry point.</li>
+</ul>
+<h3 id="console-extras">Console extras</h3>
+<p>Prompt defaults come from an optional <code>appsettings.json</code> <code>"Migration"</code> section: <code>Source</code> / <code>Dest</code> legs, each with
+<code>Provider</code> / <code>Schema</code> / <code>Table</code> and a per-provider <code>Connections</code> block keyed <code>SqlServer</code> / <code>Oracle</code> /
+<code>PostgreSql</code> (<code>ConnectionString</code> supports <code>env:VAR</code>). A newly typed connection string can be <strong>saved back</strong> to
+<code>appsettings.json</code> via <code>ConnectionStringWriter</code> (System.Text.Json, written verbatim so <code>env:NAME</code> stays a
+reference). The DDL can also be emitted to a <code>.sql</code> file instead of applied.</p>
+<p>Coverage: unit-tested without a database (emitter per dialect, column factory, config binder, connection-string
+writer); a gated SQL Server → Oracle integration test and demo entry #20 <code>TableMigration</code> exercise it live.
+<code>TflOmniDb.Scaffold</code> is intentionally left untouched by this tool.</p>
+<hr />
+<h2 id="3-benchmarks">3. Benchmarks</h2>
+<p><code>TflOmniDb.Benchmarks</code> — a separate console project using BenchmarkDotNet.</p>
+<table>
+<thead>
+<tr>
+<th>Benchmark</th>
+<th>Measures</th>
+<th>Needs a DB?</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>MetadataBenchmarks</code></td>
+<td><code>MetadataReader.For&lt;T&gt;()</code> cold vs warm cache hit</td>
+<td>No</td>
+</tr>
+<tr>
+<td><code>SqlGenerationBenchmarks</code></td>
+<td><code>SqlGenerator.For(desc)</code> cached lookup; <code>BuildSelectWhere</code> per-call cost (simple + compound predicates); <code>BuildCount</code></td>
+<td>No</td>
+</tr>
+<tr>
+<td><code>StreamingVsBufferedBenchmarks</code></td>
+<td>The O(1)-vs-O(n) memory claim: <code>StreamAllAsync</code> vs <code>GetAllAsync</code></td>
+<td><strong>Yes</strong></td>
+</tr>
+<tr>
+<td><code>BulkInsertVsLoopBenchmarks</code></td>
+<td><code>BulkInsertAsync</code> vs N × <code>InsertAsync</code> at 100 and 1,000 rows</td>
+<td><strong>Yes</strong></td>
+</tr>
+</tbody>
+</table>
+<pre><code class="language-powershell"># List everything
+dotnet run --project TflOmniDb.Benchmarks -c Release -- --list flat
+
+# Run everything
+dotnet run --project TflOmniDb.Benchmarks -c Release -- --filter '*'
+
+# In-memory only (no database required)
+dotnet run --project TflOmniDb.Benchmarks -c Release -- --filter '*Metadata*' '*Generation*'
+</code></pre>
+<p>The DB-backed benchmarks require <code>TFLOMNIDB_SQLSERVER_CONN</code> in the environment; they create their own
+<code>BenchWidget</code> / <code>BenchBulkWidget</code> tables and tear them down on cleanup. Results land in
+<code>TflOmniDb.Benchmarks/BenchmarkDotNet.Artifacts/results/</code> as <code>*-report-github.md</code> and <code>*-report.html</code>.</p>
+<hr />
+<h2 id="4-demo-application">4. Demo application</h2>
+<p>Not a tool as such, but the fastest way to see any feature working: <code>TflOmniDb.Demo</code> is a menu-driven console.</p>
+<p>It reads <code>appsettings.json</code> under the <code>TflOmniDb</code> section and is <strong>multi-provider</strong> — a CSV <code>Providers</code>
+(e.g. <code>"SqlServer,Oracle,PostgreSql"</code>) plus a per-provider <code>Connections</code> block (<code>ConnectionString</code> +
+<code>DefaultSchema</code>). Each connection string resolves <strong>env-var-first</strong> (<code>TFLOMNIDB_SQLSERVER_CONN</code> /
+<code>TFLOMNIDB_ORACLE_CONN</code> / <code>TFLOMNIDB_POSTGRES_CONN</code> — the same names the tests use), then the config value.</p>
+<p><strong>Every demo runs against each active provider in turn</strong>, with a per-demo banner and a demo × provider summary
+matrix. Set <code>Providers</code> to a single value to scope the run. A provider whose connection is blank or unreachable is
+<strong>skipped</strong> (preflight <code>OpenConnectionAsync</code>), not failed. <code>DemoSchema</code> emits provider-correct DDL so the demos
+are portable; the stored-procedure demo uses each engine's own model (T-SQL / Oracle REF CURSOR / PostgreSQL
+<code>CALL</code>); and a no-DB "generated-SQL comparison" entry prints the three dialects side by side — the quickest way to
+see what differs between engines.</p>
+<p>Notable entries: #17 <code>ComplexQuery</code> (composer vs raw SQL), #18 <code>RowAccess</code>, #20 <code>TableMigration</code>, #22
+<code>Aggregates</code>, #23 <code>CommandTimeout</code>.</p>
+<p><strong>Standing rule:</strong> every new library feature ships with both a test <em>and</em> a demo entry wired into <code>Program.cs</code>.</p>
+</div></div>
+<script>
+(function(){
+ function put(t){
+  if(navigator.clipboard&&navigator.clipboard.writeText)return navigator.clipboard.writeText(t);
+  return new Promise(function(res,rej){
+   var a=document.createElement('textarea');a.value=t;a.setAttribute('readonly','');
+   a.style.cssText='position:fixed;top:0;left:0;opacity:0';document.body.appendChild(a);
+   a.select();var ok=false;try{ok=document.execCommand('copy')}catch(e){}
+   document.body.removeChild(a);ok?res():rej()});
+ }
+ function flash(el,txt,ms){
+  var was=el.textContent;el.classList.add('done');if(txt)el.textContent=txt;
+  setTimeout(function(){el.classList.remove('done');if(txt)el.textContent=was},ms||1200);
+ }
+ function copy(text,el,okTxt){
+  put(text).then(function(){flash(el,okTxt)},function(){
+   if(okTxt){var w=el.textContent;el.textContent='Ctrl+C';setTimeout(function(){el.textContent=w},2000)}});
+ }
+ document.querySelectorAll('pre').forEach(function(pre){
+  if(pre.classList.contains('txtdoc'))return;
+  var b=document.createElement('button');
+  b.type='button';b.className='copy';b.textContent='Copy';
+  b.setAttribute('aria-label','Copy this code block to the clipboard');
+  b.addEventListener('click',function(){copy((pre.querySelector('code')||pre).innerText,b,'Copied')});
+  pre.appendChild(b);
+ });
+ document.querySelectorAll('td code').forEach(function(c){
+  if(!c.textContent.trim())return;
+  c.classList.add('cp');c.tabIndex=0;c.setAttribute('role','button');
+  c.title='Click to copy';
+  c.addEventListener('click',function(){copy(c.textContent,c)});
+  c.addEventListener('keydown',function(e){
+   if(e.key==='Enter'||e.key===' '){e.preventDefault();copy(c.textContent,c)}});
+ });
+})();
+</script>
+</body></html>

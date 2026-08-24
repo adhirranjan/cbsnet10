@@ -1,0 +1,481 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Stored-procedure migration strategy (CBS → provider-agnostic C# on TflOmniDb)</title>
+<style>
+:root{color-scheme:light dark}
+*{box-sizing:border-box}
+body{margin:0;background:#f6f8fa;color:#1f2328;font:16px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif}
+.wrap{max-width:900px;margin:0 auto;padding:32px 24px 96px}
+.card{background:#fff;border:1px solid #d0d7de;border-radius:10px;padding:40px 48px}
+h1,h2,h3{line-height:1.25;font-weight:600}
+h1{font-size:1.9rem;margin:0 0 .3em;padding-bottom:.3em;border-bottom:1px solid #d8dee4}
+h2{font-size:1.4rem;margin:1.8em 0 .6em;padding-bottom:.25em;border-bottom:1px solid #eaeef2}
+h3{font-size:1.12rem;margin:1.4em 0 .5em}
+p,li{margin:.5em 0}
+a{color:#0969da;text-decoration:none}
+a:hover{text-decoration:underline}
+code{font-family:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;font-size:.86em;background:#eff1f3;padding:.15em .4em;border-radius:6px}
+pre{background:#f6f8fa;border:1px solid #d8dee4;border-radius:8px;padding:14px 16px;overflow:auto}
+pre code{background:none;padding:0;font-size:.85em;line-height:1.45}
+blockquote{margin:1em 0;padding:.4em 1em;color:#3d444d;border-left:4px solid #d0d7de;background:#f6f8fa;border-radius:0 6px 6px 0}
+blockquote>:first-child{margin-top:0}blockquote>:last-child{margin-bottom:0}
+table{border-collapse:collapse;width:100%;margin:1em 0;display:block;overflow:auto}
+th,td{border:1px solid #d0d7de;padding:8px 12px;text-align:left;vertical-align:top}
+th{background:#f6f8fa;font-weight:600}
+tr:nth-child(2n) td{background:#f6f8fa}
+hr{border:0;border-top:1px solid #d8dee4;margin:2em 0}
+pre{position:relative}
+pre>button.copy{position:absolute;top:8px;right:8px;padding:5px 9px;cursor:pointer;
+  font:600 .68rem/1 ui-monospace,SFMono-Regular,Consolas,monospace;letter-spacing:.03em;
+  color:#636c76;background:#fff;border:1px solid #d0d7de;border-radius:6px;
+  opacity:0;transition:opacity .12s}
+pre:hover>button.copy,pre>button.copy:focus{opacity:1}
+pre>button.copy.done{color:#0a3622;background:#dafbe1;border-color:#4ac26b}
+@media(hover:none){pre>button.copy{opacity:1}}
+td code.cp{cursor:pointer}
+td code.cp:hover,td code.cp:focus{outline:1px solid #8c959f;outline-offset:1px}
+td code.cp.done{color:#0a3622;background:#dafbe1}
+.docnav{margin:0 0 20px;font-size:.85rem;color:#636c76}
+.docnav a{color:#636c76}
+ul{padding-left:1.4em}ol{padding-left:1.4em}
+@media(max-width:640px){.card{padding:24px 18px}.wrap{padding:16px 10px 64px}}
+@media(prefers-color-scheme:dark){
+ body{background:#0d1117;color:#e6edf3}
+ .card{background:#161b22;border-color:#30363d}
+ h1{border-color:#30363d}h2{border-color:#21262d}
+ code{background:#262c34}
+ pre{background:#0d1117;border-color:#30363d}
+ blockquote{background:#161b22;border-color:#30363d;color:#9198a1}
+ th,td{border-color:#30363d}th{background:#161b22}tr:nth-child(2n) td{background:#12171e}
+ a{color:#4493f8}.docnav,.docnav a{color:#9198a1}
+ hr{border-color:#30363d}
+ pre>button.copy{color:#9198a1;background:#161b22;border-color:#30363d}
+ pre>button.copy.done{color:#aff5b4;background:#1b4721;border-color:#2ea043}
+ td code.cp.done{color:#aff5b4;background:#1b4721}
+}
+</style></head>
+<body><div class="wrap"><div class="card">
+<div class="docnav"><a href="../../../index.html">&#8592; All docs</a></div>
+<h1 id="stored-procedure-migration-strategy-cbs-provider-agnostic-c-on-tflomnidb">Stored-procedure migration strategy (CBS → provider-agnostic C# on TflOmniDb)</h1>
+<blockquote>
+<p><strong>Status:</strong> decision record, now <strong>built and verified</strong> — the foundation (§10: all four
+increments) is complete and green on all three engines. §5's API sketches show the
+original design shapes; the as-built surface has since grown (typed <code>Col</code>/<code>Agg</code> tokens,
+<code>From&lt;TEntity&gt;</code> / typed joins, <code>Distinct</code>, scalar aggregates, <code>UseCommandTimeout</code>) — see
+<code>CLAUDE.md</code> for the current reference. The migration playbook (§6–§8) remains the
+operating guide for the proc-by-proc work.</p>
+</blockquote>
+<h2 id="1-goal-context">1. Goal &amp; context</h2>
+<p>The production core-banking system (CBS) is <strong>ASP.NET WebForms + VB.NET + SQL Server</strong>,
+with <strong>~98% of database logic living in T-SQL stored procedures</strong>. The objective:</p>
+<ul>
+<li>Move that stored-procedure logic into application code so it <strong>runs unchanged on SQL
+  Server, Oracle, and PostgreSQL</strong> (TflOmniDb's three targets).</li>
+<li>Do it on <strong>.NET 10 + C#</strong> (decision below), reusing TflOmniDb as the data-access spine.</li>
+<li>The WebForms → modern-UI rewrite and the net48 → net10 platform move are <strong>separate
+  workstreams</strong>; the migrated logic is written to be UI-agnostic and framework-agnostic so
+  it survives both.</li>
+</ul>
+<h3 id="decision-net-10-c">Decision: .NET 10 + C</h3>
+<ul>
+<li><strong>C# over VB.NET.</strong> VB is in maintenance mode (frozen language), ASP.NET Core tooling is
+  C#-first, WebForms (VB's first-class home) does not exist on modern .NET, and the
+  procedural SP logic maps cleanly onto modern C# (pattern matching, <code>switch</code> expressions,
+  enums, records). The move is incremental — new/migrated code in C#, untouched VB stays via
+  interop; no big-bang.</li>
+<li><strong>net10</strong> is in scope now, not "later." This is a decade-plus system, so longevity and
+  minimal long-lived dependencies are weighted heavily.</li>
+</ul>
+<h2 id="2-evidence-the-cbs-proc-library-census">2. Evidence: the CBS proc-library census</h2>
+<p>Measured across the real library (<code>20260601_cbs_procs</code>, comment-stripped keyword
+classification):</p>
+<ul>
+<li><strong>5,316 stored procedures, ~1.8 million lines of T-SQL.</strong></li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>Primary split (mutually exclusive)</th>
+<th>Count</th>
+<th>Share</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Orchestration</strong> (calls another proc / cursor / explicit <code>BEGIN TRAN</code>)</td>
+<td>2,899</td>
+<td><strong>55%</strong></td>
+</tr>
+<tr>
+<td><strong>Write / CRUD</strong> (writes, no proc-call / cursor / tran)</td>
+<td>1,062</td>
+<td>20%</td>
+</tr>
+<tr>
+<td><strong>Pure read</strong> (SELECT only)</td>
+<td>1,355</td>
+<td><strong>25%</strong></td>
+</tr>
+</tbody>
+</table>
+<table>
+<thead>
+<tr>
+<th>Orchestration signal (overlapping)</th>
+<th>Count</th>
+<th>of all</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Calls other procs (<code>EXEC</code>)</td>
+<td>2,350</td>
+<td>44% (316 call 6+)</td>
+</tr>
+<tr>
+<td>Uses temp tables / table vars</td>
+<td>3,341</td>
+<td>63%</td>
+</tr>
+<tr>
+<td><code>WHILE</code> loop</td>
+<td>2,002</td>
+<td>38%</td>
+</tr>
+<tr>
+<td>Cursor</td>
+<td>1,272</td>
+<td>24%</td>
+</tr>
+<tr>
+<td><code>BEGIN/COMMIT/ROLLBACK</code></td>
+<td>1,047</td>
+<td>20%</td>
+</tr>
+<tr>
+<td>Dynamic SQL (<code>EXEC()</code> / <code>sp_executesql</code>)</td>
+<td>946</td>
+<td>18%</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Read complexity (within the 1,355 pure reads):</strong> simple single-table 403; has JOIN 901
+(≥3 joins 585); GROUP BY 135; UNION 96; <strong>window fn 28; CTE 14; PIVOT 2.</strong></p>
+<p><strong>Portability hazards (across all procs):</strong> <code>WITH(NOLOCK)</code> 3,223 (61%); <code>ISNULL()</code> 4,541
+(85%); date/format funcs <code>GETDATE/DATEADD/DATEDIFF/CONVERT/CHARINDEX</code> 3,630 (68%);
+<code>HOLDLOCK/UPDLOCK/XLOCK</code> <strong>only 3</strong> (outliers, not systemic).</p>
+<p><strong>Scalar/table UDF (<code>fn_*</code>) dependency:</strong> <strong>85 procs (2%)</strong> reference UDFs, <strong>17 distinct</strong>
+functions (top: <code>fn_MaskAadharOrPan</code> ×34, <code>fn_util_ReplaceSpecialChar</code> ×18, <code>fn_cdcf</code> ×9,
+crypto <code>fn_encryptString</code>/<code>fn_decryptString</code>, <code>fn_eomonth</code>). A small, bounded cluster.</p>
+<h3 id="what-the-census-proves">What the census proves</h3>
+<ol>
+<li><strong>This is an orchestration codebase, not a query codebase.</strong> ~3:1 against a query
+   builder being the centerpiece. The bulk of the work is re-expressing procedural T-SQL as
+   C# service methods on TflOmniDb (loops, transactions, proc-call graph, temp tables).</li>
+<li><strong>The reads are join-heavy but not exotic.</strong> The high-ceiling shapes (window/CTE/pivot)
+   are <strong>~44 procs total (~3% of reads)</strong> — they stay raw SQL. A thin composer + raw SQL
+   covers the read surface; <strong>linq2db's high ceiling is not justified.</strong></li>
+<li><strong>The systemic portability tax is the scalar-function / null vocabulary</strong> (85% ISNULL,
+   68% date/format) — paid down once with a small <code>Fn</code> helper layer, not 5,000 times.</li>
+<li><strong>The dominant risk is call-graph coupling (44%)</strong> — migrate clusters, not single procs.</li>
+</ol>
+<h2 id="3-tool-decision">3. Tool decision</h2>
+<table>
+<thead>
+<tr>
+<th>Option</th>
+<th>Verdict</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>linq2db</strong></td>
+<td><strong>No.</strong> Its justification was a high-ceiling read surface (~44 procs). Brings a parallel execution stack that bypasses the TflOmniDb pipeline (logging/retry/redaction) and is ORM-ish (against this project's no-ORM philosophy).</td>
+</tr>
+<tr>
+<td><strong>SqlKata</strong></td>
+<td><strong>No.</strong> Maintenance has gone quiet; not worth a long-lived external dependency for a read slice this regular.</td>
+</tr>
+<tr>
+<td><strong>Raw SQL + thin in-house composer + <code>Fn</code> layer</strong></td>
+<td><strong>Yes.</strong> Zero external dependency, rides the existing pipeline natively, AOT-clean for the net10 leg, and ~90% of the machinery already exists (<code>SqlGenerator.BuildSelectWhere</code>, <code>ExpressionTranslator</code>, <code>RawQueryExecutor</code>, <code>PocoMaterializer</code>, per-dialect <code>*TypeMapper</code>).</td>
+</tr>
+</tbody>
+</table>
+<h2 id="4-target-architecture">4. Target architecture</h2>
+<pre><code>C# service method (one per migrated proc / proc-cluster)
+   │  builds query with ↓            builds expressions with ↓
+   ├──────── SqlQuery (composer) ─────── Fn (function helpers) ────┐
+   │                                                               │
+   └─ .ToListAsync&lt;T&gt;(data) ─→ DataAccess.QueryAsync&lt;T&gt;(sql,params)  ← existing pipeline
+                                 (CommandLogger · Retry · redaction · UseDirtyReads · correlation)
+</code></pre>
+<ul>
+<li><strong>Reads (proc-#1 shape + the 946 dynamic-SQL procs):</strong> <code>SqlQuery</code> composer + <code>Fn</code>,
+  executed through the existing raw-SQL helpers.</li>
+<li><strong>~44 exotic reads (window/CTE/pivot):</strong> raw <code>data.QueryAsync&lt;T&gt;(sql, params)</code> — same as today.</li>
+<li><strong>Orchestration (the ~75%):</strong> plain C# service methods on TflOmniDb — <code>ExecuteInTransactionAsync</code>
+  for atomic multi-step work, <code>GetAsync</code>/scalar/exists for lookups, <code>enum</code>s for the magic-number
+  business codes, <code>foreach</code> for cursors, method calls for <code>EXEC</code>.</li>
+</ul>
+<p>Crucially, the composer and <code>Fn</code> <strong>produce SQL + bound parameters and delegate to
+<code>DataAccess</code>/<code>IUnitOfWork</code></strong> — they never open connections or own transactions. So logging,
+transient-fault retry, sensitive-column redaction, correlation IDs, and <code>UseDirtyReads</code> keep
+working with no extra wiring.</p>
+<h2 id="5-api-shapes-to-build">5. API shapes to build</h2>
+<h3 id="51-sqlfunctions-fn-provider-bound-scalar-function-vocabulary">5.1 <code>SqlFunctions</code> / <code>Fn</code> — provider-bound scalar-function vocabulary</h3>
+<p>A tiny facade, bound to the active <code>ISqlDialect</code>, returning <strong>SQL text fragments</strong> rendered
+per dialect. Pays down the 85%-ISNULL / 68%-date tax once.</p>
+<pre><code class="language-csharp">var fn = SqlFunctions.For(provider);     // or dialect.Fn
+fn.Coalesce(&quot;c.ShortName&quot;, &quot;''&quot;);        // ISNULL → COALESCE / NVL
+fn.Concat(&quot;a&quot;, &quot;' '&quot;, &quot;b&quot;);              // a + b → a || b
+fn.CharIndex(&quot;'x'&quot;, &quot;a.code&quot;);           // CHARINDEX(n,h) → INSTR(h,n) / POSITION(n IN h)   (arg order flips!)
+fn.Now(); fn.Substring(...); fn.Length(...); fn.DateAdd(...); fn.DateDiff(...);
+fn.Cast(&quot;a.balance&quot;, CoreDataType.Money);// CAST via the dialect's *TypeMapper
+</code></pre>
+<table>
+<thead>
+<tr>
+<th><code>Fn</code> method</th>
+<th>SQL Server</th>
+<th>PostgreSQL</th>
+<th>Oracle</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>Coalesce(a,b)</code> ← <code>ISNULL</code></td>
+<td><code>ISNULL(a,b)</code></td>
+<td><code>COALESCE(a,b)</code></td>
+<td><code>NVL(a,b)</code></td>
+</tr>
+<tr>
+<td><code>Now()</code> ← <code>GETDATE()</code></td>
+<td><code>SYSDATETIME()</code></td>
+<td><code>now()</code></td>
+<td><code>SYSTIMESTAMP</code></td>
+</tr>
+<tr>
+<td><code>Concat(a,b)</code> ← <code>a + b</code></td>
+<td><code>a + b</code></td>
+<td><code>a \|\| b</code></td>
+<td><code>a \|\| b</code></td>
+</tr>
+<tr>
+<td><code>CharIndex(n,h)</code></td>
+<td><code>CHARINDEX(n,h)</code></td>
+<td><code>POSITION(n IN h)</code></td>
+<td><code>INSTR(h,n)</code></td>
+</tr>
+<tr>
+<td><code>Substring/Length</code></td>
+<td><code>SUBSTRING/LEN</code></td>
+<td><code>SUBSTRING/LENGTH</code></td>
+<td><code>SUBSTR/LENGTH</code></td>
+</tr>
+<tr>
+<td><code>DateAdd/DateDiff</code></td>
+<td><code>DATEADD/DATEDIFF</code></td>
+<td>interval math</td>
+<td>interval math</td>
+</tr>
+</tbody>
+</table>
+<h3 id="52-sqlquery-thin-conditional-predicate-composer">5.2 <code>SqlQuery</code> — thin conditional-predicate composer</h3>
+<p>Assembles <code>FROM/JOIN/WHERE(+conditional)/GROUP BY/HAVING/ORDER BY/paging</code>, collects
+parameters, normalizes the placeholder prefix per dialect (<code>@id</code> → <code>:id</code> on Oracle), and
+feeds the DAL. Headline feature: <strong><code>WhereIf</code></strong> (covers both the proc-#1 optional-filter idiom
+and the 946 dynamic-SQL procs).</p>
+<pre><code class="language-csharp">public sealed class SqlQuery
+{
+    static SqlQuery From(string table, string alias, DbProvider provider);
+    SqlQuery Select(params string[] exprs);
+    SqlQuery InnerJoin(string tableAlias, string on);
+    SqlQuery LeftJoin (string tableAlias, string on);
+    SqlQuery Where  (string predicate, params (string name, object? value)[] ps);
+    SqlQuery WhereIf(bool cond, string predicate, params (string,object?)[] ps);  // ← key
+    SqlQuery GroupBy(params string[] cols);
+    SqlQuery Having (string predicate, params (string,object?)[] ps);
+    SqlQuery OrderBy(params string[] cols);
+    SqlQuery Page(int? skip, int? take);   // dialect paging via ISqlDialect (OFFSET/FETCH vs LIMIT)
+
+    (string Sql, IReadOnlyDictionary&lt;string,object?&gt; Parameters) Build();
+
+    Task&lt;IReadOnlyList&lt;T&gt;&gt; ToListAsync&lt;T&gt;(DataAccess data,  CancellationToken ct = default) where T : new();
+    Task&lt;IReadOnlyList&lt;T&gt;&gt; ToListAsync&lt;T&gt;(IUnitOfWork uow,  CancellationToken ct = default) where T : new();
+    Task&lt;TScalar?&gt;         ScalarAsync&lt;TScalar&gt;(DataAccess data, …);
+    Task&lt;TScalar?&gt;         ScalarAsync&lt;TScalar&gt;(IUnitOfWork uow, …);
+    Task&lt;bool&gt;             ExistsAsync(DataAccess data, …);
+    IAsyncEnumerable&lt;T&gt;    StreamAsync&lt;T&gt;(DataAccess data, …);   // net10 only
+}
+</code></pre>
+<p>Predicate / join / select fragments are passed through <strong>verbatim</strong> (caller's responsibility,
+same contract as today's raw SQL); the composer adds conditional composition, parameter
+binding/dedup-by-name, dialect paging, and the <code>Fn</code> vocabulary. Result POCOs need <strong>no
+<code>[DbTable]</code>/PK</strong> — they ride <code>QueryAsync&lt;T&gt;</code> + <code>PocoMaterializer</code>.</p>
+<h3 id="53-executenonqueryasync-the-one-missing-primitive">5.3 <code>ExecuteNonQueryAsync</code> — the one missing primitive</h3>
+<p>The dry-run surfaced the only genuine DAL gap: raw <strong>reads</strong> exist (<code>QueryAsync</code> /
+<code>ExecuteScalarAsync</code> / <code>ExistsAsync</code>) but there is <strong>no raw non-query write helper</strong> for the
+targeted <code>UPDATE/INSERT/DELETE</code> text that SP migration needs constantly.</p>
+<pre><code class="language-csharp">// DataAccess (owned connection + retry-eligible) and IUnitOfWork (transactional):
+Task&lt;int&gt; ExecuteNonQueryAsync(string sql,
+    IReadOnlyDictionary&lt;string,object?&gt;? parameters = null, CancellationToken ct = default);
+</code></pre>
+<p>Mirror <code>RawQueryExecutor</code> structurally (owned-vs-transaction + <code>CommandLogger</code> + retry),
+returning rows-affected. Both legs (net10 + Fx).</p>
+<h2 id="6-migration-rules-derived-from-the-dry-run">6. Migration rules (derived from the dry-run)</h2>
+<ul>
+<li><strong>Set-based work stays set-based SQL.</strong> Never rewrite an <code>UPDATE…JOIN</code> / <code>MERGE</code> / cursor as
+  fetch-loop-update in C# — that turns one round trip into thousands. Move <em>control flow</em> to
+  C#; keep set operations in SQL.</li>
+<li><strong><code>WITH(NOLOCK)</code> → <code>using (data.UseDirtyReads())</code>.</strong> SQL Server applies the hint; no-op on
+  Oracle/PG (MVCC). Decide read-consistency consciously.</li>
+<li><strong>Optional filters → <code>WhereIf</code></strong>, not <code>col = COALESCE(@p, col)</code> (the COALESCE idiom is
+  non-SARGable; <code>WhereIf</code> omits the predicate → index-friendly).</li>
+<li><strong>Scalar UDFs → C# functions</strong> (17 of them; e.g. <code>fn_MaskAadharOrPan</code> → <code>Mask.AadharOrPan</code>,
+  which also ties into <code>[DbColumn(IsSensitive=true)]</code> redaction). Crypto UDFs become C# crypto.</li>
+<li><strong>Date/number <em>formatting</em> leaves SQL</strong> (<code>CONVERT(...,105/106)</code>, <code>REPLACE</code>) → format in C#
+  at the presentation edge (<code>dob?.ToString("dd-MM-yyyy")</code>). It is non-portable and does not
+  belong in a data layer.</li>
+<li><strong>Magic-number business codes → shared <code>enum</code>s / <code>const</code> module</strong> (the procs re-declare
+  overlapping constants — centralize once).</li>
+<li><strong><code>EXEC other_proc</code> → method call</strong>; <strong>transaction nesting (<code>@p_IsNestedCalling</code>/<code>@@TRANCOUNT</code>)
+  → transaction ownership</strong> (own via <code>ExecuteInTransactionAsync</code>, or participate by passing the
+  <code>IUnitOfWork</code>).</li>
+</ul>
+<h2 id="7-migration-playbook">7. Migration playbook</h2>
+<ul>
+<li><strong>Triage by name.</strong> Prefixes are functional modules (<code>pr_x_</code> core/txn, <code>pr_ccpc_</code>/<code>pr_cl_</code>
+  clearing, <code>pr_atm_PRIZM_</code> ATM, <code>pr_rp_</code> reports, <code>pr_kyc_</code>, <code>pr_bw_</code> batch, <code>pr_g_</code> session…).
+  The <strong><code>_r_</code> infix marks reports/reads</strong> → composer/raw path; everything else → C# service
+  methods.</li>
+<li><strong>Migrate clusters, not single procs</strong> (44% call other procs; 316 call 6+). Either move a
+  call-graph cluster together, or stand up a C#↔SQL-proc bridge and <strong>strangler-fig</strong> module by
+  module, leaving the SP callable during transition.</li>
+<li><strong>Characterization tests first.</strong> Before touching a proc, pin its current behavior with tests
+  on the <strong>live 3-DB harness</strong> (the existing env-gated <code>[SkippableFact]</code> infrastructure across
+  SQL Server / Oracle / PostgreSQL). The real cost is re-verifying decades of accreted business
+  rules, not translating SQL.</li>
+<li><strong>Scale reality:</strong> 5,316 procs / 1.8M lines is a multi-year effort. The TflOmniDb foundation
+  already covers what the data demands (provider-agnostic CRUD, transactions, retry, raw-SQL
+  helpers, redaction, 3-DB tests). The net-new pieces are §5.1–5.3.</li>
+</ul>
+<h2 id="8-scope-guardrails-keep-it-thin-never-an-orm">8. Scope guardrails (keep it thin — never an ORM)</h2>
+<p><strong><code>SqlQuery</code> does:</strong> clause assembly, conditional composition, parameter collection + prefix
+normalization, dialect paging, and the <code>Fn</code> vocabulary — then delegates to existing helpers.</p>
+<p><strong><code>SqlQuery</code> does NOT:</strong> parse/validate SQL, build a LINQ/expression-tree AST, auto-quote
+arbitrary identifiers, generate joins from navigation, do change tracking, or attempt
+window/CTE/PIVOT. Those ~44 reads drop to raw <code>QueryAsync&lt;T&gt;</code>. This hard boundary keeps the
+composer a few hundred lines, not a perennial query compiler.</p>
+<h2 id="9-dry-run-validation-two-real-procs">9. Dry-run validation (two real procs)</h2>
+<ul>
+<li><strong><code>pr_b_r_GetLoanAccountList</code></strong> (read): composer + <code>Fn</code> covered FROM/3 joins/BETWEEN/optional
+  filter/ORDER BY; <code>ROW_NUMBER</code> → C# index; <code>#temp</code> + correlated <code>TOP 1</code> → portable <code>GROUP BY</code>
+  derived join (removed non-portable <code>TOP</code>). Surfaced two latent bugs (duplicate
+  <code>LoanAgainstType = 1201</code>; name concat used <code>name2</code> twice, never <code>name3</code>) and one dead param.</li>
+<li><strong><code>pr_apy_RegisterAccountPass</code></strong> (orchestration): <code>op_code</code> multiplexer → two C# methods;
+  <code>BEGIN/COMMIT/ROLLBACK</code> + <code>EXEC…@error</code> → <code>ExecuteInTransactionAsync</code> + a throwing callee;
+  <code>GETDATE()</code> → <code>fn.Now()</code>; UDF masking + <code>CONVERT</code> date formatting → C#. Surfaced a
+  transaction-nesting bug (forces <code>@p_IsNestedCalling=1</code> immediately before checking it →
+  a nested call rolls back the outer transaction).</li>
+</ul>
+<p>Outcome: the design held up; it forced exactly <strong>one</strong> new primitive (<code>ExecuteNonQueryAsync</code>)
+plus the two migration rules (UDFs→C#, formatting→C#) — no redesign.</p>
+<h2 id="10-next-implementation-increment">10. Next implementation increment</h2>
+<p>Build order (each self-contained, both legs unless noted, mirroring existing feature structure
+with unit + 3-DB integration tests + a demo entry + CLAUDE.md):</p>
+<ol>
+<li><strong><code>ExecuteNonQueryAsync</code></strong> on <code>DataAccess</code> + <code>IUnitOfWork</code> (smallest, proven-needed). ✅ <strong>DONE</strong>
+   — both legs (<code>RawQueryExecutor</code> → <code>DataAccess</code>/<code>IUnitOfWork</code>/<code>UnitOfWork</code>), logged at
+   <code>MutationLogLevel</code>, retry-eligible on the owned path; verified against live SQL Server
+   (owned-connection UPDATE + transactional INSERT-with-rollback) on net10 and Fx; CLAUDE.md updated.</li>
+<li><strong><code>SqlFunctions</code> / <code>Fn</code></strong> facade (per-dialect, unit-tested by rendering assertions). ✅ <strong>DONE</strong>
+   — both legs (<code>*.Query.SqlFunctions</code>); <code>Coalesce</code>/<code>Concat</code>/<code>Now</code>/<code>CharIndex</code>/<code>Substring</code>/
+   <code>Length</code>/<code>Upper</code>/<code>Lower</code>/<code>Trim</code>/<code>Cast</code>; unit-tested across the 3 dialects.</li>
+<li><strong><code>SqlQuery</code></strong> composer (rides the raw-SQL helpers; net10 adds <code>StreamAsync</code>). ✅ <strong>DONE</strong>
+   — both legs (<code>*.Query.SqlQuery</code>): <code>Select</code>/<code>InnerJoin</code>/<code>LeftJoin</code>/<code>Where</code>/<code>WhereIf</code>/<code>GroupBy</code>/
+   <code>Having</code>/<code>OrderBy</code>/<code>Page</code> → <code>Build()</code> (dialect prefix rewrite + param dedup) → <code>ToListAsync</code>/
+   <code>ToDictionariesAsync</code>/<code>ScalarAsync</code>/<code>ExistsAsync</code> (+ net10 <code>StreamAsync</code>). Unit-tested no-DB
+   + end-to-end against live SQL Server. Suites: <strong>net10 407/407, Fx 324/324</strong> green.</li>
+<li><strong>A pilot module migration</strong> — one <code>_r_</code> read + one small orchestration proc — as the first
+   strangler slice, with characterization tests on the live 3-DB harness. ✅ <strong>DONE</strong> —
+   <code>TflOmniDb.Tests/Migration/PilotMigration.cs</code> (the migrated service methods: a join +
+   <code>WhereIf</code> + <code>Fn</code> read, and an <code>ExecuteInTransactionAsync</code> orchestration with atomic
+   rollback) + <code>PilotMigrationTests.cs</code> (self-contained portable <code>TflPilot*</code> schema, seeded
+   and exercised end-to-end). <strong>Green on SQL Server, Oracle, and PostgreSQL</strong> (net10
+   suite 410/410).</li>
+</ol>
+<h3 id="caveats-the-pilot-surfaced-add-to-the-migration-checklist">Caveats the pilot surfaced (add to the migration checklist)</h3>
+<ul>
+<li><strong>Don't name parameters after SQL reserved words.</strong> Oracle rejects bind variables like
+  <code>:from</code> / <code>:to</code> with <strong>ORA-01745</strong>. Use <code>@fromDt</code> / <code>@toDt</code> etc. (CBS's <code>@p_</code>-prefixed
+  convention already avoids this.)</li>
+<li><strong>Match string column types to string literals on Oracle.</strong> Concatenating an <code>NVARCHAR2</code>
+  column with a plain <code>VARCHAR2</code> literal (<code>' '</code>, <code>CASE</code> labels) raises <strong>ORA-12704</strong>
+  (character-set mismatch). Keep the column and literals the same charset, or <code>N'…'</code>-prefix
+  the literals (not portable — prefer matching types).</li>
+<li><strong>Raw <code>ExecuteNonQueryAsync</code> writes carry the dialect parameter prefix themselves.</strong> The
+  composer normalizes <code>@</code>→<code>:</code> for <em>reads</em> automatically; raw writes don't, so migrated write
+  code computes the prefix (<code>provider == Oracle ? ":" : "@"</code>). A future <code>UpdateBuilder</code> could
+  absorb this the way <code>SqlQuery</code> does for reads.</li>
+</ul>
+<h2 id="status">Status</h2>
+<p>The migration <strong>foundation is complete and verified</strong>: <code>ExecuteNonQueryAsync</code>,
+<code>SqlFunctions</code>/<code>Fn</code>, <code>SqlQuery</code>, and a green 3-DB pilot. Suites: <strong>net10 521/521, Fx 332/332</strong>
+(the per-increment counts above are the historical values at each milestone).
+The remaining work is the migration itself — proc clusters, module by module, behind a
+strangler bridge, each with characterization tests on the live 3-DB harness, using
+<code>PilotMigration</code> as the template.</p>
+<p>Tooling added since the pilot that the migration should lean on:</p>
+<ul>
+<li><strong>Typed <code>Col</code>/<code>Agg</code> tokens + scaffolder-emitted <code>Cols</code> classes</strong> — compile-checked column
+  references for the composer (replaces string fragments in migrated reads).</li>
+<li><strong>Typed scalar aggregates</strong> <code>MaxAsync</code>/<code>MinAsync</code>/<code>SumAsync</code>/<code>AvgAsync</code>/<code>MaxKeyAsync</code>/<code>AnyAsync</code>
+  (each with an optional predicate) — covers the very common <code>SELECT MAX/SUM/EXISTS</code> proc bodies
+  without raw SQL.</li>
+<li><strong>Partial-column &amp; set-based <code>UpdateAsync</code></strong> — the targeted <code>UPDATE t SET c=… WHERE …</code>
+  shape most write procs reduce to.</li>
+<li><strong><code>UseCommandTimeout(seconds)</code></strong> — per-operation server-side timeout scope for the
+  long-running report/batch procs (the legacy per-call <code>CommandTimeout</code> ergonomics).</li>
+<li><strong><code>RowAccess</code></strong> — null-safe typed getters over untyped rows / SP result sets (incl.
+  buffered SP→POCO <code>ToList&lt;T&gt;()</code>).</li>
+</ul>
+</div></div>
+<script>
+(function(){
+ function put(t){
+  if(navigator.clipboard&&navigator.clipboard.writeText)return navigator.clipboard.writeText(t);
+  return new Promise(function(res,rej){
+   var a=document.createElement('textarea');a.value=t;a.setAttribute('readonly','');
+   a.style.cssText='position:fixed;top:0;left:0;opacity:0';document.body.appendChild(a);
+   a.select();var ok=false;try{ok=document.execCommand('copy')}catch(e){}
+   document.body.removeChild(a);ok?res():rej()});
+ }
+ function flash(el,txt,ms){
+  var was=el.textContent;el.classList.add('done');if(txt)el.textContent=txt;
+  setTimeout(function(){el.classList.remove('done');if(txt)el.textContent=was},ms||1200);
+ }
+ function copy(text,el,okTxt){
+  put(text).then(function(){flash(el,okTxt)},function(){
+   if(okTxt){var w=el.textContent;el.textContent='Ctrl+C';setTimeout(function(){el.textContent=w},2000)}});
+ }
+ document.querySelectorAll('pre').forEach(function(pre){
+  if(pre.classList.contains('txtdoc'))return;
+  var b=document.createElement('button');
+  b.type='button';b.className='copy';b.textContent='Copy';
+  b.setAttribute('aria-label','Copy this code block to the clipboard');
+  b.addEventListener('click',function(){copy((pre.querySelector('code')||pre).innerText,b,'Copied')});
+  pre.appendChild(b);
+ });
+ document.querySelectorAll('td code').forEach(function(c){
+  if(!c.textContent.trim())return;
+  c.classList.add('cp');c.tabIndex=0;c.setAttribute('role','button');
+  c.title='Click to copy';
+  c.addEventListener('click',function(){copy(c.textContent,c)});
+  c.addEventListener('keydown',function(e){
+   if(e.key==='Enter'||e.key===' '){e.preventDefault();copy(c.textContent,c)}});
+ });
+})();
+</script>
+</body></html>

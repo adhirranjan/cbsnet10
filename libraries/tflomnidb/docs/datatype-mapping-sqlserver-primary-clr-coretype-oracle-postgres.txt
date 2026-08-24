@@ -1,0 +1,76 @@
+Datatype Mapping (SQL Server as source): SQL Server / CLR / CoreDataType / Oracle / PostgreSQL
+==============================================================================================
+
+SQL-Server-first schema/proc-migration reference. Defaults mirror the TflOmniDb provider type mappers.
+
+SQL Server            CLR / .NET           CoreDataType        Oracle                    PostgreSQL                      Notes                                                       
+--------------------  -------------------  ------------------  ------------------------  ------------------------------  ------------------------------------------------------------
+
+[ Integer & boolean ]
+BIT                   bool                 Boolean             NUMBER(1,0)               BOOLEAN                         Oracle <23c: NUMBER(1) 0/1; 23c+ has BOOLEAN                
+TINYINT               byte                 (none)              NUMBER(3,0)               SMALLINT                        TINYINT is unsigned 0-255; no byte CoreDataType -> use Int16
+SMALLINT              short / Int16        Int16               NUMBER(5,0)               SMALLINT                                                                                    
+INT                   int / Int32          Int32               NUMBER(10,0)              INTEGER                                                                                     
+BIGINT                long / Int64         Int64               NUMBER(19,0)              BIGINT                                                                                      
+INT IDENTITY          long (identity)      (none)              GENERATED AS IDENTITY     GENERATED AS IDENTITY / serial  Identity = KeyGeneration strategy, not a type               
+
+[ Exact numeric ]
+DECIMAL(p,s)          decimal              Decimal             NUMBER(p,s)               NUMERIC(p,s)                    NUMERIC == DECIMAL                                          
+NUMERIC(p,s)          decimal              Decimal             NUMBER(p,s)               NUMERIC(p,s)                    Oracle NUMBER max precision 38                              
+MONEY                 decimal              Money               NUMBER(19,4)              NUMERIC(19,4)                   Avoid PG MONEY (locale); canonical NUMERIC(19,4)            
+SMALLMONEY            decimal              (none)              NUMBER(10,4)              NUMERIC(10,4)                   Map to Decimal/Money; range ~ +/-214,748.3647               
+
+[ Approximate numeric ]
+REAL                  float / Single       Single              BINARY_FLOAT              REAL                            REAL = FLOAT(24), 4-byte                                    
+FLOAT                 double / Double      Double              BINARY_DOUBLE             DOUBLE PRECISION                FLOAT(53) = 8-byte double; FLOAT(24)->REAL                  
+
+[ Character & text ]
+VARCHAR(n)            string               AnsiString          VARCHAR2(n CHAR)          VARCHAR(n)                      Oracle VARCHAR2 <= 4000 bytes (32767 extended)              
+NVARCHAR(n)           string               UnicodeString       NVARCHAR2(n)              VARCHAR(n)                      Unicode; PG is UTF-8 native (no N-prefix)                   
+CHAR(n)               string               AnsiStringFixed     CHAR(n CHAR)              CHAR(n)                         Fixed length, space-padded                                  
+NCHAR(n)              string               UnicodeStringFixed  NCHAR(n)                  CHAR(n)                         Unicode fixed length                                        
+VARCHAR(MAX)          string               Clob                CLOB                      TEXT                            Large ANSI text (> 8000 bytes)                              
+NVARCHAR(MAX)         string               NClob               NCLOB                     TEXT                            Large Unicode text                                          
+TEXT (legacy)         string               Clob                CLOB                      TEXT                            Deprecated -> use VARCHAR(MAX)                              
+NTEXT (legacy)        string               NClob               NCLOB                     TEXT                            Deprecated -> use NVARCHAR(MAX)                             
+
+[ Date & time ]
+DATE                  DateTime / DateOnly  Date                DATE                      DATE                            Oracle DATE INCLUDES time-of-day (to sec)                   
+TIME(p)               TimeSpan / TimeOnly  Time                INTERVAL DAY TO SECOND    TIME(p)                         Oracle has no TIME-of-day type                              
+DATETIME2(p)          DateTime             DateTime            TIMESTAMP(p)              TIMESTAMP(p)                    Preferred date+time; p = frac-sec precision                 
+DATETIME (legacy)     DateTime             DateTime            TIMESTAMP(3)              TIMESTAMP(3)                    ~3.33 ms precision; range 1753-9999                         
+SMALLDATETIME         DateTime             DateTime            TIMESTAMP(0)              TIMESTAMP(0)                    Minute precision; 1900-2079                                 
+DATETIMEOFFSET        DateTimeOffset       DateTimeOffset      TIMESTAMP WITH TIME ZONE  TIMESTAMPTZ                     Timezone-aware                                              
+
+[ Binary ]
+VARBINARY(n)          byte[]               Binary              RAW(n)                    BYTEA                           Oracle RAW <= 2000 bytes; beyond -> BLOB                    
+BINARY(n)             byte[]               BinaryFixed         RAW(n)                    BYTEA                           Fixed; PG has no fixed-length binary                        
+VARBINARY(MAX)        byte[]               Blob                BLOB                      BYTEA                           Large binary object                                         
+IMAGE (legacy)        byte[]               Blob                BLOB                      BYTEA                           Deprecated -> use VARBINARY(MAX)                            
+
+[ Identifier & concurrency ]
+UNIQUEIDENTIFIER      Guid                 Guid                RAW(16)                   UUID                            Oracle SYS_GUID(); PG native UUID                           
+ROWVERSION            byte[] (rowversion)  (none)              (none)                    (xmin sys col)                  IsRowVersion flag -> app-managed int version                
+
+[ XML & JSON ]
+XML                   string / SqlXml      Xml                 XMLTYPE                   XML                             Native XML on all three                                     
+JSON / NVARCHAR(MAX)  string               Json                JSON (21c+)/CLOB          JSONB                           PG JSONB preferred; Oracle <21c CLOB + IS JSON              
+
+[ No direct equivalent (redesign) ]
+SQL_VARIANT           object               (none)              (none / ANYDATA)          (none)                          Redesign to a typed column                                  
+HIERARCHYID           (tree)               (none)              (none)                    LTREE (extension)               Remodel as a materialized path                              
+GEOGRAPHY/GEOMETRY    (spatial)            (none)              SDO_GEOMETRY              geometry/geography              Oracle Spatial / PostGIS extension                          
+
+General notes
+-------------
+1. Read left-to-right: this is a SQL-Server-FIRST reference. Find the SQL Server column/parameter type in the left column, then read across for the .NET/CLR type, the TflOmniDb CoreDataType to use, and the Oracle / PostgreSQL equivalents when porting the schema.
+2. Stored procedures: the CoreDataType column is what you pass to StoredProcedureCall.Input/Output(..., CoreDataType.X) and to [DbColumn(CoreType = ...)]. The DAL's per-provider type mappers translate it to the native types shown here.
+3. Oracle SP-parameter caveat: a CoreDataType.DateTime parameter binds as DbType.DateTime (TIMESTAMP) on Oracle, NOT DateTime2 - Oracle's managed provider rejects DbType.DateTime2 ('Value does not fall within the expected range'). SQL Server / PostgreSQL keep full-precision DateTime2. (CoreTypeDbType.Map.)
+4. '(none)' in the CoreDataType column marks a SQL Server type with no canonical enum value - map it to the nearest CoreDataType, or set a per-column native override via [DbColumn] SqlServerType / OracleType / PostgresType.
+5. Money is deliberately NUMERIC(19,4) on all three engines - PostgreSQL's MONEY type is locale-dependent and unsafe for financial code.
+6. Identifier casing: Oracle folds unquoted identifiers to UPPER, PostgreSQL to lower; SQL Server is case-insensitive. The DAL always quotes - call an unquoted-uppercase Oracle object by its UPPERCASE name.
+7. Oracle DATE always carries a time component (to seconds). Use TIMESTAMP for fractional seconds; for pure dates, enforce truncation in the app.
+8. Booleans: SQL Server BIT -> Oracle <23c NUMBER(1) 0/1 (23c+ native BOOLEAN) -> PostgreSQL native BOOLEAN.
+9. Auto-increment: SQL Server IDENTITY -> PostgreSQL & Oracle 12c+ GENERATED ... AS IDENTITY; older Oracle needs a SEQUENCE + trigger.
+10. Row versioning: there is no portable equivalent to SQL Server ROWVERSION. Use an app-managed integer version column (TflOmniDb IsRowVersion) checked in the UPDATE WHERE clause; Oracle ORA_ROWSCN / PostgreSQL xmin are not drop-in replacements.
+11. LOBs: SQL Server (N)VARCHAR(MAX)/VARBINARY(MAX) -> Oracle CLOB/NCLOB/BLOB -> PostgreSQL TEXT/BYTEA. PostgreSQL is UTF-8 native, so NVARCHAR and VARCHAR both collapse to VARCHAR/TEXT.

@@ -1,0 +1,535 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Modular-monolith architecture (decision)</title>
+<style>
+:root{color-scheme:light dark}
+*{box-sizing:border-box}
+body{margin:0;background:#f6f8fa;color:#1f2328;font:16px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif}
+.wrap{max-width:900px;margin:0 auto;padding:32px 24px 96px}
+.card{background:#fff;border:1px solid #d0d7de;border-radius:10px;padding:40px 48px}
+h1,h2,h3{line-height:1.25;font-weight:600}
+h1{font-size:1.9rem;margin:0 0 .3em;padding-bottom:.3em;border-bottom:1px solid #d8dee4}
+h2{font-size:1.4rem;margin:1.8em 0 .6em;padding-bottom:.25em;border-bottom:1px solid #eaeef2}
+h3{font-size:1.12rem;margin:1.4em 0 .5em}
+p,li{margin:.5em 0}
+a{color:#0969da;text-decoration:none}
+a:hover{text-decoration:underline}
+code{font-family:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;font-size:.86em;background:#eff1f3;padding:.15em .4em;border-radius:6px}
+pre{background:#f6f8fa;border:1px solid #d8dee4;border-radius:8px;padding:14px 16px;overflow:auto}
+pre code{background:none;padding:0;font-size:.85em;line-height:1.45}
+blockquote{margin:1em 0;padding:.4em 1em;color:#3d444d;border-left:4px solid #d0d7de;background:#f6f8fa;border-radius:0 6px 6px 0}
+blockquote>:first-child{margin-top:0}blockquote>:last-child{margin-bottom:0}
+table{border-collapse:collapse;width:100%;margin:1em 0;display:block;overflow:auto}
+th,td{border:1px solid #d0d7de;padding:8px 12px;text-align:left;vertical-align:top}
+th{background:#f6f8fa;font-weight:600}
+tr:nth-child(2n) td{background:#f6f8fa}
+hr{border:0;border-top:1px solid #d8dee4;margin:2em 0}
+pre{position:relative}
+pre>button.copy{position:absolute;top:8px;right:8px;padding:5px 9px;cursor:pointer;
+  font:600 .68rem/1 ui-monospace,SFMono-Regular,Consolas,monospace;letter-spacing:.03em;
+  color:#636c76;background:#fff;border:1px solid #d0d7de;border-radius:6px;
+  opacity:0;transition:opacity .12s}
+pre:hover>button.copy,pre>button.copy:focus{opacity:1}
+pre>button.copy.done{color:#0a3622;background:#dafbe1;border-color:#4ac26b}
+@media(hover:none){pre>button.copy{opacity:1}}
+td code.cp{cursor:pointer}
+td code.cp:hover,td code.cp:focus{outline:1px solid #8c959f;outline-offset:1px}
+td code.cp.done{color:#0a3622;background:#dafbe1}
+.docnav{margin:0 0 20px;font-size:.85rem;color:#636c76}
+.docnav a{color:#636c76}
+ul{padding-left:1.4em}ol{padding-left:1.4em}
+@media(max-width:640px){.card{padding:24px 18px}.wrap{padding:16px 10px 64px}}
+@media(prefers-color-scheme:dark){
+ body{background:#0d1117;color:#e6edf3}
+ .card{background:#161b22;border-color:#30363d}
+ h1{border-color:#30363d}h2{border-color:#21262d}
+ code{background:#262c34}
+ pre{background:#0d1117;border-color:#30363d}
+ blockquote{background:#161b22;border-color:#30363d;color:#9198a1}
+ th,td{border-color:#30363d}th{background:#161b22}tr:nth-child(2n) td{background:#12171e}
+ a{color:#4493f8}.docnav,.docnav a{color:#9198a1}
+ hr{border-color:#30363d}
+ pre>button.copy{color:#9198a1;background:#161b22;border-color:#30363d}
+ pre>button.copy.done{color:#aff5b4;background:#1b4721;border-color:#2ea043}
+ td code.cp.done{color:#aff5b4;background:#1b4721}
+}
+</style></head>
+<body><div class="wrap"><div class="card">
+<div class="docnav"><a href="../index.html">&#8592; All docs</a></div>
+<h1 id="modular-monolith-architecture-decision">Modular-monolith architecture (decision)</h1>
+<p>Companion to <a href="reusable-boundary.html">reusable-boundary.md</a>. That doc covers the <strong>horizontal</strong>
+framework/screen split; this one covers the <strong>vertical</strong> split of the business layer into modules.</p>
+<blockquote>
+<p><strong>Status: COMPLETE (2026-07-29), and this is now the description of what exists — not a plan.</strong>
+<strong>Steady state = modular monolith</strong> — one process, one database, code-level modules, each its own
+assembly, runnable on its own when needed. All 8 business domains are promoted, <code>TflCbsServices</code> is
+dissolved, and Phase C shipped too (four thin per-module hosts behind a YARP gateway). This is
+<em>not</em> a move to microservices (see <a href="#7-cautions">Cautions</a>, and
+<a href="Why-Modular-Monolith-Not-Microservices.html">Why-Modular-Monolith-Not-Microservices.md</a> for the full
+rationale). The staged roadmap in §6 is kept as
+the decision record of how it was done and why each choice was made. Last reviewed 2026-08-21.</p>
+</blockquote>
+<h2 id="why">Why</h2>
+<p>TrustBank CBS is migrating ~1,458 screens / 5,317 procs. The business layer (<code>TflCbsServices</code>) must be
+organized so each <strong>module</strong> (bounded domain) is independently owned, separately buildable, and
+<strong>runnable on its own when a deployment needs only some modules</strong>. The code is already cleanly
+partitioned — zero cross-module coupling, namespaces map 1:1 to folders, <code>Framework</code> is already a
+horizontal assembly — so this is mostly about formalizing boundaries and composition, not untangling.</p>
+<h2 id="the-shape-today-what-6-delivered">The shape today (what §6 delivered)</h2>
+<p>Nine module assemblies, each namespace == assembly, each an <code>ICbsModule</code> that self-registers:</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>Module</th>
+<th>Owns</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Core</strong> (<code>ICoreCbsModule</code>, always registered)</td>
+<td><code>TflCbs.Modules.General</code></td>
+<td>Menu, bank variables, broadcast/alerts, the maker-checker scroll, the process-block check — three of the four framework ports</td>
+</tr>
+<tr>
+<td></td>
+<td><code>TflCbs.Modules.Reference</code></td>
+<td>Geography masters (State/District/Taluka) — pure CRUD + lookup, ≥2 consumers</td>
+</tr>
+<tr>
+<td></td>
+<td><code>TflCbs.Core.Authentication</code></td>
+<td>Login, credentials, session validation, <code>LoginInfo</code>; implements <code>ISessionValidator</code></td>
+</tr>
+<tr>
+<td><strong>Domains</strong> (gated by <code>Modules:Enabled</code>)</td>
+<td><code>TflCbs.Modules.HR</code></td>
+<td><code>DiscipActionHistoryService</code></td>
+</tr>
+<tr>
+<td></td>
+<td><code>TflCbs.Modules.Lockers</code></td>
+<td><code>LockerTypeService</code></td>
+</tr>
+<tr>
+<td></td>
+<td><code>TflCbs.Modules.Accounts</code></td>
+<td><code>BusinessAssessmentService</code></td>
+</tr>
+<tr>
+<td></td>
+<td><code>TflCbs.Modules.Clearing</code></td>
+<td><code>InwardClearingService</code></td>
+</tr>
+<tr>
+<td></td>
+<td><code>TflCbs.Modules.Administration</code></td>
+<td><code>ModuleService</code>, <code>RoleService</code></td>
+</tr>
+<tr>
+<td></td>
+<td><code>TflCbs.Modules.RetailBanking</code></td>
+<td><code>AccountService</code>, <code>HoldingAmountService</code> (+ <code>General.Contracts</code> for <code>IScrollService</code>)</td>
+</tr>
+</tbody>
+</table>
+<p>Plus <code>TflCbs.Abstractions</code> (the floor) and <code>TflCbs.Modules.General.Contracts</code> (the only published
+cross-module surface). Full per-project detail:
+<a href="../architecture-overview.html"><code>../architecture-overview.md</code></a>.</p>
+<h2 id="the-decisions-up-front">The decisions, up front</h2>
+<ul>
+<li><strong>No library per <em>service</em>.</strong> One assembly per <code>*Service</code> would be hundreds of micro-assemblies with
+  no benefit. The unit of modularity is the <strong>module = bounded domain</strong> (General/Bank, Lockers,
+  RetailBanking, HR, Clearing, Accounts, Reports, Reconciliation, …); a module holds <strong>many</strong> services
+  in <strong>one</strong> assembly.</li>
+<li><strong>One library per <em>module</em> — staged, not big-bang.</strong> Adopt the module <em>pattern</em> first inside today's
+  single assembly (cheap, reversible, ~80% of the value), then <strong>promote folders to per-module
+  assemblies on demand</strong>, starting with the modules you most want to run independently.</li>
+<li><strong>Steady state stays one process + one database.</strong> "Run a module separately" is a
+  composition/deployment convenience (toggle which modules a host loads), not data or transaction
+  separation.</li>
+</ul>
+<h2 id="1-module-vertical-slice-the-unit">1. Module = vertical slice (the unit)</h2>
+<p>A <strong>module</strong> is named <code>TflCbs.Modules.&lt;Name&gt;</code> and owns its full stack:
+- <strong>Services + data access</strong> — today's <code>TflCbsServices/&lt;Domain&gt;/</code> folder.
+- <strong>Public surface (contract)</strong> — the service classes (or interfaces) + their request/response models +
+  <code>Result</code>. Everything else trends to <code>internal</code> once the module is its own assembly.
+- <strong>Registration entry point</strong> — <code>public static class &lt;Name&gt;Module : ICbsModule</code> (see §2).
+- <strong>UI</strong> — <strong>promoted (2026-06-30)</strong> from a host Area to a per-domain <strong>Razor Class Library</strong>
+  <code>TflCbs.Modules.&lt;Name&gt;.Web</code> (controllers + views + view models + domain JS via <code>~/_content/</code>). Shared
+  layout/partials/assets live in <code>TflCbs.Web.Shared</code>; login/logout in <code>TflCbs.Core.Authentication.Web</code>;
+  the non-auth shell in <code>TflCbs.Core.Shell.Web</code>. The thin host composes them via gated <code>AddApplicationPart</code>
+  keyed off <code>Modules:Enabled</code> (same list as services). <strong>Note:</strong> the <code>Bank</code> web module is backed by the
+  <code>General</code> service module.
+- <strong>Framework ↔ module decoupling (2026-06-30).</strong> Framework no longer depends on the concrete General/Auth
+  services. The services it needed (broadcast text, bank variables, menu rows, session re-validation) are
+  behind <strong>ports</strong> in <code>TflCbs.Abstractions</code> — <code>IBroadcastSource</code>, <code>IBankVariableSource</code>,
+  <code>IMenuSource</code>, <code>ISessionValidator</code> — implemented by <code>GeneralService</code>/<code>BankVariableService</code>/<code>MenuListService</code>
+  /<code>AuthenticationService</code> and registered by their modules. Framework ships <strong>no-op defaults</strong> (<code>TryAdd</code>) for
+  the first three and resolves <code>ISessionValidator</code> optionally, so a host runs <strong>without</strong> General or
+  Authentication (degraded: empty marquee/bank-vars/menu, no session re-check). Arch test
+  <code>Framework_must_consume_business_modules_only_through_abstraction_ports</code> locks this.
+- <strong>First Phase-B promotion (2026-07-01): <code>TflCbs.Core.Authentication</code> is its own assembly.</strong> With the
+  <code>ISessionValidator</code> seam in place, <code>AuthenticationService</code> (+ its models + <code>AuthenticationModule</code>) moved out
+  of <code>TflCbsServices</code> into a peer data-layer assembly <code>TflCbs.Core.Authentication</code> (namespaces
+  <code>TflCbs.Core.Authentication[.Models]</code>). <strong>Module discovery is now multi-assembly:</strong> <code>AddCbsModules(config,
+  params Assembly[] extraModuleAssemblies)</code> scans <code>TflCbsServices</code> <strong>plus</strong> any promoted module assemblies the
+  host passes — the host calls <code>AddCbsModules(config, typeof(AuthenticationModule).Assembly)</code>. This is the
+  template for every future folder→assembly promotion: move the folder, give it <code>TflCbs.&lt;Area&gt;</code> namespaces,
+  add its assembly to the host's <code>AddCbsModules</code> hand-off. The one cross-module call the split surfaced —
+  <code>AuthenticationService</code> reusing General's process-block check — goes through the <strong><code>IProcessBlockCheck</code>
+  contract</strong> (<code>General.Contracts</code>, second published contract after <code>IScrollService</code>); <code>GeneralGrp11Service</code>
+  implements it, the General module registers it, and <code>AuthenticationService</code> injects it. So Authentication
+  depends on General only via <code>.Contracts</code> (arch test <code>Authentication_may_call_General_only_through_its_Contracts</code>),
+  and a host that enables <code>Authentication</code> must also enable <code>General</code> (a legitimate module→module dependency).
+- <strong>Tests + Demo</strong> — per-module fixtures mirroring the existing <code>TflCbs.Tests</code> / <code>.Demo</code>
+  convention, kept in sync by the <strong>cbs-sync-test-demo</strong> agent.</p>
+<p><strong>Granularity rule: one assembly per module — never per service, never per screen.</strong> Add a separate
+<code>TflCbs.Modules.&lt;Name&gt;.Contracts</code> assembly only when another module actually needs to call this one
+(today: zero such calls — defer it).</p>
+<h2 id="2-module-composition-pattern-icbsmodule-the-key-enabler">2. Module composition pattern (<code>ICbsModule</code>) — the key enabler</h2>
+<p>A tiny contract every module implements; the host composes modules from configuration:</p>
+<pre><code class="language-csharp">public interface ICbsModule {
+    string Name { get; }
+    void AddServices(IServiceCollection services, IConfiguration config); // DI for this module
+    // (later, when modules carry their own endpoints/areas) void MapModule(IEndpointRouteBuilder e);
+}
+</code></pre>
+<ul>
+<li>Each module ships <code>&lt;Name&gt;Module : ICbsModule</code> whose <code>AddServices</code> registers its services — replacing
+  the hand-written <code>builder.Services.AddScoped&lt;XService&gt;()</code> lines in <code>Program.cs</code>.</li>
+<li>The host reads an <strong>enabled-modules list</strong> and loads only those:
+  <code>jsonc
+  "Modules": { "Enabled": [ "General", "Lockers", "RetailBanking" ] }   // or "*" for all</code>
+  <code>csharp
+  builder.Services.AddCbsFramework(builder.Configuration);
+  // Discovery is FULLY EXPLICIT since TflCbsServices was dissolved: every host names every
+  // module assembly it deploys. There is no implicit anchor assembly to scan any more.
+  builder.Services.AddCbsModules(builder.Configuration,
+      typeof(GeneralModule).Assembly, typeof(ReferenceModule).Assembly, /* … */);</code></li>
+<li><strong>This is how a module "runs separately" with zero extra projects:</strong> the same host binary runs the
+  full bank (<code>"*"</code>) or a single module (<code>["Lockers"]</code>) by config alone. Recommended default.</li>
+<li><strong>Deployed-module cross-check.</strong> <code>AddCbsModules</code> scans the output directory at startup and throws if
+  a <code>TflCbs.Modules.&lt;X&gt;</code> / <code>TflCbs.Core.&lt;X&gt;</code> assembly is deployed but was not passed in. Nothing else
+  catches that: a host on <code>"*"</code> never names a module so the unknown-name check cannot fire, and a
+  missing <code>ICoreCbsModule</code> degrades <strong>silently</strong> to the framework's no-op ports (empty menu).
+  Composition <em>tests</em> that build partial sets opt out with <code>verifyDeployedModules: false</code>.</li>
+</ul>
+<h2 id="3-run-modules-separately-two-strategies-use-the-lightest-that-fits">3. "Run modules separately" — two strategies (use the lightest that fits)</h2>
+<ul>
+<li><strong>Strategy 1 — one configurable host (default).</strong> <code>TflCbs.Host.Main</code> loads the modules in
+  <code>Modules:Enabled</code>. A focused deployment = same binary, different config. No project proliferation.</li>
+<li><strong>Strategy 2 — thin per-module host (only when truly needed).</strong> A ~20-line <code>TflCbs.Host.&lt;Name&gt;</code>:
+  <code>AddCbsFramework().AddServices(&lt;Name&gt;Module)</code> + that module's RCL. Justified only when a module needs
+  its <strong>own deploy cadence / scaling / process</strong> (e.g. a heavy Reports or Reconciliation runner). Same
+  <code>ICbsModule</code> contract — no redesign.</li>
+</ul>
+<p>Both share the <strong>horizontal foundation</strong> (<code>TflCbs.Framework</code> + <code>TflCbs.Abstractions</code> +
+<code>TflCbs.Entities</code> + <code>TflOmniDb</code>); only the <em>module set</em> differs.</p>
+<h2 id="4-shared-foundation-boundaries">4. Shared foundation &amp; boundaries</h2>
+<p><strong>Horizontal assemblies (single, shared — do NOT split per module):</strong>
+- <code>TflCbs.Framework</code> — web plumbing (session, search, RowToken, menu, access guard,
+  <code>DatabaseSelector</code>). Already its own assembly; already barred from depending on screens.
+- <strong><code>TflCbs.Abstractions</code> — extracted (2026-07-28).</strong> The shared foundation every module and the framework
+  compile against, in one namespace <code>TflCbs.Abstractions</code>: <code>Result</code>/<code>Result&lt;T&gt;</code>, <code>ICbsModule</code>/<code>ICoreCbsModule</code>,
+  the four framework ports (<code>IBroadcastSource</code>, <code>IBankVariableSource</code>, <code>IMenuSource</code>, <code>ISessionValidator</code>),
+  and the two DTOs that cross the framework boundary (<code>MenuListRow</code> — the <code>IMenuSource</code> payload; <code>BranchListItem</code>
+  — surfaced on <code>ModulesIndexViewModel</code>). <strong>Deliberately dependency-free</strong>: no <code>TflCbs.Entities</code>, no <code>TflOmniDb</code>,
+  no ASP.NET, no ADO.NET drivers. Everything above it references this, so keep it that way.
+  - Superseded the old <code>TflCbs.Services.{Common,Abstractions,Composition}</code> namespaces (single sweep, 256 files).
+  - <strong><code>ModuleRegistration.cs</code> (<code>AddCbsModules</code>) deliberately stayed in <code>TflCbsServices</code></strong>: <code>DiscoverModules</code>
+    anchors on <code>typeof(CbsModuleServiceCollectionExtensions).Assembly</code> to mean "the monolith services
+    assembly". Moving it would silently scan the wrong assembly and register nothing. It moves only once
+    <code>TflCbsServices</code> is empty — at which point discovery must become fully explicit (every host passing every
+    module assembly). Its <code>Microsoft.Extensions.DependencyInjection</code> namespace means no host call site changed.
+  - Still to fold in (unchanged from the original plan): the duplicated <code>IsDuplicate</code>/<code>IsForeignKey</code> exception
+    helpers (repeated in 8+ services), the repeated paging/sort helpers, shared base search contracts.
+- <strong><code>TflCbs.Modules.General.Contracts</code> — extracted (2026-07-28).</strong> General's published cross-module surface:
+  <code>IScrollService</code> + <code>ScrollSources</code> (consumed by RetailBanking) and <code>IProcessBlockCheck</code> (consumed by
+  <code>TflCbs.Core.Authentication</code>). Carries the <code>TflOmniDb</code> bare-DLL reference because <code>IScrollService</code> takes
+  <code>IUnitOfWork</code>. This is what let Authentication drop its <code>TflCbsServices</code> reference — see §6.
+- <code>TflCbs.Entities</code> — stays <strong>one</strong> assembly. Entities are cross-cutting, auto-generated, and shared
+  (e.g. <code>G_STATE</code> used by District + Taluka). Splitting per module would create cross-module entity
+  references — avoid.
+- <code>TflOmniDb</code> — the multi-provider DAL. Still consumed as a <strong>bare DLL by <code>HintPath</code></strong>, but since
+  <strong>2026-08-19 its source is vendored into the repo</strong> at <code>libs/TflOmniDb/</code> (as is <code>TflSecurityCrypto</code>
+  at <code>libs/TflSecurityCrypto/</code>), so a fresh clone builds without a folder outside the solution root.
+  The DLL-by-HintPath style is kept deliberately: it stops the library's transitive package graph
+  leaking into every module, which is why each project in the closure re-declares its ADO.NET
+  drivers.</p>
+<p><strong>Allowed dependency directions:</strong>
+- module → <code>TflCbs.Abstractions</code>, <code>TflCbs.Entities</code>, <code>TflOmniDb</code>, <code>TflOmniLog</code> ✅
+- module → <code>Framework</code> ❌ — <strong>the arrow does not exist in either direction.</strong> A service module has
+  <strong>zero ASP.NET</strong> (abstractions-only DI/Configuration packages, arch-tested); it never sees the
+  framework, and the framework never sees it. Where the framework needs business data it declares a
+  <strong>port</strong> in <code>TflCbs.Abstractions</code> and a core module implements it.
+- module A → module B ❌ (only via B's <code>.Contracts</code> interface through DI, if ever needed)
+- <code>Framework</code> → any module ❌ (Framework stays horizontal)
+- host → <code>Framework</code> + chosen modules + their web RCLs ✅</p>
+<p><strong>Enforcement — ✅ built.</strong> <code>TflCbs.ArchTests</code> (NetArchTest) carries the inter-module rules,
+and now that every module is its own assembly they are compiler-enforced (no project reference to
+add), like the Framework⊥screens boundary. The suite's remaining job is the meta-guard below: noticing
+when a rule's <em>level</em> changes.</p>
+<p><strong><code>Framework → any module</code> is now compiler-enforced (2026-07-28).</strong> <code>TflCbs.Framework</code> dropped its
+<code>TflCbsServices</code> project reference and links only <code>TflCbs.Abstractions</code>, <code>TflOmniLog</code> and <code>TflOmniDb</code>. The
+existing port guard (<code>Framework_must_consume_business_modules_only_through_abstraction_ports</code>) is a <em>denylist</em>
+of named concrete types, so it is backed by
+<code>Framework_must_not_reference_any_business_module_assembly</code>, which asserts on
+<code>GetReferencedAssemblies()</code> — re-adding the reference fails loudly and says why.</p>
+<h3 id="arch-rule-enforcement-levels-and-why-they-are-tracked-2026-07-28">Arch-rule enforcement levels, and why they are tracked (2026-07-28)</h3>
+<p>A NetArchTest namespace rule can only fail if the forbidden types are <strong>reachable</strong> from the inspected
+assembly. When a project reference goes away the rule keeps passing — but as a <em>tautology</em>: the dependency
+became impossible, so nothing is being checked, and green silently stops meaning "the code is clean".
+Extracting <code>TflCbs.Abstractions</code> did exactly that to two rules in one commit.</p>
+<p><code>TflCbs.ArchTests</code> therefore declares every boundary in one registry (<code>ArchBoundaries</code>) with an
+explicit level, and <code>BoundaryGuaranteeTests</code> re-verifies the level against the live reference graph:</p>
+<table>
+<thead>
+<tr>
+<th>Level</th>
+<th>Meaning</th>
+<th>What the meta-guard asserts</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>Enforcement.Namespace</code></td>
+<td>Targets ARE reachable; the namespace rule is the only thing stopping the dependency</td>
+<td>every target still reachable — else the rule is a tautology and must be retargeted</td>
+</tr>
+<tr>
+<td><code>Enforcement.Reference</code></td>
+<td>Targets are NOT reachable; the missing project reference is the guarantee</td>
+<td>nothing became reachable — else a reference was re-added and the boundary is lost</td>
+</tr>
+</tbody>
+</table>
+<p>Consequences worth knowing:
+- <strong><code>RetailBanking → General</code> is the only namespace rule with real teeth today</strong> (both share <code>TflCbsServices</code>).
+  Promoting General flips it to <code>Reference</code>, and the meta-guard will go red asking for exactly that change.
+- <strong><code>General</code> is core, not a sibling.</strong> It is <code>ICoreCbsModule</code>, always registered, and owns the shared
+  masters — the HR menu hosting General's State/District/Taluka screens is the <em>documented</em> legacy-placement
+  decision, not a leak. General must never appear in a sibling ban list.
+- <strong>The live cross-domain leak path is web → sibling <em>service</em>, not web → sibling <em>screen</em>.</strong> Every web RCL
+  references the whole <code>TflCbsServices</code> assembly, so <code>Hr.Web</code> can inject <code>LockerTypeService</code>; sibling <em>screens</em>
+  live in an unreferenced RCL and were never reachable. <code>Domain_web_module_must_not_use_a_sibling_domains_services</code>
+  closes the former.
+- <strong>Deploy config is checked against the code.</strong> <code>ModuleConfigTests</code> asserts every name in
+  <code>Modules:Enabled</code> across <code>compose*.yaml</code>/<code>appsettings*.json</code> resolves to a registered <code>ICbsModule</code>, because
+  <code>AddCbsModules</code> throws on unknown names. A stale <code>Misc</code> entry had been crashing all four Docker thin hosts
+  at startup; nothing caught it because nothing compared config to code.</p>
+<h2 id="5-enabling-infrastructure-done-before-splitting-it-made-the-split-bearable">5. Enabling infrastructure (done BEFORE splitting — it made the split bearable)</h2>
+<p>The old no-<code>.sln</code> + bare-DLL setup did not scale to 15+ module projects. The prerequisites, and where
+each landed:</p>
+<ol>
+<li><strong><code>Directory.Build.props</code> at the root — ✅ done.</strong> Defines <code>TargetFramework net10.0</code>, <code>Nullable</code>,
+   <code>ImplicitUsings</code> and <code>ManagePackageVersionsCentrally</code> once, plus the publish guard that keeps
+   <code>appsettings.Development.json</code> out of published artifacts. It deliberately does <strong>not</strong> inject the
+   <code>TflOmniDb</code>/<code>TflCbs.Entities</code> bare-DLL references or the ADO.NET drivers globally — those belong only
+   to projects whose closure needs them. Versions live in <code>Directory.Packages.props</code> (Central Package
+   Management), so csproj <code>PackageReference</code>s are version-less. <strong>Highest-leverage step, as predicted.</strong></li>
+<li><strong>A real solution — ✅ done, as <code>TflCbsNet10Sol.slnx</code></strong> (36 projects). The <code>TflCbs.Entities</code> build-order
+   problem was <strong>not</strong> solved by making it a plain <code>ProjectReference</code>: the generated-DLL contract
+   requires the HintPath. It was solved on <strong>2026-08-21</strong> by giving all 10 consumers a
+   <code>ProjectReference … ReferenceOutputAssembly="false"</code> <strong>build-order edge</strong> — MSBuild gets the
+   ordering, the compiler still binds the DLL. A parallel Rebuild All previously raced and failed with
+   <code>CS0246</code>; the manual "build <code>TflCbs.Entities</code> first" discipline is now gone.</li>
+<li><strong>Solution filters (<code>.slnf</code>) per module group — ⛔ not built, and superseded.</strong> The need it was
+   meant to serve (a team opening just their module + foundation) is met better by the
+   <code>codebase_shared/</code> pattern: a self-contained handover tree holding only the projects that team
+   edits, with the rest of the platform as prebuilt DLLs in <code>refs/</code> — which is why nine assemblies now
+   set <code>GenerateDocumentationFile</code>, so IntelliSense carries the API semantics where no source does.</li>
+</ol>
+<h2 id="6-phased-roadmap-incremental-reversible-at-each-step">6. Phased roadmap (incremental, reversible at each step)</h2>
+<ul>
+<li><strong>Phase A — modular pattern inside the current assembly (no splits).</strong> Add <code>ICbsModule</code> + per-module
+  <code>AddServices</code> / <code>AddCbsModules(config)</code>; move the <code>AddScoped</code> lines out of <code>Program.cs</code>; extract
+  <code>TflCbs.Abstractions</code>; add NetArchTest inter-module rules; add <code>Directory.Build.props</code> + <code>.sln</code>.
+  Delivers modules + "toggle which run" without splitting a single assembly.</li>
+<li><strong>Phase B — promote folders to per-module assemblies, on demand.</strong> Starting with the modules you most
+  want to run independently, move <code>TflCbsServices/&lt;Domain&gt;/</code> → <code>TflCbs.Modules.&lt;Name&gt;</code>, flip internals to
+  <code>internal</code>, expose via the module's registration + <code>.Contracts</code> if cross-module calls exist. One module at
+  a time; build stays green.</li>
+<li><strong>Namespaces follow the assembly</strong> (decided 2026-07-28, and already applied to the whole web layer): a
+    promoted domain becomes <code>namespace TflCbs.Modules.&lt;Name&gt;</code>, matching <code>TflCbs.Core.Authentication</code> and
+    <code>TflCbs.Modules.General.Contracts</code>. Renaming is cheapest now and grows with every migrated screen. It
+    costs a <code>using</code> sweep across that domain's tests, <code>TflCbs.Demo/Program.cs</code>, its Web RCL
+    controllers, and the type-name string literals in <code>ArchTests/ArchBoundaries.cs</code>.
+    <code>NamespaceDisciplineTests</code> enforces the rule (namespace starts with assembly name; no namespace shared
+    by two assemblies) — add the new assembly to its anchor table when you promote.</li>
+<li><strong><code>promote.ps1</code> rewrites <code>TflCbs.Services.Lab.&lt;X&gt;</code> → <code>TflCbs.Services.&lt;X&gt;</code>.</strong> That rule must be updated
+    per domain as each one is promoted, or Lab→prod promotion will land the wrong namespace.</li>
+<li><strong>The foundation is in place (2026-07-28)</strong> — §4. A promoted module now references <code>TflCbs.Abstractions</code>
+    (+ another module's <code>.Contracts</code> if it genuinely calls one) and <strong>never <code>TflCbsServices</code></strong>.
+    <code>TflCbs.Core.Authentication</code> is the worked template: it dropped its <code>TflCbsServices</code> reference entirely,
+    so the promotion is real rather than cosmetic.</li>
+<li>
+<p><strong>First domain promotion: <code>Lockers</code> (2026-07-29).</strong> <code>TflCbsServices/Lockers/</code> → <code>TflCbs.Modules.Lockers</code>
+    (namespace <code>TflCbs.Modules.Lockers</code>), referencing only <code>TflCbs.Abstractions</code>. Chosen over HR because it
+    yields the <strong>first fully isolated vertical slice</strong>: <code>TflCbs.Modules.Lockers.Web</code> has a single controller,
+    so it dropped <code>TflCbsServices</code> too and now links only its own service module + the horizontal layer.
+    Measured, not assumed — <code>TflCbs.Modules.Lockers.dll</code> is present in <code>TflCbs.Host.Lockers</code>/<code>TflCbs.Host.Main</code>
+    output and <strong>absent</strong> from the Hr/RetailBanking/Administration host outputs. That absence is the payoff.</p>
+<ul>
+<li><strong>Only hosts that enable a module reference it.</strong> Adding the reference to every host "for consistency"
+  would re-ship the code everywhere and defeat the exercise.</li>
+<li><strong><code>TflCbs.Host.Main</code> runs <code>Modules:Enabled = "*"</code>, which skips the unknown-name check</strong> — so a promoted
+  module missing from <em>its</em> <code>AddCbsModules</code> call is dropped <strong>silently</strong> (a 500 when a screen resolves its
+  service), whereas a thin host fails loudly at startup. Always add the assembly there.</li>
+<li>Two arch tests had borrowed Lockers as a convenience fixture for subjects that were not Lockers
+  (<code>EnabledConfig("Lockers")</code>, <code>typeof(LockerTypeService)</code>); both were re-pointed at <code>Administration</code>, a
+  domain still inside the monolith, so they stay single-assembly and keep testing config gating.</li>
+</ul>
+</li>
+<li>
+<p><strong>Second domain promotion: <code>HR</code> (2026-07-29).</strong> <code>TflCbsServices/HR/</code> → <code>TflCbs.Modules.HR</code> (namespace
+    <code>TflCbs.Modules.HR</code>), referencing only <code>TflCbs.Abstractions</code>. Named <code>.HR</code> because the module's registered
+    name is <code>"HR"</code>; that casing is now consistent across the module class, <code>Modules:Enabled</code> in every host and
+    <code>compose.multi.yaml</code> (they previously reconciled only through case-insensitive matching). The web RCL stays
+    <code>TflCbs.Modules.Hr.Web</code> and the area/routes stay <code>/Hr/…</code> — assembly and URL identifiers are a separate axis.</p>
+<ul>
+<li><strong>Unlike Lockers, <code>Hr.Web</code> keeps its <code>TflCbsServices</code> reference</strong> — its District/State/Taluka screens are
+  backed by the core General module and will be until General is promoted. So the payoff here is narrower:
+  <code>TflCbs.Modules.HR.dll</code> no longer ships to the Lockers/RetailBanking/Administration hosts, but the RCL is
+  not yet monolith-free.</li>
+<li>HR reads General-<strong>owned tables</strong> (<code>G_TITLE</code>, <code>G_DESIGNATION</code>, <code>G_ORGELEMENTDEPARTMENT</code>) through
+  <code>TflCbs.Entities</code>. That is table-level coupling to the shared schema, not an assembly dependency — it needs
+  no <code>.Contracts</code> and does not make HR a non-leaf.</li>
+</ul>
+</li>
+<li>
+<p><strong>Remaining leaves promoted (2026-07-29): <code>Accounts</code>, <code>Clearing</code>, <code>Administration</code>, <code>RetailBanking</code>.</strong>
+    All four were true leaves; <code>RetailBanking</code>'s single cross-module edge (<code>IScrollService</code>) already went
+    through <code>TflCbs.Modules.General.Contracts</code>, so it references that and nothing else from the monolith.
+    <strong><code>TflCbsServices</code> now contains only <code>General</code> and <code>Composition</code>.</strong></p>
+<ul>
+<li><code>Administration.Web</code> and <code>RetailBanking.Web</code> each had exactly one service dependency — their own domain —
+  so both dropped <code>TflCbsServices</code> too. Four of five RCLs are now monolith-free; only <code>Hr.Web</code> still links
+  it, for the General-backed District/State/Taluka screens.</li>
+<li><strong>Each thin host now ships exactly one domain module — its own.</strong> Measured on the build output, not
+  assumed.</li>
+<li>Two guard changes this forced: the registry's promoted list is now keyed by <strong>domain, not web area</strong>
+  (<code>Accounts</code> and <code>Clearing</code> have no RCL, so a web-area-keyed list could not express them), and
+  <code>RetailBanking -/-&gt; sibling service impls</code> flipped from <code>Namespace</code> to <code>Reference</code> — it was the suite's
+  last namespace rule with real teeth, and the promotion made it a compiler guarantee.</li>
+</ul>
+</li>
+<li>
+<p><strong>Final promotion — <code>General</code> split into <code>General</code> + <code>Reference</code> (2026-07-29). <code>TflCbsServices</code> is gone.</strong>
+    General had been doing two jobs: core platform (menu, bank variables, broadcast, alerts, the scroll and
+    process-block mechanisms — three of the four framework ports) and bank-wide master data. The geography
+    masters moved to <strong><code>TflCbs.Modules.Reference</code></strong>; what stayed is platform.</p>
+<ul>
+<li>Both are <code>ICoreCbsModule</code> — registered unconditionally. Reference data is needed everywhere (66 entity
+  tables carry <code>STATEID</code>/<code>DISTRICTID</code>/<code>TALUKAID</code>), so gating it would mean a thin host that forgot to list
+  it fails at runtime on a district lookup.</li>
+<li><strong>Admission rule for Reference:</strong> a master belongs there only if it has no domain behaviour (pure CRUD +
+  lookup) <strong>and</strong> two or more domains consume it. Geography passes; <code>LockerMake</code> does not — Lockers-only,
+  stays put. Without this test Reference becomes the dumping ground for anything nobody wants to place.</li>
+<li><code>Hr.Web</code> needed only State/District/Taluka, so it now references <strong>Reference</strong>, not General — making it
+  monolith-free. <strong>All five RCLs are now monolith-free.</strong></li>
+<li><strong><code>AddCbsModules</code> moved to <code>TflCbs.Abstractions</code> and discovery is fully explicit.</strong> It used to start
+  from the <code>TflCbsServices</code> assembly implicitly and add promoted assemblies to it; that assembly no longer
+  exists, so every host must now name every module. The deployment cross-check added the same day is what
+  makes that safe — miss one and startup aborts naming it.</li>
+<li><code>NamespaceDisciplineTests</code> now holds with <strong>no exceptions</strong>: <code>TflCbsServices</code> (assembly
+  <code>TflCbsServices</code>, namespaces <code>TflCbs.Services.*</code>) was the last mismatch.</li>
+<li>Follow-up <strong>closed (2026-07-29)</strong>: <code>GeneralService.GetDistrictAsync</code> (+ <code>DistrictRow</code>/
+  <code>DistrictListResult</code>) was deleted rather than relocated. It had zero callers and was a stored-procedure
+  wrapper superseded by the entity-based <code>DistrictService.SearchDistrictsAsync</code>. The <strong>proc</strong>
+  <code>pr_g_getDistrict</code> is untouched: its one remaining caller is the legacy screen
+  <code>HO\Bank\g_District.aspx</code>, so dropping it is a cutover decision, not a code one. Worth generalising —
+  during the strangler-fig migration both apps share one database, so <strong>"no C# callers" never means
+  "unused"</strong> for a proc; deleting C# is a code question, deleting a proc is a cutover question.</li>
+</ul>
+</li>
+</ul>
+<h4 id="guard-model-for-promotions-promotedmodules">Guard model for promotions: <code>PromotedModules</code></h4>
+<p><code>ArchBoundaries.PromotedModules</code> names the domains that have left <code>TflCbsServices</code>, and every sibling rule is
+emitted <strong>twice</strong> off it: <code>"&lt;X&gt; -/-&gt; sibling services (monolith)"</code> at <code>Enforcement.Namespace</code> (siblings still
+in the shared assembly are reachable, so only a namespace rule stops a call) and
+<code>"&lt;X&gt; -/-&gt; promoted sibling modules"</code> at <code>Enforcement.Reference</code> (a promoted sibling is unreachable unless
+someone adds a project reference, so the compiler is the guard). <strong>Each future promotion is one entry added to
+<code>PromotedModules</code></strong> — the rules re-partition themselves, and <code>BoundaryGuaranteeTests</code> re-verifies both levels
+against the live reference graph.</p>
+<p><strong><code>PromotedModules</code> and <code>MonolithFreeWebModules</code> were deliberately separate lists — and the second one
+is now deleted (2026-08-19).</strong> Promoting a domain's <em>service</em> module said nothing about whether its
+<em>web</em> RCL still needed <code>TflCbsServices</code>: <code>Lockers.Web</code> was decoupled by its promotion (one controller,
+one dependency), but <code>Hr.Web</code> still linked the monolith for its General-backed screens. Conflating the
+two was not a hypothetical — the HR promotion initially declared <code>Hr.Web</code>'s sibling rule <code>Reference</code> on
+that assumption and <code>BoundaryGuaranteeTests</code> failed it immediately, reporting that <code>Hr.Web</code> could still
+reach <code>TflCbs.Services.RetailBanking</code> and <code>…Administration</code>. The meta-guard earning its keep on the
+first promotion after it was written.</p>
+<p>Once <strong>all</strong> domains were promoted the distinction had no members left to express:
+<code>MonolithFreeWebModules</code> was a four-name list feeding exactly one rule
+(<code>"{key}.Web -/-&gt; sibling services (monolith)"</code>), guarded by
+<code>if (monolithSiblings.Length &gt; 0)</code> where <code>monolithSiblings = SiblingServiceNamespacesFor(key).Except(PromotedModuleNamespaces)</code>.
+With every domain in <code>PromotedModules</code> that set is always empty, so the branch was dead — a list and
+22 lines of doc comment describing a state that can no longer occur. It was deleted; <code>PromotedModules</code>
+is now the single registry, and every sibling rule is <code>Enforcement.Reference</code>.</p>
+<ul>
+<li><strong>Phase C — independent hosting — ✅ shipped.</strong> Every domain's Area became an RCL, and four thin
+  hosts exist: <code>TflCbs.Host.Hr</code>, <code>.Lockers</code>, <code>.RetailBanking</code>, <code>.Administration</code>, fronted by
+  <code>TflCbs.Gateway</code> (YARP) so all five hosts share one external origin — the precondition for
+  cross-host SSO. The trigger was not scale but <strong>proof</strong>: each thin host's build output was measured
+  to contain exactly one domain module, which is the evidence that the boundaries are real. The
+  platform therefore runs in four deployment shapes from one codebase (IIS single, IIS multi-host,
+  Docker single, Docker multi-host); see <a href="../port-map.html"><code>../port-map.md</code></a> and
+  <a href="../single-sign-on.txt"><code>../single-sign-on.txt</code></a>.</li>
+</ul>
+<p><strong>Promotion triggers (folder → own assembly):</strong> module must run/deploy on its own ✅ · a team needs hard
+ownership + internal hiding ✅ · monolith build time hurts · module ships as a package · cross-module
+calls must be constrained to a contract. Promote when a trigger fires — not all modules at once.</p>
+<h2 id="7-cautions">7. Cautions</h2>
+<ul>
+<li><strong>One database, one process is the steady state.</strong> Core-banking flows (day-end, GL posting, clearing,
+  interest) span modules in a <strong>single in-process transaction</strong>
+  (<code>DataAccess.ExecuteInTransactionAsync</code>). Splitting the <em>database</em>, or forcing modules into separate
+  <em>processes for normal operation</em>, turns these into distributed transactions / sagas — high correctness
+  and compliance risk. Module = <strong>code</strong> boundary; do not let "run separately" drift into microservices.</li>
+<li><strong>Process separation ≠ data separation.</strong> A per-module host (Strategy 2) still hits the shared DB via
+  the same <code>DatabaseSelector</code>. That's intended. Data isolation is a far bigger, separate decision — out
+  of scope here.</li>
+<li><strong>Entities stay shared.</strong> Do not split <code>TflCbs.Entities</code> per module (shared tables, generated contract).</li>
+<li><strong>Contracts before cross-calls.</strong> The first time module A needs module B, introduce B's <code>.Contracts</code>
+  interface and call through DI — never reference B's implementation assembly directly.</li>
+</ul>
+</div></div>
+<script>
+(function(){
+ function put(t){
+  if(navigator.clipboard&&navigator.clipboard.writeText)return navigator.clipboard.writeText(t);
+  return new Promise(function(res,rej){
+   var a=document.createElement('textarea');a.value=t;a.setAttribute('readonly','');
+   a.style.cssText='position:fixed;top:0;left:0;opacity:0';document.body.appendChild(a);
+   a.select();var ok=false;try{ok=document.execCommand('copy')}catch(e){}
+   document.body.removeChild(a);ok?res():rej()});
+ }
+ function flash(el,txt,ms){
+  var was=el.textContent;el.classList.add('done');if(txt)el.textContent=txt;
+  setTimeout(function(){el.classList.remove('done');if(txt)el.textContent=was},ms||1200);
+ }
+ function copy(text,el,okTxt){
+  put(text).then(function(){flash(el,okTxt)},function(){
+   if(okTxt){var w=el.textContent;el.textContent='Ctrl+C';setTimeout(function(){el.textContent=w},2000)}});
+ }
+ document.querySelectorAll('pre').forEach(function(pre){
+  if(pre.classList.contains('txtdoc'))return;
+  var b=document.createElement('button');
+  b.type='button';b.className='copy';b.textContent='Copy';
+  b.setAttribute('aria-label','Copy this code block to the clipboard');
+  b.addEventListener('click',function(){copy((pre.querySelector('code')||pre).innerText,b,'Copied')});
+  pre.appendChild(b);
+ });
+ document.querySelectorAll('td code').forEach(function(c){
+  if(!c.textContent.trim())return;
+  c.classList.add('cp');c.tabIndex=0;c.setAttribute('role','button');
+  c.title='Click to copy';
+  c.addEventListener('click',function(){copy(c.textContent,c)});
+  c.addEventListener('keydown',function(e){
+   if(e.key==='Enter'||e.key===' '){e.preventDefault();copy(c.textContent,c)}});
+ });
+})();
+</script>
+</body></html>

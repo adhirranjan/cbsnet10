@@ -1,0 +1,565 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>TflSecurityCrypto</title>
+<style>
+:root{color-scheme:light dark}
+*{box-sizing:border-box}
+body{margin:0;background:#f6f8fa;color:#1f2328;font:16px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif}
+.wrap{max-width:900px;margin:0 auto;padding:32px 24px 96px}
+.card{background:#fff;border:1px solid #d0d7de;border-radius:10px;padding:40px 48px}
+h1,h2,h3{line-height:1.25;font-weight:600}
+h1{font-size:1.9rem;margin:0 0 .3em;padding-bottom:.3em;border-bottom:1px solid #d8dee4}
+h2{font-size:1.4rem;margin:1.8em 0 .6em;padding-bottom:.25em;border-bottom:1px solid #eaeef2}
+h3{font-size:1.12rem;margin:1.4em 0 .5em}
+p,li{margin:.5em 0}
+a{color:#0969da;text-decoration:none}
+a:hover{text-decoration:underline}
+code{font-family:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;font-size:.86em;background:#eff1f3;padding:.15em .4em;border-radius:6px}
+pre{background:#f6f8fa;border:1px solid #d8dee4;border-radius:8px;padding:14px 16px;overflow:auto}
+pre code{background:none;padding:0;font-size:.85em;line-height:1.45}
+blockquote{margin:1em 0;padding:.4em 1em;color:#3d444d;border-left:4px solid #d0d7de;background:#f6f8fa;border-radius:0 6px 6px 0}
+blockquote>:first-child{margin-top:0}blockquote>:last-child{margin-bottom:0}
+table{border-collapse:collapse;width:100%;margin:1em 0;display:block;overflow:auto}
+th,td{border:1px solid #d0d7de;padding:8px 12px;text-align:left;vertical-align:top}
+th{background:#f6f8fa;font-weight:600}
+tr:nth-child(2n) td{background:#f6f8fa}
+hr{border:0;border-top:1px solid #d8dee4;margin:2em 0}
+pre{position:relative}
+pre>button.copy{position:absolute;top:8px;right:8px;padding:5px 9px;cursor:pointer;
+  font:600 .68rem/1 ui-monospace,SFMono-Regular,Consolas,monospace;letter-spacing:.03em;
+  color:#636c76;background:#fff;border:1px solid #d0d7de;border-radius:6px;
+  opacity:0;transition:opacity .12s}
+pre:hover>button.copy,pre>button.copy:focus{opacity:1}
+pre>button.copy.done{color:#0a3622;background:#dafbe1;border-color:#4ac26b}
+@media(hover:none){pre>button.copy{opacity:1}}
+td code.cp{cursor:pointer}
+td code.cp:hover,td code.cp:focus{outline:1px solid #8c959f;outline-offset:1px}
+td code.cp.done{color:#0a3622;background:#dafbe1}
+.docnav{margin:0 0 20px;font-size:.85rem;color:#636c76}
+.docnav a{color:#636c76}
+ul{padding-left:1.4em}ol{padding-left:1.4em}
+@media(max-width:640px){.card{padding:24px 18px}.wrap{padding:16px 10px 64px}}
+@media(prefers-color-scheme:dark){
+ body{background:#0d1117;color:#e6edf3}
+ .card{background:#161b22;border-color:#30363d}
+ h1{border-color:#30363d}h2{border-color:#21262d}
+ code{background:#262c34}
+ pre{background:#0d1117;border-color:#30363d}
+ blockquote{background:#161b22;border-color:#30363d;color:#9198a1}
+ th,td{border-color:#30363d}th{background:#161b22}tr:nth-child(2n) td{background:#12171e}
+ a{color:#4493f8}.docnav,.docnav a{color:#9198a1}
+ hr{border-color:#30363d}
+ pre>button.copy{color:#9198a1;background:#161b22;border-color:#30363d}
+ pre>button.copy.done{color:#aff5b4;background:#1b4721;border-color:#2ea043}
+ td code.cp.done{color:#aff5b4;background:#1b4721}
+}
+</style></head>
+<body><div class="wrap"><div class="card">
+<div class="docnav"><a href="../../index.html">&#8592; All docs</a></div>
+<h1 id="tflsecuritycrypto">TflSecurityCrypto</h1>
+<p><strong>Product:</strong> <code>Tssipl.Security.Cryptography</code> · <strong>Assembly / namespace:</strong> <code>TflSecurityCrypto</code> · <strong>TFM:</strong> <code>net10.0</code> · <strong>Version:</strong> 1.0.0.13</p>
+<p>The in-house security library: <strong>password hashing for storage</strong>, plus a <strong>byte-for-byte compatible port</strong> of the
+legacy VB.NET cryptography helpers so existing ciphertext, licence files and stored hashes remain readable
+on .NET 10.</p>
+<p>Two distinct jobs live in this one assembly, and keeping them apart is the whole point:</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>Use for</th>
+<th>Types</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Forward-looking</strong></td>
+<td>Anything new. Modern, salted, adaptive password storage.</td>
+<td><code>PasswordHash</code></td>
+</tr>
+<tr>
+<td><strong>Legacy-compatibility</strong></td>
+<td>Reading data the old VB.NET library wrote. <strong>Not</strong> for new designs.</td>
+<td><code>Cryptography</code>, <code>RC4</code>, <code>MachineIdentity</code>, <code>MachineIdentityValidator</code></td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p><strong>If you are storing a password, use <a href="#passwordhash---modern-password-storage"><code>PasswordHash</code></a> and nothing else.</strong>
+<code>Cryptography.Encrypt</code> is unsalted MD5 or reversible Triple-DES-ECB; <code>RC4</code> is a broken stream cipher. They exist
+so that twenty years of stored values keep working — see <a href="docs/security-notes.html">docs/security-notes.md</a>.</p>
+</blockquote>
+<hr />
+<h2 id="contents">Contents</h2>
+<ul>
+<li><a href="#quick-start">Quick start</a></li>
+<li><a href="#referencing-the-library">Referencing the library</a></li>
+<li><a href="#feature-map">Feature map</a></li>
+<li><a href="#passwordhash---modern-password-storage"><code>PasswordHash</code> — modern password storage</a></li>
+<li><a href="#legacy-compatibility-surface">Legacy-compatibility surface</a></li>
+<li><a href="#platform-notes">Platform notes</a></li>
+<li><a href="#components--repository-layout">Components &amp; repository layout</a></li>
+<li><a href="#compatibility-guarantee--how-it-is-proven">Compatibility guarantee &amp; how it is proven</a></li>
+<li><a href="#build-test-demo">Build, test, demo</a></li>
+<li><a href="#how-trustbank-cbs-uses-this-library">How TrustBank CBS uses this library</a></li>
+<li><a href="#further-reading">Further reading</a></li>
+</ul>
+<hr />
+<h2 id="quick-start">Quick start</h2>
+<pre><code class="language-csharp">using TflSecurityCrypto;
+
+// ---- storing a password -------------------------------------------------
+string stored = PasswordHash.Create(plainPassword);   // &quot;v1$600000$&lt;b64 salt&gt;$&lt;b64 key&gt;&quot;
+// persist `stored` (a single string column, ~90 chars) — there is no separate salt column
+
+// ---- verifying a login --------------------------------------------------
+if (!PasswordHash.Verify(submittedPassword, stored))
+    return Unauthorized();
+
+// ---- transparent cost upgrade (optional, after a successful verify) -----
+if (PasswordHash.NeedsRehash(stored))
+    stored = PasswordHash.Create(submittedPassword);  // re-save at current parameters
+</code></pre>
+<p>That is the entire API for new work. Everything below is either detail or legacy interop.</p>
+<hr />
+<h2 id="referencing-the-library">Referencing the library</h2>
+<p>It ships as a plain assembly reference (no NuGet feed). TrustBank CBS references the built DLL directly:</p>
+<pre><code class="language-xml">&lt;Reference Include=&quot;TflSecurityCrypto&quot;&gt;
+  &lt;HintPath&gt;..\..\..\_Archive\Ad.ProjectLibrary\Tssipl.Security.Cryptography\TflSecurityCrypto\TflSecurityCrypto\bin\Debug\net10.0\TflSecurityCrypto.dll&lt;/HintPath&gt;
+&lt;/Reference&gt;
+</code></pre>
+<p>Because it is a bare-DLL reference there is <strong>no build-order edge</strong> — build <code>TflSecurityCrypto</code> <em>first</em> whenever
+you change it, then rebuild the consumer.</p>
+<p><strong>Transitive package dependencies</strong> (both required at runtime):</p>
+<table>
+<thead>
+<tr>
+<th>Package</th>
+<th>Version</th>
+<th>Needed by</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>System.Configuration.ConfigurationManager</code></td>
+<td>9.0.0</td>
+<td><code>Cryptography</code> (reads the <code>SecurityKey</code> app setting)</td>
+</tr>
+<tr>
+<td><code>System.Management</code></td>
+<td>9.0.0</td>
+<td><code>MachineIdentity</code> (WMI queries, Windows only)</td>
+</tr>
+</tbody>
+</table>
+<p>XML documentation is generated (<code>GenerateDocumentationFile=true</code>), so IntelliSense carries the per-member notes.</p>
+<hr />
+<h2 id="feature-map">Feature map</h2>
+<table>
+<thead>
+<tr>
+<th>Feature</th>
+<th>Type</th>
+<th>Status</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>PBKDF2 password hash / verify / rehash-check</td>
+<td><code>PasswordHash</code></td>
+<td><strong>Current</strong></td>
+<td>PBKDF2-HMAC-SHA256, 600,000 iterations, 128-bit salt, 256-bit key</td>
+</tr>
+<tr>
+<td>MD5 digest</td>
+<td><code>Cryptography.Encrypt(string)</code></td>
+<td>Legacy</td>
+<td>Unsalted. Compatibility only</td>
+</tr>
+<tr>
+<td>Triple-DES encrypt / decrypt (reversible)</td>
+<td><code>Cryptography.Encrypt/Decrypt(string, bool)</code></td>
+<td>Legacy</td>
+<td>ECB + PKCS7, key from config or built-in default</td>
+</tr>
+<tr>
+<td>Salted SHA-256 hash / verify</td>
+<td><code>Cryptography.Encrypt(string, string)</code> / <code>VerifyHash</code></td>
+<td>Legacy</td>
+<td>Salt handling is the legacy Obviex scheme</td>
+</tr>
+<tr>
+<td>RC4 stream cipher (string &amp; byte[])</td>
+<td><code>RC4</code></td>
+<td>Legacy</td>
+<td>Plus <code>GetJsModuleScript()</code> for the browser-side twin</td>
+</tr>
+<tr>
+<td>Cryptographic RNG</td>
+<td><code>RNGCSP.RollDice</code></td>
+<td>Current</td>
+<td>Uniform 1..n via rejection sampling</td>
+</tr>
+<tr>
+<td>CP1252 byte→char</td>
+<td><code>CharSetUtil.Chr</code></td>
+<td>Utility</td>
+<td>VB <code>Chr()</code> equivalent</td>
+</tr>
+<tr>
+<td>Windows hardware fingerprint</td>
+<td><code>MachineIdentity</code></td>
+<td>Legacy</td>
+<td>WMI: baseboard, CPU, volume serial, MAC</td>
+</tr>
+<tr>
+<td>Licence-file validation</td>
+<td><code>MachineIdentityValidator</code></td>
+<td>Legacy</td>
+<td>Expiry prefix + trial window + machine binding</td>
+</tr>
+<tr>
+<td>app.config / web.config section protection</td>
+<td><code>AppConfigSectionProtector</code>, <code>ConfigFileProtection</code></td>
+<td><strong>Not supported</strong></td>
+<td>Throw <code>PlatformNotSupportedException</code> on .NET 10 — surface kept so callers still compile</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="passwordhash-modern-password-storage"><code>PasswordHash</code> — modern password storage</h2>
+<p>Static class. One-way: there is no "decrypt".</p>
+<table>
+<thead>
+<tr>
+<th>Member</th>
+<th>Signature</th>
+<th>Behaviour</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>Create</code></td>
+<td><code>static string Create(string password)</code></td>
+<td>Fresh 128-bit random salt, derives a 256-bit key, returns the versioned string. Throws <code>ArgumentNullException</code> on a null password. <strong>Two calls on the same password return different strings</strong> — that is correct.</td>
+</tr>
+<tr>
+<td><code>Verify</code></td>
+<td><code>static bool Verify(string password, string storedHash)</code></td>
+<td>Re-derives using the salt <em>and</em> iteration count embedded in <code>storedHash</code>, compares with <code>CryptographicOperations.FixedTimeEquals</code>. Returns <code>false</code> — <strong>never throws</strong> — for null / empty / malformed / tampered input.</td>
+</tr>
+<tr>
+<td><code>NeedsRehash</code></td>
+<td><code>static bool NeedsRehash(string storedHash)</code></td>
+<td><code>true</code> if the value is missing, unreadable, a non-current version, or uses fewer than <code>CurrentIterations</code>. Call it after a successful <code>Verify</code> to upgrade cost silently on next login.</td>
+</tr>
+<tr>
+<td><code>CurrentVersion</code></td>
+<td><code>const string</code> = <code>"v1"</code></td>
+<td>Format tag. A future scheme (Argon2, say) becomes <code>v2</code>.</td>
+</tr>
+<tr>
+<td><code>CurrentIterations</code></td>
+<td><code>const int</code> = <code>600_000</code></td>
+<td>OWASP guidance for PBKDF2-HMAC-SHA256. Tunable upward; raising it does not invalidate existing hashes.</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Stored format</strong> — one string, self-describing, <code>$</code>-delimited (<code>$</code> never occurs in Base64):</p>
+<pre><code>v1$600000$3Q2Ld9Xk1r7YbAcE8fGhIw==$K7pR2sT4uV6wX8yZ0aB2cD4eF6gH8iJ0kL2mN4oP6qQ=
+│  │      │                        └── Base64 derived key   (32 bytes)
+│  │      └── Base64 salt                                   (16 bytes)
+│  └── iteration count actually used for THIS hash
+└── format version
+</code></pre>
+<p>Because the iteration count travels with each hash, old and new hashes coexist and verify correctly. Parsing is
+strict: wrong field count, unknown version, non-numeric or non-positive iterations, or invalid Base64 all parse
+as failure (→ <code>Verify</code> false, <code>NeedsRehash</code> true).</p>
+<p><strong>Sizing the column:</strong> <code>v1</code> at 600,000 iterations is 4 + 7 + 25 + 45 ≈ <strong>83 characters</strong>. A <code>varchar(255)</code> column
+leaves comfortable room for a future scheme.</p>
+<hr />
+<h2 id="legacy-compatibility-surface">Legacy-compatibility surface</h2>
+<p>Full signature-level detail is in <a href="docs/api-reference.html">docs/api-reference.md</a>; the security posture of each
+primitive is in <a href="docs/security-notes.html">docs/security-notes.md</a>. Summary:</p>
+<h3 id="cryptography"><code>Cryptography</code></h3>
+<pre><code class="language-csharp">byte[] Encrypt(string text)                            // raw MD5 of UTF-8 bytes
+string Encrypt(string toEncrypt, bool useHashing)      // Triple-DES ECB/PKCS7 → Base64
+string Decrypt(string cipherString, bool useHashing)   // inverse
+byte[] Encrypt(string text, string salt)               // salted SHA-256, returns UTF-8 bytes of the Base64 hash string
+bool   VerifyHash(string text, string salt)            // recompute-and-compare
+</code></pre>
+<ul>
+<li>The Triple-DES key comes from the <strong><code>SecurityKey</code> app setting</strong>, falling back to a hard-coded default literal
+  (see <code>Cryptography.cs</code>). <code>useHashing: true</code> MD5-hashes the key first, producing the 16-byte two-key 3DES key —
+  <strong>this is the only working path</strong>. <code>useHashing: false</code> passes the raw 14-byte default key to Triple-DES, which
+  <strong>throws</strong> (invalid key size); the legacy library behaved identically, and a test pins that.</li>
+<li>On a .NET (Core) host with no <code>app.config</code>/<code>.exe.config</code>, <code>ConfigurationManager.AppSettings["SecurityKey"]</code> is
+  <code>null</code>, so the built-in default key is used. That is precisely what lets ASP.NET Core hosts decrypt legacy
+  ciphertext — but it also means the key is <strong>not a secret</strong>. Treat these values as obfuscated, not encrypted.</li>
+</ul>
+<h3 id="rc4"><code>RC4</code></h3>
+<pre><code class="language-csharp">static string mHexKey                          // public field: the shared hex key suffix
+static string GetRandomKey()                   // Guid-based
+static string Encrypt(string key, string data) // UTF-16LE + Base64
+static string Decrypt(string key, string data)
+static byte[] Encrypt(byte[] key, byte[] data) // symmetric — Decrypt is the same transform
+static byte[] Decrypt(byte[] key, byte[] data)
+static string GetJsModuleScript()              // the minified browser-side RC4 + Base64 twin
+</code></pre>
+<p>An empty key throws <code>DivideByZeroException</code> in the key-scheduling loop — again matching the legacy behaviour, and
+again pinned by a test. <code>GetJsModuleScript()</code> exists so a login page can RC4 the password client-side exactly the
+way the legacy WebForms screens did.</p>
+<h3 id="machineidentity-machineidentityvalidator"><code>MachineIdentity</code> / <code>MachineIdentityValidator</code></h3>
+<p>Windows-only (<code>[SupportedOSPlatform("windows")]</code>, WMI via <code>System.Management</code>). <code>MachineIdentity.GenerateKey()</code>
+builds a <code>key=value</code> block from baseboard serial + C: volume serial + processor id and Triple-DES-encrypts it.
+<code>MachineIdentityValidator.ValidateMachineIdentity(licenseFile)</code> reads a licence file and:</p>
+<ol>
+<li>if it starts with the date-time marker, decrypts the 24-char expiry prefix (<code>yyyyMMdd</code>) and throws
+   <code>ApplicationException("License expired")</code> when past;</li>
+<li>if the payload contains <code>TRIAL</code>, parses the start date and day count and throws
+   <code>ApplicationException("License file expired.")</code> outside the window;</li>
+<li>decrypts twice more and compares against this machine's key — returns <code>false</code> on mismatch.</li>
+</ol>
+<p>Note the deliberate legacy quirk: <strong>if the machine key cannot be generated at all, it returns <code>true</code></strong> (fail-open).
+Preserved for compatibility; do not build new licensing on it.</p>
+<h3 id="rngcsp-charsetutil"><code>RNGCSP</code>, <code>CharSetUtil</code></h3>
+<p><code>RNGCSP.RollDice(byte numberSides)</code> returns a uniform value in <code>1..numberSides</code> using rejection sampling over
+<code>RandomNumberGenerator</code> (the incomplete final byte-set is discarded, so the distribution stays fair).
+<code>CharSetUtil.Chr(int 0..255)</code> is the VB <code>Chr()</code> equivalent via code page 1252; out-of-range throws
+<code>ArgumentOutOfRangeException</code>.</p>
+<h3 id="not-supported-on-net-10">Not supported on .NET 10</h3>
+<p><code>AppConfigSectionProtector.ProtectConnectionString</code> / <code>UnprotectConnectionString</code> and
+<code>ConfigFileProtection.ProtectSection</code> / <code>UnProtectSection</code> throw <code>PlatformNotSupportedException</code>. Protected-
+configuration providers (<code>DataProtectionConfigurationProvider</code>) and <code>System.Web.Configuration</code> do not exist on
+.NET (Core). The methods remain so dependent code compiles; if you need config encryption, use
+<code>System.Security.Cryptography.ProtectedData</code> or ASP.NET Core Data Protection instead.</p>
+<h3 id="internal">Internal</h3>
+<p><code>SimpleHash</code> (salted MD5/SHA-1/SHA-256/SHA-384/SHA-512, salt appended to the plaintext and to the resulting
+Base64) is <strong><code>internal</code></strong> — reachable only from <code>Cryptography</code> and, via <code>InternalsVisibleTo</code>, from the test
+project. It is not part of the public contract.</p>
+<hr />
+<h2 id="platform-notes">Platform notes</h2>
+<table>
+<thead>
+<tr>
+<th>Concern</th>
+<th>Detail</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Windows-only members</strong></td>
+<td><code>MachineIdentity</code>, <code>MachineIdentityValidator</code> are annotated <code>[SupportedOSPlatform("windows")]</code>. Guard calls with <code>OperatingSystem.IsWindows()</code> to stay CA1416-clean on a portable build (the demo does exactly this).</td>
+</tr>
+<tr>
+<td><strong>Nullable / implicit usings</strong></td>
+<td>Both <strong>disabled</strong> on this project — matching the ported legacy source. Callers with NRT enabled see no annotations.</td>
+</tr>
+<tr>
+<td><strong>Encodings</strong></td>
+<td><code>RC4</code> string overloads use <strong>UTF-16LE</strong> (<code>Encoding.Unicode</code>); <code>Cryptography</code> uses <strong>UTF-8</strong>. Mixing them corrupts round-trips. <code>CharSetUtil</code> registers <code>CodePagesEncodingProvider</code> on each call.</td>
+</tr>
+<tr>
+<td><strong>Threading</strong></td>
+<td>Every public member is static and stateless — safe to call concurrently. The one mutable piece of shared state is the public <code>RC4.mHexKey</code> field; treat it as read-only.</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="components-repository-layout">Components &amp; repository layout</h2>
+<pre><code>Tssipl.Security.Cryptography/
+├── TflSecurityCrypto.slnx              ← solution
+├── TflSecurityCrypto/                  ← the library (net10.0)
+│   ├── PasswordHash.cs                 ← modern password storage (PBKDF2)
+│   ├── Cryptography.cs                 ← MD5 / Triple-DES / salted SHA-256
+│   ├── SimpleHash.cs                   ← internal salted-hash engine (Obviex-derived)
+│   ├── RC4.cs                          ← RC4 stream cipher + JS twin
+│   ├── RNGCSP.cs                       ← cryptographic RNG helper
+│   ├── CharSetUtil.cs                  ← CP1252 Chr()
+│   ├── MachineIdentity.cs              ← WMI hardware fingerprint (Windows)
+│   ├── MachineIdentityValidator.cs     ← licence-file validation (Windows)
+│   ├── AppConfigSectionProtector.cs    ← PlatformNotSupportedException on .NET 10
+│   └── ConfigFileProtection.cs         ← PlatformNotSupportedException on .NET 10
+├── TflSecurityCrypto.Tests/            ← xUnit; sees internals via InternalsVisibleTo
+│   ├── GoldenVectorTests.cs            ← byte-for-byte parity with the legacy VB output
+│   ├── PasswordHashTests.cs            ← PBKDF2 invariants
+│   ├── RoundTripTests.cs
+│   ├── RngAndPlatformTests.cs
+│   └── LicenseValidatorTests.cs
+├── LegacyVb/                           ← compiles the ORIGINAL, unmodified legacy .vb source
+└── Demo/                               ← runs both libraries side by side and diffs the output
+</code></pre>
+<p><code>LegacyVb.vbproj</code> deliberately compiles the untouched legacy sources from <code>../../Tssipl.Security.Cryptography/</code>
+(<code>Cryptography.vb</code>, <code>SimpleHash.vb</code>, <code>RC4.vb</code>, <code>MachineIdentity.vb</code>, <code>MachineIdentityValidator.vb</code>) with the
+obsolete-API warnings suppressed. It exists purely as the <strong>oracle</strong> the port is measured against.</p>
+<hr />
+<h2 id="compatibility-guarantee-how-it-is-proven">Compatibility guarantee &amp; how it is proven</h2>
+<p>The claim is specific: <strong>for every ported primitive, the C#/.NET 10 output is byte-for-byte identical to the
+legacy VB.NET/.NET Framework output.</strong> It is enforced two ways.</p>
+<p><strong>1 · Golden vectors</strong> (<code>GoldenVectorTests.cs</code>) — expected values were captured by running the original,
+unmodified <code>.vb</code> source, then frozen as test data:</p>
+<table>
+<thead>
+<tr>
+<th>Primitive</th>
+<th>Pinned cases</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>MD5 (<code>Encrypt(text)</code>)</td>
+<td>4 inputs incl. empty string and <code>unicode: café ☃ 日本語</code></td>
+</tr>
+<tr>
+<td>Triple-DES hashed key</td>
+<td>the same 4 inputs</td>
+</tr>
+<tr>
+<td>Triple-DES <strong>un</strong>hashed key</td>
+<td>must throw, as the legacy did</td>
+</tr>
+<tr>
+<td>RC4</td>
+<td>2 key/data pairs; empty key must throw <code>DivideByZeroException</code></td>
+</tr>
+<tr>
+<td>Salted SHA-256</td>
+<td>2 text/salt pairs</td>
+</tr>
+<tr>
+<td><code>SimpleHash</code> with a fixed salt</td>
+<td>all 6 algorithm branches (MD5, SHA-1/256/384/512, and the unknown→MD5 fallback)</td>
+</tr>
+</tbody>
+</table>
+<p><strong>2 · The Demo</strong> (<code>Demo/Program.cs</code>) — uses <code>extern alias</code> to load <em>both</em> assemblies at once and runs the same
+inputs through each, printing a <code>MATCH</code>/<code>DIFFER</code> row per case and exiting non-zero on any mismatch. It also
+proves genuine interop rather than mere equality:</p>
+<ul>
+<li>ciphertext produced by the legacy library decrypts with the new one, and vice versa;</li>
+<li>a licence issued by either library validates with the other on the same machine;</li>
+<li>a licence for a different machine is rejected by both.</li>
+</ul>
+<p><code>PasswordHash</code> has no legacy counterpart, so it is covered behaviourally instead (<code>PasswordHashTests.cs</code>):
+correct password verifies, wrong one does not, salt differs per call, format is well-formed, tampered key fails,
+malformed input returns <code>false</code> without throwing, and <code>NeedsRehash</code> flags missing / malformed / lower-iteration
+values.</p>
+<hr />
+<h2 id="build-test-demo">Build, test, demo</h2>
+<pre><code class="language-powershell"># Build the library (do this FIRST when consumers reference the DLL by HintPath)
+dotnet build TflSecurityCrypto/TflSecurityCrypto.csproj
+
+# Whole solution — library, tests, LegacyVb oracle, demo
+dotnet build TflSecurityCrypto.slnx
+
+# Tests
+dotnet test TflSecurityCrypto.Tests/TflSecurityCrypto.Tests.csproj
+
+# Side-by-side legacy-vs-new comparison; exit code 0 means every case matched
+dotnet run --project Demo
+</code></pre>
+<p>The demo's machine-identity section is skipped automatically on non-Windows.</p>
+<hr />
+<h2 id="how-trustbank-cbs-uses-this-library">How TrustBank CBS uses this library</h2>
+<table>
+<thead>
+<tr>
+<th>CBS call site</th>
+<th>Member</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>TflCbs.Core.Authentication/AuthenticationService.cs</code></td>
+<td><code>PasswordHash.Verify</code>, <code>PasswordHash.Create</code></td>
+<td>Login verification, and re-hash on the way through</td>
+</tr>
+<tr>
+<td><code>TflCbs.Core.Authentication/LoginRules.cs</code></td>
+<td><code>PasswordHash.Verify</code></td>
+<td>Password-policy / history checks</td>
+</tr>
+<tr>
+<td><code>TflCbs.Core.Authentication.Web/Controllers/AccountController.cs</code></td>
+<td><code>PasswordHash.Verify</code>, <code>Cryptography.Decrypt</code></td>
+<td>Change-password flow; decrypting a legacy value</td>
+</tr>
+<tr>
+<td><code>TflCbs.Tools.PasswordReset/Program.cs</code></td>
+<td><code>PasswordHash.Create</code></td>
+<td>Administrative reset tool</td>
+</tr>
+<tr>
+<td><code>TflCbs.Modules.General/GeneralService.cs</code></td>
+<td><code>Cryptography.Decrypt</code></td>
+<td>Reading a legacy-encrypted stored value</td>
+</tr>
+<tr>
+<td><code>TflCbs.Lab.Demo</code> (<code>Program.cs</code>, <code>Perf.cs</code>)</td>
+<td><code>Cryptography.Encrypt</code></td>
+<td>Proc-migration parity + perf harness</td>
+</tr>
+</tbody>
+</table>
+<p>All 1,731 CBS user records were migrated from the legacy reversible storage to <code>PasswordHash</code> — the migration
+that closed the "reversible password storage" finding in the CBS architecture review.</p>
+<hr />
+<h2 id="further-reading">Further reading</h2>
+<table>
+<thead>
+<tr>
+<th>Document</th>
+<th>What it covers</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a href="docs/api-reference.html">docs/api-reference.md</a></td>
+<td>Every public member: signature, parameters, return, throws, notes</td>
+</tr>
+<tr>
+<td><a href="docs/security-notes.html">docs/security-notes.md</a></td>
+<td>Which primitive is safe for what, key management, migration guidance, threat notes</td>
+</tr>
+</tbody>
+</table>
+</div></div>
+<script>
+(function(){
+ function put(t){
+  if(navigator.clipboard&&navigator.clipboard.writeText)return navigator.clipboard.writeText(t);
+  return new Promise(function(res,rej){
+   var a=document.createElement('textarea');a.value=t;a.setAttribute('readonly','');
+   a.style.cssText='position:fixed;top:0;left:0;opacity:0';document.body.appendChild(a);
+   a.select();var ok=false;try{ok=document.execCommand('copy')}catch(e){}
+   document.body.removeChild(a);ok?res():rej()});
+ }
+ function flash(el,txt,ms){
+  var was=el.textContent;el.classList.add('done');if(txt)el.textContent=txt;
+  setTimeout(function(){el.classList.remove('done');if(txt)el.textContent=was},ms||1200);
+ }
+ function copy(text,el,okTxt){
+  put(text).then(function(){flash(el,okTxt)},function(){
+   if(okTxt){var w=el.textContent;el.textContent='Ctrl+C';setTimeout(function(){el.textContent=w},2000)}});
+ }
+ document.querySelectorAll('pre').forEach(function(pre){
+  if(pre.classList.contains('txtdoc'))return;
+  var b=document.createElement('button');
+  b.type='button';b.className='copy';b.textContent='Copy';
+  b.setAttribute('aria-label','Copy this code block to the clipboard');
+  b.addEventListener('click',function(){copy((pre.querySelector('code')||pre).innerText,b,'Copied')});
+  pre.appendChild(b);
+ });
+ document.querySelectorAll('td code').forEach(function(c){
+  if(!c.textContent.trim())return;
+  c.classList.add('cp');c.tabIndex=0;c.setAttribute('role','button');
+  c.title='Click to copy';
+  c.addEventListener('click',function(){copy(c.textContent,c)});
+  c.addEventListener('keydown',function(e){
+   if(e.key==='Enter'||e.key===' '){e.preventDefault();copy(c.textContent,c)}});
+ });
+})();
+</script>
+</body></html>

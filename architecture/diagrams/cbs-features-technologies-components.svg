@@ -1,0 +1,169 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1640 1240" width="1640" height="1240" role="img" aria-label="TrustBank CBS features, technologies and components">
+  <title>TrustBank CBS — Features, Technologies &amp; Components</title>
+  <style>
+    svg { background: #ffffff; }
+    text { font-family: "Segoe UI", Inter, Helvetica, Arial, sans-serif; fill: #1F2937; }
+    .t     { font-size: 27px; font-weight: 700; fill: #1F3864; }
+    .st    { font-size: 14px; fill: #6B7280; }
+    .ch    { font-size: 15px; font-weight: 700; fill: #FFFFFF; letter-spacing: 0.4px; }
+    .chs   { font-size: 11px; fill: #E8EEF6; letter-spacing: 0.3px; }
+    .gh    { font-size: 10px; font-weight: 700; letter-spacing: 1.2px; fill: #6B7280; }
+    .chip  { font-size: 11.5px; }
+    .fv    { font-size: 17px; font-weight: 700; fill: #FFFFFF; }
+    .fl    { font-size: 10.5px; fill: #C9D4E8; }
+  </style>
+
+  <text class="t"  x="820" y="46" text-anchor="middle">TrustBank CBS — Features, Technologies &amp; Components</text>
+  <text class="st" x="820" y="72" text-anchor="middle">What the platform does  ·  what it is built on  ·  what is reusable across every screen        (as at 21 August 2026, counted from the source tree)</text>
+
+  <!-- ═══════════ COLUMN 1 · FEATURES ═══════════ -->
+  <rect x="30" y="100" width="506" height="1030" rx="8" fill="#FFFFFF" stroke="#A9D6BC"/>
+  <rect x="30" y="100" width="506" height="48" rx="8" fill="#2E8B57"/>
+  <rect x="30" y="132" width="506" height="16" fill="#2E8B57"/>
+  <text class="ch"  x="46" y="122">FEATURES</text>
+  <text class="chs" x="46" y="140">Banking capability, by module</text>
+
+  <text class="gh" x="46" y="176">RETAIL BANKING</text>
+  <rect x="46" y="186" width="474" height="26" rx="5" fill="#F3FAF5" stroke="#CDE6D8"/><text class="chip" x="58" y="204">Customer master (CIF) · KYC details</text>
+  <rect x="46" y="217" width="474" height="26" rx="5" fill="#F3FAF5" stroke="#CDE6D8"/><text class="chip" x="58" y="235">Savings &amp; current accounts</text>
+  <rect x="46" y="248" width="474" height="26" rx="5" fill="#F3FAF5" stroke="#CDE6D8"/><text class="chip" x="58" y="266">Term deposits</text>
+  <rect x="46" y="279" width="474" height="26" rx="5" fill="#F3FAF5" stroke="#CDE6D8"/><text class="chip" x="58" y="297">Loans &amp; advances</text>
+  <rect x="46" y="310" width="474" height="26" rx="5" fill="#F3FAF5" stroke="#CDE6D8"/><text class="chip" x="58" y="328">Account enquiry · statements · passbook</text>
+
+  <text class="gh" x="46" y="357">BRANCH OPERATIONS</text>
+  <rect x="46" y="367" width="474" height="26" rx="5" fill="#F3FAF5" stroke="#CDE6D8"/><text class="chip" x="58" y="385">Vouchers &amp; transaction posting</text>
+  <rect x="46" y="398" width="474" height="26" rx="5" fill="#F3FAF5" stroke="#CDE6D8"/><text class="chip" x="58" y="416">Clearing — inward &amp; outward</text>
+  <rect x="46" y="429" width="474" height="26" rx="5" fill="#F3FAF5" stroke="#CDE6D8"/><text class="chip" x="58" y="447">Lockers &amp; safe-deposit management</text>
+  <rect x="46" y="460" width="474" height="26" rx="5" fill="#F3FAF5" stroke="#CDE6D8"/><text class="chip" x="58" y="478">Day-begin / day-end processing</text>
+
+  <text class="gh" x="46" y="507">ADMINISTRATION &amp; CONTROL</text>
+  <rect x="46" y="517" width="474" height="26" rx="5" fill="#F3FAF5" stroke="#CDE6D8"/><text class="chip" x="58" y="535">Users, roles &amp; password policy</text>
+  <rect x="46" y="548" width="474" height="26" rx="5" fill="#F3FAF5" stroke="#CDE6D8"/><text class="chip" x="58" y="566">Menu authorization — enforced server-side</text>
+  <rect x="46" y="579" width="474" height="26" rx="5" fill="#F3FAF5" stroke="#CDE6D8"/><text class="chip" x="58" y="597">Bank &amp; branch variables</text>
+  <rect x="46" y="610" width="474" height="26" rx="5" fill="#F3FAF5" stroke="#CDE6D8"/><text class="chip" x="58" y="628">Broadcast messages &amp; alerts</text>
+  <rect x="46" y="641" width="474" height="26" rx="5" fill="#F3FAF5" stroke="#CDE6D8"/><text class="chip" x="58" y="659">Maker-checker scroll — dual control</text>
+
+  <text class="gh" x="46" y="688">HUMAN RESOURCES</text>
+  <rect x="46" y="698" width="474" height="26" rx="5" fill="#F3FAF5" stroke="#CDE6D8"/><text class="chip" x="58" y="716">Employee master</text>
+  <rect x="46" y="729" width="474" height="26" rx="5" fill="#F3FAF5" stroke="#CDE6D8"/><text class="chip" x="58" y="747">Designations &amp; departments</text>
+
+  <text class="gh" x="46" y="776">SHARED REFERENCE DATA</text>
+  <rect x="46" y="786" width="474" height="26" rx="5" fill="#F3FAF5" stroke="#CDE6D8"/><text class="chip" x="58" y="804">State · District · Taluka masters</text>
+
+  <text class="gh" x="46" y="833">DELIVERED TO DATE</text>
+  <rect x="46" y="843" width="474" height="26" rx="5" fill="#EDF7F1" stroke="#B8DCC8"/><text class="chip" x="58" y="861">12 domain screens across 5 areas</text>
+  <rect x="46" y="874" width="474" height="26" rx="5" fill="#EDF7F1" stroke="#B8DCC8"/><text class="chip" x="58" y="892">47 views incl. login, menu, module chooser</text>
+  <rect x="46" y="905" width="474" height="26" rx="5" fill="#EDF7F1" stroke="#B8DCC8"/><text class="chip" x="58" y="923">Running against the real database</text>
+  <rect x="46" y="936" width="474" height="26" rx="5" fill="#EDF7F1" stroke="#B8DCC8"/><text class="chip" x="58" y="954">Documented per-screen migration recipe</text>
+  <rect x="46" y="967" width="474" height="26" rx="5" fill="#EDF7F1" stroke="#B8DCC8"/><text class="chip" x="58" y="985">1,731 user records migrated to PBKDF2</text>
+
+  <text class="gh" x="46" y="1014">STILL TO MIGRATE (COUNTED FROM LEGACY)</text>
+  <rect x="46" y="1024" width="474" height="26" rx="5" fill="#FAF6EC" stroke="#E6D6AE"/><text class="chip" x="58" y="1042">1,059 functional screens</text>
+  <rect x="46" y="1055" width="474" height="26" rx="5" fill="#FAF6EC" stroke="#E6D6AE"/><text class="chip" x="58" y="1073">399 reports — rebuild vs rehost still open</text>
+  <rect x="46" y="1086" width="474" height="26" rx="5" fill="#FAF6EC" stroke="#E6D6AE"/><text class="chip" x="58" y="1104">5,317 stored procedures to convert</text>
+
+  <!-- ═══════════ COLUMN 2 · TECHNOLOGIES ═══════════ -->
+  <rect x="567" y="100" width="506" height="1030" rx="8" fill="#FFFFFF" stroke="#9FC1E4"/>
+  <rect x="567" y="100" width="506" height="48" rx="8" fill="#2E75B6"/>
+  <rect x="567" y="132" width="506" height="16" fill="#2E75B6"/>
+  <text class="ch"  x="583" y="122">TECHNOLOGIES</text>
+  <text class="chs" x="583" y="140">The stack, top to bottom</text>
+
+  <text class="gh" x="583" y="176">PLATFORM &amp; RUNTIME</text>
+  <rect x="583" y="186" width="474" height="26" rx="5" fill="#F2F7FC" stroke="#CBDDF0"/><text class="chip" x="595" y="204">.NET 10  ·  C# 13</text>
+  <rect x="583" y="217" width="474" height="26" rx="5" fill="#F2F7FC" stroke="#CBDDF0"/><text class="chip" x="595" y="235">ASP.NET Core MVC — Razor views</text>
+  <rect x="583" y="248" width="474" height="26" rx="5" fill="#F2F7FC" stroke="#CBDDF0"/><text class="chip" x="595" y="266">Razor Class Libraries — screens ship as modules</text>
+  <rect x="583" y="279" width="474" height="26" rx="5" fill="#F2F7FC" stroke="#CBDDF0"/><text class="chip" x="595" y="297">Kestrel · IIS in-process hosting</text>
+
+  <text class="gh" x="583" y="315">FRONT END</text>
+  <rect x="583" y="325" width="474" height="26" rx="5" fill="#F2F7FC" stroke="#CBDDF0"/><text class="chip" x="595" y="343">Bootstrap 5 responsive layout</text>
+  <rect x="583" y="356" width="474" height="26" rx="5" fill="#F2F7FC" stroke="#CBDDF0"/><text class="chip" x="595" y="374">Vanilla JavaScript (cbs-*.js) — no SPA framework</text>
+  <rect x="583" y="387" width="474" height="26" rx="5" fill="#F2F7FC" stroke="#CBDDF0"/><text class="chip" x="595" y="405">Static web assets served from ~/_content/…</text>
+  <rect x="583" y="418" width="474" height="26" rx="5" fill="#F2F7FC" stroke="#CBDDF0"/><text class="chip" x="595" y="436">Server-rendered, progressively enhanced</text>
+
+  <text class="gh" x="583" y="454">DATA</text>
+  <rect x="583" y="464" width="474" height="26" rx="5" fill="#F2F7FC" stroke="#CBDDF0"/><text class="chip" x="595" y="482">TflOmniDb — in-house DAL, Repository&lt;T&gt;</text>
+  <rect x="583" y="495" width="474" height="26" rx="5" fill="#F2F7FC" stroke="#CBDDF0"/><text class="chip" x="595" y="513">SQL Server · PostgreSQL · Oracle</text>
+  <rect x="583" y="526" width="474" height="26" rx="5" fill="#F2F7FC" stroke="#CBDDF0"/><text class="chip" x="595" y="544">TflCbs.Entities — generated entity model</text>
+  <rect x="583" y="557" width="474" height="26" rx="5" fill="#F2F7FC" stroke="#CBDDF0"/><text class="chip" x="595" y="575">Native row-version optimistic concurrency</text>
+  <rect x="583" y="588" width="474" height="26" rx="5" fill="#F2F7FC" stroke="#CBDDF0"/><text class="chip" x="595" y="606">Redis — optional reference cache, fail-open</text>
+
+  <text class="gh" x="583" y="624">SECURITY &amp; CROSS-CUTTING</text>
+  <rect x="583" y="634" width="474" height="26" rx="5" fill="#F2F7FC" stroke="#CBDDF0"/><text class="chip" x="595" y="652">Cookie auth + shared data-protection key ring</text>
+  <rect x="583" y="665" width="474" height="26" rx="5" fill="#F2F7FC" stroke="#CBDDF0"/><text class="chip" x="595" y="683">TflSecurityCrypto — PBKDF2 password hashing</text>
+  <rect x="583" y="696" width="474" height="26" rx="5" fill="#F2F7FC" stroke="#CBDDF0"/><text class="chip" x="595" y="714">TflOmniLog — structured logging</text>
+  <rect x="583" y="727" width="474" height="26" rx="5" fill="#F2F7FC" stroke="#CBDDF0"/><text class="chip" x="595" y="745">OpenTelemetry instrumentation (off by default)</text>
+
+  <text class="gh" x="583" y="763">HOSTING &amp; OPERATIONS</text>
+  <rect x="583" y="773" width="474" height="26" rx="5" fill="#F2F7FC" stroke="#CBDDF0"/><text class="chip" x="595" y="791">IIS — single-host and multi-host</text>
+  <rect x="583" y="804" width="474" height="26" rx="5" fill="#F2F7FC" stroke="#CBDDF0"/><text class="chip" x="595" y="822">Docker · Docker Compose</text>
+  <rect x="583" y="835" width="474" height="26" rx="5" fill="#F2F7FC" stroke="#CBDDF0"/><text class="chip" x="595" y="853">YARP reverse-proxy gateway</text>
+  <rect x="583" y="866" width="474" height="26" rx="5" fill="#F2F7FC" stroke="#CBDDF0"/><text class="chip" x="595" y="884">Config-driven module composition</text>
+  <rect x="583" y="897" width="474" height="26" rx="5" fill="#F2F7FC" stroke="#CBDDF0"/><text class="chip" x="595" y="915">DbMigrator — versioned, journalled DDL</text>
+
+  <text class="gh" x="583" y="933">BUILD &amp; QUALITY</text>
+  <rect x="583" y="943" width="474" height="26" rx="5" fill="#F2F7FC" stroke="#CBDDF0"/><text class="chip" x="595" y="961">Central Package Management</text>
+  <rect x="583" y="974" width="474" height="26" rx="5" fill="#F2F7FC" stroke="#CBDDF0"/><text class="chip" x="595" y="992">xUnit — 149 cross-provider service tests</text>
+  <rect x="583" y="1005" width="474" height="26" rx="5" fill="#F2F7FC" stroke="#CBDDF0"/><text class="chip" x="595" y="1023">NetArchTest — 94 boundary tests</text>
+  <rect x="583" y="1036" width="474" height="26" rx="5" fill="#F2F7FC" stroke="#CBDDF0"/><text class="chip" x="595" y="1054">xUnit — 74 in-process integration tests</text>
+  <rect x="583" y="1067" width="474" height="26" rx="5" fill="#F2F7FC" stroke="#CBDDF0"/><text class="chip" x="595" y="1085">Playwright — 63 browser end-to-end tests</text>
+
+  <!-- ═══════════ COLUMN 3 · COMPONENTS ═══════════ -->
+  <rect x="1104" y="100" width="506" height="1030" rx="8" fill="#FFFFFF" stroke="#C6B4E6"/>
+  <rect x="1104" y="100" width="506" height="48" rx="8" fill="#7048A8"/>
+  <rect x="1104" y="132" width="506" height="16" fill="#7048A8"/>
+  <text class="ch"  x="1120" y="122">COMPONENTS</text>
+  <text class="chs" x="1120" y="140">Built once, reused by every screen</text>
+
+  <text class="gh" x="1120" y="176">REUSABLE UI COMPONENTS</text>
+  <rect x="1120" y="186" width="474" height="26" rx="5" fill="#F7F4FC" stroke="#DACFEE"/><text class="chip" x="1132" y="204">Record picker — _RecordPicker</text>
+  <rect x="1120" y="217" width="474" height="26" rx="5" fill="#F7F4FC" stroke="#DACFEE"/><text class="chip" x="1132" y="235">Search modal — cbs-search.js</text>
+  <rect x="1120" y="248" width="474" height="26" rx="5" fill="#F7F4FC" stroke="#DACFEE"/><text class="chip" x="1132" y="266">Account picker — 3-segment, two-stage dialog</text>
+  <rect x="1120" y="279" width="474" height="26" rx="5" fill="#F7F4FC" stroke="#DACFEE"/><text class="chip" x="1132" y="297">Date picker — 3 dropdowns, no calendar</text>
+  <rect x="1120" y="310" width="474" height="26" rx="5" fill="#F7F4FC" stroke="#DACFEE"/><text class="chip" x="1132" y="328">Action bar — command-dispatch POST</text>
+  <rect x="1120" y="341" width="474" height="26" rx="5" fill="#F7F4FC" stroke="#DACFEE"/><text class="chip" x="1132" y="359">Ack modal (server) + toast (client guards)</text>
+
+  <text class="gh" x="1120" y="387">FRAMEWORK SERVICES</text>
+  <rect x="1120" y="397" width="474" height="26" rx="5" fill="#F7F4FC" stroke="#DACFEE"/><text class="chip" x="1132" y="415">CbsAccessMiddleware — fail-closed guard</text>
+  <rect x="1120" y="428" width="474" height="26" rx="5" fill="#F7F4FC" stroke="#DACFEE"/><text class="chip" x="1132" y="446">CbsSessionStore + idle warn / auto-logout</text>
+  <rect x="1120" y="459" width="474" height="26" rx="5" fill="#F7F4FC" stroke="#DACFEE"/><text class="chip" x="1132" y="477">IReferenceCache — Redis-optional, fail-open</text>
+  <rect x="1120" y="490" width="474" height="26" rx="5" fill="#F7F4FC" stroke="#DACFEE"/><text class="chip" x="1132" y="508">RowToken — opaque record identifiers</text>
+  <rect x="1120" y="521" width="474" height="26" rx="5" fill="#F7F4FC" stroke="#DACFEE"/><text class="chip" x="1132" y="539">UrlNormalizer — menu URL / request path</text>
+  <rect x="1120" y="552" width="474" height="26" rx="5" fill="#F7F4FC" stroke="#DACFEE"/><text class="chip" x="1132" y="570">SearchDescriptor — declarative lookups</text>
+
+  <text class="gh" x="1120" y="598">CONTRACTS &amp; PORTS (TflCbs.Abstractions)</text>
+  <rect x="1120" y="608" width="474" height="26" rx="5" fill="#F7F4FC" stroke="#DACFEE"/><text class="chip" x="1132" y="626">Result / Result&lt;T&gt; — no exceptions across the boundary</text>
+  <rect x="1120" y="639" width="474" height="26" rx="5" fill="#F7F4FC" stroke="#DACFEE"/><text class="chip" x="1132" y="657">ICbsModule / ICoreCbsModule</text>
+  <rect x="1120" y="670" width="474" height="26" rx="5" fill="#F7F4FC" stroke="#DACFEE"/><text class="chip" x="1132" y="688">IMenuSource</text>
+  <rect x="1120" y="701" width="474" height="26" rx="5" fill="#F7F4FC" stroke="#DACFEE"/><text class="chip" x="1132" y="719">IBankVariableSource</text>
+  <rect x="1120" y="732" width="474" height="26" rx="5" fill="#F7F4FC" stroke="#DACFEE"/><text class="chip" x="1132" y="750">IBroadcastSource</text>
+  <rect x="1120" y="763" width="474" height="26" rx="5" fill="#F7F4FC" stroke="#DACFEE"/><text class="chip" x="1132" y="781">ISessionValidator</text>
+  <rect x="1120" y="794" width="474" height="26" rx="5" fill="#F7F4FC" stroke="#DACFEE"/><text class="chip" x="1132" y="812">IScrollService — maker-checker</text>
+  <rect x="1120" y="825" width="474" height="26" rx="5" fill="#F7F4FC" stroke="#DACFEE"/><text class="chip" x="1132" y="843">IProcessBlockCheck</text>
+
+  <text class="gh" x="1120" y="871">SHARED HELPERS</text>
+  <rect x="1120" y="881" width="474" height="26" rx="5" fill="#F7F4FC" stroke="#DACFEE"/><text class="chip" x="1132" y="899">ServiceQuery — Has / Eq / Val / Paged</text>
+  <rect x="1120" y="912" width="474" height="26" rx="5" fill="#F7F4FC" stroke="#DACFEE"/><text class="chip" x="1132" y="930">DbErrors — duplicate / foreign-key detection</text>
+
+  <text class="gh" x="1120" y="958">CONVENTIONS ENFORCED BY TESTS</text>
+  <rect x="1120" y="968" width="474" height="26" rx="5" fill="#F4EFFA" stroke="#CFC0E8"/><text class="chip" x="1132" y="986">Namespace == assembly name</text>
+  <rect x="1120" y="999" width="474" height="26" rx="5" fill="#F4EFFA" stroke="#CFC0E8"/><text class="chip" x="1132" y="1017">Framework never references screens or services</text>
+  <rect x="1120" y="1030" width="474" height="26" rx="5" fill="#F4EFFA" stroke="#CFC0E8"/><text class="chip" x="1132" y="1048">No raw SQL, no new stored procedures</text>
+
+  <!-- ═══════════ FOOTER ═══════════ -->
+  <rect x="30" y="1154" width="1580" height="58" rx="8" fill="#1F3864"/>
+  <text class="fv" x="188"  y="1180" text-anchor="middle">36 projects</text>
+  <text class="fl" x="188"  y="1198" text-anchor="middle">in the build solution</text>
+  <text class="fv" x="504"  y="1180" text-anchor="middle">9 module assemblies</text>
+  <text class="fl" x="504"  y="1198" text-anchor="middle">3 core · 6 domain — all promoted</text>
+  <text class="fv" x="820"  y="1180" text-anchor="middle">380 tests</text>
+  <text class="fl" x="820"  y="1198" text-anchor="middle">architecture · service · integration · browser</text>
+  <text class="fv" x="1136" y="1180" text-anchor="middle">4 deployment shapes</text>
+  <text class="fl" x="1136" y="1198" text-anchor="middle">3 databases, one codebase</text>
+  <text class="fv" x="1452" y="1180" text-anchor="middle">0 stored procedures</text>
+  <text class="fl" x="1452" y="1198" text-anchor="middle">in new master CRUD, by standing rule</text>
+  <line x1="346" y1="1166" x2="346" y2="1200" stroke="#3C5A96"/>
+  <line x1="662" y1="1166" x2="662" y2="1200" stroke="#3C5A96"/>
+  <line x1="978" y1="1166" x2="978" y2="1200" stroke="#3C5A96"/>
+  <line x1="1294" y1="1166" x2="1294" y2="1200" stroke="#3C5A96"/>
+</svg>

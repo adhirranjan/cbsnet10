@@ -1,0 +1,282 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Database migrations — versioned DDL for CBS</title>
+<style>
+:root{color-scheme:light dark}
+*{box-sizing:border-box}
+body{margin:0;background:#f6f8fa;color:#1f2328;font:16px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif}
+.wrap{max-width:900px;margin:0 auto;padding:32px 24px 96px}
+.card{background:#fff;border:1px solid #d0d7de;border-radius:10px;padding:40px 48px}
+h1,h2,h3{line-height:1.25;font-weight:600}
+h1{font-size:1.9rem;margin:0 0 .3em;padding-bottom:.3em;border-bottom:1px solid #d8dee4}
+h2{font-size:1.4rem;margin:1.8em 0 .6em;padding-bottom:.25em;border-bottom:1px solid #eaeef2}
+h3{font-size:1.12rem;margin:1.4em 0 .5em}
+p,li{margin:.5em 0}
+a{color:#0969da;text-decoration:none}
+a:hover{text-decoration:underline}
+code{font-family:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;font-size:.86em;background:#eff1f3;padding:.15em .4em;border-radius:6px}
+pre{background:#f6f8fa;border:1px solid #d8dee4;border-radius:8px;padding:14px 16px;overflow:auto}
+pre code{background:none;padding:0;font-size:.85em;line-height:1.45}
+blockquote{margin:1em 0;padding:.4em 1em;color:#3d444d;border-left:4px solid #d0d7de;background:#f6f8fa;border-radius:0 6px 6px 0}
+blockquote>:first-child{margin-top:0}blockquote>:last-child{margin-bottom:0}
+table{border-collapse:collapse;width:100%;margin:1em 0;display:block;overflow:auto}
+th,td{border:1px solid #d0d7de;padding:8px 12px;text-align:left;vertical-align:top}
+th{background:#f6f8fa;font-weight:600}
+tr:nth-child(2n) td{background:#f6f8fa}
+hr{border:0;border-top:1px solid #d8dee4;margin:2em 0}
+pre{position:relative}
+pre>button.copy{position:absolute;top:8px;right:8px;padding:5px 9px;cursor:pointer;
+  font:600 .68rem/1 ui-monospace,SFMono-Regular,Consolas,monospace;letter-spacing:.03em;
+  color:#636c76;background:#fff;border:1px solid #d0d7de;border-radius:6px;
+  opacity:0;transition:opacity .12s}
+pre:hover>button.copy,pre>button.copy:focus{opacity:1}
+pre>button.copy.done{color:#0a3622;background:#dafbe1;border-color:#4ac26b}
+@media(hover:none){pre>button.copy{opacity:1}}
+td code.cp{cursor:pointer}
+td code.cp:hover,td code.cp:focus{outline:1px solid #8c959f;outline-offset:1px}
+td code.cp.done{color:#0a3622;background:#dafbe1}
+.docnav{margin:0 0 20px;font-size:.85rem;color:#636c76}
+.docnav a{color:#636c76}
+ul{padding-left:1.4em}ol{padding-left:1.4em}
+@media(max-width:640px){.card{padding:24px 18px}.wrap{padding:16px 10px 64px}}
+@media(prefers-color-scheme:dark){
+ body{background:#0d1117;color:#e6edf3}
+ .card{background:#161b22;border-color:#30363d}
+ h1{border-color:#30363d}h2{border-color:#21262d}
+ code{background:#262c34}
+ pre{background:#0d1117;border-color:#30363d}
+ blockquote{background:#161b22;border-color:#30363d;color:#9198a1}
+ th,td{border-color:#30363d}th{background:#161b22}tr:nth-child(2n) td{background:#12171e}
+ a{color:#4493f8}.docnav,.docnav a{color:#9198a1}
+ hr{border-color:#30363d}
+ pre>button.copy{color:#9198a1;background:#161b22;border-color:#30363d}
+ pre>button.copy.done{color:#aff5b4;background:#1b4721;border-color:#2ea043}
+ td code.cp.done{color:#aff5b4;background:#1b4721}
+}
+</style></head>
+<body><div class="wrap"><div class="card">
+<div class="docnav"><a href="../index.html">&#8592; All docs</a></div>
+<h1 id="database-migrations-versioned-ddl-for-cbs">Database migrations — versioned DDL for CBS</h1>
+<p>Closes finding <strong>#12</strong> of the <a href="../architecture-review/ARCHITECTURE-REVIEW.html">architecture review</a>
+("No DB migration tooling — unrepeatable, un-versioned schema changes for a regulated cutover").</p>
+<p>Before: five loose <code>.sql</code> files under <code>sql/</code> and <code>db/optimistic-concurrency/</code>, applied by hand, each
+carrying its own <code>IF NOT EXISTS</code> guard because nothing tracked what had already run, with the Oracle
+half commented out and "run this separately" in the header.</p>
+<p>Now: every schema change is a <strong>numbered, immutable script</strong> in
+<a href="../../TflCbs.Tools.DbMigrator/Migrations/"><code>TflCbs.Tools.DbMigrator/Migrations/</code></a>, applied by
+<strong>DbUp</strong> exactly once per database, in order, and recorded in the <strong><code>CbsSchemaVersions</code></strong> journal
+table. That table is the audit trail: which script, applied when.</p>
+<hr />
+<h2 id="the-tool">The tool</h2>
+<p><code>TflCbs.Tools.DbMigrator</code> — a standalone console app. It references <strong>no</strong> TflOmniDb, TflCbs.Entities or
+Framework code on purpose: it has to run against a database whose schema does <em>not</em> yet match the
+app's entity model. Scripts are embedded in the assembly, so a deployed migrator can never disagree
+with the scripts it was built from.</p>
+<table>
+<thead>
+<tr>
+<th>Command</th>
+<th>What it does</th>
+<th>Exit code</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>status</code></td>
+<td>Lists applied and pending scripts. <strong>Read-only.</strong></td>
+<td><code>0</code> up to date · <code>2</code> pending · <code>1</code> error</td>
+</tr>
+<tr>
+<td><code>preview</code></td>
+<td>Prints the SQL that <code>upgrade</code> would run. <strong>Read-only.</strong></td>
+<td><code>0</code> / <code>1</code></td>
+</tr>
+<tr>
+<td><code>upgrade</code></td>
+<td>Applies every pending script in order, journalling each. Prompts for <code>MIGRATE</code>.</td>
+<td><code>0</code> / <code>1</code></td>
+</tr>
+<tr>
+<td><code>baseline</code></td>
+<td>Marks pending scripts as applied <strong>without running them</strong>. Prompts for <code>BASELINE</code>.</td>
+<td><code>0</code> / <code>1</code></td>
+</tr>
+</tbody>
+</table>
+<p>Options: <code>--provider</code>, <code>--connection-string</code>, <code>--schema</code>, <code>--yes</code> (skip the prompt, for CI),
+<code>--quiet</code>, <code>--help</code>.</p>
+<h3 id="configuration">Configuration</h3>
+<p>The same keys every CBS host uses — so an environment that already runs a host already configures
+the migrator:</p>
+<pre><code>Database:Provider                      SqlServer | Oracle | PostgreSql
+Database:ConnectionStrings:&lt;provider&gt;
+Database:Schemas:&lt;provider&gt;            defaults: dbo / (connection default) / public
+</code></pre>
+<p>From <code>appsettings.json</code> next to the binary, <code>appsettings.Development.json</code> (gitignored, local dev
+only, never published), or environment variables — <code>Database__ConnectionStrings__SqlServer=…</code>, which
+is exactly the form compose and the IIS <code>web.config</code> <code>&lt;environmentVariables&gt;</code> already use.</p>
+<hr />
+<h2 id="running-it">Running it</h2>
+<h3 id="local-development">Local development</h3>
+<pre><code class="language-powershell">dotnet run --project TflCbs.Tools.DbMigrator -- status
+dotnet run --project TflCbs.Tools.DbMigrator -- preview
+dotnet run --project TflCbs.Tools.DbMigrator -- upgrade
+</code></pre>
+<p>Copy <code>appsettings.Development.json.example</code> to <code>appsettings.Development.json</code> and fill in the dev
+connection string first (see <a href="local-dev-secrets.html">local-dev-secrets.md</a>).</p>
+<h3 id="as-part-of-a-deploy">As part of a deploy</h3>
+<p><a href="../../scripts/deploy-cbs.ps1"><code>scripts/deploy-cbs.ps1</code></a> <strong>checks</strong> the schema after the build and
+before deploying, and warns loudly if the target database is behind. It does not apply DDL unless
+you ask:</p>
+<pre><code class="language-powershell">powershell -File scripts\deploy-cbs.ps1                        # check + warn
+powershell -File scripts\deploy-cbs.ps1 -Migrate               # check + apply
+powershell -File scripts\deploy-cbs.ps1 -SkipMigrationCheck    # don't touch the DB
+powershell -File scripts\deploy-cbs.ps1 -MigrateConnectionString &quot;&lt;cs&gt;&quot;
+</code></pre>
+<p>An unreachable database is reported as <strong>unknown</strong>, never as up to date.</p>
+<h3 id="iis-single-or-multi-host">IIS (single or multi host)</h3>
+<p>The migrator publishes like any other project; run it once against the shared database:</p>
+<pre><code class="language-powershell">dotnet publish TflCbs.Tools.DbMigrator -c Release -o D:\publish\migrator
+$env:Database__ConnectionStrings__SqlServer = '&lt;connection string&gt;'
+D:\publish\migrator\TflCbs.Tools.DbMigrator.exe status
+D:\publish\migrator\TflCbs.Tools.DbMigrator.exe upgrade
+</code></pre>
+<p>The multi-host shape has five sites against <strong>one</strong> database — migrate once, not per site.</p>
+<h3 id="docker-single-or-multi-host">Docker (single or multi host)</h3>
+<p>A <code>cbs-migrate</code> service is defined in both compose files behind the <strong><code>migrate</code> profile</strong>, so a
+plain <code>docker compose up</code> never applies DDL:</p>
+<pre><code class="language-bash">docker compose --profile migrate run --rm cbs-migrate status
+docker compose --profile migrate run --rm cbs-migrate upgrade --yes
+
+docker compose -f compose.multi.yaml --profile migrate run --rm cbs-migrate status
+</code></pre>
+<p>It uses the same <code>Dockerfile</code> — the <code>PROJECT</code> build arg just selects a different project to publish.</p>
+<hr />
+<h2 id="adopting-the-migrator-on-an-existing-database">Adopting the migrator on an existing database</h2>
+<p>The <code>0001</code>–<code>0003</code> scripts describe changes that were <strong>hand-applied before the migrator existed</strong>, so
+an existing CBS database already has them but has no journal. Two ways to reconcile, both correct:</p>
+<ol>
+<li><strong><code>upgrade</code></strong> — the three baseline scripts kept their original <code>IF NOT EXISTS</code> / ORA-01430 guards,
+   so running them on an already-migrated database is a no-op that simply writes the journal rows.
+   This is what was done on the dev database.</li>
+<li><strong><code>baseline</code></strong> — marks them applied without running them. Use this when you don't want the DDL
+   executed at all (e.g. a production database you'd rather not touch).</li>
+</ol>
+<p>Both leave the database in the same state: journal current, schema unchanged. From <code>0004</code> onwards
+neither applies — new scripts run exactly once and need no guards.</p>
+<hr />
+<h2 id="authoring-a-migration">Authoring a migration</h2>
+<p>Full rules: <a href="../../TflCbs.Tools.DbMigrator/Migrations/README.html"><code>TflCbs.Tools.DbMigrator/Migrations/README.md</code></a>.
+The short version:</p>
+<ul>
+<li>One folder per provider — <code>Migrations/sqlserver/</code>, <code>oracle/</code>, <code>postgres/</code> — because CBS ships
+  genuinely different DDL per provider, not one dialect translated at runtime.</li>
+<li><code>NNNN_snake_case_name.sql</code>. The number is the order. The <strong>same number is the same logical change</strong>
+  across providers; gaps are fine where a change doesn't apply to a provider.</li>
+<li><strong>Never edit an applied script.</strong> The journal says <code>0002</code> ran; changing its contents gives two
+  databases different schemas under the same version. Fix forward with a new number.</li>
+<li>Build the tool after adding a script (they are embedded resources), then <code>preview</code>, then <code>upgrade</code>.</li>
+</ul>
+<h2 id="current-scripts">Current scripts</h2>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Change</th>
+<th style="text-align: center;">SQL Server</th>
+<th style="text-align: center;">Oracle</th>
+<th style="text-align: center;">PostgreSQL</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0001</td>
+<td><code>a_User.PASSWORDHASH</code> / <code>PASSWORDVERSION</code> (C-2 PBKDF2 passwords)</td>
+<td style="text-align: center;">✅</td>
+<td style="text-align: center;">✅</td>
+<td style="text-align: center;">✅</td>
+</tr>
+<tr>
+<td>0002</td>
+<td><code>G_STATE.VERSION</code> optimistic-concurrency counter (H-6)</td>
+<td style="text-align: center;">✅</td>
+<td style="text-align: center;">✅</td>
+<td style="text-align: center;">✅</td>
+</tr>
+<tr>
+<td>0003</td>
+<td><code>IDX_B_ACCOUNT_ORGID</code> — branch-scoped account index</td>
+<td style="text-align: center;">— <em>(equivalent clustered index already exists)</em></td>
+<td style="text-align: center;">✅</td>
+<td style="text-align: center;">—</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Verified on two live providers (2026-07-30):</strong></p>
+<ul>
+<li><strong>SQL Server</strong> (dev, <code>Trustbank_MDCC_TEST</code>) — journal created, both scripts applied, re-run reports
+  up to date. Both changes were already present, so the guards made them no-ops — the adopt-an-existing-database
+  path above, exercised for real.</li>
+<li><strong>Oracle</strong> (dev, <code>192.168.1.161/ORCL</code>, schema <code>TFLCBS</code>) — all three applied and independently
+  confirmed against the data dictionary. The identifier-casing caveat these scripts carried is
+  <strong>resolved</strong>: the schema uses unquoted UPPERCASE names (<code>A_USER</code>, <code>G_STATE</code>, <code>B_ACCOUNT</code>), exactly
+  what the scripts assume. <code>0001</code> and <code>0002</code> did real work (the columns were genuinely missing on
+  Oracle — <code>A_USER</code> gained <code>PASSWORDHASH VARCHAR2(200)</code> / <code>PASSWORDVERSION NUMBER</code>, <code>G_STATE</code> gained
+  <code>VERSION NUMBER NOT NULL</code> with all 44 rows at 0). <code>0003</code> found <code>IDX_B_ACCOUNT_ORGID</code> already
+  present, so its ORA-00955 guard fired and no duplicate index was created — the guard mechanism
+  proven on a live instance.</li>
+</ul>
+<p><strong>PostgreSQL is still unverified</strong> — no PostgreSQL connection string is configured for this
+environment. Those two scripts keep the lowercase-folding caveat in their headers; check the real
+casing before a first apply.</p>
+<h2 id="known-limits">Known limits</h2>
+<ul>
+<li><strong>No down-migrations.</strong> DbUp is forward-only by design. A bad change is corrected by a new script,
+  and a genuine rollback is a database restore — which is the DR posture's job (finding #13), not
+  this tool's.</li>
+<li><strong>No automatic baseline of the legacy schema.</strong> The journal starts at <code>0001</code>; it does not
+  reproduce the existing TrustBank schema from an empty database. Scripting the current DDL as an
+  already-applied <code>0000</code> would add that, and is worth doing before the cutover.</li>
+<li><strong>The migrator is not run automatically at host startup</strong>, deliberately: in the multi-host shapes
+  four processes would race to apply DDL to one database on every restart, with the gateway routing
+  traffic mid-migration. Migrating is a discrete, approvable step.</li>
+</ul>
+</div></div>
+<script>
+(function(){
+ function put(t){
+  if(navigator.clipboard&&navigator.clipboard.writeText)return navigator.clipboard.writeText(t);
+  return new Promise(function(res,rej){
+   var a=document.createElement('textarea');a.value=t;a.setAttribute('readonly','');
+   a.style.cssText='position:fixed;top:0;left:0;opacity:0';document.body.appendChild(a);
+   a.select();var ok=false;try{ok=document.execCommand('copy')}catch(e){}
+   document.body.removeChild(a);ok?res():rej()});
+ }
+ function flash(el,txt,ms){
+  var was=el.textContent;el.classList.add('done');if(txt)el.textContent=txt;
+  setTimeout(function(){el.classList.remove('done');if(txt)el.textContent=was},ms||1200);
+ }
+ function copy(text,el,okTxt){
+  put(text).then(function(){flash(el,okTxt)},function(){
+   if(okTxt){var w=el.textContent;el.textContent='Ctrl+C';setTimeout(function(){el.textContent=w},2000)}});
+ }
+ document.querySelectorAll('pre').forEach(function(pre){
+  if(pre.classList.contains('txtdoc'))return;
+  var b=document.createElement('button');
+  b.type='button';b.className='copy';b.textContent='Copy';
+  b.setAttribute('aria-label','Copy this code block to the clipboard');
+  b.addEventListener('click',function(){copy((pre.querySelector('code')||pre).innerText,b,'Copied')});
+  pre.appendChild(b);
+ });
+ document.querySelectorAll('td code').forEach(function(c){
+  if(!c.textContent.trim())return;
+  c.classList.add('cp');c.tabIndex=0;c.setAttribute('role','button');
+  c.title='Click to copy';
+  c.addEventListener('click',function(){copy(c.textContent,c)});
+  c.addEventListener('keydown',function(e){
+   if(e.key==='Enter'||e.key===' '){e.preventDefault();copy(c.textContent,c)}});
+ });
+})();
+</script>
+</body></html>

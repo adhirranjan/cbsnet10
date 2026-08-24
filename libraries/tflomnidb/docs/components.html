@@ -1,0 +1,459 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>TflOmniDb — Components &amp;amp; Internal Architecture</title>
+<style>
+:root{color-scheme:light dark}
+*{box-sizing:border-box}
+body{margin:0;background:#f6f8fa;color:#1f2328;font:16px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif}
+.wrap{max-width:900px;margin:0 auto;padding:32px 24px 96px}
+.card{background:#fff;border:1px solid #d0d7de;border-radius:10px;padding:40px 48px}
+h1,h2,h3{line-height:1.25;font-weight:600}
+h1{font-size:1.9rem;margin:0 0 .3em;padding-bottom:.3em;border-bottom:1px solid #d8dee4}
+h2{font-size:1.4rem;margin:1.8em 0 .6em;padding-bottom:.25em;border-bottom:1px solid #eaeef2}
+h3{font-size:1.12rem;margin:1.4em 0 .5em}
+p,li{margin:.5em 0}
+a{color:#0969da;text-decoration:none}
+a:hover{text-decoration:underline}
+code{font-family:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;font-size:.86em;background:#eff1f3;padding:.15em .4em;border-radius:6px}
+pre{background:#f6f8fa;border:1px solid #d8dee4;border-radius:8px;padding:14px 16px;overflow:auto}
+pre code{background:none;padding:0;font-size:.85em;line-height:1.45}
+blockquote{margin:1em 0;padding:.4em 1em;color:#3d444d;border-left:4px solid #d0d7de;background:#f6f8fa;border-radius:0 6px 6px 0}
+blockquote>:first-child{margin-top:0}blockquote>:last-child{margin-bottom:0}
+table{border-collapse:collapse;width:100%;margin:1em 0;display:block;overflow:auto}
+th,td{border:1px solid #d0d7de;padding:8px 12px;text-align:left;vertical-align:top}
+th{background:#f6f8fa;font-weight:600}
+tr:nth-child(2n) td{background:#f6f8fa}
+hr{border:0;border-top:1px solid #d8dee4;margin:2em 0}
+pre{position:relative}
+pre>button.copy{position:absolute;top:8px;right:8px;padding:5px 9px;cursor:pointer;
+  font:600 .68rem/1 ui-monospace,SFMono-Regular,Consolas,monospace;letter-spacing:.03em;
+  color:#636c76;background:#fff;border:1px solid #d0d7de;border-radius:6px;
+  opacity:0;transition:opacity .12s}
+pre:hover>button.copy,pre>button.copy:focus{opacity:1}
+pre>button.copy.done{color:#0a3622;background:#dafbe1;border-color:#4ac26b}
+@media(hover:none){pre>button.copy{opacity:1}}
+td code.cp{cursor:pointer}
+td code.cp:hover,td code.cp:focus{outline:1px solid #8c959f;outline-offset:1px}
+td code.cp.done{color:#0a3622;background:#dafbe1}
+.docnav{margin:0 0 20px;font-size:.85rem;color:#636c76}
+.docnav a{color:#636c76}
+ul{padding-left:1.4em}ol{padding-left:1.4em}
+@media(max-width:640px){.card{padding:24px 18px}.wrap{padding:16px 10px 64px}}
+@media(prefers-color-scheme:dark){
+ body{background:#0d1117;color:#e6edf3}
+ .card{background:#161b22;border-color:#30363d}
+ h1{border-color:#30363d}h2{border-color:#21262d}
+ code{background:#262c34}
+ pre{background:#0d1117;border-color:#30363d}
+ blockquote{background:#161b22;border-color:#30363d;color:#9198a1}
+ th,td{border-color:#30363d}th{background:#161b22}tr:nth-child(2n) td{background:#12171e}
+ a{color:#4493f8}.docnav,.docnav a{color:#9198a1}
+ hr{border-color:#30363d}
+ pre>button.copy{color:#9198a1;background:#161b22;border-color:#30363d}
+ pre>button.copy.done{color:#aff5b4;background:#1b4721;border-color:#2ea043}
+ td code.cp.done{color:#aff5b4;background:#1b4721}
+}
+</style></head>
+<body><div class="wrap"><div class="card">
+<div class="docnav"><a href="../../../index.html">&#8592; All docs</a></div>
+<h1 id="tflomnidb-components-internal-architecture">TflOmniDb — Components &amp; Internal Architecture</h1>
+<p>How the library is put together, what each layer owns, what is cached, and where the extension points are.
+Written for someone about to change the library rather than call it — callers want
+<a href="usage-guide.html">usage-guide.md</a>.</p>
+<hr />
+<h2 id="1-layer-map">1. Layer map</h2>
+<pre><code>        ┌──────────────────────────────────────────────────────────────────┐
+        │  Query/          SqlQuery · SqlFunctions (Fn) · Col · Agg        │  composition
+        └───────────────┬──────────────────────────────────────────────────┘
+                        │ generates (sql, parameters), delegates down
+        ┌───────────────▼──────────────────────────────────────────────────┐
+        │  Repository/    DataAccess · Repository&lt;T&gt; · UnitOfWork          │  execution
+        │                 StoredProcedure* · RawQueryExecutor              │
+        │                 RetryExecutor · CommandLogger · RowAccess        │
+        └───────┬───────────────────────┬──────────────────────┬───────────┘
+                │ needs SQL             │ needs a connection   │ needs values
+        ┌───────▼─────────┐   ┌─────────▼──────────┐   ┌───────▼───────────┐
+        │  Sql/           │   │  Providers/        │   │  Metadata/        │
+        │  SqlGenerator   │   │  IProviderRuntime  │   │  EntityDescriptor │
+        │  ExpressionTr.  │   │  ProviderRegistry  │   │  ColumnDescriptor │
+        └───────┬─────────┘   └─────────┬──────────┘   └───────┬───────────┘
+                │ per dialect           │ per engine           │ from attributes
+        ┌───────▼───────────────────────▼──────────────────────▼───────────┐
+        │  Dialect/  ISqlDialect + SqlServer/Oracle/Postgres + TypeMappers │
+        ├──────────────────────────────────────────────────────────────────┤
+        │  Core/     Entity · [DbTable] · [DbColumn] · CoreDataType · enums │
+        └──────────────────────────────────────────────────────────────────┘
+
+  Scaffolding/  and  Migration/  sit beside this stack and reuse it
+  (schema reading, reverse type mapping, raw SQL, bulk copy).
+</code></pre>
+<hr />
+<h2 id="2-what-each-layer-owns">2. What each layer owns</h2>
+<h3 id="core-the-vocabulary"><code>Core/</code> — the vocabulary</h3>
+<p><code>Entity</code> base, <code>[DbTable]</code> / <code>[DbColumn]</code>, and the neutral enums <code>CoreDataType</code>, <code>KeyGenerationStrategy</code>,
+<code>DefaultValueKind</code>. Provider-neutral by design: nothing here knows what a <code>NVARCHAR2</code> is. Per-provider overrides
+exist as optional strings on the column attribute (<code>SqlServerType</code> / <code>OracleType</code> / <code>PostgresType</code>) — the escape
+hatch when the neutral type is not precise enough.</p>
+<p>Two flags carry behaviour rather than shape: <code>IsRowVersion</code> (optimistic-concurrency token) and <code>IsSensitive</code>
+(redact in logs).</p>
+<h3 id="metadata-attributes-descriptors-once"><code>Metadata/</code> — attributes → descriptors, once</h3>
+<p><code>MetadataReader.For&lt;T&gt;()</code> reflects over the type and builds an <code>EntityDescriptor</code> (table, key columns, updatable
+columns, row-version binding) with a <code>ColumnDescriptor</code> per property. <strong>Reflection runs once per <code>Type</code> and is
+cached for the AppDomain lifetime.</strong></p>
+<p>Validation is fail-fast at descriptor build, not at execution: <code>Size &gt; 0</code> for variable-length strings,
+<code>SequenceName</code> present for <code>KeyGeneration.Sequence</code>, at most one <code>IsRowVersion</code>. A bad entity therefore throws
+<code>MetadataValidationException</code> the first time it is touched, not on some later edge-case row.</p>
+<p><code>ColumnDescriptor.SetValue</code> owns the read-side coercion — <code>DBNull</code> handling and width promotion (e.g. <code>int</code> →
+<code>decimal?</code>), which is why entity properties are nullable.</p>
+<h3 id="dialect-how-each-engine-spells-things"><code>Dialect/</code> — how each engine spells things</h3>
+<p><code>ISqlDialect</code> plus three implementations:</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>Quoting</th>
+<th>Parameter prefix</th>
+<th>Identity return</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>SqlServerDialect</code></td>
+<td><code>[name]</code></td>
+<td><code>@p0</code></td>
+<td><code>SCOPE_IDENTITY()</code></td>
+</tr>
+<tr>
+<td><code>OracleDialect</code></td>
+<td><code>"name"</code></td>
+<td><code>:p0</code></td>
+<td><code>RETURNING … INTO :ret</code></td>
+</tr>
+<tr>
+<td><code>PostgresDialect</code></td>
+<td><code>"name"</code></td>
+<td><code>@p0</code></td>
+<td><code>INSERT … RETURNING</code></td>
+</tr>
+</tbody>
+</table>
+<p>Each ships a sibling <code>*TypeMapper</code> translating <code>CoreDataType</code> to native types. <strong>Identifiers are always quoted</strong> —
+that is what preserves casing on Oracle and PostgreSQL, and it is why table/column names must match exactly across
+the three databases.</p>
+<h3 id="sql-statement-generation"><code>Sql/</code> — statement generation</h3>
+<p><code>SqlGenerator</code> produces a <code>StatementSet</code> (SELECT-by-key, SELECT-all, INSERT, UPDATE, DELETE) per
+<strong>(descriptor, dialect, schema, dirty-reads)</strong> and caches it in a <code>ConcurrentDictionary</code>. Non-cached builders exist
+where the shape varies per call: <code>BuildSelectWhere</code>, <code>BuildCount</code>, <code>BuildAggregate</code>, <code>BuildUpdatePartial</code>.</p>
+<p><code>ExpressionTranslator</code> converts LINQ predicates to parameterised WHERE clauses. Its supported shapes are a
+deliberate whitelist — binary comparisons, boolean composition, null checks, the three <code>string</code> methods,
+<code>collection.Contains</code>, entity member access, captured locals. Anything else throws <code>NotSupportedException</code> rather
+than guessing. Every constant, closure value and IN-list item is appended via <code>AppendParameter</code>; LIKE patterns
+escape <code>%</code>, <code>_</code>, <code>[</code>, <code>]</code> before binding.</p>
+<p><code>ColumnSelector</code> unwraps the compiler-inserted <code>Convert(...)</code> around boxed value-type property access, so
+<code>x =&gt; x.Id</code> works when <code>Id</code> is <code>long?</code>. <code>EntityDataReader</code> adapts a <code>IReadOnlyList&lt;T&gt;</code> to <code>IDataReader</code> for
+<code>SqlBulkCopy</code>.</p>
+<h3 id="providers-per-engine-runtime"><code>Providers/</code> — per-engine runtime</h3>
+<p><code>IProviderRuntime</code> is the seam: create connection/command, bind parameters, run the bulk-copy fast path, and
+classify exceptions via <code>IsTransient(ex, includeTimeouts)</code>. <code>ProviderRegistry</code> dispatches through a
+<code>FrozenDictionary&lt;DbProvider, IProviderRuntime&gt;</code> built once at static init (a switch on the Fx leg — same external
+behaviour).</p>
+<p><code>IBulkColumn</code> (<code>ColumnName</code> + <code>ClrType</code>) is a small internal seam implemented by both <code>ColumnDescriptor</code> and
+<code>MigrationColumn</code>, so one provider bulk-insert path serves both the typed <code>Repository&lt;T&gt;</code> and the runtime
+migration path.</p>
+<h3 id="repository-execution"><code>Repository/</code> — execution</h3>
+<p>The largest folder, and the only one callers touch directly.</p>
+<table>
+<thead>
+<tr>
+<th>Piece</th>
+<th>Role</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>DataAccess</code></td>
+<td>Connection-level entry point. Owns options, repositories, transactions, raw SQL, procedures, and the ambient scopes</td>
+</tr>
+<tr>
+<td><code>Repository&lt;T&gt;</code></td>
+<td>Typed CRUD, filtered reads, projections, aggregates, bulk insert, streaming</td>
+</tr>
+<tr>
+<td><code>UnitOfWork</code> / <code>IUnitOfWork</code></td>
+<td>An open connection + transaction; hands out attached repositories</td>
+</tr>
+<tr>
+<td><code>RawQueryExecutor</code></td>
+<td>The non-entity SQL path (<code>QueryAsync</code>, scalar, exists, non-query, streaming)</td>
+</tr>
+<tr>
+<td><code>StoredProcedureCall</code> / <code>Binder</code> / <code>Executor</code> / <code>Result</code> / <code>ResultSet</code></td>
+<td>The procedure stack — fluent description, provider-aware binding, one <code>do/while NextResult</code> loop covering all three engines</td>
+</tr>
+<tr>
+<td><code>RetryExecutor</code></td>
+<td>Exponential backoff with optional full jitter, driven by <code>IsTransient</code></td>
+</tr>
+<tr>
+<td><code>CommandLogger</code> / <code>CommandLogging</code></td>
+<td>Command pairing, correlation id, timing, redaction</td>
+</tr>
+<tr>
+<td><code>PocoMaterializer</code></td>
+<td>Column→property mapping and <code>Coerce</code> (enum, <code>Guid</code>, <code>Nullable&lt;T&gt;</code> unwrap, invariant <code>ChangeType</code>) — shared by <code>QueryAsync&lt;T&gt;</code>, <code>RowAccess</code> and <code>ToList&lt;T&gt;()</code></td>
+</tr>
+<tr>
+<td><code>RowAccess</code></td>
+<td>Null-safe extension accessors over untyped rows and result sets</td>
+</tr>
+<tr>
+<td><code>ConcurrencyException</code>, <code>DataAccessOptions(Builder)</code>, <code>RetryOptions</code>, <code>BulkInsertOptions</code>, <code>CoreTypeDbType</code></td>
+<td>Supporting types</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Ambient scopes</strong> (<code>UseDirtyReads</code>, <code>UseCommandTimeout</code>, <code>PushCorrelation</code>, <code>SuppressLogging</code> / <code>EnableLogging</code>)
+are <code>AsyncLocal</code>-based, so they follow the async flow, nest, shadow and restore on dispose. Timeout precedence is
+centralised in <code>DataAccess.ResolveCommandTimeout</code>; all three executors' <code>ApplyTimeout</code> defer to it — the single
+place to change if the precedence rule ever moves.</p>
+<h3 id="query-composition"><code>Query/</code> — composition</h3>
+<p><code>SqlQuery</code>, <code>SqlFunctions</code> (<code>Fn</code>), and the <code>Col</code> / <code>Agg</code> tokens. This layer <strong>only generates text and parameters</strong>
+and then calls the raw-SQL helpers — it never opens a connection, owns a transaction, parses SQL, or builds an
+expression tree. That is what keeps logging, retry, redaction, correlation and dirty-reads working through it for
+free. Tokens are structs over strings: no allocation or GC pressure.</p>
+<h3 id="scaffolding-and-migration"><code>Scaffolding/</code> and <code>Migration/</code></h3>
+<p>Both are library code with thin console/web front-ends, so the logic is testable without a UI.</p>
+<ul>
+<li><strong>Scaffolding</strong> — two acquisition modes (live catalog read vs air-gapped script/dump) converge on one
+  provider-neutral <code>SchemaModel</code>, so the generator is written once. Reverse type mappers invert the dialect
+  <code>*TypeMapper</code>s. The connected reader and the dump parser are asserted <strong>byte-identical</strong> by integration tests
+  (run the live script, parse it, compare).</li>
+<li><strong>Migration</strong> — <code>MigrationFacade</code> splits into <code>PrepareAsync</code> (read schema, map columns, emit DDL, count source
+  rows, <strong>no writes</strong> — this powers the dry-run preview) and <code>ExecuteAsync</code> (apply exists-behaviour, create,
+  bulk-copy, verify count). <code>CreateTableEmitter</code> is the general-purpose CREATE TABLE generator the library
+  previously lacked.</li>
+</ul>
+<hr />
+<h2 id="3-life-of-a-call">3. Life of a call</h2>
+<p><strong><code>repo.GetAsync([42])</code></strong></p>
+<ol>
+<li><code>Repository&lt;T&gt;</code> asks <code>MetadataReader.For&lt;T&gt;()</code> → cached <code>EntityDescriptor</code>.</li>
+<li>Asks <code>SqlGenerator.For(descriptor, dialect, schema, dirtyReads)</code> → cached <code>StatementSet</code>; takes <code>SelectByKey</code>.</li>
+<li><code>ProviderRegistry</code> → the engine's <code>IProviderRuntime</code>; opens an owned connection (or reuses the unit of work's).</li>
+<li>Key values bound as <code>DbParameter</code>s.</li>
+<li><code>CommandLogger</code> records the command (redacting sensitive values) at <code>QueryLogLevel</code>.</li>
+<li>Executed inside <code>RetryExecutor</code> <strong>if</strong> <code>Retry</code> is set and this is the owned-connection path.</li>
+<li>Row materialised via <code>ColumnDescriptor.SetValue</code> per column; connection returned to the pool.</li>
+</ol>
+<p><strong><code>repo.WhereAsync(x =&gt; x.BALANCE &gt; min, take: 20)</code></strong> — same, except step 2 calls <code>BuildSelectWhere</code>, which is
+<strong>not</strong> cached (predicates are dynamic) and costs ~10–50 μs, and <code>ExpressionTranslator</code> binds <code>min</code> as a parameter
+by walking the closure.</p>
+<p><strong><code>data.QueryAsync&lt;T&gt;(sql, pars)</code></strong> — skips metadata and generation entirely: <code>RawQueryExecutor</code> binds the
+dictionary, logs, retries if eligible, and hands rows to <code>PocoMaterializer</code>.</p>
+<hr />
+<h2 id="4-caching">4. Caching</h2>
+<table>
+<thead>
+<tr>
+<th>Cached</th>
+<th>Key</th>
+<th>Lifetime</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>EntityDescriptor</code></td>
+<td><code>Type</code></td>
+<td>AppDomain</td>
+</tr>
+<tr>
+<td><code>StatementSet</code></td>
+<td>(descriptor, dialect, schema, dirty-reads)</td>
+<td>AppDomain</td>
+</tr>
+<tr>
+<td><code>IProviderRuntime</code></td>
+<td><code>DbProvider</code></td>
+<td>Static init (<code>FrozenDictionary</code>)</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Recomputed per call:</strong> <code>WhereAsync</code> / <code>CountAsync</code> / aggregate / partial-update SQL (dynamic shapes), and closure
+values inside predicates (~5 μs via <code>ExpressionTranslator.TryEvaluate</code>'s manual walk for the common shapes —
+literals, captured-local field/property chains, <code>Convert</code> wrappers — falling back to
+<code>Expression.Lambda(...).Compile().DynamicInvoke()</code> only when the fast path cannot resolve it).</p>
+<p>Measured by <code>TflOmniDb.Benchmarks</code>: <code>MetadataBenchmarks</code> (cold vs warm), <code>SqlGenerationBenchmarks</code> (cached lookup
+vs per-call <code>BuildSelectWhere</code> / <code>BuildCount</code>).</p>
+<hr />
+<h2 id="5-deliberate-non-goals">5. Deliberate non-goals</h2>
+<p>Each of these is a decision, not a backlog item:</p>
+<table>
+<thead>
+<tr>
+<th>Not implemented</th>
+<th>Why</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Joins / GROUP BY / sub-query generation</td>
+<td>Prevents cartesian explosions and unreadable generated SQL. Raw SQL or <code>SqlQuery</code> instead</td>
+</tr>
+<tr>
+<td>Navigation properties, lazy loading</td>
+<td>The N+1 source. Absent by construction</td>
+</tr>
+<tr>
+<td>Change tracking, identity map</td>
+<td>The repository is stateless; each call constructs fresh entities</td>
+</tr>
+<tr>
+<td>Materialisation proxies</td>
+<td><code>PropertyInfo.SetValue</code> writes directly</td>
+</tr>
+<tr>
+<td>Fluent / convention-based mapping</td>
+<td>Every persisted column declares a <code>[DbColumn]</code>; mapping is greppable</td>
+</tr>
+<tr>
+<td>Sync overloads</td>
+<td>Async-first, no sync-over-async traps</td>
+</tr>
+<tr>
+<td><code>EXISTS</code> / <code>.Any()</code> inside <code>WhereAsync</code></td>
+<td>Would require sub-query generation</td>
+</tr>
+<tr>
+<td>DB-native row versioning (<code>ROWVERSION</code>, <code>xmin</code>, <code>ORA_ROWSCN</code>)</td>
+<td>App-managed integer works identically on all three engines</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="6-extension-points">6. Extension points</h2>
+<table>
+<thead>
+<tr>
+<th>To add…</th>
+<th>Touch</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>A new provider</td>
+<td><code>DbProvider</code>, a <code>ISqlDialect</code> + <code>*TypeMapper</code>, an <code>IProviderRuntime</code> (incl. <code>IsTransient</code> and the bulk path), register in <code>ProviderRegistry</code>; a reverse type mapper + <code>CatalogSql</code> + script emitter if it should scaffold</td>
+</tr>
+<tr>
+<td>A new <code>CoreDataType</code></td>
+<td>The enum, all three <code>*TypeMapper</code>s, all three reverse mappers, <code>CoreTypeDbType.Map</code>, and the <code>datatype-mapping-*</code> reference docs</td>
+</tr>
+<tr>
+<td>A new predicate shape</td>
+<td><code>ExpressionTranslator</code> — and add a per-dialect unit test; the whitelist is the safety property</td>
+</tr>
+<tr>
+<td>A new statement kind</td>
+<td><code>SqlGenerator</code> (decide cached vs per-call), the dialect if the syntax differs, then <code>Repository&lt;T&gt;</code></td>
+</tr>
+<tr>
+<td>A new scalar function in <code>Fn</code></td>
+<td><code>SqlFunctions</code> with a rendering per dialect + <code>QueryComposerTests</code></td>
+</tr>
+<tr>
+<td>A new transient error code</td>
+<td>The provider runtime's <code>IsTransient</code> list; verify with <code>RetryExecutor</code>'s fake-predicate tests</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Standing rule for any of these:</strong> every feature ships with a <strong>test and a demo</strong> — update <code>TflOmniDb.Tests</code>
+(unit + live-3-DB as appropriate) <em>and</em> add or extend a <code>TflOmniDb.Demo/Demos/*</code> entry wired into <code>Program.cs</code>.
+And do not touch the frozen <code>TflOmniDbFx*</code> projects.</p>
+<hr />
+<h2 id="7-test-topology">7. Test topology</h2>
+<table>
+<thead>
+<tr>
+<th>Suite</th>
+<th>Covers</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Unit (no DB)</td>
+<td>Dialect rendering, SQL generation per dialect, expression translation, metadata validation, retry loop with a fake transient predicate, composer rendering (<code>QueryComposerTests</code>), aggregates (<code>AggregateSqlTests</code>), timeout scopes (<code>CommandTimeoutScopeTests</code>), scaffolder emitters/parsers, migration emitter + column factory + config binder</td>
+</tr>
+<tr>
+<td>Live integration</td>
+<td>CRUD, transactions, concurrency, redaction, filtered queries + paging, dirty-read hints, bulk insert, projections, procedures (multi-set, OUT/INOUT, return value, TVP/array), raw-SQL complex queries, streaming, partial/set-based updates, aggregates, command timeout — run against SQL Server, PostgreSQL and Oracle</td>
+</tr>
+<tr>
+<td><code>SqlInjectionTests</code></td>
+<td>8 tests per leg: malicious payloads across all three dialects</td>
+</tr>
+<tr>
+<td>Benchmarks</td>
+<td>Metadata cache, SQL generation, streaming vs buffered, bulk vs loop</td>
+</tr>
+</tbody>
+</table>
+<p>Net10: 521 tests. Fx: 332. Connection strings resolve env-var-first (<code>TFLOMNIDB_*_CONN</code>), then the test project's
+<code>App.config</code>.</p>
+<hr />
+<h2 id="8-known-gaps">8. Known gaps</h2>
+<p>Net-new work if requested — confirm the shape before extending contracts:</p>
+<ul>
+<li>Schema diff / DDL generation from descriptors (<code>CreateTableEmitter</code> covers only the migration case: no indexes,
+  FKs, check constraints or computed columns).</li>
+<li>Audit-column auto-population (<code>CreatedBy</code> / <code>CreatedOn</code> / …) via an ambient <code>ICurrentUser</code>.</li>
+<li>Explicit <code>DbType</code> / provider-specific precision on parameter binding.</li>
+<li>DB-native row-version support.</li>
+<li>Bulk insert with identity round-trip.</li>
+<li>Oracle bulk insert against mixed-case quoted tables (an <code>OracleBulkCopy</code> / OCI limitation).</li>
+<li><strong>net10 only:</strong> source generators replacing <code>MetadataReader</code> reflection for zero-reflection startup and native
+  AOT. The code is already shaped for it — a generator would replace <code>MetadataReader.For&lt;T&gt;()</code> with
+  <code>Metadata&lt;T&gt;.Descriptor</code> constants. (<code>IsAotCompatible</code> / <code>IsTrimmable</code> are already set on the library csproj, so
+  unsafe-for-AOT reflection surfaces as analyzer warnings today.)</li>
+</ul>
+<p><strong>Type mappings exercised live:</strong> SQL Server <code>BIGINT / NVARCHAR / NUMERIC / DATETIME2</code>; PostgreSQL
+<code>BIGINT / VARCHAR / CHAR / NUMERIC / TIMESTAMP</code>; Oracle <code>NUMBER(19,0) / NUMBER(10,0) / NVARCHAR2 / CHAR(n CHAR) /
+TIMESTAMP</code>. <strong>Not yet exercised</strong> (no entity uses them): <code>JSONB</code>, <code>BYTEA</code>, <code>UUID</code>, <code>TIMESTAMPTZ</code>, <code>XML</code> on
+PostgreSQL; <code>INTERVAL</code>, <code>TIMESTAMP WITH TIME ZONE</code>, <code>XMLTYPE</code>, native <code>JSON</code> on Oracle.</p>
+</div></div>
+<script>
+(function(){
+ function put(t){
+  if(navigator.clipboard&&navigator.clipboard.writeText)return navigator.clipboard.writeText(t);
+  return new Promise(function(res,rej){
+   var a=document.createElement('textarea');a.value=t;a.setAttribute('readonly','');
+   a.style.cssText='position:fixed;top:0;left:0;opacity:0';document.body.appendChild(a);
+   a.select();var ok=false;try{ok=document.execCommand('copy')}catch(e){}
+   document.body.removeChild(a);ok?res():rej()});
+ }
+ function flash(el,txt,ms){
+  var was=el.textContent;el.classList.add('done');if(txt)el.textContent=txt;
+  setTimeout(function(){el.classList.remove('done');if(txt)el.textContent=was},ms||1200);
+ }
+ function copy(text,el,okTxt){
+  put(text).then(function(){flash(el,okTxt)},function(){
+   if(okTxt){var w=el.textContent;el.textContent='Ctrl+C';setTimeout(function(){el.textContent=w},2000)}});
+ }
+ document.querySelectorAll('pre').forEach(function(pre){
+  if(pre.classList.contains('txtdoc'))return;
+  var b=document.createElement('button');
+  b.type='button';b.className='copy';b.textContent='Copy';
+  b.setAttribute('aria-label','Copy this code block to the clipboard');
+  b.addEventListener('click',function(){copy((pre.querySelector('code')||pre).innerText,b,'Copied')});
+  pre.appendChild(b);
+ });
+ document.querySelectorAll('td code').forEach(function(c){
+  if(!c.textContent.trim())return;
+  c.classList.add('cp');c.tabIndex=0;c.setAttribute('role','button');
+  c.title='Click to copy';
+  c.addEventListener('click',function(){copy(c.textContent,c)});
+  c.addEventListener('keydown',function(e){
+   if(e.key==='Enter'||e.key===' '){e.preventDefault();copy(c.textContent,c)}});
+ });
+})();
+</script>
+</body></html>

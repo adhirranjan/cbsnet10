@@ -1,0 +1,676 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>TflOmniDb — Usage Guide</title>
+<style>
+:root{color-scheme:light dark}
+*{box-sizing:border-box}
+body{margin:0;background:#f6f8fa;color:#1f2328;font:16px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif}
+.wrap{max-width:900px;margin:0 auto;padding:32px 24px 96px}
+.card{background:#fff;border:1px solid #d0d7de;border-radius:10px;padding:40px 48px}
+h1,h2,h3{line-height:1.25;font-weight:600}
+h1{font-size:1.9rem;margin:0 0 .3em;padding-bottom:.3em;border-bottom:1px solid #d8dee4}
+h2{font-size:1.4rem;margin:1.8em 0 .6em;padding-bottom:.25em;border-bottom:1px solid #eaeef2}
+h3{font-size:1.12rem;margin:1.4em 0 .5em}
+p,li{margin:.5em 0}
+a{color:#0969da;text-decoration:none}
+a:hover{text-decoration:underline}
+code{font-family:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;font-size:.86em;background:#eff1f3;padding:.15em .4em;border-radius:6px}
+pre{background:#f6f8fa;border:1px solid #d8dee4;border-radius:8px;padding:14px 16px;overflow:auto}
+pre code{background:none;padding:0;font-size:.85em;line-height:1.45}
+blockquote{margin:1em 0;padding:.4em 1em;color:#3d444d;border-left:4px solid #d0d7de;background:#f6f8fa;border-radius:0 6px 6px 0}
+blockquote>:first-child{margin-top:0}blockquote>:last-child{margin-bottom:0}
+table{border-collapse:collapse;width:100%;margin:1em 0;display:block;overflow:auto}
+th,td{border:1px solid #d0d7de;padding:8px 12px;text-align:left;vertical-align:top}
+th{background:#f6f8fa;font-weight:600}
+tr:nth-child(2n) td{background:#f6f8fa}
+hr{border:0;border-top:1px solid #d8dee4;margin:2em 0}
+pre{position:relative}
+pre>button.copy{position:absolute;top:8px;right:8px;padding:5px 9px;cursor:pointer;
+  font:600 .68rem/1 ui-monospace,SFMono-Regular,Consolas,monospace;letter-spacing:.03em;
+  color:#636c76;background:#fff;border:1px solid #d0d7de;border-radius:6px;
+  opacity:0;transition:opacity .12s}
+pre:hover>button.copy,pre>button.copy:focus{opacity:1}
+pre>button.copy.done{color:#0a3622;background:#dafbe1;border-color:#4ac26b}
+@media(hover:none){pre>button.copy{opacity:1}}
+td code.cp{cursor:pointer}
+td code.cp:hover,td code.cp:focus{outline:1px solid #8c959f;outline-offset:1px}
+td code.cp.done{color:#0a3622;background:#dafbe1}
+.docnav{margin:0 0 20px;font-size:.85rem;color:#636c76}
+.docnav a{color:#636c76}
+ul{padding-left:1.4em}ol{padding-left:1.4em}
+@media(max-width:640px){.card{padding:24px 18px}.wrap{padding:16px 10px 64px}}
+@media(prefers-color-scheme:dark){
+ body{background:#0d1117;color:#e6edf3}
+ .card{background:#161b22;border-color:#30363d}
+ h1{border-color:#30363d}h2{border-color:#21262d}
+ code{background:#262c34}
+ pre{background:#0d1117;border-color:#30363d}
+ blockquote{background:#161b22;border-color:#30363d;color:#9198a1}
+ th,td{border-color:#30363d}th{background:#161b22}tr:nth-child(2n) td{background:#12171e}
+ a{color:#4493f8}.docnav,.docnav a{color:#9198a1}
+ hr{border-color:#30363d}
+ pre>button.copy{color:#9198a1;background:#161b22;border-color:#30363d}
+ pre>button.copy.done{color:#aff5b4;background:#1b4721;border-color:#2ea043}
+ td code.cp.done{color:#aff5b4;background:#1b4721}
+}
+</style></head>
+<body><div class="wrap"><div class="card">
+<div class="docnav"><a href="../../../index.html">&#8592; All docs</a></div>
+<h1 id="tflomnidb-usage-guide">TflOmniDb — Usage Guide</h1>
+<p>Task-oriented recipes. Signatures live in <a href="api-reference.html">api-reference.md</a>; internals in
+<a href="components.html">components.md</a>. Examples target the <strong>net10</strong> leg; anything marked <strong>net10</strong> has no Fx equivalent.</p>
+<hr />
+<h2 id="contents">Contents</h2>
+<ol>
+<li><a href="#1-setting-up-dataaccess">Setting up <code>DataAccess</code></a></li>
+<li><a href="#2-defining-an-entity">Defining an entity</a></li>
+<li><a href="#3-crud">CRUD</a></li>
+<li><a href="#4-filtering-ordering-paging">Filtering, ordering, paging</a></li>
+<li><a href="#5-reading-fewer-columns">Reading fewer columns</a></li>
+<li><a href="#6-targeted-updates">Targeted updates</a></li>
+<li><a href="#7-scalar-aggregates">Scalar aggregates</a></li>
+<li><a href="#8-transactions">Transactions</a></li>
+<li><a href="#9-optimistic-concurrency">Optimistic concurrency</a></li>
+<li><a href="#10-bulk-insert">Bulk insert</a></li>
+<li><a href="#11-streaming-large-reads">Streaming large reads</a></li>
+<li><a href="#12-complex-queries--raw-sql">Complex queries — raw SQL</a></li>
+<li><a href="#13-composing-sql--sqlquery--fn">Composing SQL — <code>SqlQuery</code> + <code>Fn</code></a></li>
+<li><a href="#14-stored-procedures">Stored procedures</a></li>
+<li><a href="#15-reading-untyped-rows-safely">Reading untyped rows safely</a></li>
+<li><a href="#16-transient-fault-retry">Transient-fault retry</a></li>
+<li><a href="#17-dirty-reads">Dirty reads</a></li>
+<li><a href="#18-command-timeout">Command timeout</a></li>
+<li><a href="#19-logging-redaction-correlation">Logging, redaction, correlation</a></li>
+<li><a href="#20-writing-portable-sql-across-three-engines">Writing portable SQL across three engines</a></li>
+<li><a href="#21-troubleshooting">Troubleshooting</a></li>
+</ol>
+<hr />
+<h2 id="1-setting-up-dataaccess">1. Setting up <code>DataAccess</code></h2>
+<p>One instance per connection string, for the life of the process. It is thread-safe and holds no connection.</p>
+<pre><code class="language-csharp">var data = new DataAccess(new DataAccessOptions
+{
+    Provider              = DbProvider.SqlServer,   // required
+    ConnectionString      = cs,                     // required
+    DefaultSchema         = &quot;dbo&quot;,                  // connection-level, not per table
+    CommandTimeoutSeconds = 30,                     // null ⇒ provider default
+    LoggerFactory         = loggerFactory,          // null ⇒ nothing is logged
+    LogParameterValues    = false,                  // keep false in production
+});
+</code></pre>
+<p>In DI, register it as a singleton:</p>
+<pre><code class="language-csharp">services.AddSingleton(sp =&gt; new DataAccess(new DataAccessOptions
+{
+    Provider         = Enum.Parse&lt;DbProvider&gt;(cfg[&quot;Db:Provider&quot;]!),
+    ConnectionString = cfg.GetConnectionString(&quot;Cbs&quot;)!,
+    DefaultSchema    = cfg[&quot;Db:Schema&quot;] ?? &quot;dbo&quot;,
+    LoggerFactory    = sp.GetRequiredService&lt;ILoggerFactory&gt;(),
+}));
+</code></pre>
+<p>Switching engines is a <strong>configuration</strong> change — no code change, provided your SQL stays inside the typed API or
+the <code>SqlQuery</code> composer.</p>
+<hr />
+<h2 id="2-defining-an-entity">2. Defining an entity</h2>
+<pre><code class="language-csharp">[DbTable(TableName = &quot;B_ACCOUNT&quot;)]
+public partial class B_ACCOUNT : Entity
+{
+    [DbColumn(ColumnName = &quot;ACCOUNT_ID&quot;, CoreType = CoreDataType.Int64,
+              IsPrimaryKey = true, KeyGeneration = KeyGenerationStrategy.Identity)]
+    public virtual long? ACCOUNT_ID { get; set; }
+
+    [DbColumn(ColumnName = &quot;ACCOUNT_NAME&quot;, CoreType = CoreDataType.UnicodeString, Size = 100)]
+    public virtual string? ACCOUNT_NAME { get; set; }
+
+    [DbColumn(ColumnName = &quot;BALANCE&quot;, CoreType = CoreDataType.Money)]
+    public virtual decimal? BALANCE { get; set; }
+
+    [DbColumn(ColumnName = &quot;PIN&quot;, CoreType = CoreDataType.AnsiString, Size = 8, IsSensitive = true)]
+    public virtual string? PIN { get; set; }          // redacted in command logs
+
+    [DbColumn(ColumnName = &quot;ROW_VER&quot;, CoreType = CoreDataType.Int32, IsRowVersion = true)]
+    public virtual int? ROW_VER { get; set; }
+}
+</code></pre>
+<p>Rules that are enforced, not advisory:</p>
+<ul>
+<li><strong><code>Size</code> &gt; 0 is required</strong> for variable-length strings — otherwise <code>MetadataValidationException</code> at first use.</li>
+<li><strong><code>SequenceName</code> is required</strong> when <code>KeyGeneration = Sequence</code>.</li>
+<li><strong>At most one <code>IsRowVersion</code></strong> column per entity.</li>
+<li>Properties are <strong>nullable</strong> so partial rows (projections) materialise, and <strong>virtual</strong> by convention.</li>
+<li>Table names must be identical across all three databases; the schema comes from <code>DataAccessOptions</code>.</li>
+</ul>
+<p>Don't hand-write these — generate them with the <a href="tooling.html">scaffolder</a>, which also emits a nested <code>Cols</code> class
+of typed column tokens.</p>
+<hr />
+<h2 id="3-crud">3. CRUD</h2>
+<pre><code class="language-csharp">var repo = data.Repository&lt;B_ACCOUNT&gt;();
+
+// Insert — identity flows back into the instance
+var acc = new B_ACCOUNT { ACCOUNT_NAME = &quot;Ledger&quot;, BALANCE = 0m, ROW_VER = 0 };
+await repo.InsertAsync(acc);
+long id = acc.ACCOUNT_ID!.Value;
+
+// Read by key — keys in declaration order; null when absent
+B_ACCOUNT? found = await repo.GetAsync([id]);
+
+// Update — every updatable column
+found!.BALANCE = 100m;
+int rows = await repo.UpdateAsync(found);
+
+// Delete — key read from the entity
+await repo.DeleteAsync(found);
+</code></pre>
+<p>Composite keys pass in declaration order: <code>await repo.GetAsync([branchId, accountNo]);</code></p>
+<hr />
+<h2 id="4-filtering-ordering-paging">4. Filtering, ordering, paging</h2>
+<pre><code class="language-csharp">var page = await repo.WhereAsync(
+    x =&gt; x.BALANCE &gt; 1000m &amp;&amp; x.ACCOUNT_NAME!.StartsWith(&quot;A&quot;),
+    orderBy: x =&gt; x.ACCOUNT_NAME!,
+    descending: false,
+    skip: 40, take: 20);
+
+long matching = await repo.CountAsync(x =&gt; x.BALANCE &gt; 1000m);
+bool anyRich  = await repo.AnyAsync(x =&gt; x.BALANCE &gt; 1_000_000m);   // net10, cheaper than Count &gt; 0
+</code></pre>
+<p>Supported predicate shapes: binary comparisons, <code>&amp;&amp;</code> / <code>||</code> / <code>!</code>, null checks, <code>string.Contains</code> / <code>StartsWith</code>
+/ <code>EndsWith</code>, <code>list.Contains(x.Prop)</code>, member access on the entity, and captured locals. Anything else throws
+<code>NotSupportedException</code> — that is the signal to drop to raw SQL or <code>SqlQuery</code>.</p>
+<pre><code class="language-csharp">var wanted = new[] { 1L, 2L, 3L };
+await repo.WhereAsync(x =&gt; wanted.Contains(x.ACCOUNT_ID!.Value));   // IN (@p0, @p1, @p2)
+</code></pre>
+<p>Pass <code>null</code> for the predicate to page over the whole table. When <code>skip</code>/<code>take</code> is set without <code>orderBy</code>, ordering
+falls back to the first PK column so paging is deterministic. LIKE metacharacters (<code>%</code>, <code>_</code>, <code>[</code>, <code>]</code>) inside a
+<code>Contains</code>/<code>StartsWith</code> value are escaped and bound — user input is safe here.</p>
+<hr />
+<h2 id="5-reading-fewer-columns">5. Reading fewer columns</h2>
+<pre><code class="language-csharp">// Dropdown: only Id + Name off a wide table (PK always included)
+var summaries = await repo.GetAllAsync(x =&gt; x.ACCOUNT_ID, x =&gt; x.ACCOUNT_NAME);
+
+// Single row, two columns
+var one = await repo.GetAsync([id], x =&gt; x.ACCOUNT_NAME, x =&gt; x.BALANCE);
+
+// net10 — filter and project together (columns are the 2nd argument)
+var u = (await repo.WhereAsync(x =&gt; x.LOGINNAME == login, [x =&gt; x.ORGELEMENTID], take: 1))
+        .FirstOrDefault();
+</code></pre>
+<p>Unprojected properties stay at their CLR default on the returned entity — <strong>do not</strong> persist a projected entity
+with <code>UpdateAsync</code>, or you will blank every column you did not read. Use a <a href="#6-targeted-updates">partial update</a>
+instead. Each selector must be a simple property access; computed expressions throw <code>ArgumentException</code>.</p>
+<hr />
+<h2 id="6-targeted-updates">6. Targeted updates</h2>
+<p><strong>net10.</strong> Three write shapes, narrowest first:</p>
+<pre><code class="language-csharp">// Partial-column — no prior read needed; PK + changed columns is enough
+await repo.UpdateAsync(new B_ACCOUNT { ACCOUNT_ID = 42, ACCOUNT_NAME = &quot;renamed&quot;, ROW_VER = current },
+                       x =&gt; x.ACCOUNT_NAME);
+
+// Set-based — UPDATE … SET … WHERE &lt;predicate&gt;; many rows, no PK
+await repo.UpdateWhereAsync(x =&gt; x.BALANCE &lt; 50m, [ (x =&gt; x.ACCOUNT_NAME, &quot;dormant&quot;) ]);
+
+// Set-based delete
+await repo.DeleteWhereAsync(x =&gt; x.BALANCE == 0m);
+</code></pre>
+<p>The distinction that matters: <strong>partial update always enforces row-version</strong> (incremented in SET, checked in
+WHERE, even when not listed among the columns) — so the entity must carry the current version. <strong>Set-based
+update/delete has no row-version semantics at all</strong>; it is a blind bulk write. Choose deliberately.</p>
+<hr />
+<h2 id="7-scalar-aggregates">7. Scalar aggregates</h2>
+<p><strong>net10.</strong> The typed replacement for the legacy <code>Max(type, criteria)</code> / <code>MaxPrimaryKeyValue(type)</code> idiom.</p>
+<pre><code class="language-csharp">decimal  max  = await repo.MaxAsync&lt;decimal&gt;(x =&gt; x.BALANCE);
+decimal  hi   = await repo.MaxAsync&lt;decimal&gt;(x =&gt; x.BALANCE, x =&gt; x.STATUS == 1);
+decimal  sum  = await repo.SumAsync&lt;decimal&gt;(x =&gt; x.BALANCE, x =&gt; x.BALANCE &gt;= 30m);
+long     next = await repo.MaxKeyAsync&lt;long&gt;();
+bool     any  = await repo.AnyAsync(x =&gt; x.BALANCE &gt; 999m);
+
+decimal? maybe = await repo.MaxAsync&lt;decimal?&gt;(x =&gt; x.BALANCE);   // null ⇒ genuinely no rows
+</code></pre>
+<p>Three traps:</p>
+<ul>
+<li><strong>Empty set ⇒ <code>default(TResult)</code>.</strong> <code>MaxAsync&lt;decimal&gt;</code> returns <code>0</code> for an empty table — indistinguishable from
+  a real zero. Use a nullable <code>TResult</code> when the difference matters.</li>
+<li><strong><code>SUM</code> of an <code>int</code> column stays <code>int</code> on SQL Server.</strong> Pick a wide <code>TResult</code> to avoid overflow.</li>
+<li><strong><code>AVG</code> follows the engine.</strong> An integer column averages to a truncated integer on SQL Server and Oracle. Average
+  a decimal column, or cast in raw SQL.</li>
+</ul>
+<p>Aggregates work transactionally through <code>uow.Repository&lt;T&gt;()</code>.</p>
+<hr />
+<h2 id="8-transactions">8. Transactions</h2>
+<pre><code class="language-csharp">await using (var uow = await data.BeginTransactionAsync())
+{
+    var accounts = uow.Repository&lt;B_ACCOUNT&gt;();
+    var journal  = uow.Repository&lt;B_JOURNAL&gt;();
+
+    await accounts.UpdateAsync(debited);
+    await accounts.UpdateAsync(credited);
+    await journal.InsertAsync(entry);
+
+    await uow.CommitAsync();
+}
+// Disposing without CommitAsync rolls back — including on an exception.
+</code></pre>
+<p>Non-transactional <code>data.Repository&lt;T&gt;()</code> opens a <strong>fresh connection per call</strong>, so two calls are two transactions.
+For any money movement, use a unit of work.</p>
+<p>Raw SQL and stored procedures have transactional counterparts on <code>IUnitOfWork</code> (<code>uow.QueryAsync</code>,
+<code>uow.ExecuteNonQueryAsync</code>, <code>uow.ExecuteProcedureAsync</code>, …) so they enlist rather than opening their own connection.</p>
+<hr />
+<h2 id="9-optimistic-concurrency">9. Optimistic concurrency</h2>
+<p>App-managed and identical on all three engines — no <code>ROWVERSION</code> / <code>xmin</code> / <code>ORA_ROWSCN</code> dependency.</p>
+<pre><code class="language-csharp">[DbColumn(ColumnName = &quot;ROW_VER&quot;, CoreType = CoreDataType.Int32, IsRowVersion = true)]
+public virtual int? ROW_VER { get; set; }
+</code></pre>
+<p>The repository increments the column in SET and checks the old value in WHERE. Zero rows matched ⇒
+<code>ConcurrencyException</code>.</p>
+<pre><code class="language-csharp">try
+{
+    await repo.UpdateAsync(entity);
+}
+catch (ConcurrencyException)
+{
+    // Someone else changed the row since you read it. Re-read, re-apply, or surface a conflict to the user.
+}
+</code></pre>
+<p>Set an initial value on insert (<code>ROW_VER = 0</code>) unless the column has a DB default — <code>BulkInsertAsync</code> writes the
+entity's value verbatim and will happily insert NULL.</p>
+<hr />
+<h2 id="10-bulk-insert">10. Bulk insert</h2>
+<pre><code class="language-csharp">int written = await repo.BulkInsertAsync(rows, new BulkInsertOptions
+{
+    BatchSize      = 5000,
+    TimeoutSeconds = 120,
+});
+</code></pre>
+<p>Orders of magnitude faster than <code>InsertAsync</code> in a loop beyond ~50 rows. Per provider: <code>SqlBulkCopy</code> (SQL Server),
+binary <code>COPY</code> (PostgreSQL), <code>OracleBulkCopy</code> (Oracle — synchronous, wrapped in <code>Task.Run</code>).</p>
+<p><strong>Limitations to plan around:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Limitation</th>
+<th>Consequence</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Identity values are <strong>not</strong> round-tripped</td>
+<td>If you need generated ids, use <code>InsertAsync</code> per row</td>
+</tr>
+<tr>
+<td>Row-version inserted verbatim</td>
+<td>Set an initial value yourself</td>
+</tr>
+<tr>
+<td>Oracle requires unquoted-uppercase table names</td>
+<td>OCI direct-path strips quotes; <code>CREATE TABLE "Widget"</code> is unreachable via bulk — use <code>InsertAsync</code> for those</td>
+</tr>
+<tr>
+<td>Excluded from auto-retry</td>
+<td>A partial batch cannot resume</td>
+</tr>
+</tbody>
+</table>
+<p><code>EnableTableLock</code> and <code>FireTriggers</code> are SQL-Server-only. When called on a transaction-attached repository the
+bulk load enlists in that transaction and rollback discards the rows.</p>
+<hr />
+<h2 id="11-streaming-large-reads">11. Streaming large reads</h2>
+<p><strong>net10.</strong> Constant memory instead of a <code>List&lt;T&gt;</code> the size of the result set.</p>
+<pre><code class="language-csharp">await foreach (var row in repo.StreamWhereAsync(x =&gt; x.BRANCH_ID == branch, ct: ct))
+{
+    await WriteToStatementFile(row);
+}
+</code></pre>
+<p><code>StreamAllAsync</code>, <code>StreamWhereAsync</code>, <code>StreamQueryAsync</code> and <code>StreamProcedureAsync</code> are all backed by one open
+reader; the connection stays open for the enumeration, so <code>await foreach</code> (deterministic disposal) is mandatory —
+do not park an enumerator across requests. Streaming is <strong>excluded from auto-retry</strong>: rows already yielded cannot
+be un-yielded. Cancellation mid-stream is honoured.</p>
+<p><code>TflOmniDb.Benchmarks/StreamingVsBufferedBenchmarks</code> measures the O(1) vs O(n) claim.</p>
+<hr />
+<h2 id="12-complex-queries-raw-sql">12. Complex queries — raw SQL</h2>
+<p>The typed API generates <strong>no joins, GROUP BY or sub-queries</strong> by design. Those are raw SQL, through non-entity
+helpers that still route via <code>CommandLogger</code> and the retry path.</p>
+<pre><code class="language-csharp">// GROUP BY into a plain POCO — no [DbTable], no PK, no Entity base
+public sealed class CustomerSummary
+{
+    public int CustomerId { get; set; }
+    public int OrderCount { get; set; }
+    public decimal TotalAmount { get; set; }
+}
+
+var rows = await data.QueryAsync&lt;CustomerSummary&gt;(
+    &quot;SELECT CustomerId, COUNT(*) AS OrderCount, SUM(Amount) AS TotalAmount FROM Orders GROUP BY CustomerId&quot;);
+
+// Untyped rows
+var buckets = await data.QueryAsync(
+    &quot;SELECT 'low' AS Bucket, COUNT(*) AS N FROM Orders WHERE Amount &lt; @t &quot; +
+    &quot;UNION ALL SELECT 'high', COUNT(*) FROM Orders WHERE Amount &gt;= @t&quot;,
+    new Dictionary&lt;string, object?&gt; { [&quot;@t&quot;] = 60m });
+
+decimal total = await data.ExecuteScalarAsync&lt;decimal&gt;(&quot;SELECT SUM(Amount) FROM Orders&quot;);
+bool     any  = await data.ExistsAsync(&quot;SELECT 1 FROM Orders WHERE CustomerId = @id&quot;, pars);
+int      hit  = await data.ExecuteNonQueryAsync(&quot;UPDATE Orders SET Amount = Amount + @b WHERE Id = @id&quot;, pars);
+</code></pre>
+<p>Mapping for <code>QueryAsync&lt;T&gt;</code> is column→property by name, case-insensitive, honouring <code>[DbColumn(ColumnName=…)]</code> as
+an alias; unmatched columns are ignored.</p>
+<p><strong>Parameter keys carry the dialect prefix</strong> (<code>"@id"</code> / <code>":id"</code>). <strong>The SQL text is yours to make safe</strong> — never
+concatenate user input into it. That is the whole reason the typed API exists.</p>
+<hr />
+<h2 id="13-composing-sql-sqlquery-fn">13. Composing SQL — <code>SqlQuery</code> + <code>Fn</code></h2>
+<p>A thin, provider-aware layer over the raw-SQL helpers, built for the stored-procedure-to-C# migration. It
+generates SQL + bound parameters and delegates to the same pipeline, so logging, retry, redaction and dirty-reads
+keep working.</p>
+<pre><code class="language-csharp">using TflOmniDb.Query;
+
+var q = SqlQuery.From(&quot;ORDERS&quot;, &quot;o&quot;, data.Options.Provider)
+    .Select(&quot;o.CUSTOMER_ID&quot;, &quot;COUNT(*) AS ORDER_COUNT&quot;)
+    .WhereIf(branchId is not null, &quot;o.BRANCH_ID = @branch&quot;, (&quot;branch&quot;, branchId))
+    .WhereIf(from is not null,     &quot;o.ORDER_DATE &gt;= @from&quot;,  (&quot;from&quot;, from))
+    .GroupBy(&quot;o.CUSTOMER_ID&quot;)
+    .Having(&quot;COUNT(*) &gt; @min&quot;, (&quot;min&quot;, 5))
+    .OrderBy(&quot;ORDER_COUNT DESC&quot;)
+    .Page(skip, take);
+
+var rows = await q.ToListAsync&lt;CustomerSummary&gt;(data);
+</code></pre>
+<p><code>WhereIf</code> is the point of the whole thing: it replaces both the "eight near-identical query branches" report
+pattern and runtime dynamic-SQL string building — and unlike <code>col = COALESCE(@p, col)</code> it stays index-friendly,
+because the predicate is simply absent when the filter is not supplied.</p>
+<p><strong>Typed tokens</strong> avoid string fragments entirely (the scaffolder emits <code>Cols</code> per entity):</p>
+<pre><code class="language-csharp">var q = SqlQuery.From&lt;B_ACCOUNT&gt;(&quot;a&quot;, provider)
+    .SelectCols(B_ACCOUNT.Cols.ACCOUNT_ID, B_ACCOUNT.Cols.ACCOUNT_NAME)
+    .InnerJoin&lt;B_BRANCH&gt;(&quot;b&quot;, B_ACCOUNT.Cols.BRANCH_ID.As(&quot;a&quot;), B_BRANCH.Cols.BRANCH_ID.As(&quot;b&quot;))
+    .Where(B_ACCOUNT.Cols.STATUS, &quot;=&quot;, 1)
+    .OrderBy(B_ACCOUNT.Cols.ACCOUNT_NAME);
+</code></pre>
+<p><strong>Cross-dialect scalars</strong> via <code>Fn</code> — this is what pays down the pervasive <code>ISNULL</code> / <code>GETDATE</code> / <code>+</code>-concat tax:</p>
+<pre><code class="language-csharp">var fn = q.Fn;
+q.Select(fn.Coalesce(&quot;o.NOTE&quot;, &quot;''&quot;), fn.Concat(&quot;c.FIRST&quot;, &quot;' '&quot;, &quot;c.LAST&quot;), fn.Now());
+</code></pre>
+<p>Placeholders use the neutral <code>@name</code> prefix; <code>Build()</code> rewrites to the dialect prefix (<code>@</code>→<code>:</code> on Oracle) and
+de-duplicates reused names. <strong>Fragments pass through verbatim</strong> — bind values as parameters, never concatenate.</p>
+<p><code>Build()</code> returns <code>(sql, parameters)</code> if you want to run or log it yourself. Not modelled: window functions, CTEs,
+PIVOT — those stay raw <code>QueryAsync&lt;T&gt;</code>.</p>
+<hr />
+<h2 id="14-stored-procedures">14. Stored procedures</h2>
+<pre><code class="language-csharp">var call = new StoredProcedureCall(&quot;usp_Transfer&quot;)            // schema defaults to DefaultSchema
+    .Input(&quot;p_from&quot;, 1001)
+    .Input(&quot;p_amount&quot;, 500m, CoreDataType.Money)
+    .Input(&quot;p_pin&quot;, pin, CoreDataType.AnsiString, size: 8, sensitive: true)   // redacted in logs
+    .InputOutput(&quot;p_note&quot;, &quot;ref&quot;, CoreDataType.UnicodeString, size: 50)
+    .Output(&quot;p_new_balance&quot;, CoreDataType.Money)
+    .ReturnValue();                                            // SQL Server / Oracle only
+
+StoredProcedureResult r = await data.ExecuteProcedureAsync(call);
+
+decimal bal  = r.GetOutput&lt;decimal&gt;(&quot;p_new_balance&quot;);
+int?    code = r.ReturnValue;
+var     rows = r.FirstResultSet;
+</code></pre>
+<ul>
+<li>Parameter names <strong>without</strong> the <code>@</code> / <code>:</code> prefix; the DAL adds the provider's.</li>
+<li>List them in the procedure's declared order — <strong>PostgreSQL binds positionally</strong>.</li>
+<li><code>ExecuteScalarProcedureAsync</code> / <code>ExecuteNonQueryProcedureAsync</code> for the simple cases; the <code>IUnitOfWork</code>
+  equivalents enlist in a transaction.</li>
+<li>Result sets are <strong>raw/untyped by design</strong> — map them yourself, or use <a href="#15-reading-untyped-rows-safely"><code>RowAccess</code></a>.</li>
+</ul>
+<p>Provider differences you must code for:</p>
+<pre><code class="language-csharp">// Oracle: multiple result sets arrive as OUT REF CURSORs
+var oracle = new StoredProcedureCall(&quot;PR_G_GETSTATEMENT&quot;)     // UPPERCASE — the DAL always quotes
+    .Input(&quot;p_acct&quot;, id)
+    .Cursor(&quot;p_rows&quot;);
+
+// Collection parameters: TVP (SQL Server) / assoc array (Oracle) / native array (PostgreSQL)
+call.Table(&quot;p_ids&quot;, dataTable, &quot;dbo.IdList&quot;);   // SQL Server needs the pre-created TABLE TYPE
+call.Table(&quot;p_ids&quot;, idArray);                   // Oracle / PostgreSQL
+</code></pre>
+<p><code>ReturnValue()</code> on PostgreSQL throws <code>NotSupportedException</code> — procedures there return through OUT/INOUT.</p>
+<p><strong>net10</strong> adds <code>repo.StreamProcedureAsync(call)</code> → <code>IAsyncEnumerable&lt;T&gt;</code> over the <strong>first</strong> result set only.</p>
+<hr />
+<h2 id="15-reading-untyped-rows-safely">15. Reading untyped rows safely</h2>
+<p>Instead of hand-casting <code>object?</code> and guarding four failure modes (null result set, missing row, missing column,
+SQL NULL):</p>
+<pre><code class="language-csharp">using TflOmniDb.Repository;   // RowAccess extensions
+
+// On an untyped row
+foreach (var row in await data.QueryAsync(sql, pars))
+{
+    string? name = row.GetString(&quot;ACCOUNT_NAME&quot;);
+    decimal bal  = row.GetDecimal(&quot;BALANCE&quot;, 0m);       // non-null overload with a fallback
+    if (row.IsNull(&quot;CLOSED_ON&quot;)) { … }
+}
+
+// On a stored-proc result — null-safe receiver, so this is fine even if FirstResultSet is null
+var first = result.FirstResultSet.FirstRow();
+long id   = result.FirstResultSet.Get&lt;long&gt;(&quot;ACCOUNT_ID&quot;);
+var list  = result.FirstResultSet.ToList&lt;AccountRow&gt;();  // buffered SP → POCO
+</code></pre>
+<p><code>Get&lt;T&gt;</code> returns <code>default</code> for a missing column or SQL NULL (<code>Get&lt;int&gt;</code> → <code>0</code>, <code>Get&lt;int?&gt;</code> → <code>null</code>); use
+<code>GetAs&lt;T&gt;</code> for <code>byte[]</code> / <code>string</code> where <code>Convert.ChangeType</code> would throw.</p>
+<hr />
+<h2 id="16-transient-fault-retry">16. Transient-fault retry</h2>
+<p><strong>Off by default.</strong> Enabling it changes failure semantics, so do it consciously.</p>
+<pre><code class="language-csharp">var options = new DataAccessOptions
+{
+    Provider = DbProvider.SqlServer,
+    ConnectionString = cs,
+    Retry = new RetryOptions
+    {
+        MaxAttempts    = 3,
+        BaseDelay      = TimeSpan.FromMilliseconds(200),
+        MaxDelay       = TimeSpan.FromSeconds(5),
+        RetryOnTimeout = false,        // keep false on write paths
+        UseJitter      = true,
+    },
+};
+</code></pre>
+<p><strong>What retries:</strong> the owned-connection path — single CRUD, <code>WhereAsync</code> / <code>CountAsync</code> / <code>QueryAsync</code>, aggregates,
+stored-procedure calls. Each attempt opens a fresh connection.</p>
+<p><strong>What does not:</strong> a single command inside an open transaction, bulk insert, streaming.</p>
+<p><strong>To retry multi-statement work</strong>, wrap it — this is the only safe way:</p>
+<pre><code class="language-csharp">await data.ExecuteInTransactionAsync(async uow =&gt;
+{
+    await uow.Repository&lt;B_ACCOUNT&gt;().UpdateAsync(debited);
+    await uow.Repository&lt;B_ACCOUNT&gt;().UpdateAsync(credited);
+    await uow.CommitAsync();
+});
+// Rolls back and reopens a fresh connection + transaction per attempt — so make the delegate idempotent.
+</code></pre>
+<p><strong>Write safety.</strong> Deadlocks (the engine already rolled back) and pre-send connection errors are always retried.
+<strong>Command timeouts are not retried unless <code>RetryOnTimeout = true</code></strong> — a timed-out non-idempotent write may already
+have committed on the server, and retrying would double-apply it. Leave it off for writes.</p>
+<p>Every retry logs a Warning.</p>
+<hr />
+<h2 id="17-dirty-reads">17. Dirty reads</h2>
+<pre><code class="language-csharp">using (data.UseDirtyReads())
+{
+    var snapshot = await repo.GetAllAsync();   // WITH(NOLOCK) on SQL Server
+}
+</code></pre>
+<p>No-op on Oracle and PostgreSQL, which are MVCC by design. Scoped to the async flow; nested scopes shadow and
+restore. Remember what it buys and costs: fewer blocked readers, at the price of dirty/phantom rows — never for
+anything that drives a posting decision.</p>
+<hr />
+<h2 id="18-command-timeout">18. Command timeout</h2>
+<p><strong>net10.</strong> Three levels, narrowest wins:</p>
+<pre><code class="language-csharp">// 1 · instance default
+new DataAccessOptions { …, CommandTimeoutSeconds = 30 }
+
+// 2 · per scope (async-flow local; nests, shadows, restores)
+using (data.UseCommandTimeout(300))
+{
+    await repo.QueryAsync(bigReportSql);        // 300s for everything in this scope
+}
+
+// 3 · bulk insert has its own
+await repo.BulkInsertAsync(rows, new BulkInsertOptions { TimeoutSeconds = 600 });
+</code></pre>
+<p><code>0</code> means no timeout. This is the <strong>server-side</strong> timeout — distinct from a client-side <code>CancellationToken</code>
+deadline; set both if you want a hard bound on a request.</p>
+<hr />
+<h2 id="19-logging-redaction-correlation">19. Logging, redaction, correlation</h2>
+<pre><code class="language-csharp">var options = new DataAccessOptions
+{
+    …,
+    LoggerFactory      = loggerFactory,
+    LogParameterValues = false,                 // default; keep it in production
+    MutationLogLevel   = LogLevel.Information,  // INSERT / UPDATE / DELETE / raw writes
+    QueryLogLevel      = LogLevel.Debug,        // reads
+};
+</code></pre>
+<p>With no <code>LoggerFactory</code> everything is swallowed by <code>NullLogger</code> — logging is opt-in.</p>
+<pre><code class="language-csharp">using (data.PushCorrelation(httpContext.TraceIdentifier))
+{
+    await repo.InsertAsync(entity);   // every command in this scope carries the correlation id
+}
+
+using (data.SuppressLogging()) { await repo.GetAllAsync(); }   // e.g. a noisy poll
+</code></pre>
+<p><strong>Redaction:</strong> columns marked <code>[DbColumn(IsSensitive = true)]</code> and procedure inputs passed with <code>sensitive: true</code>
+are replaced in log output even when <code>LogParameterValues = true</code>. <code>DataAccessOptions.GloballyEnabled</code> is a
+process-wide kill switch.</p>
+<hr />
+<h2 id="20-writing-portable-sql-across-three-engines">20. Writing portable SQL across three engines</h2>
+<p>Inside the typed API, portability is free. Once you drop to raw SQL it is your problem. What actually bites:</p>
+<table>
+<thead>
+<tr>
+<th>Concern</th>
+<th>Rule</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Identifier casing</strong></td>
+<td>The DAL always quotes, so <code>"Widget"</code> ≠ <code>"WIDGET"</code>. Create objects with <strong>uppercase</strong> names — quoted uppercase on PostgreSQL — so all three agree</td>
+</tr>
+<tr>
+<td><strong>Parameter prefix</strong></td>
+<td><code>@</code> on SQL Server / PostgreSQL, <code>:</code> on Oracle. <code>SqlQuery</code> rewrites it for you; hand-written SQL does not</td>
+</tr>
+<tr>
+<td><strong>Scalar functions</strong></td>
+<td><code>ISNULL</code> / <code>NVL</code> / <code>COALESCE</code>, <code>+</code> vs <code>\|\|</code>, <code>LEN</code> vs <code>LENGTH</code>, <code>CHARINDEX</code> vs <code>INSTR</code> vs <code>POSITION</code>. Use <code>Fn</code></td>
+</tr>
+<tr>
+<td><strong>Paging</strong></td>
+<td>OFFSET-FETCH (SQL Server 2012+, Oracle 12c+) vs LIMIT-OFFSET (PostgreSQL). The typed API handles it</td>
+</tr>
+<tr>
+<td><strong>Booleans</strong></td>
+<td><code>BIT</code> / <code>NUMBER(1,0)</code> / <code>BOOLEAN</code> — use <code>CoreDataType.Boolean</code>, never a literal <code>1</code>/<code>true</code> in raw SQL</td>
+</tr>
+<tr>
+<td><strong>Dates</strong></td>
+<td><code>DateTime</code> binds as <code>DateTime2</code> on SQL Server / PostgreSQL, folds to <code>DbType.DateTime</code> on Oracle. Never format a date into SQL text</td>
+</tr>
+<tr>
+<td><strong><code>SELECT 1</code> vs <code>EXISTS</code></strong></td>
+<td>Oracle needs <code>FROM DUAL</code> for a bare select — <code>AnyAsync</code> and <code>ExistsAsync</code> already use the portable form</td>
+</tr>
+<tr>
+<td><strong>Procedures</strong></td>
+<td>Different enough that the call site must know the engine — see <a href="#14-stored-procedures">§14</a></td>
+</tr>
+</tbody>
+</table>
+<p>The net10 demo has a no-DB "generated-SQL comparison" entry that prints the three dialects side by side for the
+same operation — the fastest way to see what will differ.</p>
+<hr />
+<h2 id="21-troubleshooting">21. Troubleshooting</h2>
+<table>
+<thead>
+<tr>
+<th>Symptom</th>
+<th>Cause / fix</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>MetadataValidationException</code> on first use</td>
+<td>A variable-length string column with no <code>Size</code>, a <code>Sequence</code> key with no <code>SequenceName</code>, or two <code>IsRowVersion</code> columns</td>
+</tr>
+<tr>
+<td><code>NotSupportedException</code> from <code>WhereAsync</code></td>
+<td>Predicate shape outside the supported set — drop to raw SQL or <code>SqlQuery</code></td>
+</tr>
+<tr>
+<td><code>ArgumentException</code> from a projection or partial update</td>
+<td>Selector is not a simple property access, or it names a PK / read-only / computed column, or the list is empty</td>
+</tr>
+<tr>
+<td><code>ConcurrencyException</code></td>
+<td>Row changed since you read it — re-read and re-apply. On a partial update, check the entity carries the <strong>current</strong> row-version</td>
+</tr>
+<tr>
+<td>Update blanked columns you did not set</td>
+<td>You persisted a <strong>projected</strong> entity with the full <code>UpdateAsync</code>. Use the partial overload</td>
+</tr>
+<tr>
+<td>Oracle bulk insert cannot find the table</td>
+<td>The table was created with a quoted mixed-case name. OCI direct path uppercases — recreate unquoted, or use <code>InsertAsync</code></td>
+</tr>
+<tr>
+<td><code>InvalidOperationException</code> from <code>MaxKeyAsync</code></td>
+<td>Composite or keyless entity — use <code>MaxAsync</code> with an explicit selector</td>
+</tr>
+<tr>
+<td>PostgreSQL procedure throws on <code>.ReturnValue()</code></td>
+<td>Not supported there; use an OUT parameter</td>
+</tr>
+<tr>
+<td>Oracle procedure "not found"</td>
+<td>Unquoted-uppercase procedures must be named in UPPERCASE — the DAL always quotes</td>
+</tr>
+<tr>
+<td>Oracle rejects a <code>DateTime</code> parameter</td>
+<td>Already handled (<code>DbType.DateTime</code> on Oracle). If you bound the parameter by hand, do the same</td>
+</tr>
+<tr>
+<td>Retry never fires on a timeout</td>
+<td>By design — set <code>RetryOnTimeout = true</code> only if the operation is idempotent</td>
+</tr>
+<tr>
+<td>Streaming enumeration throws after a while</td>
+<td>The connection is held for the enumeration. Do not park an enumerator across requests, and always <code>await foreach</code></td>
+</tr>
+<tr>
+<td>Parameter values missing from logs</td>
+<td><code>LogParameterValues</code> is <code>false</code> by default; sensitive columns stay redacted regardless</td>
+</tr>
+</tbody>
+</table>
+</div></div>
+<script>
+(function(){
+ function put(t){
+  if(navigator.clipboard&&navigator.clipboard.writeText)return navigator.clipboard.writeText(t);
+  return new Promise(function(res,rej){
+   var a=document.createElement('textarea');a.value=t;a.setAttribute('readonly','');
+   a.style.cssText='position:fixed;top:0;left:0;opacity:0';document.body.appendChild(a);
+   a.select();var ok=false;try{ok=document.execCommand('copy')}catch(e){}
+   document.body.removeChild(a);ok?res():rej()});
+ }
+ function flash(el,txt,ms){
+  var was=el.textContent;el.classList.add('done');if(txt)el.textContent=txt;
+  setTimeout(function(){el.classList.remove('done');if(txt)el.textContent=was},ms||1200);
+ }
+ function copy(text,el,okTxt){
+  put(text).then(function(){flash(el,okTxt)},function(){
+   if(okTxt){var w=el.textContent;el.textContent='Ctrl+C';setTimeout(function(){el.textContent=w},2000)}});
+ }
+ document.querySelectorAll('pre').forEach(function(pre){
+  if(pre.classList.contains('txtdoc'))return;
+  var b=document.createElement('button');
+  b.type='button';b.className='copy';b.textContent='Copy';
+  b.setAttribute('aria-label','Copy this code block to the clipboard');
+  b.addEventListener('click',function(){copy((pre.querySelector('code')||pre).innerText,b,'Copied')});
+  pre.appendChild(b);
+ });
+ document.querySelectorAll('td code').forEach(function(c){
+  if(!c.textContent.trim())return;
+  c.classList.add('cp');c.tabIndex=0;c.setAttribute('role','button');
+  c.title='Click to copy';
+  c.addEventListener('click',function(){copy(c.textContent,c)});
+  c.addEventListener('keydown',function(e){
+   if(e.key==='Enter'||e.key===' '){e.preventDefault();copy(c.textContent,c)}});
+ });
+})();
+</script>
+</body></html>

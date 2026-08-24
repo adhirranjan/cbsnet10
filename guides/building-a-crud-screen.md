@@ -1,0 +1,803 @@
+# Building a Simple CRUD Screen — TrustBank CBS (.NET 10)
+
+> A step-by-step, copy-paste-and-rename tutorial for new developers.
+> Worked example: the **State** master (`/Hr/State`) — the cleanest full-CRUD screen in the repo
+> (one text field, no foreign keys). Every step shows **what** we did and explains **why**.
+>
+> This guide covers adding a screen **inside an existing module**. To create a brand-new module
+> first, see [`starting-a-new-module.txt`](starting-a-new-module.txt).
+
+---
+
+## 1. Overview & architecture
+
+We are migrating TrustBank CBS from WebForms / VB.NET / .NET 4.8 to **.NET 10 / C# MVC** using the
+**strangler-fig** pattern: each legacy `*.aspx` screen is rebuilt as a new MVC screen while the old
+URL keeps working until cutover.
+
+Every CRUD screen is built from the same layers. A request flows **top to bottom** and the
+response flows back up:
+
+```
+Browser (Razor view + cbs-*.js from TflCbs.Web.Shared)
+   │  HTTP GET/POST
+   ▼
+Controller            (TflCbs.Modules.<Area>.Web RCL)  — thin: bind, authorize, call service,
+   │  calls                                              notify, redirect (base: CbsScreenController)
+   ▼
+Service               (TflCbs.Modules.<Domain>)        — business logic, returns Result / Result<T>,
+   │  uses                                               registered by its <Domain>Module (ICbsModule)
+   ▼
+Repository<T>         (TflOmniDb)                      — typed CRUD (GetAll/Where/Count/Insert/Update/Delete)
+   │  over
+   ▼
+Entity (TflCbs.Entities) ─────────────►  Database
+```
+
+**Where things live** (this matters — screens are NOT in the host):
+- Screens (controller + views + form models) → the domain **web RCL** `TflCbs.Modules.<Area>.Web`.
+- Business logic → the domain's **own service assembly** `TflCbs.Modules.<Domain>` (registered by that
+  assembly's `ICbsModule`). There is **no `TflCbsServices`** — it was dissolved on 2026-07-29 and every
+  domain now has its own project. The test/demo projects keep the old names (`TflCbs.Tests` /
+  `.Demo`) but cover all nine module assemblies.
+- Shared foundation everything compiles against (`Result`, `ICbsModule`, the framework ports, and the
+  shared `ServiceQuery`/`DbErrors` helpers) → **`TflCbs.Abstractions`**.
+- Shared layout/partials/JS → **`TflCbs.Web.Shared`** (served from `~/_content/TflCbs.Web.Shared/`).
+- Web plumbing (`CbsScreenController`, `RowToken`, `Notify`, middleware) → **`TflCbs.Framework`**.
+- The host (`TflCbs.Host.Main`) just composes these parts.
+
+**A screen's area and its service module are separate axes.** The worked example lives in
+`TflCbs.Modules.Hr.Web` (the HR menu, `/Hr/State`) but is backed by `TflCbs.Modules.Reference` — the core
+module that owns the shared geography masters. Legacy menu placement is preserved as-is; don't realign
+code modules to menu modules.
+
+### The golden rules (these are non-negotiable)
+
+| Rule | Why |
+|------|-----|
+| **No raw SQL / stored procedures** for new master CRUD — use `Repository<T>`. | One portable data path; provider-agnostic; testable. |
+| **Services return `Result` / `Result<T>`** — never throw across the service boundary. | Controllers handle failure explicitly; no unhandled 500s; user gets a safe message + reference id. |
+| **Access is fail-closed** (`CbsAccessMiddleware`). | A screen is reachable only if its route is in the user's menu. Never widen access. |
+| **Build `TflCbs.Entities` first** when entities change. | It's referenced by bare-DLL HintPath — there's no build-order edge to do it for you. |
+| **Stop the app before rebuilding.** | A running instance (including one under the VS debugger) holds DLL locks. |
+
+---
+
+## 2. The end-to-end request flow (what actually happens)
+
+Read this once before you build — it ties all the layers together.
+
+**A. New record**
+1. User clicks **State** in the menu → `GET /Hr/State` (no `row` query).
+2. Controller returns an empty `EditViewModel<StateForm>` (`IsEditMode = false`).
+3. View shows the State card with an empty input and a **Save** button.
+4. User types a name, clicks Save → `POST /Hr/State/save`.
+5. Service inserts the row, returns `Result.Ok()`; controller returns `SavedOk(HostUrl)`
+   (= `NotifySuccess` + redirect, Post-Redirect-Get).
+6. The `_Notification` partial shows a blocking acknowledgement modal.
+
+**B. Search + edit**
+1. User clicks **Search** → `cbs-search.js` opens the shared modal.
+2. Modal requests `GET /Hr/State/search?search.Q=...` (or `search.Filters[StateName]=...`).
+3. `SearchData` runs `StateService.SearchStatesAsync` → JSON rows. **Each row's id is an opaque token.**
+4. User clicks a row → browser navigates to `/Hr/State?row=<token>`.
+5. Controller **resolves** the token → real id → loads the name → renders edit mode (`IsEditMode = true`)
+   with Update/Delete buttons and a **fresh** token in the hidden field.
+6. User edits, clicks Update → `POST /Hr/State/update` → token **consumed** (single-use) → service updates → redirect.
+
+**C. Delete with FK guard**
+1. User clicks Delete → `POST /Hr/State/delete` (token consumed).
+2. Service attempts the delete. If the row is referenced elsewhere (FK violation), it returns
+   `Result.Fail("This state is referenced elsewhere…")`.
+3. Controller reopens the record in edit mode (`RedirectToRecord`, fresh token) and shows the reason.
+
+---
+
+## 3. Step 1 — The entity (`TflCbs.Entities`)
+
+**File:** `TflCbs.Entities/G_STATE.cs` (auto-generated — **do not hand-edit**)
+
+```csharp
+// <auto-generated> Generated by the TflOmniDb entity generator from the g_State table. </auto-generated>
+[DbTable(TableName = "G_STATE")]
+public partial class G_STATE : Entity
+{
+    [DbColumn(ColumnName = "STATEID", CoreType = CoreDataType.Int32,
+        AllowDbNull = false, IsPrimaryKey = true, KeyGeneration = KeyGenerationStrategy.Identity)]
+    public virtual int? STATEID { get; set; }
+
+    [DbColumn(ColumnName = "STATENAME", CoreType = CoreDataType.AnsiString, Size = 100, AllowDbNull = false)]
+    public virtual string? STATENAME { get; set; }
+
+    [DbColumn(ColumnName = "CREATEDBY", CoreType = CoreDataType.Int32)]
+    public virtual int? CREATEDBY { get; set; }
+    [DbColumn(ColumnName = "CREATEDON", CoreType = CoreDataType.DateTime)]
+    public virtual DateTime? CREATEDON { get; set; }
+    [DbColumn(ColumnName = "LASTMODIFIEDBY", CoreType = CoreDataType.Int32)]
+    public virtual int? LASTMODIFIEDBY { get; set; }
+    [DbColumn(ColumnName = "LASTMODIFIEDON", CoreType = CoreDataType.DateTime)]
+    public virtual DateTime? LASTMODIFIEDON { get; set; }
+    // … COUNTRYID, CODE, CODE2, CERSAICODE …
+
+    public static class Cols   // strongly-typed column tokens for the SqlQuery composer
+    {
+        public const string Table = "G_STATE";
+        public static readonly Col STATEID = new("STATEID");
+        public static readonly Col STATENAME = new("STATENAME");
+        // …
+    }
+}
+```
+
+**Why it looks like this**
+- **UPPERCASE properties** match the DB column names 1:1 — the generator maps them directly, no surprises.
+- **All properties are nullable** (`int?`, `string?`) — `null` means "not set", which lets us load a row,
+  change one field, and write it back without inventing default values.
+- **`varchar` → `AnsiString`, `MONEY` → `Money`, `DATETIME` → `DateTime`** — the `CoreType` is the
+  provider-neutral type; TflOmniDb turns it into the right SQL per database.
+- **`partial`** — if you need a hand-written member, put it in a *sibling* file so regeneration never
+  clobbers it. Worked example: `TflCbs.Entities/G_STATE.Concurrency.cs` adds the `VERSION` column
+  (`IsRowVersion = true`) that drives the optimistic-concurrency guard in Step 2. The DB column itself
+  comes from a migration (`TflCbs.Tools.DbMigrator/Migrations/<provider>/0002_g_state_version.sql`).
+- **Mind the PK type.** Not every PK is `int` — e.g. `A_ROLE.ROLEID` is `decimal`. Your service and
+  controller must use the entity's real PK type (see the token section below).
+- **It's generated** — when the table changes, regenerate with `TflOmniDb.Scaffold` and **build
+  `TflCbs.Entities` first** (`dotnet build TflCbs.Entities`).
+
+For most master screens the entity already exists. You only generate one for a brand-new table.
+
+---
+
+## 4. Step 2 — The service (the domain's module assembly)
+
+**File:** `TflCbs.Modules.Reference/StateService.cs`
+**Namespace:** `TflCbs.Modules.Reference`
+
+The service holds all business logic. It is the **only** place that touches data, and it returns a
+`Result`/`Result<T>` from every method — never throws to the controller.
+
+**Namespace == assembly.** Every type sits under a namespace starting with its own assembly name, so a
+`using` names the assembly you are coupling to (`NamespaceDisciplineTests` enforces it). Put your service
+in `TflCbs.Modules.<Domain>` inside the project of the same name.
+
+### The shape
+
+```csharp
+using TflCbs.Abstractions;
+using TflCbs.Entities;
+using TflOmniDb.Repository;
+using static TflCbs.Abstractions.ServiceQuery;   // Has / Eq / Val / Paged + page-size bounds
+using static TflCbs.Abstractions.DbErrors;       // IsDuplicate / IsForeignKey
+
+namespace TflCbs.Modules.Reference;
+
+public sealed class StateService(DataAccess data)         // primary constructor — DataAccess injected
+{
+    private Repository<G_STATE> States => data.Repository<G_STATE>();   // typed repo, on demand
+    // … methods …
+}
+```
+
+**Why** `DataAccess` (not a connection string): DI hands the service the *current* `DataAccess` for the
+request (the active DB provider — see Step 3). `data.Repository<T>()` is the typed CRUD gateway.
+
+> ⚠️ **Never re-declare a service helper privately.** `Has`/`Eq`/`Val`/`Paged` and
+> `IsDuplicate`/`IsForeignKey` live in `TflCbs.Abstractions` and are consumed with the two `using static`
+> lines above. They were copy-pasted into 8 services before being extracted, so `SharedServiceHelperTests`
+> now **fails the build** on any private copy. Need different semantics? Give it a different name.
+
+### Read for the grid — `SearchStatesAsync`
+
+```csharp
+public async Task<Result<(IReadOnlyList<IReadOnlyDictionary<string, object?>> Rows, int Total)>>
+    SearchStatesAsync(string? q, string? stateName, string? code, string? cersaiCode,
+                      string? sort, bool desc, int page, int pageSize, CancellationToken ct = default)
+{
+    try
+    {
+        IEnumerable<G_STATE> qy = await States.GetAllAsync(ct);   // small lookup → load & filter in memory
+        if (!string.IsNullOrWhiteSpace(q)) { var t = q.Trim();
+            qy = qy.Where(s => Has(s.STATENAME, t) || Has(s.CODE, t) || Has(s.CERSAICODE?.ToString(), t)); }
+        if (!string.IsNullOrWhiteSpace(stateName)) { var t = stateName.Trim(); qy = qy.Where(s => Has(s.STATENAME, t)); }
+        // … per-field filters, then sort by an allow-listed column …
+        var list = qy.ToList();
+        var rows = Paged(list, page, pageSize).Select(s => (IReadOnlyDictionary<string, object?>)
+            new Dictionary<string, object?> { ["Id"] = s.STATEID, ["StateName"] = s.STATENAME,
+                                              ["Code"] = s.CODE, ["CersaiCode"] = s.CERSAICODE }).ToList();
+        return Result<(IReadOnlyList<IReadOnlyDictionary<string, object?>>, int)>.Ok((rows, list.Count));
+    }
+    catch (Exception ex)
+    {
+        return Result<(IReadOnlyList<IReadOnlyDictionary<string, object?>>, int)>.Fail(ex);
+    }
+}
+```
+
+**Why** rows are `Dictionary<string, object?>`: the grid is generic — it renders whatever keys the
+descriptor's columns name (`StateName`, `Code`, …). `Id` is special: the controller turns it into an
+opaque token before it reaches the browser. Sorting is restricted to an allow-list to avoid injecting
+arbitrary column names.
+
+### Read one — `LoadStateAsync`
+
+```csharp
+public async Task<Result<StateEdit?>> LoadStateAsync(int id, CancellationToken ct = default)
+{
+    try
+    {
+        var state = (await States.WhereAsync(s => s.STATEID == id, take: 1, cancellationToken: ct)).FirstOrDefault();
+        return Result<StateEdit?>.Ok(state is null ? null : new StateEdit(state.STATENAME, state.VERSION ?? 0));
+    }
+    catch (Exception ex) { return Result<StateEdit?>.Fail(ex); }
+}
+
+/// <summary>Edit-load payload: the editable field(s) + the optimistic-concurrency version.</summary>
+public sealed record StateEdit(string? StateName, int Version);
+```
+
+**Why a record and not just the name:** the load must also hand back the row's **concurrency version**,
+which the edit form round-trips and the update uses as its guard (see below). `Value == null` still means
+"the row is gone" — `TryLoad` in the controller turns that into the "already deleted" message.
+
+### Create — `SaveStateAsync`
+
+```csharp
+public async Task<Result> SaveStateAsync(string stateName, int userId, CancellationToken ct = default)
+{
+    try
+    {
+        var name = stateName.Trim();
+        if (await NameExistsAsync(name, excludeId: null, ct))
+            return Result.Fail(errorString: "Duplicate record already exists.");   // friendly, pre-checked
+
+        await States.InsertAsync(new G_STATE
+        {
+            STATENAME = name, CREATEDBY = userId, CREATEDON = DateTime.Now.Date,
+            VERSION = 0,      // optimistic-concurrency counter starts at 0 (matches the NOT NULL DEFAULT 0 column)
+        }, ct);
+        return Result.Ok();
+    }
+    catch (Exception ex) when (IsDuplicate(ex)) { return Result.Fail(ex, "Duplicate record already exists."); }  // race fallback
+    catch (Exception ex) { return Result.Fail(ex); }
+}
+```
+
+**Why** both an upfront `NameExistsAsync` check **and** an `IsDuplicate(ex)` catch: the check gives a
+clean message in the normal case; the catch handles the race where two users insert the same name at
+once (the DB unique constraint is the real guard).
+
+### Update — `UpdateStateAsync` (partial update, version-guarded)
+
+```csharp
+public async Task<Result> UpdateStateAsync(int id, string stateName, int expectedVersion, int userId,
+                                           CancellationToken ct = default)
+{
+    try
+    {
+        var name = stateName.Trim();
+        if (await NameExistsAsync(name, excludeId: id, ct)) return Result.Fail(errorString: "Duplicate record already exists.");
+
+        var entity = new G_STATE
+        {
+            STATEID = id,
+            VERSION = expectedVersion,       // the version the editor loaded — the concurrency guard
+            STATENAME = name,
+            LASTMODIFIEDBY = userId,
+            LASTMODIFIEDON = DateTime.Now.Date,
+        };
+
+        // PARTIAL update: writes only the listed columns, no prior read. Because G_STATE.VERSION is
+        // IsRowVersion, the DAL auto-increments it and appends "AND VERSION = @expectedVersion" to the
+        // WHERE — 0 rows affected throws ConcurrencyException.
+        await States.UpdateAsync(entity, s => s.STATENAME, s => s.LASTMODIFIEDBY, s => s.LASTMODIFIEDON);
+        return Result.Ok();
+    }
+    catch (ConcurrencyException)
+    {
+        // 0 rows matched: either someone else saved first, or the row was deleted. One cheap existence
+        // check keeps the two messages distinct.
+        var stillExists = await States.AnyAsync(s => s.STATEID == id, ct);
+        return Result.Fail(errorString: stillExists
+            ? "This state was changed by another user. Please reload and try again."
+            : "State already deleted.");
+    }
+    catch (Exception ex) when (IsDuplicate(ex)) { return Result.Fail(ex, "Duplicate record already exists."); }
+    catch (Exception ex) { return Result.Fail(ex); }
+}
+```
+
+**The two update shapes — pick deliberately:**
+
+| Overload | Writes | Prior read | Use when |
+|---|---|---|---|
+| `UpdateAsync(entity, s => s.Col1, s => s.Col2, …)` | only the named columns | none | **Default.** One round trip, and columns the form doesn't own can't be touched. |
+| `UpdateAsync(entity, ct)` | **every** mapped column | **required** | Only when you really are rewriting the whole row. |
+
+**Why this matters:** the full overload rewrites all mapped columns, so
+`new G_STATE { STATEID = id, STATENAME = name }` saved that way would blank `CODE`, `CERSAICODE`,
+`COUNTRYID` and the created-audit. If you use it, load-mutate-save (load first, change only the form's
+fields, write back). The partial overload sidesteps the trap entirely, which is why State uses it.
+
+**Why the version guard:** without it, two users editing the same row silently overwrite each other —
+last writer wins, no error. `VERSION` is loaded with the record, round-tripped through a hidden form
+field, and checked in the `WHERE`. Requires the table to have an `IsRowVersion` column.
+
+### Delete — `DeleteStateAsync` (FK guard)
+
+```csharp
+public async Task<Result> DeleteStateAsync(int id, CancellationToken ct = default)
+{
+    try
+    {
+        await States.DeleteAsync(new G_STATE { STATEID = id }, ct);   // delete binds on the PK only
+        return Result.Ok();
+    }
+    catch (Exception ex) when (IsForeignKey(ex))
+    { return Result.Fail(ex, "This state is referenced elsewhere and cannot be deleted."); }
+    catch (Exception ex) { return Result.Fail(ex); }
+}
+```
+
+### The `Result` / `Result<T>` envelope
+
+**File:** `TflCbs.Abstractions/Result.cs`
+
+```csharp
+public record Result
+{
+    public int Status { get; init; }              // 1 = success, 0 = failure
+    public bool IsSuccess => Status == 1;
+    public string ErrorCode { get; init; } = "";  // "9999" default
+    public string ErrorString { get; init; } = "";// short, user-safe message
+    public Exception? Exception { get; init; }     // server-side only — NEVER serialize to a client
+    public string? Reference { get; init; }        // correlation id for log lookup
+
+    public static Result Ok() => new() { Status = 1 };
+    public static Result Fail(Exception? exception = null, string? errorString = null, string errorCode = "9999") => …;
+}
+
+public sealed record Result<T> : Result
+{
+    public T? Value { get; init; }                 // payload on success; default on failure
+    public static Result<T> Ok(T value) => …;
+    public static new Result<T> Fail(…) => …;
+}
+```
+
+**Why** this exists: it forces every caller to handle success and failure explicitly. The `Exception`
+stays server-side; the user sees `ErrorString` plus a `Reference` they can quote to support.
+
+> ⚠️ **After you add/change/remove a public service method, run the `cbs-sync-test-demo` agent.** It
+> keeps `TflCbs.Tests` and `TflCbs.Demo` in sync, builds, and runs the tests. (Both
+> project names are **historical** — they cover all nine module assemblies; there is no `TflCbsServices`.)
+
+---
+
+## 5. Step 3 — Register the service in its module (NOT in Program.cs)
+
+Services are registered by their module's `ICbsModule`, which lives in the same assembly. For State that
+is the Reference module:
+
+**File:** `TflCbs.Modules.Reference/ReferenceModule.cs`
+
+```csharp
+public sealed class ReferenceModule : ICoreCbsModule   // core → registered unconditionally
+{
+    public string Name => "Reference";
+    public void AddServices(IServiceCollection services, IConfiguration config)
+    {
+        services.AddScoped<StateService>();
+        services.AddScoped<DistrictService>();
+        services.AddScoped<TalukaService>();
+    }
+}
+```
+
+**Two kinds of module:**
+
+| Interface | Gated by `Modules:Enabled`? | Who |
+|---|---|---|
+| `ICoreCbsModule` | **No** — always registered | `General` (menu/bank vars/broadcast/scroll), `Reference` (geography), `Authentication` |
+| `ICbsModule` | Yes | the six leaf domains: `HR`, `Lockers`, `Accounts`, `Clearing`, `Administration`, `RetailBanking` |
+
+The host's `Program.cs` never lists individual services — it calls `builder.Services.AddCbsModules(config, …)`
+once, which discovers every `ICbsModule` in the assemblies it is handed, registers the core ones
+unconditionally, and filters the domain ones by `Modules:Enabled`. **Adding a service to an existing
+module = one `AddScoped` line in that module's `AddServices`** — no host edit.
+
+> ⚠️ **A brand-new module assembly must be named in every host's `AddCbsModules(...)` call** —
+> discovery is fully explicit; there is no implicit anchor since `TflCbsServices` was dissolved.
+> `AddCbsModules` cross-checks the output directory at startup and throws if a `TflCbs.Modules.<X>` /
+> `TflCbs.Core.<X>` assembly is deployed but not passed. Nothing else catches this: a host on
+> `Modules:Enabled = "*"` never names a module, so the unknown-name check can't fire, and a missing
+> `ICoreCbsModule` degrades silently to the framework's no-op ports (empty menu).
+
+**Why `Scoped`:** one service instance per HTTP request. The framework registers `DataAccess`
+per request (resolved from the `DatabaseSelector`, the active provider), so DI injects the correct
+`DataAccess` into your scoped service automatically — you never new it up.
+
+---
+
+## 6. Step 4 — Form model & view model
+
+**Form** — `TflCbs.Modules.Hr.Web/Models/Hr/StateModels.cs` (lives **in the web RCL**, namespace
+`TflCbs.Modules.<Area>.Web.Models` — namespace == assembly):
+
+```csharp
+namespace TflCbs.Modules.Hr.Web.Models;
+
+public sealed class StateForm : IRowForm
+{
+    public string? Row { get; set; }   // opaque row token for edit/update/delete; null for a new record
+
+    [Required(ErrorMessage = "'State Name' cannot be blank.")]
+    [StringLength(100)]
+    public string StateName { get; set; } = string.Empty;
+
+    /// Optimistic-concurrency version loaded with the record; round-tripped as a hidden field and passed
+    /// to the guarded update. A conflict token, NOT a security token — 0 for a new record.
+    public int Version { get; set; }
+}
+```
+
+`IRowForm` (Framework, `Models/Shared`) is the tiny contract — "has a `Row` token property" — that
+lets the shared `EditFailed<TForm>` helper re-mint tokens generically.
+
+**View model** — generic, reused by *every* CRUD screen (don't write a per-screen one):
+`TflCbs.Framework/Models/Shared/EditViewModel.cs` (namespace `TflCbs.Framework.ViewModels`)
+
+```csharp
+public class EditViewModel<TForm> where TForm : new()
+{
+    public TForm Form { get; set; } = new();
+    public bool IsEditMode { get; set; }   // drives new-vs-edit rendering + which buttons show
+}
+```
+
+**Why** a generic VM: with ~1000 screens, a per-screen `XViewModel` is pure noise. You only define the
+`Form`; `EditViewModel<TForm>` supplies the edit/new flag.
+
+---
+
+## 7. Step 5 — The controller
+
+**File:** `TflCbs.Modules.Hr.Web/Areas/Hr/Controllers/StateController.cs`
+**Namespace:** `TflCbs.Modules.Hr.Web.Controllers` (the RCL owns exactly **one** namespace prefix —
+`TflCbs.Modules.<Area>.Web.*`; the `Areas/` folder is routing, not namespacing)
+
+Controllers inherit **`CbsScreenController`** (Framework), which centralizes the write lifecycle —
+token-resolve → validate → token-consume → notify → redirect — so each screen only writes its actions.
+
+```csharp
+[Area("Hr")]
+[Route("Hr/State")]
+[CbsAccessScreen(ScreenKey)]   // per-action routes (save/update/delete/search) authorize as this screen
+public sealed class StateController(
+    CbsSessionStore store, StateService svc, SearchEndpoint searchEndpoint, RowToken tokens)
+    : CbsScreenController(store, tokens, searchEndpoint)
+{
+    private const string HostUrl = "/Hr/State";
+    private const string ScreenKey = "Hr/State";   // row-token screen binding
+
+    protected override string Screen => ScreenKey; // hands the key to the base helpers
+
+    [HttpGet]
+    public async Task<IActionResult> Index(string? row, CancellationToken ct)
+    {
+        var vm = new EditViewModel<StateForm>();
+
+        if (!string.IsNullOrEmpty(row))
+        {
+            if (!TryOpenRecord(row, out var idStr) || !int.TryParse(idStr, out var stateId))
+                return View(vm);                                     // helper already notified
+            if (!TryLoad(await svc.LoadStateAsync(stateId, ct), "State already deleted.", out var loaded))
+                return View(vm);
+            vm.IsEditMode = true;
+            vm.Form.StateName = loaded.StateName ?? string.Empty;
+            vm.Form.Version = loaded.Version;                        // carry the concurrency version to the form
+            vm.Form.Row = ProtectId(stateId.ToString());             // fresh single-use token
+        }
+        return View(vm);
+    }
+
+    [HttpGet("search")]   // JSON rows for the search modal
+    public async Task<IActionResult> SearchData([FromQuery] SearchRequest search, CancellationToken ct)
+    {
+        var resp = await RunSearch(async (r, c) =>
+        {
+            r.Filters.TryGetValue("StateName", out var sn);
+            r.Filters.TryGetValue("Code", out var code);
+            r.Filters.TryGetValue("CersaiCode", out var cersai);
+            var res = await svc.SearchStatesAsync(r.Q, sn, code, cersai, r.Sort, r.Desc, r.Page, r.PageSize, c);
+            return res.IsSuccess ? res.Value : ([], 0);
+        }, search, ct);                       // base supplies the "Id" key + this screen
+        return Json(resp);
+    }
+
+    [HttpPost("save")]
+    public async Task<IActionResult> Save([Bind(Prefix = "Form")] StateForm form, CancellationToken ct)
+    {
+        if (!ModelState.IsValid)
+        {
+            this.NotifyError(FirstError());
+            return View(nameof(Index), new EditViewModel<StateForm> { Form = form });
+        }
+
+        var result = await svc.SaveStateAsync(form.StateName, UserId, ct);
+        if (!result.IsSuccess)
+        {
+            this.NotifyError(result.ErrorString);
+            return View(nameof(Index), new EditViewModel<StateForm> { Form = form });
+        }
+
+        return SavedOk(HostUrl);              // NotifySuccess("Record saved successfully.") + redirect (PRG)
+    }
+
+    [HttpPost("update")]
+    public async Task<IActionResult> Update([Bind(Prefix = "Form")] StateForm form, CancellationToken ct)
+    {
+        if (!TryBeginWrite(form.Row, out var idStr) || !int.TryParse(idStr, out var stateId))
+            return Redirect(HostUrl);
+        if (!ModelState.IsValid)
+            return EditFailed(stateId.ToString(), form, FirstError());
+
+        if (!TryConsume(form.Row, out _, MsgAlreadyDone))      // single-use → blocks double-submit
+            return Redirect(HostUrl);
+
+        var result = await svc.UpdateStateAsync(stateId, form.StateName, form.Version, UserId, ct);
+        if (!result.IsSuccess)
+            return EditFailed(stateId.ToString(), form, result.ErrorString);
+
+        return UpdatedOk(HostUrl);
+    }
+
+    [HttpPost("delete")]
+    public async Task<IActionResult> Delete([Bind(Prefix = "Form")] StateForm form, CancellationToken ct)
+    {
+        if (!TryConsume(form.Row, out var idStr) || !int.TryParse(idStr, out var stateId))
+            return Redirect(HostUrl);
+
+        var result = await svc.DeleteStateAsync(stateId, ct);
+        if (result.IsSuccess)
+            return DeletedOk(HostUrl);
+
+        // FK-guard: reopen in edit mode with a fresh token + the reason.
+        this.NotifyError(result.ErrorString);
+        return RedirectToRecord(HostUrl, stateId.ToString());
+    }
+}
+```
+
+### The `CbsScreenController` helpers (and why)
+
+`TflCbs.Framework/Infrastructure/CbsScreenController.cs`:
+
+| Helper | Use | What it does |
+|--------|-----|--------------|
+| `TryOpenRecord(token, out id)` | GET (open) | Resolve token → id (read-only). Notifies the standard message on failure. |
+| `TryBeginWrite(token, out id)` | top of Update | Resolve (validate only, not yet consumed). |
+| `TryConsume(token, out id, msg?)` | Delete / final step of Update | Resolve + **burn** (single-use). Blocks replay/double-submit. |
+| `ProtectId(id)` | redisplay | Mint a fresh single-use token. |
+| `RedirectToRecord(hostUrl, id)` | FK-guard reopen | Redirect with a fresh token in `?row=`. |
+| `SavedOk / UpdatedOk / DeletedOk(hostUrl)` | success | `NotifySuccess` + redirect (Post-Redirect-Get). |
+| `TryLoad(result, deletedMsg, out value)` | Index load | Unwraps `Result<T>`; notifies error/deleted. |
+| `EditFailed(id, form, msg)` | failed write | Re-render Index in edit mode with a **fresh** token (the prior one may be consumed). Needs `TForm : IRowForm`. |
+| `RunSearch(fetch, req, ct)` | search action | Wraps `SearchEndpoint` with the constant `"Id"` key + this screen. |
+| `UserId`, `OrgElementId`, `WorkingDate`, `FirstError()` | anywhere | Session accessors + first ModelState error. |
+
+**Token ids are strings end-to-end.** `RowToken` mints an opaque *string*; the helpers hand it back as
+a string and **each screen parses it to its service's PK type at the call site** (`int.Parse` here;
+`decimal.Parse` for e.g. `A_ROLE.ROLEID`). This exists because narrowing every id through `int` broke
+decimal PKs — don't reintroduce that.
+
+**Why the token dance at all:** raw ids in URLs invite tampering (`?row=5` → edit any state) and
+double-submits. `RowToken` tokens are AES-encrypted, screen-bound, session-bound, and single-use for
+writes — opaque, un-forgeable, one-shot.
+
+---
+
+## 8. Step 6 — The view
+
+**File:** `TflCbs.Modules.Hr.Web/Areas/Hr/Views/State/Index.cshtml`
+
+One view serves both **New** and **Edit**, switched by `Model.IsEditMode`.
+
+```cshtml
+@using TflCbs.Modules.Hr.Web.Controllers
+@model EditViewModel<StateForm>
+@{
+    ViewData["Title"] = "State";
+    ViewData["SelectedMenu"] = "State";
+
+    var searchDescriptor = new SearchDescriptor
+    {
+        Title = "States",
+        DataUrl = Url.Action(nameof(StateController.SearchData))!,
+        Method = "GET",                 // per-action screens use GET (search.* rides as query string)
+        IdKey = "Id",
+        Columns =
+        [
+            new SearchColumn("StateName", "State Name"),
+            new SearchColumn("Code", "Code"),
+            new SearchColumn("CersaiCode", "CERSAI Code"),
+        ],
+        Filters =
+        [
+            new SearchFilter("StateName", "State Name"),
+            new SearchFilter("Code", "Code"),
+        ],
+        PageSize = 10,
+        SelectMode = "navigate",                     // pick a row → open it
+        NavigateTemplate = "/Hr/State?row={token}",  // {token} replaced with the row's opaque id
+    };
+}
+
+<form method="post" asp-action="@nameof(StateController.Save)">
+    <input type="hidden" asp-for="Form.Row" />
+    <input type="hidden" asp-for="Form.Version" /> @* concurrency token round-tripped to the guarded update *@
+
+    <div class="card">
+        <div class="card-title">@ViewData["SelectedMenu"]</div>
+        <div class="form-grid">
+            <div>
+                <label class="req" asp-for="Form.StateName">State Name</label>
+                <input asp-for="Form.StateName" maxlength="100" autocomplete="off" autofocus />
+            </div>
+        </div>
+
+        <div class="action-bar">
+            @if (!Model.IsEditMode)
+            {
+                <button type="submit" class="btn btn-primary">Save</button>
+            }
+            else
+            {
+                <button type="submit" class="btn btn-primary"
+                        formaction="@Url.Action(nameof(StateController.Update))">Update</button>
+                <button type="submit" class="btn btn-ghost"
+                        formaction="@Url.Action(nameof(StateController.Delete))"
+                        data-cbs-confirm="Delete this state?">Delete</button>
+            }
+            <button type="button" class="btn btn-ghost" data-cbs-search='@Json.Serialize(searchDescriptor)'>Search</button>
+            <a class="btn btn-ghost" href="/Hr/State">Cancel</a>
+        </div>
+    </div>
+</form>
+```
+
+**Why it's shaped this way**
+- **One form, `formaction` per button** — the form posts to `Save` by default; the Update/Delete buttons
+  override the target with `formaction`. One form, three endpoints, no JS.
+- **`asp-for="Form.StateName"`** — the `Form.` prefix matches the controller's `[Bind(Prefix = "Form")]`.
+- **`data-cbs-confirm="…"`** — the shared confirm guard in `site.js`, not an inline `onclick`. Inline
+  handlers are blocked by the strict CSP that `UseCbsSecurityHeaders` sets on every response.
+- **`data-cbs-search='@Json.Serialize(searchDescriptor)'`** — the Search button carries the whole search
+  config as JSON. The screen owns *what* to search (columns/filters/data URL); the reusable modal owns
+  *how* it looks and behaves.
+- **`SelectMode = "navigate"`** — picking a row navigates to `/Hr/State?row={token}` (edit it). For an
+  FK picker you'd use `SelectMode = "callback"` to fill a field instead.
+- **`_Notification` and `_SearchModal` are rendered once in `_Layout`** (in `TflCbs.Web.Shared`) —
+  you don't include them per view.
+
+`SearchDescriptor` (`TflCbs.Framework/Models/Search/SearchDescriptor.cs`) has many optional
+properties (picker mode, `DependsOn`, `PickFields`, `GoFilterKey`, …) — all with safe defaults, so a
+simple master only sets the handful above.
+
+---
+
+## 9. Step 7 — Client wiring
+
+For a simple master, **you write zero JavaScript**. The shared layout (`TflCbs.Web.Shared/Views/Shared/_Layout.cshtml`)
+already loads the global scripts from the shared RCL's static assets:
+
+```html
+<script src="~/_content/TflCbs.Web.Shared/js/site.js"               asp-append-version="true"></script>
+<script src="~/_content/TflCbs.Web.Shared/js/cbs-search.js"         asp-append-version="true"></script>
+<script src="~/_content/TflCbs.Web.Shared/js/cbs-datepicker.js"     asp-append-version="true"></script>
+<script src="~/_content/TflCbs.Web.Shared/js/cbs-account-picker.js" asp-append-version="true"></script>
+<script src="~/_content/TflCbs.Web.Shared/js/cbs-command-palette.js" asp-append-version="true"></script>
+<script src="~/_content/TflCbs.Web.Shared/js/cbs-form-guard.js"     asp-append-version="true"></script>
+<script src="~/_content/TflCbs.Web.Shared/js/cbs-idle.js"           asp-append-version="true"></script>
+<script src="~/_content/TflCbs.Web.Shared/js/cbs-uppercase.js"      asp-append-version="true"></script>
+```
+
+`cbs-search.js` finds any element with `data-cbs-search='<JSON>'`, opens the shared modal, runs the
+grid (filter / sort / page), and on row-pick either navigates (`navigate` mode) or fills fields
+(`callback` mode). `asp-append-version` adds a content hash for cache-busting.
+
+**When does a screen need its own JS?** Only for screen-specific behaviour (e.g. a calculation). Put it
+in the module RCL's `wwwroot/js/` (served from `~/_content/TflCbs.Modules.<Area>.Web/js/…`), reference
+it in a `@section Scripts { … }` block, and `node --check` it. A plain master like State needs none.
+
+---
+
+## 10. Step 8 — Access & legacy URL cutover
+
+**Access is fail-closed.** `[CbsAccessScreen("Hr/State")]` ties every action (including
+`/save`, `/update`, `/delete`, `/search`) to one screen key. `CbsAccessMiddleware` then allows the
+request only if the normalized route is in the signed-in user's menu (`AllowedUrls`). You never widen
+this; menu authorization is server-side.
+
+**Point the menu row at your route.** `a_Menus.NavigateURL` is the single source of truth: it is both
+what the menu links to and what `AllowedUrls` is derived from, so until that column holds your new route
+nobody can reach the screen. Ship the change as a **DbMigrator migration**, one per provider — see
+[`0004_menu_routes_cutover.sql`](../../TflCbs.Tools.DbMigrator/Migrations/sqlserver/0004_menu_routes_cutover.sql)
+for the pattern:
+
+```sql
+UPDATE dbo.A_MENUS SET NavigateURL = '/Hr/State'
+ WHERE LOWER(REPLACE(NavigateURL, '~', '')) = '/ho/bank/g_state.aspx?';
+```
+
+Match on the **whole** legacy string, not a `LIKE '%g_state%'` — `g_State_Mapping.aspx` is a different
+screen. A legacy page that multiplexed modes via a query value (`?Source=ENTRY|ENTRYPASS`) already has
+one `a_Menus` row per mode, so give each row its own route and each screen keeps its own menu right.
+`_NavigateURL_SQL` holds the pre-migration value, so a rollback is a one-line restore.
+
+> Until 2026-08-24 this was an in-memory config map (`routecutover.json`), so the legacy WebForms app
+> could keep using the same rows. That app no longer reads the database, and the config layer is gone.
+
+> **Placement rule:** a screen goes in the web RCL of its **runtime menu area**, not necessarily its
+> data domain. State sits in `TflCbs.Modules.Hr.Web` (HR menu) but is backed by the **Reference** module
+> (shared geography masters). Don't realign code modules to match menu modules.
+
+---
+
+## 11. Checklist — build a new master by renaming State
+
+Do these in order. Replace `State` / `G_STATE` / `Hr` with your entity / table / area.
+(If the **module itself** is new, first follow `starting-a-new-module.txt`.)
+
+1. **Entity** — if the table is new, generate it with `TflOmniDb.Scaffold`, then **`dotnet build TflCbs.Entities`** first.
+2. **Service** — add `YourThingService.cs` to `TflCbs.Modules.<Domain>/` (namespace `TflCbs.Modules.<Domain>`):
+   primary ctor `(DataAccess data)`, `Repository<YOUR_ENTITY>` accessor, `Search/Load/Save/Update/Delete`
+   returning `Result`/`Result<T>`, shared helpers via `using static TflCbs.Abstractions.ServiceQuery;` /
+   `…DbErrors;` (never a private copy). Then **run the `cbs-sync-test-demo` agent**.
+3. **Register** — one `services.AddScoped<YourThingService>();` line in that assembly's
+   `<Domain>Module.AddServices`. (New *assembly*? Also add it to every host's `AddCbsModules(...)` — see
+   `starting-a-new-module.txt`.)
+4. **Form model** — `YourThingForm : IRowForm` (DataAnnotations + `string? Row`, plus `int Version` if the
+   table has a row-version column) in the web RCL's `Models/<Area>/`; reuse `EditViewModel<TForm>`.
+5. **Controller** — `TflCbs.Modules.<Area>.Web/Areas/<Area>/Controllers/YourThingController.cs`:
+   inherit `CbsScreenController`, copy State's actions; parse the string token id to your PK type
+   (mind decimal PKs).
+6. **View** — `Areas/<Area>/Views/YourThing/Index.cshtml`: copy State's view; adjust fields, columns,
+   and `NavigateTemplate`.
+7. **Route cutover** — add a DbMigrator migration pointing the screen's `a_Menus.NavigateURL` at
+   `/Area/YourThing` (one script per provider), then `dotnet run --project TflCbs.Tools.DbMigrator -- upgrade`.
+8. **Build & verify** (below). If you touched a **shared** UI component, also run the `component-demo` /
+   `component-docs-sync` agents.
+
+---
+
+## 12. Verification
+
+| After you change… | Run |
+|-------------------|-----|
+| C# / Razor | `dotnet build TflCbs.Host.Main` (stop the app first) |
+| `TflCbs.Entities` | `dotnet build TflCbs.Entities` **first**, then dependents |
+| A service public method | the `cbs-sync-test-demo` agent, then `dotnet test TflCbs.Tests` |
+| Architecture boundaries | `dotnet test TflCbs.ArchTests` |
+| JavaScript | `node --check <file.js>` |
+| Runtime / UI behaviour | `dotnet run --project TflCbs.Host.Main` → verify at `https://localhost:7225`, then **stop it** before the next build |
+
+---
+
+## 13. Conventions cheat-sheet & common pitfalls
+
+- **Naming:** C# types/methods PascalCase; locals/params camelCase; `_camelCase` private fields;
+  `TflCbs.Entities` props are **UPPERCASE** (DB-generated). Client assets kebab-case (`cbs-search.js`).
+- **Never write raw SQL / stored procedures** for new master CRUD — `Repository<T>` only.
+- **Never re-declare `Has`/`Eq`/`Val`/`Paged`/`IsDuplicate`/`IsForeignKey`** — `using static` them from
+  `TflCbs.Abstractions`; a private copy fails `SharedServiceHelperTests`.
+- **Prefer the partial `UpdateAsync(entity, s => s.Col, …)`** — it writes only the named columns. The
+  full `UpdateAsync(entity, ct)` rewrites every mapped column, so it needs a load-mutate-save first or
+  you'll blank fields.
+- **Tokens:** `TryOpenRecord`/`TryBeginWrite` for reads, `TryConsume` for writes; `ProtectId` a fresh
+  token on every redisplay. Ids are **strings** — parse to the service's PK type at the call site.
+- **Always `Result`** — handle `IsSuccess`; show `ErrorString`; never let an exception cross the boundary.
+- **Screens live in the web RCL of their menu area** — not the host, not necessarily their data domain.
+- **Reusable components stay additive** — extend `SearchDescriptor` etc. with safe defaults; never break
+  existing pickers.
+- **Build `TflCbs.Entities` first** on entity changes; **stop the app before rebuilding**.
+- **When uncertain, ask** rather than assume.

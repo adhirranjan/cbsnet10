@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AdDataAccessComponent vs. TflOmniDb — Component Comparison</title>
+<style>
+  :root {
+    --bg: #f6f7f9; --panel: #ffffff; --ink: #1c2733; --muted: #5b6b7b;
+    --line: #dde3ea; --legacy: #9a6b15; --legacy-bg: #fdf6e8; --legacy-line: #ecd9ad;
+    --new: #1c7a4d; --new-bg: #eef8f1; --new-line: #bfe3cc;
+    --code-bg: #212a35; --code-ink: #dbe4ee; --accent: #23558c;
+    --warn-bg: #fdf0f0; --warn-line: #e6bcbc;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #12181f; --panel: #1a222c; --ink: #dbe4ee; --muted: #8fa0b3;
+      --line: #2c3a49; --legacy: #d9a94e; --legacy-bg: #241d0f; --legacy-line: #4d3d1a;
+      --new: #5cc492; --new-bg: #0f231a; --new-line: #1f4433;
+      --code-bg: #0d1319; --code-ink: #cdd9e5; --accent: #7cb2e8;
+      --warn-bg: #2a1717; --warn-line: #553030;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--ink);
+    font: 15px/1.55 "Segoe UI", system-ui, -apple-system, sans-serif;
+  }
+  .wrap { max-width: 1180px; margin: 0 auto; padding: 24px 20px 80px; }
+  header.hero { padding: 40px 0 8px; }
+  header.hero h1 { font-size: 1.9rem; margin: 0 0 6px; letter-spacing: -0.02em; }
+  header.hero p { color: var(--muted); margin: 0; max-width: 70ch; }
+  .tags { margin-top: 14px; display: flex; gap: 8px; flex-wrap: wrap; }
+  .tag { font-size: .78rem; padding: 3px 10px; border-radius: 999px; border: 1px solid var(--line); color: var(--muted); background: var(--panel); }
+  h2 { font-size: 1.3rem; margin: 44px 0 4px; letter-spacing: -0.01em; }
+  h2 .no { color: var(--accent); margin-right: 6px; }
+  h3 { font-size: 1.02rem; margin: 28px 0 10px; }
+  p.lead { color: var(--muted); margin: 4px 0 16px; max-width: 80ch; }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 16px 18px; }
+
+  /* tables */
+  .tbl-scroll { overflow-x: auto; border: 1px solid var(--line); border-radius: 10px; background: var(--panel); }
+  table { border-collapse: collapse; width: 100%; font-size: .88rem; }
+  th, td { text-align: left; padding: 8px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  thead th { background: transparent; color: var(--muted); font-weight: 600; font-size: .8rem; text-transform: uppercase; letter-spacing: .04em; }
+  tbody tr:last-child td { border-bottom: none; }
+  td.c, th.c { text-align: center; white-space: nowrap; }
+  tr.grp td { background: color-mix(in srgb, var(--accent) 7%, var(--panel)); font-weight: 700; font-size: .8rem; text-transform: uppercase; letter-spacing: .05em; color: var(--accent); }
+  .ok { color: var(--new); font-weight: 600; }
+  .part { color: var(--legacy); font-weight: 600; }
+  .no2 { color: #b3535a; font-weight: 600; }
+
+  /* side-by-side code */
+  .duo { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin: 10px 0 6px; }
+  @media (max-width: 880px) { .duo { grid-template-columns: 1fr; } }
+  .pane { border-radius: 10px; overflow: hidden; border: 1px solid var(--line); display: flex; flex-direction: column; }
+  .pane .cap { font-size: .78rem; font-weight: 700; padding: 7px 12px; letter-spacing: .03em; }
+  .pane.legacy .cap { background: var(--legacy-bg); color: var(--legacy); border-bottom: 1px solid var(--legacy-line); }
+  .pane.newer  .cap { background: var(--new-bg); color: var(--new); border-bottom: 1px solid var(--new-line); }
+  .pane pre { margin: 0; padding: 12px 14px; background: var(--code-bg); color: var(--code-ink);
+              font: 12.5px/1.5 Consolas, "Cascadia Code", Menlo, monospace; overflow-x: auto; flex: 1; }
+  .pane pre .cm { color: #7e93a8; font-style: italic; }
+  .pane.newer pre { border-top: none; }
+  .solo { max-width: 100%; }
+
+  .note { border: 1px solid var(--warn-line); background: var(--warn-bg); border-radius: 10px; padding: 10px 14px; font-size: .9rem; margin: 10px 0; }
+  .note b { color: #b3535a; }
+
+  /* strengths / weaknesses */
+  .sw { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  @media (max-width: 880px) { .sw { grid-template-columns: 1fr; } }
+  .sw .card h3 { margin-top: 2px; }
+  .sw ul { margin: 6px 0 12px; padding-left: 20px; }
+  .sw li { margin: 3px 0; }
+  .sw .plus  { color: var(--new); font-weight: 700; }
+  .sw .minus { color: #b3535a; font-weight: 700; }
+
+  .verdict { border-left: 4px solid var(--accent); }
+  footer { margin-top: 56px; color: var(--muted); font-size: .8rem; border-top: 1px solid var(--line); padding-top: 14px; }
+  a { color: var(--accent); }
+  code.inl { background: color-mix(in srgb, var(--ink) 8%, var(--panel)); padding: 1px 5px; border-radius: 4px; font-size: .85em; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="hero">
+  <h1>AdDataAccessComponent <span style="color:var(--muted)">vs.</span> TflOmniDb</h1>
+  <p>A side-by-side comparison of the legacy VB.NET data-access component (Enterprise Library 5.0,
+     static API, sync-only) and its modern replacement (net10 / net48, instance API, async-only,
+     SQL Server + Oracle + PostgreSQL).</p>
+  <div class="tags">
+    <span class="tag">Legacy: VB.NET · EntLib 5.0 · SQL Server + Oracle</span>
+    <span class="tag">New: C# · .NET 10 + net48 · 3 providers · async</span>
+    <span class="tag">Companion: Migration-from-AdDataAccessComponent.md</span>
+  </div>
+</header>
+
+<h2><span class="no">1.</span>At a glance</h2>
+<div class="tbl-scroll">
+<table>
+  <thead><tr><th>Dimension</th><th>AdDataAccessComponent (legacy)</th><th>TflOmniDb (new)</th></tr></thead>
+  <tbody>
+    <tr><td>Language</td><td>VB.NET</td><td>C# (net10 + net48 legs); scaffolder can emit VB entities</td></tr>
+    <tr><td>Runtime</td><td>.NET Framework only</td><td>.NET 10 <b>and</b> .NET Framework 4.8</td></tr>
+    <tr><td>Data stack</td><td>EntLib 5.0 DAAB (abandoned) + EntLibContrib</td><td>Microsoft.Data.SqlClient 6.x · ODP.NET Core 23.x · Npgsql 9.x</td></tr>
+    <tr><td>Providers</td><td>SQL Server, Oracle (incl. deprecated System.Data.OracleClient)</td><td>SQL Server, Oracle (managed), <b>PostgreSQL</b></td></tr>
+    <tr><td>API model</td><td>Static <code class="inl">Shared</code> methods (global state)</td><td>Instance <code class="inl">DataAccess</code> / <code class="inl">IRepository&lt;T&gt;</code> / <code class="inl">IUnitOfWork</code></td></tr>
+    <tr><td>Concurrency model</td><td>Synchronous only</td><td>Async-only (<code class="inl">Task</code> / <code class="inl">IAsyncEnumerable</code>, cancellation)</td></tr>
+    <tr><td>SQL generation</td><td>String concat per call, no caching</td><td>Cached per (entity, dialect, schema); dialect-owned quoting</td></tr>
+    <tr><td>Entity mapping</td><td>Reflection on <b>every call</b></td><td>Reflection <b>once per type</b> (cached)</td></tr>
+    <tr><td>Filtering</td><td>Raw <code class="inl">criteria</code> string in WHERE</td><td>LINQ predicate → parameterized SQL</td></tr>
+    <tr><td>Result shapes</td><td>DataTable / DataSet / DataRow / List(Of T)</td><td>T / IReadOnlyList&lt;T&gt; / IAsyncEnumerable&lt;T&gt; / dict rows</td></tr>
+    <tr><td>Logging</td><td>None in-component</td><td>M.E.Logging: per-command, redaction, correlation ids</td></tr>
+    <tr><td>Tests</td><td>Manual test harness</td><td>510 (net10) / 332 (fx) automated, live on 3 engines</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h2><span class="no">2.</span>Feature matrix</h2>
+<p class="lead"><span class="ok">✔</span> full &nbsp;·&nbsp; <span class="part">◑</span> partial / manual &nbsp;·&nbsp; <span class="no2">✘</span> absent</p>
+<div class="tbl-scroll">
+<table>
+  <thead><tr><th>Feature</th><th class="c">Legacy</th><th class="c">TflOmniDb</th></tr></thead>
+  <tbody>
+    <tr class="grp"><td colspan="3">CRUD</td></tr>
+    <tr><td>Insert with identity round-trip</td><td class="c"><span class="ok">✔</span> ByRef Int32 only</td><td class="c"><span class="ok">✔</span> into entity, any type</td></tr>
+    <tr><td>Oracle sequence keys</td><td class="c"><span class="part">◑</span> probed per insert</td><td class="c"><span class="ok">✔</span> declared</td></tr>
+    <tr><td>Update full row</td><td class="c"><span class="part">◑</span> skips null props</td><td class="c"><span class="ok">✔</span> explicit</td></tr>
+    <tr><td>Partial-column update</td><td class="c"><span class="part">◑</span> implicit only</td><td class="c"><span class="ok">✔</span> explicit (net10)</td></tr>
+    <tr><td>Set-based update by criteria</td><td class="c"><span class="ok">✔</span> raw string</td><td class="c"><span class="ok">✔</span> parameterized</td></tr>
+    <tr><td>Delete by PK / criteria</td><td class="c"><span class="ok">✔</span> raw string</td><td class="c"><span class="ok">✔</span> predicate</td></tr>
+    <tr><td>Truncate</td><td class="c"><span class="ok">✔</span></td><td class="c"><span class="part">◑</span> raw SQL</td></tr>
+    <tr><td>Bulk insert</td><td class="c"><span class="no2">✘</span></td><td class="c"><span class="ok">✔</span> 3 fast paths</td></tr>
+    <tr class="grp"><td colspan="3">Read / query</td></tr>
+    <tr><td>Get by key</td><td class="c"><span class="ok">✔</span></td><td class="c"><span class="ok">✔</span></td></tr>
+    <tr><td>Filtered list</td><td class="c"><span class="ok">✔</span> criteria string</td><td class="c"><span class="ok">✔</span> LINQ predicate</td></tr>
+    <tr><td>Ordering + paging</td><td class="c"><span class="no2">✘</span></td><td class="c"><span class="ok">✔</span></td></tr>
+    <tr><td>Column projection</td><td class="c"><span class="no2">✘</span></td><td class="c"><span class="ok">✔</span></td></tr>
+    <tr><td>Streaming reads</td><td class="c"><span class="no2">✘</span></td><td class="c"><span class="ok">✔</span> net10</td></tr>
+    <tr><td>Raw SQL → typed POCO</td><td class="c"><span class="no2">✘</span> DataSet only</td><td class="c"><span class="ok">✔</span></td></tr>
+    <tr><td>Raw SQL → untyped rows</td><td class="c"><span class="ok">✔</span> DataSet</td><td class="c"><span class="ok">✔</span> dict + RowAccess</td></tr>
+    <tr><td>Scalar / EXISTS helpers</td><td class="c"><span class="part">◑</span></td><td class="c"><span class="ok">✔</span></td></tr>
+    <tr><td>Aggregates</td><td class="c"><span class="ok">✔</span> Max/Min/MaxPk (Int32)</td><td class="c"><span class="ok">✔</span> Max/Min/Sum/Avg/MaxKey/Any</td></tr>
+    <tr><td>Cross-dialect query composer</td><td class="c"><span class="no2">✘</span></td><td class="c"><span class="ok">✔</span> SqlQuery + Fn</td></tr>
+    <tr class="grp"><td colspan="3">Stored procedures</td></tr>
+    <tr><td>Execute → result sets</td><td class="c"><span class="ok">✔</span> DataSet</td><td class="c"><span class="ok">✔</span> typed, multi-set</td></tr>
+    <tr><td>OUT / INOUT / return value</td><td class="c"><span class="ok">✔</span> dict write-back</td><td class="c"><span class="ok">✔</span> typed accessors</td></tr>
+    <tr><td>Parameter discovery</td><td class="c"><span class="ok">✔</span> auto (extra round-trip)</td><td class="c"><span class="no2">✘</span> explicit by design</td></tr>
+    <tr><td>Oracle REF CURSOR</td><td class="c"><span class="no2">✘</span></td><td class="c"><span class="ok">✔</span></td></tr>
+    <tr><td>TVP / array parameters</td><td class="c"><span class="no2">✘</span></td><td class="c"><span class="ok">✔</span></td></tr>
+    <tr class="grp"><td colspan="3">Transactions</td></tr>
+    <tr><td>Explicit transaction</td><td class="c"><span class="ok">✔</span> hand-threaded</td><td class="c"><span class="ok">✔</span> auto-enlisted UoW</td></tr>
+    <tr><td>Auto-rollback on failure</td><td class="c"><span class="no2">✘</span> Rollback() commits (bug)</td><td class="c"><span class="ok">✔</span></td></tr>
+    <tr><td>Retryable transaction</td><td class="c"><span class="no2">✘</span></td><td class="c"><span class="ok">✔</span></td></tr>
+    <tr class="grp"><td colspan="3">Safety &amp; resilience</td></tr>
+    <tr><td>SQL-injection safety</td><td class="c"><span class="no2">✘</span> criteria concat</td><td class="c"><span class="ok">✔</span> all bound + test suite</td></tr>
+    <tr><td>Optimistic concurrency</td><td class="c"><span class="no2">✘</span></td><td class="c"><span class="ok">✔</span> IsRowVersion</td></tr>
+    <tr><td>Transient-fault retry</td><td class="c"><span class="no2">✘</span></td><td class="c"><span class="ok">✔</span> opt-in</td></tr>
+    <tr><td>Sensitive-value redaction</td><td class="c">n/a</td><td class="c"><span class="ok">✔</span> IsSensitive</td></tr>
+    <tr><td>Dirty-read hint</td><td class="c"><span class="no2">✘</span></td><td class="c"><span class="ok">✔</span> UseDirtyReads()</td></tr>
+    <tr class="grp"><td colspan="3">Configuration &amp; tooling</td></tr>
+    <tr><td>Command timeout</td><td class="c"><span class="ok">✔</span> per call (bag only)</td><td class="c"><span class="ok">✔</span> instance + scope + bulk</td></tr>
+    <tr><td>Entity generation from schema</td><td class="c"><span class="no2">✘</span> hand-written</td><td class="c"><span class="ok">✔</span> Scaffold CLI + web</td></tr>
+    <tr><td>Cross-provider table migration</td><td class="c"><span class="no2">✘</span></td><td class="c"><span class="ok">✔</span></td></tr>
+    <tr><td>Performance benchmarks</td><td class="c"><span class="no2">✘</span></td><td class="c"><span class="ok">✔</span> BenchmarkDotNet</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h2><span class="no">3.</span>Side-by-side code, feature by feature</h2>
+<p class="lead">Same fictional table throughout: <code class="inl">DemoWidget</code> (Id identity PK, Name, Price, Notes).
+Left pane: legacy VB.NET. Right pane: TflOmniDb C#.</p>
+
+<h3>3.1 Entity definition</h3>
+<div class="duo">
+  <div class="pane legacy"><div class="cap">Legacy — VB.NET (class name IS the table name)</div>
+<pre><span class="cm">' Every property must carry the attribute — the DAL reads
+' GetCustomAttributes(True)(0) blindly.</span>
+Public Class DemoWidget
+    Inherits AdEntity
+
+    Private _id As Integer?
+    &lt;AdDbColumnInfo(IsPrimaryKey:=True, IsAutoIncrement:=True,
+                    DbType:=DbType.Int32, DataType:=GetType(Integer),
+                    AllowDbNull:=False)&gt;
+    Public Property Id() As Integer?
+        Get
+            Return _id
+        End Get
+        Set(ByVal value As Integer?)
+            _id = value
+        End Set
+    End Property
+
+    <span class="cm">'... same Get/Set boilerplate for Name, Price, Notes</span>
+End Class</pre></div>
+  <div class="pane newer"><div class="cap">TflOmniDb — C# (explicit table name; scaffolder-generated)</div>
+<pre>[DbTable(TableName = "DemoWidget")]
+public class Widget : Entity
+{
+    [DbColumn(ColumnName = "Id", CoreType = CoreDataType.Int64,
+        AllowDbNull = false, IsPrimaryKey = true,
+        KeyGeneration = KeyGenerationStrategy.Identity)]
+    public virtual long? Id { get; set; }
+
+    [DbColumn(ColumnName = "Name", CoreType = CoreDataType.UnicodeString,
+        Size = 100, AllowDbNull = false)]
+    public virtual string? Name { get; set; }
+
+    [DbColumn(ColumnName = "Price", CoreType = CoreDataType.Money,
+        AllowDbNull = false)]
+    public virtual decimal? Price { get; set; }
+
+    [DbColumn(ColumnName = "Notes", CoreType = CoreDataType.UnicodeString,
+        Size = 500, AllowDbNull = true)]
+    public virtual string? Notes { get; set; }
+}</pre></div>
+</div>
+
+<h3>3.2 Setup / connection</h3>
+<div class="duo">
+  <div class="pane legacy"><div class="cap">Legacy — nothing to construct; config is ambient</div>
+<pre><span class="cm">' Connection from app.config (EntLib DAAB section), or per call:</span>
+Dim connInfo As New AdConnectionInfo("MainDb")            <span class="cm">' config name</span>
+Dim connInfo2 As New AdConnectionInfo(cs,
+    "System.Data.SqlClient")                              <span class="cm">' string+provider</span></pre></div>
+  <div class="pane newer"><div class="cap">TflOmniDb — construct once, reuse (DI-friendly)</div>
+<pre>var data = new DataAccess(new DataAccessOptions
+{
+    Provider = DbProvider.SqlServer,   <span class="cm">// or Oracle / PostgreSql</span>
+    ConnectionString = cs,
+    DefaultSchema = "dbo",
+    CommandTimeoutSeconds = 60,
+});
+var repo = data.Repository&lt;Widget&gt;();</pre></div>
+</div>
+
+<h3>3.3 Insert (identity round-trip)</h3>
+<div class="duo">
+  <div class="pane legacy"><div class="cap">Legacy — ByRef Integer (Int32 only)</div>
+<pre>Dim w As New DemoWidget With {.Name = "gear", .Price = 25D}
+Dim newId As Integer
+AdDataAccessComponent.Insert(w, newId)
+<span class="cm">' w.Id is NOT populated — only newId is.</span></pre></div>
+  <div class="pane newer"><div class="cap">TflOmniDb — key written back into the entity</div>
+<pre>var w = new Widget { Name = "gear", Price = 25m };
+await repo.InsertAsync(w);
+Console.WriteLine(w.Id);   <span class="cm">// populated</span></pre></div>
+</div>
+
+<h3>3.4 Update — full row</h3>
+<div class="note"><b>⚠ Semantics differ.</b> Legacy skips properties that are <code class="inl">Nothing</code> (implicit partial update).
+TflOmniDb writes <b>every</b> updatable column — a null property becomes <code class="inl">NULL</code> in the database.
+Audit legacy <code class="inl">Update</code> call sites before porting.</div>
+<div class="duo">
+  <div class="pane legacy"><div class="cap">Legacy — null properties are silently skipped</div>
+<pre>w.Name = "gear v2"
+w.Price = Nothing          <span class="cm">' stored PRICE left untouched</span>
+Dim rows As Integer = AdDataAccessComponent.Update(w)</pre></div>
+  <div class="pane newer"><div class="cap">TflOmniDb — full row, or explicit partial</div>
+<pre>w.Name = "gear v2";
+int rows = await repo.UpdateAsync(w);   <span class="cm">// writes ALL columns</span>
+
+<span class="cm">// keep the legacy "only these columns" behavior explicitly:</span>
+await repo.UpdateAsync(w, x =&gt; x.Name); <span class="cm">// partial (net10)</span></pre></div>
+</div>
+
+<h3>3.5 Set-based update by criteria</h3>
+<div class="duo">
+  <div class="pane legacy"><div class="cap">Legacy — raw string concatenated into SQL (injection risk)</div>
+<pre>AdDataAccessComponent.Update(w, "PRICE &lt; 50")</pre></div>
+  <div class="pane newer"><div class="cap">TflOmniDb — translated, parameter-bound</div>
+<pre>await repo.UpdateWhereAsync(
+    x =&gt; x.Price &lt; 50m,
+    [ (x =&gt; x.Notes, "on sale") ]);</pre></div>
+</div>
+
+<h3>3.6 Delete</h3>
+<div class="duo">
+  <div class="pane legacy"><div class="cap">Legacy</div>
+<pre>AdDataAccessComponent.Delete(w)                    <span class="cm">' by PK</span>
+AdDataAccessComponent.Delete(w, "NOTES IS NULL")   <span class="cm">' by criteria</span></pre></div>
+  <div class="pane newer"><div class="cap">TflOmniDb</div>
+<pre>await repo.DeleteAsync(w);                         <span class="cm">// by PK</span>
+await repo.DeleteWhereAsync(x =&gt; x.Notes == null); <span class="cm">// by predicate</span></pre></div>
+</div>
+
+<h3>3.7 Get by key</h3>
+<div class="duo">
+  <div class="pane legacy"><div class="cap">Legacy — Object return, caller casts; id formatted into WHERE</div>
+<pre>Dim w As DemoWidget = CType(
+    AdDataAccessComponent.RetrieveByKey(GetType(DemoWidget), 42),
+    DemoWidget)</pre></div>
+  <div class="pane newer"><div class="cap">TflOmniDb — typed, parameter-bound</div>
+<pre>Widget? w = await repo.GetAsync(new object[] { 42L });</pre></div>
+</div>
+
+<h3>3.8 Retrieve all / filtered list</h3>
+<div class="duo">
+  <div class="pane legacy"><div class="cap">Legacy — raw criteria; Object → cast</div>
+<pre>Dim all As List(Of DemoWidget) = CType(
+    AdDataAccessComponent.Retrieve(GetType(DemoWidget)),
+    List(Of DemoWidget))
+
+Dim dear As List(Of DemoWidget) = CType(
+    AdDataAccessComponent.Retrieve(GetType(DemoWidget),
+        "PRICE &gt; 100"),
+    List(Of DemoWidget))
+<span class="cm">' No ordering or paging support.</span></pre></div>
+  <div class="pane newer"><div class="cap">TflOmniDb — typed; predicate; ordering + paging built in</div>
+<pre>IReadOnlyList&lt;Widget&gt; all  = await repo.GetAllAsync();
+IReadOnlyList&lt;Widget&gt; dear =
+    await repo.WhereAsync(x =&gt; x.Price &gt; 100m);
+
+<span class="cm">// no legacy equivalent — ordered page 3 (20 rows/page):</span>
+var page = await repo.WhereAsync(x =&gt; x.Price &gt; 0m,
+    orderBy: x =&gt; x.Name, descending: false,
+    skip: 40, take: 20);</pre></div>
+</div>
+
+<h3>3.9 Count &amp; aggregates</h3>
+<div class="duo">
+  <div class="pane legacy"><div class="cap">Legacy — Int32 only; criteria strings; no Sum/Avg/Exists</div>
+<pre>Dim n   As Int32 = AdDataAccessComponent.Count(
+    GetType(DemoWidget), "PRICE &gt; 100")
+Dim max As Int32 = AdDataAccessComponent.Max(
+    GetType(DemoWidget), "Price", "PRICE &gt; 0")
+Dim top As Int32 = AdDataAccessComponent.MaxPrimaryKeyValue(
+    GetType(DemoWidget))</pre></div>
+  <div class="pane newer"><div class="cap">TflOmniDb — typed results, optional predicate</div>
+<pre>long     n   = await repo.CountAsync(x =&gt; x.Price &gt; 100m);
+decimal? max = await repo.MaxAsync&lt;decimal?&gt;(
+                   x =&gt; x.Price, x =&gt; x.Price &gt; 0m);
+long     top = await repo.MaxKeyAsync&lt;long&gt;();
+decimal  sum = await repo.SumAsync&lt;decimal&gt;(x =&gt; x.Price) ?? 0m;
+bool     any = await repo.AnyAsync(x =&gt; x.Price &gt; 999m);</pre></div>
+</div>
+
+<h3>3.10 Raw SQL</h3>
+<div class="duo">
+  <div class="pane legacy"><div class="cap">Legacy — DataSet out; no parameter support on Select()</div>
+<pre>Dim ds As DataSet = AdDataAccessComponent.Select(
+    "SELECT Name, COUNT(*) AS N FROM DemoWidget GROUP BY Name")
+For Each dr As DataRow In ds.Tables(0).Rows
+    Console.WriteLine("{0}: {1}", dr("Name"), dr("N"))
+Next</pre></div>
+  <div class="pane newer"><div class="cap">TflOmniDb — typed POCO or dict rows; parameters bound</div>
+<pre>public sealed class NameCount { public string? Name; public int N; }
+
+var rows = await data.QueryAsync&lt;NameCount&gt;(
+    "SELECT Name, COUNT(*) AS N FROM DemoWidget " +
+    "WHERE Price &gt; @p GROUP BY Name",
+    new Dictionary&lt;string, object?&gt; { ["@p"] = 10m });
+
+<span class="cm">// untyped alternative + null-safe getters:</span>
+var dicts = await data.QueryAsync(
+    "SELECT Name, COUNT(*) AS N FROM DemoWidget GROUP BY Name");
+foreach (var r in dicts)
+    Console.WriteLine($"{r.GetString("Name")}: {r.GetInt32("N")}");</pre></div>
+</div>
+
+<h3>3.11 Stored procedure (inputs, OUT param, result set)</h3>
+<div class="duo">
+  <div class="pane legacy"><div class="cap">Legacy — dict in, DataSet out; params auto-discovered (extra round-trip)</div>
+<pre>Dim params As New Dictionary(Of String, Object)
+params.Add("@FromAccount", 1001)
+params.Add("@Amount", 500D)
+params.Add("@NewBalance", 0D)              <span class="cm">' OUT</span>
+
+Dim ds As DataSet =
+    AdDataAccessComponent.Execute("usp_Transfer", params)
+Dim bal As Decimal = CDec(params("@NewBalance"))</pre></div>
+  <div class="pane newer"><div class="cap">TflOmniDb — explicit fluent declaration; typed result</div>
+<pre>var call = new StoredProcedureCall("usp_Transfer")
+    .Input("FromAccount", 1001)
+    .Input("Amount", 500m, CoreDataType.Money)
+    .Output("NewBalance", CoreDataType.Money);
+
+StoredProcedureResult r = await data.ExecuteProcedureAsync(call);
+decimal bal  = r.GetOutput&lt;decimal&gt;("NewBalance");
+var     rows = r.FirstResultSet;   <span class="cm">// ColumnNames + Rows</span></pre></div>
+</div>
+
+<h3>3.12 Transactions</h3>
+<div class="duo">
+  <div class="pane legacy"><div class="cap">Legacy — hand-thread the transaction into every call</div>
+<pre><span class="cm">' Miss one call and that write silently escapes atomicity.
+' (And TransactionManager.Rollback() actually COMMITS — a bug.)</span>
+Dim tm As New TransactionManager()
+Dim tx As DbTransaction =
+    CType(tm.BeginTran(connInfo), DbTransaction)
+Try
+    AdDataAccessComponent.Insert(w1, tx)
+    AdDataAccessComponent.Update(w2, tx)
+    tm.Transaction = tx
+    tm.Commit()
+Catch
+    <span class="cm">' manual cleanup...</span>
+End Try</pre></div>
+  <div class="pane newer"><div class="cap">TflOmniDb — unit of work; auto-rollback on dispose</div>
+<pre>using (var uow = await data.BeginTransactionAsync())
+{
+    var r = uow.Repository&lt;Widget&gt;();
+    await r.InsertAsync(w1);
+    await r.UpdateAsync(w2);
+    await uow.CommitAsync();
+}   <span class="cm">// exception before CommitAsync ⇒ automatic rollback</span></pre></div>
+</div>
+
+<h3>3.13 Command timeout</h3>
+<div class="duo">
+  <div class="pane legacy"><div class="cap">Legacy — per call via the options bag (simple overloads: none)</div>
+<pre>Dim options As New AdDataAccessOptions()
+options.Entity = w
+options.CommandTimeout = 300
+AdDataAccessComponent.Update(options)</pre></div>
+  <div class="pane newer"><div class="cap">TflOmniDb — instance default + per-scope override</div>
+<pre><span class="cm">// instance default (also bindable from appsettings.json):</span>
+CommandTimeoutSeconds = 60,
+
+<span class="cm">// per-scope override, just for one slow operation:</span>
+using (data.UseCommandTimeout(300))
+{
+    var report = await data.QueryAsync&lt;NameCount&gt;(heavySql);
+}   <span class="cm">// reverts on dispose; 0 = no timeout</span></pre></div>
+</div>
+
+<h3>3.14 Net-new in TflOmniDb (no legacy code to compare)</h3>
+<div class="pane newer solo"><div class="cap">TflOmniDb — capabilities with no legacy counterpart</div>
+<pre><span class="cm">// Bulk insert — orders of magnitude faster than a loop for large batches.</span>
+await repo.BulkInsertAsync(widgets, new BulkInsertOptions { BatchSize = 5_000 });
+
+<span class="cm">// Streaming read — O(1) memory over any row count (net10).</span>
+await foreach (var w in repo.StreamWhereAsync(x =&gt; x.Price &gt; 0m))
+    Process(w);
+
+<span class="cm">// Column projection — SELECT only what you need (+ PK).</span>
+var summaries = await repo.GetAllAsync(x =&gt; x.Id, x =&gt; x.Name);
+
+<span class="cm">// Optimistic concurrency — IsRowVersion column checked on UPDATE.</span>
+try { await repo.UpdateAsync(w); }
+catch (ConcurrencyException) { <span class="cm">/* row changed under you — reload &amp; retry */</span> }
+
+<span class="cm">// Transient-fault retry — opt-in; deadlocks / dropped connections auto-retried.</span>
+var resilient = new DataAccess(new DataAccessOptions
+{
+    Provider = DbProvider.SqlServer, ConnectionString = cs,
+    Retry = new RetryOptions { MaxAttempts = 3 },
+});
+await resilient.ExecuteInTransactionAsync(async uow =&gt; { <span class="cm">/* idempotent work */</span> });
+
+<span class="cm">// Dirty reads — WITH(NOLOCK) scope (SQL Server; no-op on Oracle/PG).</span>
+using (data.UseDirtyReads())
+    var approx = await repo.CountAsync();
+
+<span class="cm">// Cross-dialect query composer — provider-portable GROUP BY without raw SQL.</span>
+var q = SqlQuery.From&lt;Widget&gt;("w", DbProvider.SqlServer)
+    .SelectCols(Widget.Cols.Name)
+    .Select(Agg.Count(Widget.Cols.Id, "N"))
+    .WhereIf(minPrice is not null, Widget.Cols.Price, "&gt;=", minPrice)
+    .GroupBy(Widget.Cols.Name);
+var counts = await q.ToDictionariesAsync(data);</pre></div>
+
+<h2><span class="no">4.</span>Strengths &amp; weaknesses</h2>
+<div class="sw">
+  <div class="card">
+    <h3 style="color:var(--legacy)">AdDataAccessComponent (legacy)</h3>
+    <ul>
+      <li><span class="plus">+</span> Very low ceremony: one static call, no object setup</li>
+      <li><span class="plus">+</span> Terse one-liners (<code class="inl">Max</code>, <code class="inl">Count</code>, <code class="inl">Execute(sp, dict)</code>)</li>
+      <li><span class="plus">+</span> DataTable/DataSet output binds straight into classic WinForms/WebForms</li>
+      <li><span class="plus">+</span> Battle-tested in production for years</li>
+    </ul>
+    <ul>
+      <li><span class="minus">−</span> SQL-injection exposure through criteria / PK concatenation</li>
+      <li><span class="minus">−</span> Sync-only; blocks threads under server load</li>
+      <li><span class="minus">−</span> Dead platform: EntLib 5.0 unmaintained; System.Data.OracleClient deprecated</li>
+      <li><span class="minus">−</span> Global static state; effectively untestable in isolation</li>
+      <li><span class="minus">−</span> Per-call reflection + string building + Oracle sequence probing</li>
+      <li><span class="minus">−</span> Int32-only identity / aggregate assumptions</li>
+      <li><span class="minus">−</span> Transaction hand-threaded; <code class="inl">Rollback()</code> bug commits instead</li>
+      <li><span class="minus">−</span> No logging, retry, concurrency control, paging, or bulk path</li>
+    </ul>
+  </div>
+  <div class="card">
+    <h3 style="color:var(--new)">TflOmniDb (new)</h3>
+    <ul>
+      <li><span class="plus">+</span> Injection-safe by construction; verified by tests on all 3 engines</li>
+      <li><span class="plus">+</span> Async + streaming; scales; cancellable</li>
+      <li><span class="plus">+</span> Three providers behind one API, including PostgreSQL</li>
+      <li><span class="plus">+</span> Testable (interfaces, DI), observable (logging + redaction), resilient (retry, concurrency)</li>
+      <li><span class="plus">+</span> Rich surface: bulk, paging, projection, aggregates, composer, typed SPs</li>
+      <li><span class="plus">+</span> Tooling: scaffolder, migration tool, benchmarks; 800+ automated tests</li>
+    </ul>
+    <ul>
+      <li><span class="minus">−</span> More initial ceremony (options → DataAccess → repository)</li>
+      <li><span class="minus">−</span> Async-only forces call-chain changes in legacy sync codebases</li>
+      <li><span class="minus">−</span> No DataTable/DataSet bridge for old UI binding (main migration friction)</li>
+      <li><span class="minus">−</span> Explicit SP parameter declaration is wordier than the legacy dictionary</li>
+      <li><span class="minus">−</span> Full-row UpdateAsync differs from legacy null-skip semantics (§3.4)</li>
+    </ul>
+  </div>
+</div>
+
+<h2><span class="no">5.</span>Verdict</h2>
+<div class="card verdict">
+  <p><b>TflOmniDb supersedes AdDataAccessComponent on every axis that matters for a banking DAL</b> —
+  security (parameterization vs. a live injection surface), platform viability (supported drivers vs.
+  abandoned EntLib), scalability (async vs. sync), correctness (working rollback, optimistic concurrency,
+  retry), breadth (PostgreSQL, bulk, streaming, paging), and engineering hygiene (tests, logging, tooling).
+  The legacy component's remaining advantages are conveniences — lower ceremony and direct DataTable
+  binding — not capabilities, and the scaffolder plus the migration cheat-sheet absorb most of the porting cost.</p>
+  <p style="margin-bottom:0">The two genuine watch-items when migrating:
+  <b>1)</b> legacy <code class="inl">Update</code> null-skip semantics (§3.4) — audit before porting;
+  <b>2)</b> DataTable-bound UI code — needs a typed-model or dictionary-row rewrite.</p>
+</div>
+
+<footer>
+  Companion docs: <i>Migration-from-AdDataAccessComponent.md</i> (idiom-by-idiom cheat-sheet) ·
+  <i>CommandTimeout-and-AdDataAccessOptions.md</i> (timeout &amp; options-bag deep-dive) ·
+  <i>StoredProcMigration.md</i>. Generated from the markdown comparison in this folder.
+</footer>
+
+</div>
+</body>
+</html>

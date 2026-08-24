@@ -1,0 +1,380 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>My Docker Setup — TrustBank CBS (inventory &amp;amp; how to operate)</title>
+<style>
+:root{color-scheme:light dark}
+*{box-sizing:border-box}
+body{margin:0;background:#f6f8fa;color:#1f2328;font:16px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif}
+.wrap{max-width:900px;margin:0 auto;padding:32px 24px 96px}
+.card{background:#fff;border:1px solid #d0d7de;border-radius:10px;padding:40px 48px}
+h1,h2,h3{line-height:1.25;font-weight:600}
+h1{font-size:1.9rem;margin:0 0 .3em;padding-bottom:.3em;border-bottom:1px solid #d8dee4}
+h2{font-size:1.4rem;margin:1.8em 0 .6em;padding-bottom:.25em;border-bottom:1px solid #eaeef2}
+h3{font-size:1.12rem;margin:1.4em 0 .5em}
+p,li{margin:.5em 0}
+a{color:#0969da;text-decoration:none}
+a:hover{text-decoration:underline}
+code{font-family:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;font-size:.86em;background:#eff1f3;padding:.15em .4em;border-radius:6px}
+pre{background:#f6f8fa;border:1px solid #d8dee4;border-radius:8px;padding:14px 16px;overflow:auto}
+pre code{background:none;padding:0;font-size:.85em;line-height:1.45}
+blockquote{margin:1em 0;padding:.4em 1em;color:#3d444d;border-left:4px solid #d0d7de;background:#f6f8fa;border-radius:0 6px 6px 0}
+blockquote>:first-child{margin-top:0}blockquote>:last-child{margin-bottom:0}
+table{border-collapse:collapse;width:100%;margin:1em 0;display:block;overflow:auto}
+th,td{border:1px solid #d0d7de;padding:8px 12px;text-align:left;vertical-align:top}
+th{background:#f6f8fa;font-weight:600}
+tr:nth-child(2n) td{background:#f6f8fa}
+hr{border:0;border-top:1px solid #d8dee4;margin:2em 0}
+pre{position:relative}
+pre>button.copy{position:absolute;top:8px;right:8px;padding:5px 9px;cursor:pointer;
+  font:600 .68rem/1 ui-monospace,SFMono-Regular,Consolas,monospace;letter-spacing:.03em;
+  color:#636c76;background:#fff;border:1px solid #d0d7de;border-radius:6px;
+  opacity:0;transition:opacity .12s}
+pre:hover>button.copy,pre>button.copy:focus{opacity:1}
+pre>button.copy.done{color:#0a3622;background:#dafbe1;border-color:#4ac26b}
+@media(hover:none){pre>button.copy{opacity:1}}
+td code.cp{cursor:pointer}
+td code.cp:hover,td code.cp:focus{outline:1px solid #8c959f;outline-offset:1px}
+td code.cp.done{color:#0a3622;background:#dafbe1}
+.docnav{margin:0 0 20px;font-size:.85rem;color:#636c76}
+.docnav a{color:#636c76}
+ul{padding-left:1.4em}ol{padding-left:1.4em}
+@media(max-width:640px){.card{padding:24px 18px}.wrap{padding:16px 10px 64px}}
+@media(prefers-color-scheme:dark){
+ body{background:#0d1117;color:#e6edf3}
+ .card{background:#161b22;border-color:#30363d}
+ h1{border-color:#30363d}h2{border-color:#21262d}
+ code{background:#262c34}
+ pre{background:#0d1117;border-color:#30363d}
+ blockquote{background:#161b22;border-color:#30363d;color:#9198a1}
+ th,td{border-color:#30363d}th{background:#161b22}tr:nth-child(2n) td{background:#12171e}
+ a{color:#4493f8}.docnav,.docnav a{color:#9198a1}
+ hr{border-color:#30363d}
+ pre>button.copy{color:#9198a1;background:#161b22;border-color:#30363d}
+ pre>button.copy.done{color:#aff5b4;background:#1b4721;border-color:#2ea043}
+ td code.cp.done{color:#aff5b4;background:#1b4721}
+}
+</style></head>
+<body><div class="wrap"><div class="card">
+<div class="docnav"><a href="../index.html">&#8592; All docs</a></div>
+<h1 id="my-docker-setup-trustbank-cbs-inventory-how-to-operate">My Docker Setup — TrustBank CBS (inventory &amp; how to operate)</h1>
+<p>A practical reference for <strong>what Docker artifacts this repo has and how to work with them</strong>. For the deep deployment walkthroughs see <a href="../deploy/docker-single-host.html">../deploy/docker-single-host.md</a> and <a href="../deploy/docker-multi-host.html">../deploy/docker-multi-host.md</a>; for ports see <a href="../port-map.html">../port-map.md</a>.</p>
+<blockquote>
+<p><strong>One line:</strong> one parameterized <code>Dockerfile</code> builds every host; <code>compose.yaml</code> runs the app as <strong>one</strong> container (single-host, port 8090), <code>compose.multi.yaml</code> runs it as <strong>six</strong> containers behind a gateway (multi-host, port 8091). TLS terminates <em>outside</em> the containers.</p>
+</blockquote>
+<hr />
+<h2 id="1-files-in-the-repo">1. Files in the repo</h2>
+<table>
+<thead>
+<tr>
+<th>File</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>Dockerfile</code></td>
+<td><strong>One</strong> multi-stage build for <strong>every</strong> host. Parameterized by <code>ARG PROJECT</code> — pass <code>TflCbs.Gateway</code>, <code>TflCbs.Host.Main</code>, <code>TflCbs.Host.Hr</code>, … to bake that project's publish output. Installs <code>curl</code> (for health checks). Vendors the two external DLLs from <code>docker/vendor/</code>.</td>
+</tr>
+<tr>
+<td><code>Dockerfile.dockerignore</code></td>
+<td>Keeps the build context small (excludes bin/obj, etc.).</td>
+</tr>
+<tr>
+<td><code>compose.yaml</code></td>
+<td><strong>Single-host</strong> deployment: 1 app container, host <strong>8090</strong>→8080, FileSystem DP keys (bind mount), <code>SecurePolicy=Always</code>.</td>
+</tr>
+<tr>
+<td><code>compose.override.yaml</code></td>
+<td><strong>Local-only</strong> overlay for <code>compose.yaml</code> (auto-merged) — sets <code>SecurePolicy=SameAsRequest</code> + <code>KnownProxies</code> so you can browse the single host over plain http and behind the 8092 gateway.</td>
+</tr>
+<tr>
+<td><code>compose.multi.yaml</code></td>
+<td><strong>Multi-host</strong> deployment: gateway + default + hr/lockers/retail/admin (6 services). Only the gateway publishes (<strong>8091</strong>). Gateway routing comes from the mounted <code>docker/gateway.multi.appsettings.json</code>.</td>
+</tr>
+<tr>
+<td><code>compose.multi.local.yaml</code></td>
+<td><strong>Local-only</strong> overlay for <code>compose.multi.yaml</code> — sets <code>SecurePolicy=SameAsRequest</code> on the app services so login works over plain <code>http://localhost:8091</code>. Passed explicitly (<code>-f … -f …</code>); <strong>not</strong> auto-merged.</td>
+</tr>
+<tr>
+<td><code>.env</code></td>
+<td>Secrets/config read by compose (<code>CBS_SQLSERVER_CONNSTRING</code>, optionally <code>CBS_PUBLIC_HOST</code>). <strong>Not committed</strong> with real values.</td>
+</tr>
+<tr>
+<td><code>docker/gateway.multi.appsettings.json</code></td>
+<td>Committed. Mounted into the multi-host gateway as <code>/app/appsettings.Production.json</code> to point YARP at the compose <strong>service names</strong>. (Must be JSON — env-var overrides with hyphenated keys get dropped; see §7.)</td>
+</tr>
+<tr>
+<td><code>docker/vendor/</code></td>
+<td>Vendored external DLLs (<code>TflOmniDb</code>, <code>TflSecurityCrypto</code>) so the build context can stay at the solution root.</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="2-images">2. Images</h2>
+<p>All built from the single <code>Dockerfile</code> via <code>--build-arg PROJECT=…</code> (compose does this per service).</p>
+<table>
+<thead>
+<tr>
+<th>Image</th>
+<th>~Size</th>
+<th><code>PROJECT</code></th>
+<th>Role</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>cbs-gateway:latest</code></td>
+<td>349 MB</td>
+<td><code>TflCbs.Gateway</code></td>
+<td>YARP reverse proxy (pure — no services/RCLs/DB drivers)</td>
+</tr>
+<tr>
+<td><code>trustbank-cbs:latest</code></td>
+<td>429 MB</td>
+<td><code>TflCbs.Host.Main</code></td>
+<td>Default/full host — <strong>all</strong> modules, <strong>login authority</strong>. Also the single-host image.</td>
+</tr>
+<tr>
+<td><code>cbs-hr:latest</code></td>
+<td>425 MB</td>
+<td><code>TflCbs.Host.Hr</code></td>
+<td>Thin host — Hr</td>
+</tr>
+<tr>
+<td><code>cbs-lockers:latest</code></td>
+<td>425 MB</td>
+<td><code>TflCbs.Host.Lockers</code></td>
+<td>Thin host — Lockers</td>
+</tr>
+<tr>
+<td><code>cbs-retail:latest</code></td>
+<td>425 MB</td>
+<td><code>TflCbs.Host.RetailBanking</code></td>
+<td>Thin host — RetailBanking</td>
+</tr>
+<tr>
+<td><code>cbs-admin:latest</code></td>
+<td>425 MB</td>
+<td><code>TflCbs.Host.Administration</code></td>
+<td>Thin host — Administration</td>
+</tr>
+<tr>
+<td><code>redis:7-alpine</code></td>
+<td>58 MB</td>
+<td><em>(pulled)</em></td>
+<td>Optional dev cache (reference cache); not part of a host</td>
+</tr>
+</tbody>
+</table>
+<p>The 5 app images are the same size — each carries the full stack and differs only in which <strong>one</strong> domain RCL is baked in (the default carries all five). The gateway is ~80 MB smaller.</p>
+<hr />
+<h2 id="3-containers-when-running">3. Containers (when running)</h2>
+<p>Compose project name = <code>tflcbsnet10sol</code> (from the folder). Container names are <code>tflcbsnet10sol-&lt;service&gt;-1</code>.</p>
+<p><strong>Single-host</strong> (<code>compose.yaml</code>):</p>
+<table>
+<thead>
+<tr>
+<th>Container</th>
+<th>Image</th>
+<th>Ports</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>tflcbsnet10sol-cbs-1</code></td>
+<td>trustbank-cbs</td>
+<td><strong>8090→8080</strong></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Multi-host</strong> (<code>compose.multi.yaml</code>):</p>
+<table>
+<thead>
+<tr>
+<th>Container</th>
+<th>Image</th>
+<th>Ports</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>tflcbsnet10sol-gateway-1</code></td>
+<td>cbs-gateway</td>
+<td><strong>8091→8080 (only published)</strong></td>
+</tr>
+<tr>
+<td><code>tflcbsnet10sol-default-1</code></td>
+<td>trustbank-cbs</td>
+<td>8080 (internal)</td>
+</tr>
+<tr>
+<td><code>tflcbsnet10sol-hr-1</code></td>
+<td>cbs-hr</td>
+<td>8080 (internal)</td>
+</tr>
+<tr>
+<td><code>tflcbsnet10sol-lockers-1</code></td>
+<td>cbs-lockers</td>
+<td>8080 (internal)</td>
+</tr>
+<tr>
+<td><code>tflcbsnet10sol-retail-1</code></td>
+<td>cbs-retail</td>
+<td>8080 (internal)</td>
+</tr>
+<tr>
+<td><code>tflcbsnet10sol-admin-1</code></td>
+<td>cbs-admin</td>
+<td>8080 (internal)</td>
+</tr>
+</tbody>
+</table>
+<p>Backends have <strong>no</strong> published ports — only reachable inside the compose network <code>tflcbsnet10sol_default</code> by service name (<code>http://hr:8080/</code>, …). Only the gateway is exposed to the host.</p>
+<p><strong>Mounts / volumes in use:</strong>
+- single-host <code>cbs</code>: bind <code>./docker-data/dpkeys → /keys</code> (Data Protection keys persist on the host).
+- multi-host <code>gateway</code>: bind <code>./docker/gateway.multi.appsettings.json → /app/appsettings.Production.json</code> (routing).</p>
+<hr />
+<h2 id="4-the-two-deployments-at-a-glance">4. The two deployments at a glance</h2>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>Single-host</th>
+<th>Multi-host</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Compose file</td>
+<td><code>compose.yaml</code> (+ <code>compose.override.yaml</code>)</td>
+<td><code>compose.multi.yaml</code> (+ <code>compose.multi.local.yaml</code>)</td>
+</tr>
+<tr>
+<td>Containers</td>
+<td>1</td>
+<td>6 (gateway + 5 hosts)</td>
+</tr>
+<tr>
+<td>Browse</td>
+<td><code>http://localhost:8090</code> (or <code>https://localhost:8092</code> via the IIS <code>cbs-docker-gw</code>)</td>
+<td><code>http://localhost:8091</code></td>
+</tr>
+<tr>
+<td>Modules</td>
+<td>all in one container</td>
+<td>split — default = all, thin hosts = one each</td>
+</tr>
+<tr>
+<td>DP key ring</td>
+<td><strong>FileSystem</strong> (bind mount) — standalone</td>
+<td><strong>TflOmniDb</strong> (shared DB) — SSO across all containers</td>
+</tr>
+<tr>
+<td>Login</td>
+<td>served locally</td>
+<td>thin hosts <strong>defer</strong> to the gateway (login authority = default)</td>
+</tr>
+<tr>
+<td>HTTPS</td>
+<td>via IIS gateway 8092, or a TLS edge</td>
+<td>via a TLS edge / reserved 8093 (see <a href="../deploy/docker-multi-host.html">../deploy/docker-multi-host.md</a>)</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="5-everyday-commands-this-project">5. Everyday commands (this project)</h2>
+<p>All from the solution root. The <code>.env</code> is picked up automatically.</p>
+<p><strong>Single-host</strong></p>
+<pre><code class="language-bash">docker compose up -d --build          # build + start (compose.yaml + compose.override.yaml auto-merged)
+docker compose ps                     # status
+docker compose logs -f cbs            # follow logs
+docker compose down                   # stop + remove
+</code></pre>
+<p><strong>Multi-host</strong> (note: two <code>-f</code> flags — the local overlay is NOT auto-merged)</p>
+<pre><code class="language-bash">docker compose -f compose.multi.yaml -f compose.multi.local.yaml up -d --build
+docker compose -f compose.multi.yaml ps
+docker compose -f compose.multi.yaml logs -f gateway
+docker compose -f compose.multi.yaml -f compose.multi.local.yaml down
+</code></pre>
+<p><strong>Health checks</strong></p>
+<pre><code class="language-bash">curl http://localhost:8090/health/ready                         # single host (DB-ready)
+curl http://localhost:8091/gateway/health                       # multi gateway liveness
+docker compose -f compose.multi.yaml exec hr curl -fsS http://localhost:8080/health/ready   # a backend, from inside
+</code></pre>
+<p><strong>After changing a config file</strong> (env, mounted appsettings, overlay): recreate the affected service —</p>
+<pre><code class="language-bash">docker compose -f compose.multi.yaml -f compose.multi.local.yaml up -d gateway   # just the gateway
+</code></pre>
+<p>Editing a <strong>bind-mounted</strong> file (e.g. <code>docker/gateway.multi.appsettings.json</code>) still needs a recreate/restart — the app reads it at startup.</p>
+<hr />
+<h2 id="6-data-db-sso-specifics">6. Data, DB &amp; SSO specifics</h2>
+<ul>
+<li><strong>Database:</strong> the connection string comes from <code>.env</code> (<code>CBS_SQLSERVER_CONNSTRING</code>). It targets the SQL Server <strong>named instance</strong> by name so SQL Browser resolves the (dynamic) port; use the server <strong>IP</strong> so the container needs no name resolution.</li>
+<li><strong>Single-host Data Protection:</strong> <code>KeyRing=FileSystem</code> + bind mount <code>./docker-data/dpkeys</code> → keys survive <code>down</code>/redeploy (no forced re-login). Standalone identity — no SSO with anything else.</li>
+<li><strong>Multi-host SSO:</strong> every app container shares <code>KeyRing=TflOmniDb</code> + <code>ApplicationName=TrustBankCBS</code> + the <code>CBS_SESSIONREVOCATIONS</code> table → one container's cookie is valid on the others, and global logout revokes everywhere. The two shared tables (<code>CBS_DATAPROTECTIONKEYS</code>, <code>CBS_SESSIONREVOCATIONS</code>) must exist once in the DB.</li>
+<li><strong>Single active session</strong> is DB-backed and shared across <strong>every</strong> deployment on that DB (IIS + Docker) — a user can be logged into only one at a time.</li>
+</ul>
+<hr />
+<h2 id="7-project-specific-gotchas">7. Project-specific gotchas</h2>
+<ul>
+<li><strong>Gateway routing must be JSON, not env vars.</strong> The cluster/destination keys have hyphens (<code>cbs-default</code>, <code>default-host</code>, …); env-var names with hyphens are invalid POSIX names that the container runtime <strong>drops before the app starts</strong>, so a <code>ReverseProxy__Clusters__cbs-default__…</code> override never binds and YARP keeps the baked-in <code>localhost:5xxx</code> addresses → <strong>502</strong>. That's why routing lives in the mounted <code>docker/gateway.multi.appsettings.json</code>.</li>
+<li><strong>Plain-http login needs <code>SecurePolicy=SameAsRequest</code>.</strong> The committed compose keeps <code>Always</code> (for behind-TLS); the local overlays relax it so the auth cookie round-trips over plain http. Remove the overlay once you put real TLS in front.</li>
+<li><strong>Containers are HTTP-only.</strong> No cert baked in; TLS terminates at an edge (IIS <code>cbs-docker-gw</code> 8092 for single-host, or a TLS edge/8093 for multi). <code>UseHttpsRedirection</code> is inert in the container (no https port), so health probes over http return 200 (no redirect trap).</li>
+<li><strong>DLL-lock rule doesn't apply to Docker.</strong> The "stop the app before building" rule is for the IIS/<code>dotnet run</code> hosts on Windows; Docker builds are isolated, so single-host and multi-host can build/run without freeing local DLL locks.</li>
+</ul>
+<hr />
+<h2 id="8-cleanup">8. Cleanup</h2>
+<pre><code class="language-bash">docker compose down                                    # stop single-host
+docker compose -f compose.multi.yaml down              # stop multi-host (+ its containers/network)
+docker image rm cbs-gateway:latest cbs-hr:latest …     # remove images (optional)
+docker system df                                       # see reclaimable space
+docker system prune                                    # remove stopped containers, unused networks, dangling images
+docker builder prune                                   # reclaim build cache
+</code></pre>
+<p>Local throwaway files to delete when done testing: <code>compose.override.yaml</code>, <code>compose.multi.local.yaml</code>, <code>.env</code>, <code>docker-data/</code>. Keep the committed ones: <code>Dockerfile</code>, <code>compose.yaml</code>, <code>compose.multi.yaml</code>, <code>docker/</code>.</p>
+<hr />
+<h2 id="9-related-docs">9. Related docs</h2>
+<ul>
+<li><a href="../deploy/docker-single-host.html">../deploy/docker-single-host.md</a> — single-host walkthrough</li>
+<li><a href="../deploy/docker-multi-host.html">../deploy/docker-multi-host.md</a> — multi-host walkthrough</li>
+<li><a href="docker-cheatsheet.html">docker-cheatsheet.md</a> — Docker terminology &amp; commands (general)</li>
+<li><a href="../port-map.html">../port-map.md</a> — all ports (dev + deploy)</li>
+</ul>
+</div></div>
+<script>
+(function(){
+ function put(t){
+  if(navigator.clipboard&&navigator.clipboard.writeText)return navigator.clipboard.writeText(t);
+  return new Promise(function(res,rej){
+   var a=document.createElement('textarea');a.value=t;a.setAttribute('readonly','');
+   a.style.cssText='position:fixed;top:0;left:0;opacity:0';document.body.appendChild(a);
+   a.select();var ok=false;try{ok=document.execCommand('copy')}catch(e){}
+   document.body.removeChild(a);ok?res():rej()});
+ }
+ function flash(el,txt,ms){
+  var was=el.textContent;el.classList.add('done');if(txt)el.textContent=txt;
+  setTimeout(function(){el.classList.remove('done');if(txt)el.textContent=was},ms||1200);
+ }
+ function copy(text,el,okTxt){
+  put(text).then(function(){flash(el,okTxt)},function(){
+   if(okTxt){var w=el.textContent;el.textContent='Ctrl+C';setTimeout(function(){el.textContent=w},2000)}});
+ }
+ document.querySelectorAll('pre').forEach(function(pre){
+  if(pre.classList.contains('txtdoc'))return;
+  var b=document.createElement('button');
+  b.type='button';b.className='copy';b.textContent='Copy';
+  b.setAttribute('aria-label','Copy this code block to the clipboard');
+  b.addEventListener('click',function(){copy((pre.querySelector('code')||pre).innerText,b,'Copied')});
+  pre.appendChild(b);
+ });
+ document.querySelectorAll('td code').forEach(function(c){
+  if(!c.textContent.trim())return;
+  c.classList.add('cp');c.tabIndex=0;c.setAttribute('role','button');
+  c.title='Click to copy';
+  c.addEventListener('click',function(){copy(c.textContent,c)});
+  c.addEventListener('keydown',function(e){
+   if(e.key==='Enter'||e.key===' '){e.preventDefault();copy(c.textContent,c)}});
+ });
+})();
+</script>
+</body></html>

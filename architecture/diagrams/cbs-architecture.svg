@@ -1,0 +1,260 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1640 1030" width="1640" height="1030" role="img" aria-label="TrustBank CBS .NET 10 modular monolith architecture">
+  <title>TrustBank CBS — .NET 10 Modular Monolith Architecture</title>
+  <style>
+    svg { background: #ffffff; }
+    text { font-family: "Segoe UI", Inter, Helvetica, Arial, sans-serif; fill: #1F2937; }
+    .t    { font-size: 27px; font-weight: 700; fill: #1F3864; }
+    .st   { font-size: 14px; fill: #6B7280; }
+    .bl   { font-size: 10.5px; font-weight: 700; letter-spacing: 1.4px; fill: #6B7280; }
+    .bx   { font-size: 12.5px; }
+    .bxb  { font-size: 12.5px; font-weight: 600; }
+    .bxs  { font-size: 10.5px; fill: #6B7280; }
+    .chip { font-size: 11px; }
+    .cap  { font-size: 11px; font-style: italic; fill: #6B7280; }
+    .gh   { font-size: 10px; font-weight: 700; letter-spacing: 1.1px; fill: #6B7280; }
+    .side { font-size: 11px; }
+    .sideh{ font-size: 10px; font-weight: 700; letter-spacing: 1.1px; fill: #1F3864; }
+    .foot { font-size: 12px; fill: #6B7280; }
+    .lg   { font-size: 11px; fill: #7A7A7A; }
+    .band { stroke-width: 1.2; }
+    .box  { fill: #ffffff; stroke-width: 1.2; }
+  </style>
+  <defs>
+    <marker id="arw" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 1 L 10 5 L 0 9 z" fill="#1F3864"/>
+    </marker>
+    <marker id="arwg" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 1 L 10 5 L 0 9 z" fill="#9A9A9A"/>
+    </marker>
+    <filter id="sh" x="-20%" y="-20%" width="140%" height="150%">
+      <feDropShadow dx="0" dy="1" stdDeviation="1.4" flood-color="#1F2937" flood-opacity="0.12"/>
+    </filter>
+  </defs>
+
+  <!-- ── titles ─────────────────────────────────────────────── -->
+  <text class="t"  x="820" y="46" text-anchor="middle">TrustBank CBS — .NET 10 Modular Monolith Architecture</text>
+  <text class="st" x="820" y="72" text-anchor="middle">Strangler-fig migration: ASP.NET WebForms / VB.NET / .NET Framework 4.8  →  .NET 10 / C# ASP.NET Core MVC   ·   one codebase, four deployment shapes, three databases</text>
+
+  <!-- ── left panel: legacy ─────────────────────────────────── -->
+  <rect x="20" y="100" width="170" height="888" rx="8" fill="#F4F4F4" stroke="#CFCFCF" stroke-dasharray="5 4"/>
+  <text class="sideh" x="32" y="124" fill="#7A7A7A">LEGACY — RETIRING</text>
+  <text class="lg" x="32" y="150">ASP.NET WebForms</text>
+  <text class="lg" x="32" y="168">VB.NET</text>
+  <text class="lg" x="32" y="186">.NET Framework 4.8</text>
+  <line x1="32" y1="204" x2="178" y2="204" stroke="#DCDCDC"/>
+  <text class="lg" x="32" y="228">Counted scope:</text>
+  <text class="lg" x="32" y="248">1,458 ASPX screens</text>
+  <text class="lg" x="32" y="266">5,317 stored procs</text>
+  <text class="lg" x="32" y="284">1,497 code-behinds</text>
+  <line x1="32" y1="302" x2="178" y2="302" stroke="#DCDCDC"/>
+  <text class="lg" x="32" y="326">Legacy keeps running.</text>
+  <text class="lg" x="32" y="344">Screens cut over one</text>
+  <text class="lg" x="32" y="362">at a time — no big-bang</text>
+  <text class="lg" x="32" y="380">switchover.</text>
+  <line x1="32" y1="398" x2="178" y2="398" stroke="#DCDCDC"/>
+  <text class="lg" x="32" y="422">a_Menus.NavigateURL</text>
+  <text class="lg" x="32" y="440">holds each screen's</text>
+  <text class="lg" x="32" y="458">route, rewritten one</text>
+  <text class="lg" x="32" y="476">screen at a time.</text>
+  <line x1="32" y1="494" x2="178" y2="494" stroke="#DCDCDC"/>
+  <text class="sideh" x="32" y="518" fill="#7A7A7A">WHY STRANGLER-FIG</text>
+  <text class="lg" x="32" y="542">Bank keeps operating —</text>
+  <text class="lg" x="32" y="560">no freeze, no big-bang</text>
+  <text class="lg" x="32" y="578">cutover date.</text>
+  <text class="lg" x="32" y="602">Risk is per screen,</text>
+  <text class="lg" x="32" y="620">not per programme.</text>
+  <text class="lg" x="32" y="644">Rollback is one menu</text>
+  <text class="lg" x="32" y="662">row, not a release.</text>
+  <line x1="32" y1="680" x2="178" y2="680" stroke="#DCDCDC"/>
+  <text class="sideh" x="32" y="704" fill="#7A7A7A">SCOPE — ROM ±40%</text>
+  <text class="lg" x="32" y="728">~10,550 person-days</text>
+  <text class="lg" x="32" y="746">(~48 person-years)</text>
+  <text class="lg" x="32" y="770">~2.5–3 years with a</text>
+  <text class="lg" x="32" y="788">team of ~20</text>
+  <text class="lg" x="32" y="812">Optimistic 7,400 pd</text>
+  <text class="lg" x="32" y="830">Pessimistic 14,800 pd</text>
+  <line x1="32" y1="848" x2="178" y2="848" stroke="#DCDCDC"/>
+  <text class="sideh" x="32" y="872" fill="#7A7A7A">BIGGEST LEVERS</text>
+  <text class="lg" x="32" y="896">Reports: rebuild or</text>
+  <text class="lg" x="32" y="914">rehost (±500–700 pd)</text>
+  <text class="lg" x="32" y="938">One database or three</text>
+  <text class="lg" x="32" y="956">(±120–150 pd)</text>
+  <line x1="190" y1="342" x2="206" y2="342" stroke="#9A9A9A" stroke-dasharray="4 3" marker-end="url(#arwg)"/>
+
+  <!-- ── right panel: deployment ────────────────────────────── -->
+  <rect x="1450" y="100" width="170" height="888" rx="8" fill="#FFFFFF" stroke="#1F3864"/>
+  <text class="sideh" x="1462" y="124">DEPLOYMENT SHAPES</text>
+  <text class="side" x="1462" y="150">1 · IIS single-host</text>
+  <text class="side" x="1462" y="170">2 · IIS multi-host</text>
+  <text class="bxs" x="1472" y="187">gateway + thin hosts</text>
+  <text class="side" x="1462" y="207">3 · Docker single-host</text>
+  <text class="side" x="1462" y="227">4 · Docker multi-host</text>
+  <text class="bxs" x="1472" y="244">compose.multi.yaml</text>
+  <line x1="1462" y1="262" x2="1608" y2="262" stroke="#E3E6EA"/>
+  <text class="sideh" x="1462" y="288">DATABASES</text>
+  <text class="side" x="1462" y="312">SQL Server</text>
+  <text class="side" x="1462" y="332">Oracle</text>
+  <text class="side" x="1462" y="352">PostgreSQL</text>
+  <text class="bxs" x="1462" y="370">one live · all 3 supported</text>
+  <line x1="1462" y1="388" x2="1608" y2="388" stroke="#E3E6EA"/>
+  <text class="sideh" x="1462" y="414">GATES ON EVERY BUILD</text>
+  <text class="side" x="1462" y="438">94 architecture tests</text>
+  <text class="side" x="1462" y="458">149 service tests</text>
+  <text class="bxs" x="1472" y="475">on all 3 providers</text>
+  <text class="side" x="1462" y="495">74 integration tests</text>
+  <text class="bxs" x="1472" y="512">real pipeline, in-process</text>
+  <text class="side" x="1462" y="532">63 browser tests</text>
+  <text class="bxs" x="1472" y="549">Playwright, real browser</text>
+  <line x1="1462" y1="567" x2="1608" y2="567" stroke="#E3E6EA"/>
+  <text class="sideh" x="1462" y="593">HARD RULES</text>
+  <text class="side" x="1462" y="617">Fail-closed access</text>
+  <text class="side" x="1462" y="637">No new stored procs</text>
+  <text class="side" x="1462" y="657">No raw SQL for CRUD</text>
+  <text class="side" x="1462" y="677">Result&lt;T&gt; at boundaries</text>
+  <text class="side" x="1462" y="697">Namespace == assembly</text>
+  <text class="side" x="1462" y="717">Framework never sees</text>
+  <text class="side" x="1462" y="733">a screen or a service</text>
+  <line x1="1462" y1="751" x2="1608" y2="751" stroke="#E3E6EA"/>
+  <text class="sideh" x="1462" y="777">OPEN GATE ITEMS</text>
+  <text class="side" x="1462" y="801">1 · Source control + CI</text>
+  <text class="bxs" x="1472" y="818">highest priority</text>
+  <text class="side" x="1462" y="842">2 · Concurrency rollout</text>
+  <text class="bxs" x="1472" y="859">pattern built, partial</text>
+  <text class="side" x="1462" y="883">3 · Credential rotation</text>
+  <text class="bxs" x="1472" y="900">and production cert</text>
+  <line x1="1462" y1="918" x2="1608" y2="918" stroke="#E3E6EA"/>
+  <text class="bxs" x="1462" y="942">6 of the 8 gate items</text>
+  <text class="bxs" x="1462" y="960">are already closed</text>
+
+  <!-- ── band 1 · clients ───────────────────────────────────── -->
+  <rect class="band" x="210" y="100" width="1220" height="80" rx="8" fill="#F5F6F8" stroke="#D8DBE0"/>
+  <text class="bl" x="222" y="119">CLIENTS</text>
+  <rect class="box" x="230" y="128" width="360" height="40" rx="6" stroke="#B9BEC7" filter="url(#sh)"/>
+  <text class="bx" x="410" y="153" text-anchor="middle">Branch teller — browser</text>
+  <rect class="box" x="640" y="128" width="360" height="40" rx="6" stroke="#B9BEC7" filter="url(#sh)"/>
+  <text class="bx" x="820" y="153" text-anchor="middle">Back office — browser</text>
+  <rect class="box" x="1050" y="128" width="360" height="40" rx="6" stroke="#B9BEC7" filter="url(#sh)"/>
+  <text class="bx" x="1230" y="153" text-anchor="middle">Administrator — browser</text>
+  <line x1="820" y1="182" x2="820" y2="197" stroke="#1F3864" marker-end="url(#arw)"/>
+
+  <!-- ── band 2 · edge ──────────────────────────────────────── -->
+  <rect class="band" x="210" y="200" width="1220" height="72" rx="8" fill="#EAF2FB" stroke="#B7D0EA"/>
+  <text class="bl" x="222" y="219">EDGE  ·  MULTI-HOST SHAPES ONLY</text>
+  <rect class="box" x="230" y="228" width="1180" height="36" rx="6" stroke="#2E75B6" filter="url(#sh)"/>
+  <text class="bxb" x="820" y="251" text-anchor="middle">TflCbs.Gateway — YARP reverse proxy  ·  single public origin  ·  shared SSO data-protection key ring  ·  forwarded headers</text>
+  <line x1="820" y1="274" x2="820" y2="289" stroke="#1F3864" marker-end="url(#arw)"/>
+
+  <!-- ── band 3 · hosts ────────────────────────────────────── -->
+  <rect class="band" x="210" y="292" width="1220" height="100" rx="8" fill="#DCE9F7" stroke="#9FC1E4"/>
+  <text class="bl" x="222" y="311">HOSTS  ·  ASP.NET CORE / KESTREL</text>
+  <rect class="box" x="230" y="320" width="220" height="44" rx="6" stroke="#2E75B6" filter="url(#sh)"/>
+  <text class="bxb" x="340" y="337" text-anchor="middle">TflCbs.Host.Main</text>
+  <text class="bxs" x="340" y="353" text-anchor="middle">all-in-one host · all modules</text>
+  <rect class="box" x="470" y="320" width="220" height="44" rx="6" stroke="#2E75B6" filter="url(#sh)"/>
+  <text class="bxb" x="580" y="337" text-anchor="middle">TflCbs.Host.Hr</text>
+  <text class="bxs" x="580" y="353" text-anchor="middle">thin host</text>
+  <rect class="box" x="710" y="320" width="220" height="44" rx="6" stroke="#2E75B6" filter="url(#sh)"/>
+  <text class="bxb" x="820" y="337" text-anchor="middle">TflCbs.Host.Lockers</text>
+  <text class="bxs" x="820" y="353" text-anchor="middle">thin host</text>
+  <rect class="box" x="950" y="320" width="220" height="44" rx="6" stroke="#2E75B6" filter="url(#sh)"/>
+  <text class="bxb" x="1060" y="337" text-anchor="middle">TflCbs.Host.RetailBanking</text>
+  <text class="bxs" x="1060" y="353" text-anchor="middle">thin host</text>
+  <rect class="box" x="1190" y="320" width="220" height="44" rx="6" stroke="#2E75B6" filter="url(#sh)"/>
+  <text class="bxb" x="1300" y="337" text-anchor="middle">TflCbs.Host.Administration</text>
+  <text class="bxs" x="1300" y="353" text-anchor="middle">thin host</text>
+  <text class="cap" x="820" y="382" text-anchor="middle">Each host composes only the screens it needs — AddApplicationPart, gated by Modules:Enabled · AddCbsModules asserts at startup that every deployed module assembly was registered</text>
+  <line x1="820" y1="394" x2="820" y2="409" stroke="#1F3864" marker-end="url(#arw)"/>
+
+  <!-- ── band 4 · screens ──────────────────────────────────── -->
+  <rect class="band" x="210" y="412" width="1220" height="128" rx="8" fill="#E4F4F4" stroke="#A5D8D8"/>
+  <text class="bl" x="222" y="431">SCREENS  ·  RAZOR CLASS LIBRARIES (VIEWS, CONTROLLERS, WWWROOT)</text>
+  <rect class="box" x="230" y="440" width="280" height="36" rx="6" stroke="#2E9E9E" filter="url(#sh)"/>
+  <text class="bx" x="370" y="463" text-anchor="middle">TflCbs.Modules.Bank.Web</text>
+  <rect class="box" x="530" y="440" width="280" height="36" rx="6" stroke="#2E9E9E" filter="url(#sh)"/>
+  <text class="bx" x="670" y="463" text-anchor="middle">TflCbs.Modules.Hr.Web</text>
+  <rect class="box" x="830" y="440" width="280" height="36" rx="6" stroke="#2E9E9E" filter="url(#sh)"/>
+  <text class="bx" x="970" y="463" text-anchor="middle">TflCbs.Modules.Lockers.Web</text>
+  <rect class="box" x="1130" y="440" width="280" height="36" rx="6" stroke="#2E9E9E" filter="url(#sh)"/>
+  <text class="bx" x="1270" y="463" text-anchor="middle">TflCbs.Modules.RetailBanking.Web</text>
+  <rect class="box" x="230" y="486" width="280" height="36" rx="6" stroke="#2E9E9E" filter="url(#sh)"/>
+  <text class="bx" x="370" y="509" text-anchor="middle">TflCbs.Modules.Administration.Web</text>
+  <rect class="box" x="530" y="486" width="280" height="36" rx="6" stroke="#2E9E9E" filter="url(#sh)"/>
+  <text class="bx" x="670" y="509" text-anchor="middle">TflCbs.Core.Authentication.Web</text>
+  <rect class="box" x="830" y="486" width="280" height="36" rx="6" stroke="#2E9E9E" filter="url(#sh)"/>
+  <text class="bx" x="970" y="509" text-anchor="middle">TflCbs.Core.Shell.Web</text>
+  <rect class="box" x="1130" y="486" width="280" height="36" rx="6" stroke="#2E9E9E" filter="url(#sh)"/>
+  <text class="bxb" x="1270" y="503" text-anchor="middle">TflCbs.Web.Shared</text>
+  <text class="bxs" x="1270" y="517" text-anchor="middle">layout · partials · wwwroot</text>
+  <line x1="820" y1="542" x2="820" y2="557" stroke="#1F3864" marker-end="url(#arw)"/>
+
+  <!-- ── band 5 · framework ────────────────────────────────── -->
+  <rect class="band" x="210" y="560" width="1220" height="104" rx="8" fill="#EFE9F8" stroke="#C6B4E6"/>
+  <text class="bl" x="222" y="579">FRAMEWORK  ·  REUSABLE WEB PLUMBING — REFERENCES ABSTRACTIONS ONLY, NEVER A SCREEN OR A SERVICE</text>
+  <rect class="box" x="230" y="586" width="1180" height="68" rx="6" stroke="#7048A8" filter="url(#sh)"/>
+  <text class="bxb" x="820" y="606" text-anchor="middle">TflCbs.Framework — one-call setup: AddCbsFramework() + UseCbsFramework()</text>
+  <rect x="244" y="616" width="270" height="28" rx="5" fill="#F6F2FC" stroke="#C6B4E6"/>
+  <text class="chip" x="379" y="634" text-anchor="middle">CbsAccessMiddleware — fail-closed</text>
+  <rect x="538" y="616" width="270" height="28" rx="5" fill="#F6F2FC" stroke="#C6B4E6"/>
+  <text class="chip" x="673" y="634" text-anchor="middle">Session store · idle warn / logout</text>
+  <rect x="832" y="616" width="270" height="28" rx="5" fill="#F6F2FC" stroke="#C6B4E6"/>
+  <text class="chip" x="967" y="634" text-anchor="middle">Pickers · search · date components</text>
+  <rect x="1126" y="616" width="270" height="28" rx="5" fill="#F6F2FC" stroke="#C6B4E6"/>
+  <text class="chip" x="1261" y="634" text-anchor="middle">RowToken · reference cache</text>
+  <line x1="820" y1="666" x2="820" y2="681" stroke="#1F3864" marker-end="url(#arw)"/>
+
+  <!-- ── band 6 · business modules ─────────────────────────── -->
+  <rect class="band" x="210" y="684" width="1220" height="152" rx="8" fill="#E7F4EC" stroke="#A9D6BC"/>
+  <text class="bl" x="222" y="703">BUSINESS MODULES  ·  9 ASSEMBLIES, ONE PROCESS — CROSS-MODULE CALLS ONLY THROUGH PUBLISHED CONTRACTS</text>
+  <rect x="230" y="710" width="560" height="118" rx="6" fill="#F5FBF7" stroke="#A9D6BC"/>
+  <text class="gh" x="242" y="728">CORE — ALWAYS REGISTERED (ICoreCbsModule)</text>
+  <rect class="box" x="242" y="736" width="536" height="40" rx="5" stroke="#2E8B57"/>
+  <text class="bxb" x="510" y="753" text-anchor="middle">TflCbs.Modules.General</text>
+  <text class="bxs" x="510" y="768" text-anchor="middle">menu · bank variables · broadcast · alerts · maker-checker scroll · process-block</text>
+  <rect class="box" x="242" y="784" width="262" height="40" rx="5" stroke="#2E8B57"/>
+  <text class="bxb" x="373" y="801" text-anchor="middle">TflCbs.Modules.Reference</text>
+  <text class="bxs" x="373" y="816" text-anchor="middle">shared geography masters</text>
+  <rect class="box" x="516" y="784" width="262" height="40" rx="5" stroke="#2E8B57"/>
+  <text class="bxb" x="647" y="801" text-anchor="middle">TflCbs.Core.Authentication</text>
+  <text class="bxs" x="647" y="816" text-anchor="middle">login · session · SSO</text>
+  <rect x="830" y="710" width="580" height="118" rx="6" fill="#F5FBF7" stroke="#A9D6BC"/>
+  <text class="gh" x="842" y="728">DOMAINS — SWITCHED ON BY CONFIGURATION (ICbsModule)</text>
+  <rect class="box" x="842" y="736" width="176" height="40" rx="5" stroke="#2E8B57"/>
+  <text class="bx" x="930" y="760" text-anchor="middle">Accounts</text>
+  <rect class="box" x="1032" y="736" width="176" height="40" rx="5" stroke="#2E8B57"/>
+  <text class="bx" x="1120" y="760" text-anchor="middle">RetailBanking</text>
+  <rect class="box" x="1222" y="736" width="176" height="40" rx="5" stroke="#2E8B57"/>
+  <text class="bx" x="1310" y="760" text-anchor="middle">Clearing</text>
+  <rect class="box" x="842" y="784" width="176" height="40" rx="5" stroke="#2E8B57"/>
+  <text class="bx" x="930" y="808" text-anchor="middle">Lockers</text>
+  <rect class="box" x="1032" y="784" width="176" height="40" rx="5" stroke="#2E8B57"/>
+  <text class="bx" x="1120" y="808" text-anchor="middle">HR</text>
+  <rect class="box" x="1222" y="784" width="176" height="40" rx="5" stroke="#2E8B57"/>
+  <text class="bx" x="1310" y="808" text-anchor="middle">Administration</text>
+  <line x1="820" y1="838" x2="820" y2="853" stroke="#1F3864" marker-end="url(#arw)"/>
+
+  <!-- ── band 7 · foundation & data ────────────────────────── -->
+  <rect class="band" x="210" y="856" width="1220" height="132" rx="8" fill="#FBF2DC" stroke="#E6CE8E"/>
+  <text class="bl" x="222" y="875">FOUNDATION &amp; DATA  ·  IN-HOUSE LIBRARIES, VENDORED IN-REPO — NO NICHE THIRD-PARTY DEPENDENCIES</text>
+  <rect class="box" x="230" y="882" width="280" height="46" rx="6" stroke="#C98A00" filter="url(#sh)"/>
+  <text class="bxb" x="370" y="900" text-anchor="middle">TflCbs.Abstractions</text>
+  <text class="bxs" x="370" y="916" text-anchor="middle">Result&lt;T&gt; · ICbsModule · 4 ports</text>
+  <rect class="box" x="530" y="882" width="280" height="46" rx="6" stroke="#C98A00" filter="url(#sh)"/>
+  <text class="bxb" x="670" y="900" text-anchor="middle">TflOmniDb — data access</text>
+  <text class="bxs" x="670" y="916" text-anchor="middle">Repository&lt;T&gt; · parameterized only</text>
+  <rect class="box" x="830" y="882" width="280" height="46" rx="6" stroke="#C98A00" filter="url(#sh)"/>
+  <text class="bxb" x="970" y="900" text-anchor="middle">TflCbs.Entities</text>
+  <text class="bxs" x="970" y="916" text-anchor="middle">generated entity model</text>
+  <rect class="box" x="1130" y="882" width="280" height="46" rx="6" stroke="#C98A00" filter="url(#sh)"/>
+  <text class="bxb" x="1270" y="900" text-anchor="middle">TflOmniLog · TflSecurityCrypto</text>
+  <text class="bxs" x="1270" y="916" text-anchor="middle">logging · PBKDF2 hashing</text>
+  <rect x="390" y="938" width="200" height="40" rx="6" fill="#FFFFFF" stroke="#1F3864"/>
+  <text class="bx" x="490" y="963" text-anchor="middle">SQL Server</text>
+  <rect x="610" y="938" width="200" height="40" rx="6" fill="#FFFFFF" stroke="#1F3864"/>
+  <text class="bx" x="710" y="963" text-anchor="middle">PostgreSQL</text>
+  <rect x="830" y="938" width="200" height="40" rx="6" fill="#FFFFFF" stroke="#1F3864"/>
+  <text class="bx" x="930" y="963" text-anchor="middle">Oracle</text>
+  <rect x="1050" y="938" width="200" height="40" rx="6" fill="#FFFFFF" stroke="#1F3864" stroke-dasharray="5 4"/>
+  <text class="bx" x="1150" y="963" text-anchor="middle">Redis — optional cache</text>
+
+  <text class="foot" x="820" y="1013" text-anchor="middle">One process, one database, hard internal boundaries · 36 projects · 9 module assemblies (3 core, 6 domain) · scale-out to separate hosts is built and demonstrated, not a rewrite</text>
+</svg>

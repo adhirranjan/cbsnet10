@@ -1,0 +1,263 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Gateway → Backend Scheme: why the gateway calls its backends over HTTPS</title>
+<style>
+:root{color-scheme:light dark}
+*{box-sizing:border-box}
+body{margin:0;background:#f6f8fa;color:#1f2328;font:16px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif}
+.wrap{max-width:900px;margin:0 auto;padding:32px 24px 96px}
+.card{background:#fff;border:1px solid #d0d7de;border-radius:10px;padding:40px 48px}
+h1,h2,h3{line-height:1.25;font-weight:600}
+h1{font-size:1.9rem;margin:0 0 .3em;padding-bottom:.3em;border-bottom:1px solid #d8dee4}
+h2{font-size:1.4rem;margin:1.8em 0 .6em;padding-bottom:.25em;border-bottom:1px solid #eaeef2}
+h3{font-size:1.12rem;margin:1.4em 0 .5em}
+p,li{margin:.5em 0}
+a{color:#0969da;text-decoration:none}
+a:hover{text-decoration:underline}
+code{font-family:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;font-size:.86em;background:#eff1f3;padding:.15em .4em;border-radius:6px}
+pre{background:#f6f8fa;border:1px solid #d8dee4;border-radius:8px;padding:14px 16px;overflow:auto}
+pre code{background:none;padding:0;font-size:.85em;line-height:1.45}
+blockquote{margin:1em 0;padding:.4em 1em;color:#3d444d;border-left:4px solid #d0d7de;background:#f6f8fa;border-radius:0 6px 6px 0}
+blockquote>:first-child{margin-top:0}blockquote>:last-child{margin-bottom:0}
+table{border-collapse:collapse;width:100%;margin:1em 0;display:block;overflow:auto}
+th,td{border:1px solid #d0d7de;padding:8px 12px;text-align:left;vertical-align:top}
+th{background:#f6f8fa;font-weight:600}
+tr:nth-child(2n) td{background:#f6f8fa}
+hr{border:0;border-top:1px solid #d8dee4;margin:2em 0}
+pre{position:relative}
+pre>button.copy{position:absolute;top:8px;right:8px;padding:5px 9px;cursor:pointer;
+  font:600 .68rem/1 ui-monospace,SFMono-Regular,Consolas,monospace;letter-spacing:.03em;
+  color:#636c76;background:#fff;border:1px solid #d0d7de;border-radius:6px;
+  opacity:0;transition:opacity .12s}
+pre:hover>button.copy,pre>button.copy:focus{opacity:1}
+pre>button.copy.done{color:#0a3622;background:#dafbe1;border-color:#4ac26b}
+@media(hover:none){pre>button.copy{opacity:1}}
+td code.cp{cursor:pointer}
+td code.cp:hover,td code.cp:focus{outline:1px solid #8c959f;outline-offset:1px}
+td code.cp.done{color:#0a3622;background:#dafbe1}
+.docnav{margin:0 0 20px;font-size:.85rem;color:#636c76}
+.docnav a{color:#636c76}
+ul{padding-left:1.4em}ol{padding-left:1.4em}
+@media(max-width:640px){.card{padding:24px 18px}.wrap{padding:16px 10px 64px}}
+@media(prefers-color-scheme:dark){
+ body{background:#0d1117;color:#e6edf3}
+ .card{background:#161b22;border-color:#30363d}
+ h1{border-color:#30363d}h2{border-color:#21262d}
+ code{background:#262c34}
+ pre{background:#0d1117;border-color:#30363d}
+ blockquote{background:#161b22;border-color:#30363d;color:#9198a1}
+ th,td{border-color:#30363d}th{background:#161b22}tr:nth-child(2n) td{background:#12171e}
+ a{color:#4493f8}.docnav,.docnav a{color:#9198a1}
+ hr{border-color:#30363d}
+ pre>button.copy{color:#9198a1;background:#161b22;border-color:#30363d}
+ pre>button.copy.done{color:#aff5b4;background:#1b4721;border-color:#2ea043}
+ td code.cp.done{color:#aff5b4;background:#1b4721}
+}
+</style></head>
+<body><div class="wrap"><div class="card">
+<div class="docnav"><a href="../index.html">&#8592; All docs</a></div>
+<h1 id="gateway-backend-scheme-why-the-gateway-calls-its-backends-over-https">Gateway → Backend Scheme: why the gateway calls its backends over <strong>HTTPS</strong></h1>
+<p>When you run the multi-host topology (gateway + default host + thin hosts), one config choice trips people up: <strong>over what scheme does the YARP gateway reach its backend hosts — HTTP or HTTPS?</strong> The intuitive answer ("they're on the same box, just use HTTP loopback — simpler, no certs") is <strong>wrong for this app</strong>, and the failure is sneaky: the site works in a browser but the gateway reports the backends as down.</p>
+<p>This doc explains exactly why, and documents every way to make HTTP work if you ever need it. <strong>Short answer: use HTTPS backends.</strong></p>
+<h2 id="1-the-topology">1. The topology</h2>
+<pre><code>browser ──HTTPS──► gateway (cbs-gateway :8101) ──?──► backend hosts:
+                                                         cbs-default :8111
+                                                         cbs-hr      :8121
+                                                         cbs-lockers :8131
+                                                         cbs-retail  :8141
+                                                         cbs-admin   :8151
+</code></pre>
+<p>The gateway (YARP) does two things to each backend:
+1. <strong>Proxies</strong> browser requests (<code>/Hr/*</code> → <code>cbs-hr</code>, catch-all → <code>cbs-default</code>, …).
+2. <strong>Active health checks</strong> — on a timer (every 10s) it calls each backend's <code>/health/ready</code> and pulls the backend out of rotation if it stops returning 2xx.</p>
+<p>The <code>?</code> in the diagram is the scheme of that gateway→backend hop.</p>
+<h2 id="2-what-each-backend-does-on-every-request">2. What each backend does on every request</h2>
+<p>Every CBS backend host (<code>TflCbs.Host.Main</code> and the <code>TflCbs.Host.*</code> thin hosts) wires this middleware order in <code>Program.cs</code>:</p>
+<pre><code class="language-csharp">app.UseCbsForwardedHeaders(builder.Configuration);  // (1) honour X-Forwarded-* from the gateway
+...
+app.UseHttpsRedirection();                            // (2) redirect http → https
+...
+app.MapCbsHealthChecks();                             // /health, /health/ready
+</code></pre>
+<ul>
+<li><strong><code>UseHttpsRedirection</code></strong> 307-redirects any request whose <code>Request.Scheme == "http"</code> to <code>https://…</code>.</li>
+<li><strong><code>UseCbsForwardedHeaders</code></strong> rewrites <code>Request.Scheme</code> (and <code>Host</code>) from the <code>X-Forwarded-Proto</code> / <code>X-Forwarded-Host</code> headers — <strong>but only when those headers are present and come from a trusted peer</strong> (loopback is trusted by default; see <a href="self-signed-cert.html">self-signed-cert.md</a> / the multi-host doc for <code>KnownProxies</code>).</li>
+</ul>
+<p><code>UseCbsForwardedHeaders</code> runs <strong>before</strong> <code>UseHttpsRedirection</code> on purpose — so the redirect sees the <em>forwarded</em> scheme, not the raw hop scheme.</p>
+<h2 id="3-the-asymmetry-two-kinds-of-requests-hit-a-backend">3. The asymmetry — two kinds of requests hit a backend</h2>
+<p>This is the crux. Two very different callers reach a backend, and they differ in <strong>one header</strong>:</p>
+<table>
+<thead>
+<tr>
+<th>Caller</th>
+<th>Carries <code>X-Forwarded-Proto</code>?</th>
+<th><code>Request.Scheme</code> after (1)</th>
+<th><code>UseHttpsRedirection</code></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Proxied browser request</strong> (user → gateway <code>https</code> → backend)</td>
+<td><strong>Yes</strong> — YARP adds <code>X-Forwarded-Proto: https</code></td>
+<td><code>https</code></td>
+<td>no-op ✅</td>
+</tr>
+<tr>
+<td><strong>YARP active health probe</strong> (gateway → <code>…/health/ready</code>, a direct timer call)</td>
+<td><strong>No</strong> — it's not a proxied request; YARP doesn't add forwarded headers to its own health probe</td>
+<td><em>(raw hop scheme)</em></td>
+<td>depends on hop scheme ⚠️</td>
+</tr>
+</tbody>
+</table>
+<p>A browser request always carries <code>X-Forwarded-Proto: https</code> (the scheme the <em>browser</em> used to reach the gateway), so the backend always thinks it's https — regardless of whether the gateway→backend hop was http or https. <strong>The health probe does not.</strong></p>
+<h2 id="4-why-http-backends-break-step-by-step">4. Why HTTP backends break (step by step)</h2>
+<p>Set the gateway destinations to <code>http://localhost:8110/</code> (etc.) and watch the health probe:</p>
+<ol>
+<li>Gateway health-check client calls <code>http://localhost:8110/health/ready</code> — a <strong>direct</strong> HTTP request, no <code>X-Forwarded-Proto</code>.</li>
+<li><code>UseCbsForwardedHeaders</code> finds no forwarded header → leaves <code>Request.Scheme = "http"</code>.</li>
+<li><code>UseHttpsRedirection</code> sees <code>http</code> → returns <strong>307 Redirect</strong> to <code>https://…/health/ready</code>. (The probe never reaches the health endpoint.)</li>
+<li>YARP's health policy expects a <strong>2xx</strong>; a <strong>307</strong> is a failure. After <code>ConsecutiveFailures</code>, the backend is marked <strong>Unhealthy</strong>.</li>
+<li>The gateway stops routing to it → every request for that cluster returns <strong>503</strong>.</li>
+</ol>
+<p>Meanwhile the <strong>browser path still works</strong> (it carries the header), so a quick manual click-through looks fine — until the health checks trip and the cluster drops. That's what makes this failure sneaky: it's not a startup error, it's a delayed 503 from a health subsystem, on a backend that "works when I test it directly."</p>
+<blockquote>
+<p>The dev topology (<code>dotnet run</code>) never hit this because its gateway <code>appsettings.Development.json</code> already points at <strong>HTTPS</strong> backend ports (7100/72–75xx) — it just needed <code>DangerousAcceptAnyServerCertificate</code> because the ASP.NET dev cert isn't trusted.</p>
+</blockquote>
+<h2 id="5-the-fix-https-backends-what-we-use">5. The fix — HTTPS backends (what we use)</h2>
+<p>Point the gateway destinations at the backends' <strong>HTTPS</strong> ports:</p>
+<pre><code class="language-jsonc">// gateway appsettings.Production.json
+&quot;ReverseProxy&quot;: { &quot;Clusters&quot;: {
+  &quot;cbs-default&quot;:         { &quot;Destinations&quot;: { &quot;default-host&quot;:        { &quot;Address&quot;: &quot;https://localhost:8111/&quot; } } },
+  &quot;hr-host&quot;:             { &quot;Destinations&quot;: { &quot;hr-thin&quot;:             { &quot;Address&quot;: &quot;https://localhost:8121/&quot; } } },
+  &quot;lockers-host&quot;:        { &quot;Destinations&quot;: { &quot;lockers-thin&quot;:        { &quot;Address&quot;: &quot;https://localhost:8131/&quot; } } },
+  &quot;retailbanking-host&quot;:  { &quot;Destinations&quot;: { &quot;retailbanking-thin&quot;:  { &quot;Address&quot;: &quot;https://localhost:8141/&quot; } } },
+  &quot;administration-host&quot;: { &quot;Destinations&quot;: { &quot;administration-thin&quot;: { &quot;Address&quot;: &quot;https://localhost:8151/&quot; } } }
+}}
+</code></pre>
+<p>Now:
+- The backend receives the request (and the health probe) over <strong>https</strong> → <code>Request.Scheme == "https"</code> regardless of any header → <code>UseHttpsRedirection</code> <strong>never fires</strong> → <code>/health/ready</code> returns <strong>200</strong>. Health checks are green.
+- The gateway must <strong>trust the backend's certificate</strong>. Our single self-signed cert is installed in <strong><code>LocalMachine\Root</code></strong> (see <a href="self-signed-cert.html">self-signed-cert.md</a>), and .NET's HTTP client validates against the machine store on Windows — so the gateway trusts it, hostname <code>localhost</code> matches the cert SAN, and <strong>no <code>DangerousAcceptAnyServerCertificate</code> is needed</strong> (that flag disables cert validation entirely and is dev-only).</p>
+<blockquote>
+<p><strong>Reuse the destination <em>key</em>.</strong> The base <code>appsettings.json</code> names each destination (<code>default-host</code>, <code>hr-thin</code>, …). Keep the same key in the Production override so you <em>replace the Address</em> — a new key would <em>add a second destination</em> and YARP would load-balance onto the (dead) dev-port one.</p>
+</blockquote>
+<p><strong>Cost:</strong> zero code changes, active health checks stay on, it matches the dev topology, and it's actually <em>more</em> secure (the internal hop is encrypted too). The only prerequisite — a trusted cert — you already have.</p>
+<h2 id="6-alternatives-making-http-loopback-backends-work-not-used-here">6. Alternatives — making HTTP-loopback backends work (NOT used here)</h2>
+<p>If you ever deliberately want plain-HTTP backends (e.g. a proxy that terminates TLS and you don't want internal TLS), the <em>only</em> thing to solve is the health-probe 307. Options, best-to-worst for this codebase:</p>
+<h3 id="a-drop-usehttpsredirection-on-the-backends-cleanest-but-a-code-change">(a) Drop <code>UseHttpsRedirection()</code> on the backends — cleanest, but a code change</h3>
+<p>A host that <strong>always</strong> sits behind a TLS-terminating gateway arguably shouldn't self-redirect at all: the gateway owns TLS, the backend speaks plain HTTP internally, and <code>ForwardedHeaders</code> still sets <code>Request.Scheme = https</code> for URL/cookie generation (so <code>returnUrl</code> and the <code>Secure</code> cookie flag stay correct).</p>
+<pre><code class="language-csharp">// Program.cs — remove (or guard) this line on backends that only run behind the gateway:
+// app.UseHttpsRedirection();
+</code></pre>
+<ul>
+<li><strong>Pro:</strong> HTTP loopback works, active health checks intact, simplest runtime.</li>
+<li><strong>Con:</strong> a code change; the host no longer forces HTTPS if hit <strong>directly</strong> (fine behind a gateway, weaker standalone). If the <em>same</em> project also runs standalone (e.g. <code>TflCbs.Host.Main</code> as <code>cbs-single</code>), you'd need to gate it by config.</li>
+</ul>
+<h3 id="b-disable-active-health-checks-config-only-but-you-lose-proactive-detection">(b) Disable active health checks — config-only, but you lose proactive detection</h3>
+<pre><code class="language-jsonc">&quot;Clusters&quot;: { &quot;hr-host&quot;: { &quot;HealthCheck&quot;: { &quot;Active&quot;: { &quot;Enabled&quot;: false } } } }
+</code></pre>
+<ul>
+<li><strong>Pro:</strong> no code change; no HTTP probe → no 307. Browser requests still work.</li>
+<li><strong>Con:</strong> the gateway no longer proactively pulls a dead backend out; it discovers failure <strong>passively</strong> — a real user request fails and returns 502/retries. Slower failover, worse observability.</li>
+</ul>
+<h3 id="c-exclude-health-from-the-redirect-surgical-code-change">(c) Exclude <code>/health</code> from the redirect — surgical code change</h3>
+<pre><code class="language-csharp">app.UseWhen(
+    ctx =&gt; !ctx.Request.Path.StartsWithSegments(&quot;/health&quot;),
+    branch =&gt; branch.UseHttpsRedirection());
+</code></pre>
+<ul>
+<li><strong>Pro:</strong> keeps HTTPS-redirect for real traffic <strong>and</strong> active health checks over HTTP.</li>
+<li><strong>Con:</strong> a code change on every backend; easy to forget on a new host.</li>
+</ul>
+<h3 id="what-does-not-work">What does <em>not</em> work</h3>
+<ul>
+<li><strong>Injecting <code>X-Forwarded-Proto: https</code> onto YARP's health probe</strong> — there's no clean per-cluster knob to add a header to the active health request.</li>
+<li><strong>Teaching the probe to treat 307 as healthy</strong> — requires a custom <code>IActiveHealthCheckPolicy</code>; more work than just using HTTPS.</li>
+</ul>
+<h2 id="7-decision-matrix">7. Decision matrix</h2>
+<table>
+<thead>
+<tr>
+<th>Approach</th>
+<th style="text-align: center;">Code change?</th>
+<th style="text-align: center;">Active health checks</th>
+<th style="text-align: center;">Internal hop encrypted</th>
+<th>Verdict</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>HTTPS backends</strong></td>
+<td style="text-align: center;">No</td>
+<td style="text-align: center;">✅</td>
+<td style="text-align: center;">✅</td>
+<td><strong>Use this</strong></td>
+</tr>
+<tr>
+<td>Drop <code>UseHttpsRedirection</code></td>
+<td style="text-align: center;">Yes</td>
+<td style="text-align: center;">✅</td>
+<td style="text-align: center;">✗</td>
+<td>OK if hosts are gateway-only</td>
+</tr>
+<tr>
+<td>Disable active health checks</td>
+<td style="text-align: center;">No</td>
+<td style="text-align: center;">✗</td>
+<td style="text-align: center;">✗</td>
+<td>Last resort</td>
+</tr>
+<tr>
+<td><code>UseWhen</code> exclude <code>/health</code></td>
+<td style="text-align: center;">Yes</td>
+<td style="text-align: center;">✅</td>
+<td style="text-align: center;">✗</td>
+<td>Works, more moving parts</td>
+</tr>
+</tbody>
+</table>
+<h2 id="8-related">8. Related</h2>
+<ul>
+<li><a href="iis-multi-host.html">iis-multi-host.md</a> — the multi-host deploy (uses these HTTPS destinations)</li>
+<li><a href="self-signed-cert.html">self-signed-cert.md</a> — the trusted cert the gateway validates against</li>
+<li><a href="../single-sign-on.txt">single-sign-on.txt</a> — why the gateway exists (one origin for cross-host SSO)</li>
+</ul>
+</div></div>
+<script>
+(function(){
+ function put(t){
+  if(navigator.clipboard&&navigator.clipboard.writeText)return navigator.clipboard.writeText(t);
+  return new Promise(function(res,rej){
+   var a=document.createElement('textarea');a.value=t;a.setAttribute('readonly','');
+   a.style.cssText='position:fixed;top:0;left:0;opacity:0';document.body.appendChild(a);
+   a.select();var ok=false;try{ok=document.execCommand('copy')}catch(e){}
+   document.body.removeChild(a);ok?res():rej()});
+ }
+ function flash(el,txt,ms){
+  var was=el.textContent;el.classList.add('done');if(txt)el.textContent=txt;
+  setTimeout(function(){el.classList.remove('done');if(txt)el.textContent=was},ms||1200);
+ }
+ function copy(text,el,okTxt){
+  put(text).then(function(){flash(el,okTxt)},function(){
+   if(okTxt){var w=el.textContent;el.textContent='Ctrl+C';setTimeout(function(){el.textContent=w},2000)}});
+ }
+ document.querySelectorAll('pre').forEach(function(pre){
+  if(pre.classList.contains('txtdoc'))return;
+  var b=document.createElement('button');
+  b.type='button';b.className='copy';b.textContent='Copy';
+  b.setAttribute('aria-label','Copy this code block to the clipboard');
+  b.addEventListener('click',function(){copy((pre.querySelector('code')||pre).innerText,b,'Copied')});
+  pre.appendChild(b);
+ });
+ document.querySelectorAll('td code').forEach(function(c){
+  if(!c.textContent.trim())return;
+  c.classList.add('cp');c.tabIndex=0;c.setAttribute('role','button');
+  c.title='Click to copy';
+  c.addEventListener('click',function(){copy(c.textContent,c)});
+  c.addEventListener('keydown',function(e){
+   if(e.key==='Enter'||e.key===' '){e.preventDefault();copy(c.textContent,c)}});
+ });
+})();
+</script>
+</body></html>

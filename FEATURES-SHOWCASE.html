@@ -1,0 +1,354 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>TrustBank CBS — .NET 10 Migration : FEATURES DEVELOPED (Showcase)</title>
+<style>
+:root{color-scheme:light dark}
+*{box-sizing:border-box}
+body{margin:0;background:#f6f8fa;color:#1f2328;font:16px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif}
+.wrap{max-width:900px;margin:0 auto;padding:32px 24px 96px}
+.card{background:#fff;border:1px solid #d0d7de;border-radius:10px;padding:40px 48px}
+h1,h2,h3{line-height:1.25;font-weight:600}
+h1{font-size:1.9rem;margin:0 0 .3em;padding-bottom:.3em;border-bottom:1px solid #d8dee4}
+h2{font-size:1.4rem;margin:1.8em 0 .6em;padding-bottom:.25em;border-bottom:1px solid #eaeef2}
+h3{font-size:1.12rem;margin:1.4em 0 .5em}
+p,li{margin:.5em 0}
+a{color:#0969da;text-decoration:none}
+a:hover{text-decoration:underline}
+code{font-family:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;font-size:.86em;background:#eff1f3;padding:.15em .4em;border-radius:6px}
+pre{background:#f6f8fa;border:1px solid #d8dee4;border-radius:8px;padding:14px 16px;overflow:auto}
+pre code{background:none;padding:0;font-size:.85em;line-height:1.45}
+blockquote{margin:1em 0;padding:.4em 1em;color:#3d444d;border-left:4px solid #d0d7de;background:#f6f8fa;border-radius:0 6px 6px 0}
+blockquote>:first-child{margin-top:0}blockquote>:last-child{margin-bottom:0}
+table{border-collapse:collapse;width:100%;margin:1em 0;display:block;overflow:auto}
+th,td{border:1px solid #d0d7de;padding:8px 12px;text-align:left;vertical-align:top}
+th{background:#f6f8fa;font-weight:600}
+tr:nth-child(2n) td{background:#f6f8fa}
+hr{border:0;border-top:1px solid #d8dee4;margin:2em 0}
+pre{position:relative}
+pre>button.copy{position:absolute;top:8px;right:8px;padding:5px 9px;cursor:pointer;
+  font:600 .68rem/1 ui-monospace,SFMono-Regular,Consolas,monospace;letter-spacing:.03em;
+  color:#636c76;background:#fff;border:1px solid #d0d7de;border-radius:6px;
+  opacity:0;transition:opacity .12s}
+pre:hover>button.copy,pre>button.copy:focus{opacity:1}
+pre>button.copy.done{color:#0a3622;background:#dafbe1;border-color:#4ac26b}
+@media(hover:none){pre>button.copy{opacity:1}}
+td code.cp{cursor:pointer}
+td code.cp:hover,td code.cp:focus{outline:1px solid #8c959f;outline-offset:1px}
+td code.cp.done{color:#0a3622;background:#dafbe1}
+.docnav{margin:0 0 20px;font-size:.85rem;color:#636c76}
+.docnav a{color:#636c76}
+ul{padding-left:1.4em}ol{padding-left:1.4em}
+@media(max-width:640px){.card{padding:24px 18px}.wrap{padding:16px 10px 64px}}
+@media(prefers-color-scheme:dark){
+ body{background:#0d1117;color:#e6edf3}
+ .card{background:#161b22;border-color:#30363d}
+ h1{border-color:#30363d}h2{border-color:#21262d}
+ code{background:#262c34}
+ pre{background:#0d1117;border-color:#30363d}
+ blockquote{background:#161b22;border-color:#30363d;color:#9198a1}
+ th,td{border-color:#30363d}th{background:#161b22}tr:nth-child(2n) td{background:#12171e}
+ a{color:#4493f8}.docnav,.docnav a{color:#9198a1}
+ hr{border-color:#30363d}
+ pre>button.copy{color:#9198a1;background:#161b22;border-color:#30363d}
+ pre>button.copy.done{color:#aff5b4;background:#1b4721;border-color:#2ea043}
+ td code.cp.done{color:#aff5b4;background:#1b4721}
+}
+
+pre.txtdoc{font-size:.8rem;line-height:1.45;white-space:pre;overflow-x:auto;
+           border:0;background:none;padding:0;margin-top:1.2em}
+@media(prefers-color-scheme:dark){pre.txtdoc{background:none}}
+</style></head>
+<body><div class="wrap"><div class="card">
+<div class="docnav"><a href="index.html">&#8592; All docs</a> &middot;
+plain-text document &middot; <a href="FEATURES-SHOWCASE.txt">view raw .txt</a></div>
+<h1>TrustBank CBS — .NET 10 Migration : FEATURES DEVELOPED (Showcase)</h1>
+<pre class="txtdoc">==============================================================================
+ TrustBank CBS — .NET 10 Migration : FEATURES DEVELOPED (Showcase)
+ Strangler-fig migration of TrustBank CBS from WebForms/VB.NET/.NET 4.8
+ to .NET 10 / C# MVC.  One line per feature.
+
+ Last updated: 2026-07-30 (post modular-monolith split; 35 solution projects).
+ This is a FLAT capability inventory — it does not say which features are
+ faithful ports of legacy behaviour and which are net-new.  For that, read
+ docs/migrated-vs-new.md, which tags every capability Ported / Rebuilt / New
+ and also lists what was deliberately dropped and what is not yet migrated.
+
+ To PRESENT any of this: docs/architecture/diagrams/ holds the layered
+ architecture and a features / technologies / components board as .svg
+ (pastes straight into PowerPoint or Word) plus 2x .png copies.
+==============================================================================
+
+
+------------------------------------------------------------------------------
+ REUSABLE UI COMPONENTS / PICKERS
+------------------------------------------------------------------------------
+ All partials + client assets ship from the shared RCL TflCbs.Web.Shared
+ (static files served from ~/_content/TflCbs.Web.Shared/), so every host
+ and every screen RCL gets the same components with no duplication.
+- Record Picker (_RecordPicker / RecordPickerModel / cbs-search.js) — Go/Pick/Clear lookup with exact-resolve or modal-browse selection.
+- Account Picker (_AccountPicker / AccountPickerModel / cbs-account-picker.js) — 3-segment account input with a two-stage Chart-of-Account -&gt; Account modal.
+- Date Picker (_DatePicker / DatePickerModel / cbs-datepicker.js) — three-dropdown Day/Month/Year input, leap-year aware, with an ISO yyyy-MM-dd hidden field.
+- Search Modal (_SearchModal / SearchDescriptor) — dynamic filter inputs plus a sortable, paginated grid with row selection.
+- Account Search Modal (_AccountSearchModal) — two-stage Chart-of-Account / Account grids with filter, sort and pagination.
+- RowToken — session-bound, single-use, AES-encrypted opaque row ids that hide primary keys and prevent replay/cross-screen reuse.
+- Notification Modal (_Notification / UserMessage) — blocking acknowledgement modal for Success/Info/Warning/Error outcomes.
+- Transient toast (cbsNotify) — non-blocking client-side guard messages, distinct from the server-outcome ack modal.
+- Action Bar (_ActionBar) — configurable Save/Update/Delete/Search/Cancel form toolbar with primary/ghost styling.
+- Menu surface (_MenuOverlay / _MenuGrid) — server-authorized menu rendering; the menu IS the access-control list.
+- Command palette (_CommandPalette / cbs-command-palette.js) — Ctrl+K quick-access search over the session menu, client-side.
+- Session info bar (_SessionInfoBar) — bank/org, working date + session, financial-year range, last login and screen caption, rendered from session with no per-request DB hit.
+- Unsaved-changes guard (cbs-form-guard.js) — warns on navigating away from a dirty form; declarative data-confirm for destructive actions.
+- Idle timeout (cbs-idle.js + KeepAliveController) — warn at Cbs:IdleWarnMinutes, auto-logout at IdleLogoutMinutes, &quot;stay signed in&quot; ping (GET /Account/Ping -&gt; 204) that closes the b_UserLogTime row on logout.
+- Default-uppercase entry (cbs-uppercase.js) — delegated, caret-preserving, IME-aware uppercasing of text/search/tel inputs; cbs-keep-case opts out on any ancestor, cbs-uppercase opts in elsewhere.
+- Layouts — _Layout (full chrome: menu, session bar, footer marquee) and _LayoutBlank (chrome-free, for login/error).
+- DB Switcher (_DbSwitcher) — development-only selector to switch the active database provider at runtime.
+- Declarative config models — SearchDescriptor / SearchColumn / SearchFilter / SearchRequest / SearchResponse drive search behaviour via config, never client-side SQL.
+- Additive-with-safe-defaults rule — every component extension (e.g. the GET/POST Method opt-in, account-picker host events) defaults to previous behaviour so existing screens are unaffected.
+- Live showcase — /Dev/Components (Development only) renders every component above with dummy data and all options.
+
+
+------------------------------------------------------------------------------
+ ENTITY GENERATION (TflOmniDb.Scaffold)
+------------------------------------------------------------------------------
+- Reverse-engineers live DB schemas into [DbTable]/[DbColumn]-annotated entity classes for SQL Server, Oracle and PostgreSQL.
+- Interactive menu-driven wizard (run with no arguments) plus CLI flags for scripted / CI generation.
+- Configurable namespace, language (C# or VB.NET), target framework (net10 or .NET 4.8) and naming/casing strategy.
+- Emits a nested static Cols token class per entity for type-safe, refactor-friendly SQL composition.
+- Generates partial classes so hand-written business logic survives regeneration in a sibling file.
+- Optional --sensitive flag marks PII columns for automatic redaction in logs and audit trails.
+- Table-prefix filtering (skips &quot;_&quot; tables by default); sources from a live connection or an air-gap SQL dump.
+
+
+------------------------------------------------------------------------------
+ TflCbs.Entities (Generated Domain Entities)
+------------------------------------------------------------------------------
+- 3,682 auto-generated entity classes mirroring the TrustBank CBS database schema 1:1.
+- UPPERCASE nullable properties with type mapping (varchar -&gt; AnsiString, MONEY -&gt; Money, DATETIME -&gt; DateTime, etc.).
+- Every entity inherits Entity, is declared partial, and exposes a nested Cols class of strongly-typed column tokens.
+- Referenced by bare-DLL HintPath to TflOmniDb.dll — build TflCbs.Entities FIRST whenever the schema changes.
+
+
+------------------------------------------------------------------------------
+ TflOmniDb (Data Access Layer / DAL)
+------------------------------------------------------------------------------
+- Repository&lt;T&gt; CRUD — GetAsync / GetAllAsync / InsertAsync / UpdateAsync / DeleteAsync.
+- Set-based operations — UpdateWhereAsync / DeleteWhereAsync / CountAsync with LINQ predicates.
+- DataAccess query API — QueryAsync&lt;T&gt; (POCO), QueryAsync (dictionary), ExecuteScalarAsync, ExecuteNonQueryAsync.
+- Stored-procedure support — ExecuteProcedureAsync with INPUT/OUTPUT/RETURN params and multiple result sets (for legacy procs already migrated as procs; new master CRUD uses Repository&lt;T&gt;).
+- Multi-dialect engine — SQL Server, Oracle and PostgreSQL (identifier quoting, param prefixes, identity, paging, dirty-read hints).
+- Streaming APIs — StreamAllAsync / StreamWhereAsync / StreamQueryAsync / StreamProcedureAsync for arbitrarily large result sets.
+- Fully async-only with CancellationToken support throughout (no synchronous overloads).
+- Transactions &amp; Unit of Work — BeginTransactionAsync, IUnitOfWork, ExecuteInTransactionAsync with transient-failure retry.
+- Optimistic concurrency — row-version columns auto-increment and guard UPDATEs, throwing ConcurrencyException on stale writes.
+- Bulk insert — provider fast paths (SqlBulkCopy / PostgreSQL COPY / OracleBulkCopy) with batching options.
+- Operational scopes — correlation-id tagging, per-scope logging suppression, and sensitivity-based parameter redaction.
+- Attribute-driven metadata — [DbTable]/[DbColumn] capture columns, keys, identity, defaults, foreign keys, row-version and PII flags.
+- Editable in-house source (not a black box) — consumed by HintPath, with its own migration/scaffolding tooling.
+- Full documentation set mirrored at docs/libraries/tflomnidb/ — README, api-reference, usage-guide (21 recipes), components, tooling, the AdDataAccessComponent comparison and a porting cheat-sheet off the legacy Enterprise-Library DAL.
+
+
+------------------------------------------------------------------------------
+ BUSINESS / DATA LAYER (per-domain service modules)
+------------------------------------------------------------------------------
+- Result / Result&lt;T&gt; service contract — every service method returns an outcome envelope; no throwing across the service boundary, no silent failures.
+- No stored procedures and no raw SQL for new master CRUD — everything goes through Repository&lt;T&gt; / DataAccess.
+- Shared query helpers (ServiceQuery: Has / Eq / Val / Paged + page-size bounds) with enforced page-size limits, consumed via `using static`.
+- Shared DB-error mapping (DbErrors: IsDuplicate / IsForeignKey) — provider-aware duplicate/FK detection instead of per-proc @error codes.
+- Single-definition discipline — SharedServiceHelperTests fails the build if any service re-declares one of those helpers privately.
+- Zero ASP.NET in the data layer — modules reference only TflCbs.Abstractions + TflCbs.Entities/TflOmniDb, so the same services run in any host or console tool.
+- Proc-parity perf harness — times a legacy T-SQL proc against its migrated C# service across three targets and writes a dated report (docs/perf/).
+- Conversion pipeline — every proc is converted in TflCbs.Lab first, then promoted (class-wise or function-wise, Roslyn-assisted) into its owning module assembly.
+
+
+------------------------------------------------------------------------------
+ MODULAR MONOLITH &amp; FRAMEWORK
+------------------------------------------------------------------------------
+- Vertical split COMPLETE (2026-07-29) — nine independently-buildable service assemblies; the interim single TflCbsServices assembly no longer exists.
+- Core modules (ICoreCbsModule, always registered) — TflCbs.Modules.General (menu, bank variables, broadcast/alerts, maker-checker scroll, process-block check), TflCbs.Modules.Reference (geography masters), TflCbs.Core.Authentication (login, credential and session rules).
+- Domain modules (gated by Modules:Enabled) — HR, Lockers, Accounts, Clearing, Administration, RetailBanking; module = bounded domain, never per-service.
+- Dependency-free foundation — TflCbs.Abstractions holds Result/Result&lt;T&gt;, ICbsModule/ICoreCbsModule, the four framework ports, the boundary DTOs and the shared service helpers; no TflCbs.Entities, no TflOmniDb, no ASP.NET.
+- Framework ports (IBroadcastSource / IBankVariableSource / IMenuSource / ISessionValidator) — modules implement, the framework consumes, with no-op defaults so a partial composition still boots.
+- Published cross-module contracts — TflCbs.Modules.General.Contracts (IScrollService / ScrollSources, IProcessBlockCheck); consumers never reference General&#x27;s implementation.
+- Reference-module admission rule — a master joins TflCbs.Modules.Reference only if it has no domain behaviour AND &gt;=2 domains consume it, so it cannot become a dumping ground.
+- Explicit module composition — AddCbsModules(config, &lt;every module assembly&gt;) with no implicit anchor; unknown names in Modules:Enabled fail loud at startup.
+- Deployed-module cross-check — startup throws if a TflCbs.Modules.* / TflCbs.Core.* assembly is present in the output directory but was not handed to AddCbsModules (nothing else catches that mistake).
+- Per-domain web RCLs — screens ship as composable Razor Class Libraries (TflCbs.Modules.&lt;Area&gt;.Web) the host adds via gated AddApplicationPart; only hosts that enable a module reference it.
+- Horizontal framework/screen split — TflCbs.Framework references only TflCbs.Abstractions: never a service module, never a screen RCL (compiler-enforced and arch-tested).
+- Namespace == assembly across the whole solution, so a `using` names the assembly you are coupling to; enforced by NamespaceDisciplineTests with zero exceptions.
+- One-call framework setup — AddCbsFramework() + UseCbsFramework() wire session, cache, fail-closed access guard, search, DataAccess, health checks and security headers.
+- CbsScreenController — shared base for CRUD controllers: string-only token helpers (TryOpenRecord/TryBeginWrite/TryConsume/ProtectId), SavedOk/UpdatedOk/DeletedOk, TryLoad, EditFailed, RunSearch.
+- Server-owned search — SearchEndpoint + SearchRequest/SearchResponse; no SQL, table or column names ever reach the client (the legacy encrypted-SQL-in-the-URL model is gone).
+- Per-action attribute routing — each CRUD operation is its own routed action (compile-checked via asp-action/@nameof) instead of magic-string command dispatch.
+- Route cutover — a_Menus.NavigateURL holds each screen&#x27;s route; a DbMigrator migration rewrites it from the legacy *.aspx at cutover (strangler-fig, one source of truth for both the link and the access set).
+- Multi-provider wiring — DatabaseSelector + ADO.NET driver registration for SQL Server / Oracle / PostgreSQL from a single config switch.
+- Health checks — DatabaseHealthCheck plus per-host endpoints for gateway probing.
+
+
+------------------------------------------------------------------------------
+ SECURITY, AUTHENTICATION &amp; SESSION
+------------------------------------------------------------------------------
+- Fail-closed access — CbsAccessMiddleware allows a route only if the user is authenticated, has a module selected, and the URL is in their server-side menu; per-screen [CbsAccessScreen] binds sub-routes to their owning screen&#x27;s rights.
+- Per-request single-session guard — force-logout of a superseded session (legacy IsUserAlreadyLoggedIn behaviour, preserved).
+- Financial-year readiness gate — required by default, opt out with [CbsSkipFinancialYearCheck]; a missing FY redirects to login with a visible reason instead of a silent bounce.
+- Stale-session recovery — b_UserLogTime.LoginInfo carries &lt;REMOTE_HOST&gt; so a user&#x27;s own dead session from the same workstation is cleared before the &quot;already connected&quot; gate; parsed only by LoginInfo, the one sanctioned parser.
+- PBKDF2 password storage — per-user salt in PASSWORDHASH/PASSWORDVERSION, replacing the legacy reversible scheme; one-off clean-break migration via TflCbs.Tools.PasswordReset (supports --dry-run).
+- Password policy + expiry alerts — PasswordPolicyRules and a password-expiry notice surfaced on the module chooser.
+- Three-clock idle policy — client warn/logout thresholds and the server session TTL must agree; CbsSessionOptions.Resolve refuses to start if the server TTL does not exceed the client logout.
+- Security response headers — CSP, X-Frame-Options and friends, applied first in the pipeline.
+- Antiforgery on every mutating post, covered by an integration test.
+- Opaque row identity — RowToken keeps real primary keys off the client entirely (AES, screen+session bound, single-use on write).
+- Connected-user administration — /Administration/ConnectedUsers over ConnectedUserService.
+- Secrets hygiene — no credentials or connection strings in source; appsettings.Development.json is gitignored and never published; production supplies the connection string via environment variable / secret store.
+- TflSecurityCrypto — see the next section (byte-for-byte legacy crypto compatibility).
+
+
+------------------------------------------------------------------------------
+ TflSecurityCrypto (Cryptographic Utilities)
+------------------------------------------------------------------------------
+- Salted hashing — SimpleHash ComputeHash / VerifyHash across MD5, SHA1, SHA256, SHA384 and SHA512.
+- Symmetric encryption — Triple-DES (3DES) block cipher and an RC4 stream cipher with base64 output.
+- Salt-hash password handling — SHA256-plus-salt scheme with matching verify, plus the PBKDF2 PasswordHash used by the new login.
+- Hardware fingerprinting — machine-bound licensing from WMI motherboard / CPU / disk serials (Windows).
+- Cryptographically secure RNG — RNGCSP for uniform, unbiased random generation.
+- Legacy 1:1 VB.NET port — byte-for-byte cryptographic output compatibility with the original library.
+- Full documentation set mirrored at docs/libraries/tflsecuritycrypto/ — README (incl. how the compatibility guarantee is proven), api-reference and primitive-by-primitive security notes.
+
+
+------------------------------------------------------------------------------
+ CACHING (Reference Cache)
+------------------------------------------------------------------------------
+- Generic IReferenceCache for slow-changing master data — category+id keyed, read-through, with a generation-token &quot;flush all&quot;.
+- Per-key stampede guard plus a TTL backstop; fail-open by design (a cache error transparently falls back to the DB loader, never throws).
+- Provider chosen by Cache:Provider — in-memory default (the app runs fully with nothing configured), Redis, SQL Server, or bring-your-own IDistributedCache.
+- Bank/branch variables served through IBankVars with a per-request memo, replacing the old per-user session snapshot — so an admin flush reaches logged-in users on their next request with no re-login.
+- Removing those session Hashtables also removed the last non-serializable session state, unblocking future session externalization.
+- Access-guarded, audited admin screen /Bank/ReferenceCache — inspect category/id/size/timing, flush one entry or all (sizes only, never values).
+- Broadcast/marquee caching — the bank-wide broadcast is loaded once with a short TTL, not per user per request.
+
+
+------------------------------------------------------------------------------
+ LOGGING (TflOmniLog)
+------------------------------------------------------------------------------
+- Reusable Serilog-backed logging component (ITflLogger / ITflLogger&lt;T&gt;) with terse Trace/Debug/Info/Warn/Error/Critical, kept ASP.NET-free so the data layer can use it.
+- Category-wise logging — every line carries a Category, and categories flagged SeparateFile fan out to their own rolling file (audit / security / performance).
+- Config-driven levels — global minimum plus per-category level and enable/disable, hot-swappable at runtime via IOptionsMonitor.
+- Audit API — who / what / when / before-after into a dedicated trail.
+- PII masking — recursive redaction of AccountNo/PAN/CVV/password-style values, plus configurable regex/value patterns; masks values, not literal template text.
+- Correlation — ambient TflLogContext reusing Activity.Current.Id; cross-host enrichment (UserId/UserName/SessionId/Host) for multi-host tracing.
+- Sinks — file, console, batched SQL Server (ILogRowWriter seam + sql/CbsLog.sql) and alert-on-Critical (webhook/SMTP via IAlertChannel, throttled).
+- Sampling / rate limiting — token-bucket per level+category+template, annotating dropped counts rather than lying about volume.
+- TflOmniDb integration without coupling — a CategorySources map routes TflOmniDb&#x27;s SQL logs to the Database category (and its own file/level) while TflOmniDb stays MEL-only, with no Serilog dependency.
+- TimeOperation perf timing, and an HTTP request-logging middleware in the framework (Request category) so the core stays ASP.NET-free.
+
+
+------------------------------------------------------------------------------
+ OBSERVABILITY (OpenTelemetry)
+------------------------------------------------------------------------------
+- One-call AddCbsObservability — OpenTelemetry traces and metrics with ASP.NET Core, HTTP-client and .NET runtime instrumentation.
+- OTLP export to a pluggable backend; the dev backend is the single-container grafana/otel-lgtm stack (compose.observability.yaml, Grafana on :3000).
+- Enabled per host, so a request crossing the gateway into a thin host is traceable end to end.
+
+
+------------------------------------------------------------------------------
+ MULTI-HOST &amp; SINGLE SIGN-ON
+------------------------------------------------------------------------------
+- Internal cross-host SSO — log in once, recognized on every CBS host (CbsAuth encrypted cookie; no external IdP/SAML/OIDC).
+- Shared DataProtection key ring in the DB (CBS_DATAPROTECTIONKEYS) — any host decrypts a cookie any other host issued.
+- Global logout — shared revocation table (CBS_SESSIONREVOCATIONS) kills a session across all hosts.
+- Per-host session rehydration — a jumped-to host rebuilds the session from the cookie ticket and reloads its own menu from the DB.
+- YARP gateway (TflCbs.Gateway, :5100/:7100) — one origin fronting all hosts: path routing, health checks, load balancing, rate limiting. Pure proxy: no framework, no screens, no project references.
+- Four thin per-module hosts — Hr (:7300), Lockers (:7200), RetailBanking (:7400), Administration (:7500) run one domain + core standalone.
+- Login authority — an absolute external Auth:LoginUrl defers login to the designated authority host; ForwardedHeaders:Enabled keeps returnUrl on the gateway origin.
+- Permanent HTTPS dev topology — plain `dotnet run` per project brings the cluster up; the default host joins via the `https (shared-sso)` launch profile.
+
+
+------------------------------------------------------------------------------
+ DEPLOYMENT &amp; BUILD
+------------------------------------------------------------------------------
+- Four supported deployment shapes — IIS single-host, IIS multi-host (gateway + thin hosts), Docker single-host, Docker multi-host — all driven by scripts/deploy-cbs.ps1 (cbs-deploy skill).
+- Docker assets — Dockerfile plus compose.yaml (1 container), compose.multi.yaml (6 containers, only the gateway port published), compose.multi.https.yaml and compose.observability.yaml.
+- IIS automation — deploy-cbs-iis.ps1 provisions sites/app-pools and writes per-site web.config &lt;environmentVariables&gt; for connection string, SSO key ring and gateway login URL.
+- Dev cluster scripts — start-cbs-hosts / stop-cbs-hosts (.ps1 + .bat).
+- Central Package Management — every NuGet version in Directory.Packages.props, version-less PackageReference in csprojs; solution-wide defaults (net10.0, nullable, implicit usings) in Directory.Build.props.
+- Publish hygiene — appsettings.Development.json is marked CopyToPublishDirectory=Never so local dev credentials cannot reach an artifact.
+
+
+------------------------------------------------------------------------------
+ TESTING &amp; QUALITY GATES
+------------------------------------------------------------------------------
+- TflCbs.Tests (xUnit) — cross-provider, non-destructive service tests across all nine service modules.
+- TflCbs.ArchTests (NetArchTest) — ten suites enforcing framework-vs-screens isolation, web-module boundaries, namespace == assembly, module config gating, the promoted-module list, guard ordering, session-timeout coherence, reference-cache rules and resolve-all-modules.
+- TflCbs.IntegrationTests (Mvc.Testing) — boots the real host pipeline in-process, middleware order included, and asserts the fail-closed access guard, antiforgery and authenticated access.
+- TflOmniLog.Tests — unit tests for the logging library.
+- TflCbs.Demo — console mirror of every service method against any provider, kept in step with the tests by the cbs-sync-test-demo agent.
+- Build-failing conventions — a privately re-declared shared service helper, a namespace/assembly mismatch or an incoherent idle-timeout configuration all fail the build or startup rather than degrading silently.
+
+
+------------------------------------------------------------------------------
+ SCREENS DELIVERED SO FAR
+------------------------------------------------------------------------------
+ The reusable foundation above is proven on these screens; the bulk of the
+ 1,059 legacy functional screens (and all 399 reports) are still to come.
+- Shell — login (with financial-year notice), change password, logout, module chooser with branch select/switch, home/menu, access denied, error.
+- Reference / Hr area — State, District, Taluka masters.
+- HR — DiscipActionHistory.
+- Lockers — LockerType.
+- RetailBanking — Account, Clients, AccHoldingAmount (maker-checker).
+- Administration — Module, Role, ConnectedUsers.
+- Bank — ReferenceCache admin.
+- Dev-only — /Dev/Components component showcase, DB switcher.
+
+
+------------------------------------------------------------------------------
+ DEVELOPER TOOLING &amp; DOCUMENTATION
+------------------------------------------------------------------------------
+- Repeatable recipes — building-a-crud-screen (worked on the State master), starting-a-new-module (worked on Administration), search-and-rowtoken-flow.
+- Component reference — legacy-vs-new-components (per-control property mapping and copy-paste recipes) kept current by the component-docs-sync agent.
+- Migrated-vs-new inventory — docs/migrated-vs-new.md tags every capability Ported / Rebuilt / New and states what is not yet migrated.
+- Architecture set — architecture-overview (every project and the request flow), the modular-monolith and reusable-boundary decision records, the platform-architecture and management brief documents.
+- Management diagrams — docs/architecture/diagrams/: layered architecture (clients -&gt; gateway -&gt; hosts -&gt; screen RCLs -&gt; framework -&gt; 9 modules -&gt; data, with the legacy estate and the deployment/gate rails) and a features/technologies/components board; .svg for slides, 2x .png alongside.
+- In-house library docs — docs/libraries/tflomnidb/ and docs/libraries/tflsecuritycrypto/, mirrored from the library repo by scripts/sync-library-docs.py (edit the Markdown there, never the copy here).
+- Deployment set — one document per hosting shape, plus gateway-backend-scheme, self-signed-cert, local-dev-secrets and the port map.
+- Doc generation — Markdown (or txt-native) is the source of truth; every HTML/txt/pdf/docx/pptx/xlsx sibling is generated by a committed script.
+- Maintenance agents — cbs-sync-test-demo (tests + demo), component-demo (/Dev/Components), component-docs-sync (component guide).
+==============================================================================
+</pre>
+</div></div>
+<script>
+(function(){
+ function put(t){
+  if(navigator.clipboard&&navigator.clipboard.writeText)return navigator.clipboard.writeText(t);
+  return new Promise(function(res,rej){
+   var a=document.createElement('textarea');a.value=t;a.setAttribute('readonly','');
+   a.style.cssText='position:fixed;top:0;left:0;opacity:0';document.body.appendChild(a);
+   a.select();var ok=false;try{ok=document.execCommand('copy')}catch(e){}
+   document.body.removeChild(a);ok?res():rej()});
+ }
+ function flash(el,txt,ms){
+  var was=el.textContent;el.classList.add('done');if(txt)el.textContent=txt;
+  setTimeout(function(){el.classList.remove('done');if(txt)el.textContent=was},ms||1200);
+ }
+ function copy(text,el,okTxt){
+  put(text).then(function(){flash(el,okTxt)},function(){
+   if(okTxt){var w=el.textContent;el.textContent='Ctrl+C';setTimeout(function(){el.textContent=w},2000)}});
+ }
+ document.querySelectorAll('pre').forEach(function(pre){
+  if(pre.classList.contains('txtdoc'))return;
+  var b=document.createElement('button');
+  b.type='button';b.className='copy';b.textContent='Copy';
+  b.setAttribute('aria-label','Copy this code block to the clipboard');
+  b.addEventListener('click',function(){copy((pre.querySelector('code')||pre).innerText,b,'Copied')});
+  pre.appendChild(b);
+ });
+ document.querySelectorAll('td code').forEach(function(c){
+  if(!c.textContent.trim())return;
+  c.classList.add('cp');c.tabIndex=0;c.setAttribute('role','button');
+  c.title='Click to copy';
+  c.addEventListener('click',function(){copy(c.textContent,c)});
+  c.addEventListener('keydown',function(e){
+   if(e.key==='Enter'||e.key===' '){e.preventDefault();copy(c.textContent,c)}});
+ });
+})();
+</script>
+</body></html>

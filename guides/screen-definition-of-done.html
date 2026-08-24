@@ -1,0 +1,253 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Definition of Done — a migrated screen</title>
+<style>
+:root{color-scheme:light dark}
+*{box-sizing:border-box}
+body{margin:0;background:#f6f8fa;color:#1f2328;font:16px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif}
+.wrap{max-width:900px;margin:0 auto;padding:32px 24px 96px}
+.card{background:#fff;border:1px solid #d0d7de;border-radius:10px;padding:40px 48px}
+h1,h2,h3{line-height:1.25;font-weight:600}
+h1{font-size:1.9rem;margin:0 0 .3em;padding-bottom:.3em;border-bottom:1px solid #d8dee4}
+h2{font-size:1.4rem;margin:1.8em 0 .6em;padding-bottom:.25em;border-bottom:1px solid #eaeef2}
+h3{font-size:1.12rem;margin:1.4em 0 .5em}
+p,li{margin:.5em 0}
+a{color:#0969da;text-decoration:none}
+a:hover{text-decoration:underline}
+code{font-family:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;font-size:.86em;background:#eff1f3;padding:.15em .4em;border-radius:6px}
+pre{background:#f6f8fa;border:1px solid #d8dee4;border-radius:8px;padding:14px 16px;overflow:auto}
+pre code{background:none;padding:0;font-size:.85em;line-height:1.45}
+blockquote{margin:1em 0;padding:.4em 1em;color:#3d444d;border-left:4px solid #d0d7de;background:#f6f8fa;border-radius:0 6px 6px 0}
+blockquote>:first-child{margin-top:0}blockquote>:last-child{margin-bottom:0}
+table{border-collapse:collapse;width:100%;margin:1em 0;display:block;overflow:auto}
+th,td{border:1px solid #d0d7de;padding:8px 12px;text-align:left;vertical-align:top}
+th{background:#f6f8fa;font-weight:600}
+tr:nth-child(2n) td{background:#f6f8fa}
+hr{border:0;border-top:1px solid #d8dee4;margin:2em 0}
+pre{position:relative}
+pre>button.copy{position:absolute;top:8px;right:8px;padding:5px 9px;cursor:pointer;
+  font:600 .68rem/1 ui-monospace,SFMono-Regular,Consolas,monospace;letter-spacing:.03em;
+  color:#636c76;background:#fff;border:1px solid #d0d7de;border-radius:6px;
+  opacity:0;transition:opacity .12s}
+pre:hover>button.copy,pre>button.copy:focus{opacity:1}
+pre>button.copy.done{color:#0a3622;background:#dafbe1;border-color:#4ac26b}
+@media(hover:none){pre>button.copy{opacity:1}}
+td code.cp{cursor:pointer}
+td code.cp:hover,td code.cp:focus{outline:1px solid #8c959f;outline-offset:1px}
+td code.cp.done{color:#0a3622;background:#dafbe1}
+.docnav{margin:0 0 20px;font-size:.85rem;color:#636c76}
+.docnav a{color:#636c76}
+ul{padding-left:1.4em}ol{padding-left:1.4em}
+@media(max-width:640px){.card{padding:24px 18px}.wrap{padding:16px 10px 64px}}
+@media(prefers-color-scheme:dark){
+ body{background:#0d1117;color:#e6edf3}
+ .card{background:#161b22;border-color:#30363d}
+ h1{border-color:#30363d}h2{border-color:#21262d}
+ code{background:#262c34}
+ pre{background:#0d1117;border-color:#30363d}
+ blockquote{background:#161b22;border-color:#30363d;color:#9198a1}
+ th,td{border-color:#30363d}th{background:#161b22}tr:nth-child(2n) td{background:#12171e}
+ a{color:#4493f8}.docnav,.docnav a{color:#9198a1}
+ hr{border-color:#30363d}
+ pre>button.copy{color:#9198a1;background:#161b22;border-color:#30363d}
+ pre>button.copy.done{color:#aff5b4;background:#1b4721;border-color:#2ea043}
+ td code.cp.done{color:#aff5b4;background:#1b4721}
+}
+</style></head>
+<body><div class="wrap"><div class="card">
+<div class="docnav"><a href="../index.html">&#8592; All docs</a></div>
+<h1 id="definition-of-done-a-migrated-screen">Definition of Done — a migrated screen</h1>
+<blockquote>
+<p>What "finished" means for one screen, and what a reviewer checks before accepting it.
+The build tutorial is <a href="building-a-crud-screen.html"><code>building-a-crud-screen.md</code></a>; this is the gate at
+the other end of it.</p>
+<p><strong>Scope:</strong> one migrated screen (a master, config or inquiry screen). Transaction and maker-checker
+screens carry extra rules that belong with their own domain lead.</p>
+</blockquote>
+<hr />
+<h2 id="0-the-one-line-test">0. The one-line test</h2>
+<blockquote>
+<p><strong>A migrated screen is done when the legacy <code>.aspx</code> link opens the new screen, it does what the old
+one did, and nothing about it needed a special explanation.</strong></p>
+</blockquote>
+<p>Everything below is that sentence, itemised.</p>
+<hr />
+<h2 id="1-authors-gate-before-you-request-review">1. Author's gate — before you request review</h2>
+<p>Do not open a review until all of these are green. A reviewer's time is the scarce resource, not yours.</p>
+<ul>
+<li>[ ] <code>dotnet build TflCbs.Host.Main</code> — clean, <strong>zero new warnings</strong> (stop the running app first).</li>
+<li>[ ] <code>dotnet test TflCbs.Tests</code> — passing.</li>
+<li>[ ] <code>dotnet test TflCbs.ArchTests</code> — passing (this is the one that catches boundary breaks).</li>
+<li>[ ] <code>node --check &lt;file&gt;</code> for every JavaScript file you touched.</li>
+<li>[ ] You ran the screen and exercised <strong>every</strong> action: search, open, save, update, delete, cancel.</li>
+<li>[ ] You opened the <strong>legacy</strong> screen side by side and compared field for field.</li>
+</ul>
+<h2 id="2-parity-this-is-a-migration-not-a-redesign">2. Parity — this is a migration, not a redesign</h2>
+<ul>
+<li>[ ] Every field on the legacy screen exists here, or its absence is a <strong>deliberate, stated</strong> decision
+      in the PR description. Silently dropped fields are the most common defect in this programme.</li>
+<li>[ ] Validation matches the legacy screen's — required fields, lengths, allowed characters.</li>
+<li>[ ] Legacy-screen behaviour that looks like a bug is <strong>reproduced and flagged</strong>, not silently fixed.
+      Bug-for-bug parity is the default; breaking it is a decision someone signs off on.</li>
+<li>[ ] Labels, column order and screen title match the legacy screen. Users are being retrained on
+      nothing.</li>
+<li>[ ] The legacy stored procedure's logic is fully accounted for — every branch, not just the happy path.</li>
+</ul>
+<h2 id="3-service-layer">3. Service layer</h2>
+<ul>
+<li>[ ] Lives in <code>TflCbs.Modules.&lt;Domain&gt;/</code>, namespace matching the assembly.</li>
+<li>[ ] Every public method returns <strong><code>Result</code>/<code>Result&lt;T&gt;</code></strong>. No exceptions cross the service boundary.</li>
+<li>[ ] <strong><code>Repository&lt;T&gt;</code> only</strong> — no raw SQL, no stored procedure for new master CRUD.</li>
+<li>[ ] Shared helpers come from <code>using static TflCbs.Abstractions.ServiceQuery;</code> / <code>...DbErrors;</code> —
+      <strong>no private copy</strong> of <code>Has</code>/<code>Eq</code>/<code>Val</code>/<code>Paged</code>/<code>IsDuplicate</code>/<code>IsForeignKey</code>.</li>
+<li>[ ] Updates use the <strong>partial</strong> <code>UpdateAsync(entity, s =&gt; s.Col, ...)</code>, or a deliberate
+      load-mutate-save. The full overload rewrites every mapped column and blanks what you didn't set.</li>
+<li>[ ] Duplicate-key and foreign-key violations are turned into a <strong>readable message</strong> via <code>DbErrors</code>,
+      not surfaced as a raw provider error.</li>
+<li>[ ] Registered with one <code>AddScoped</code> line in that assembly's <code>&lt;Domain&gt;Module.AddServices</code> — <strong>not</strong> in
+      <code>Program.cs</code>.</li>
+</ul>
+<h2 id="4-controller">4. Controller</h2>
+<ul>
+<li>[ ] Inherits <code>CbsScreenController</code>, in the web RCL of the screen's <strong>menu area</strong> (not necessarily its
+      data domain).</li>
+<li>[ ] <code>[CbsAccessScreen("&lt;Area&gt;/&lt;Screen&gt;")]</code> present, covering <strong>every</strong> action — including <code>save</code>,
+      <code>update</code>, <code>delete</code> and <code>search</code>. An unguarded POST is an access hole.</li>
+<li>[ ] Real primary keys never reach the client. Row tokens only: <code>TryOpenRecord</code>/<code>TryBeginWrite</code> to
+      read, <code>TryConsume</code> to write, and a <strong>fresh <code>ProtectId</code></strong> on every redisplay.</li>
+<li>[ ] Token ids are strings — parsed to the service's PK type at the call site (watch <code>decimal</code> PKs).</li>
+<li>[ ] Every <code>Result</code> is handled: success and failure both produce a user-visible outcome.</li>
+<li>[ ] If the table has a row-version column, the form carries <code>int Version</code> and a concurrency conflict
+      shows a real message rather than silently overwriting.</li>
+</ul>
+<h2 id="5-view-client">5. View &amp; client</h2>
+<ul>
+<li>[ ] Reuses the existing components — record picker, account picker, date picker, search modal. A
+      hand-rolled equivalent of something on <code>/Dev/Components</code> is a reject.</li>
+<li>[ ] <strong>No inline <code>&lt;script&gt;</code>, no inline <code>style=</code>, no <code>onclick=</code></strong> — the CSP is strict (<code>script-src</code>/
+      <code>style-src 'self'</code>, no <code>unsafe-inline</code>). Inline anything silently fails at runtime.</li>
+<li>[ ] POSTs use the command-dispatch idiom: <code>&lt;button name="command" value="..."&gt;</code>.</li>
+<li>[ ] Server CRUD outcomes use the blocking ack modal; client-side guards use a transient toast.</li>
+<li>[ ] Text inputs uppercase by default (<code>cbs-uppercase.js</code>); <code>cbs-keep-case</code> only where the legacy
+      screen genuinely preserved case.</li>
+<li>[ ] Client assets kebab-case; no new JavaScript library added for something the existing helpers do.</li>
+</ul>
+<h2 id="6-access-cutover">6. Access &amp; cutover</h2>
+<ul>
+<li>[ ] The screen's <code>a_Menus.NavigateURL</code> is set to the new route by a <strong>DbMigrator migration</strong> (one
+      per provider, applied with <code>-- upgrade</code>), and you <strong>verified the menu link opens the new screen</strong>.
+      <code>AllowedUrls</code> is derived from that column, so a row still holding <code>~/x.aspx</code> means the screen is
+      unreachable in production and is not done.</li>
+<li>[ ] Each row points at its own screen only. <code>AllowedUrls</code> comes from these URLs, so pointing a row at
+      a different screen's route grants its holders that screen.</li>
+<li>[ ] You confirmed the screen is <strong>denied</strong> to a user without the menu entry. Fail-closed is only real
+      if someone checked it.</li>
+</ul>
+<h2 id="7-tests-docs">7. Tests &amp; docs</h2>
+<ul>
+<li>[ ] Service public API added/changed/removed → the <strong><code>cbs-sync-test-demo</code></strong> agent has been run, and
+      <code>TflCbs.Tests</code> passes.</li>
+<li>[ ] A shared UI component was touched → the <strong><code>component-demo</code></strong> and <strong><code>component-docs-sync</code></strong> agents
+      have been run.</li>
+<li>[ ] <code>CHANGELOG.md</code> has its one line: <code>[YYYY-MM-DD] feat: &lt;screen&gt; migrated</code>.</li>
+<li>[ ] The PR description names the <strong>legacy screen and stored procedure</strong> this replaces. Six months on,
+      that is the only way anyone reconstructs what was ported.</li>
+</ul>
+<hr />
+<h2 id="automatic-reject-no-discussion-needed">Automatic reject — no discussion needed</h2>
+<p>These are cheap to spot and expensive to leave in. A reviewer stops at the first one.</p>
+<table>
+<thead>
+<tr>
+<th>Reject</th>
+<th>Why</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Raw SQL or a stored procedure for new master CRUD</td>
+<td><code>Repository&lt;T&gt;</code> only — a hard project rule</td>
+</tr>
+<tr>
+<td>A service method that throws instead of returning <code>Result</code></td>
+<td>Callers have no error path</td>
+</tr>
+<tr>
+<td>A real primary key in markup, a URL or a hidden field</td>
+<td>Row tokens exist precisely to prevent this</td>
+</tr>
+<tr>
+<td>A missing or partial <code>[CbsAccessScreen]</code></td>
+<td>Unguarded actions bypass the fail-closed guard</td>
+</tr>
+<tr>
+<td>Inline script, inline style or an <code>onclick=</code> handler</td>
+<td>Blocked by the CSP; it will not run</td>
+</tr>
+<tr>
+<td>A private copy of <code>Has</code>/<code>Eq</code>/<code>Val</code>/<code>IsDuplicate</code>/...</td>
+<td>Fails <code>SharedServiceHelperTests</code>; the reason they were extracted</td>
+</tr>
+<tr>
+<td>A new screen whose <code>a_Menus.NavigateURL</code> still holds <code>~/x.aspx</code></td>
+<td>Nobody can reach it</td>
+</tr>
+<tr>
+<td>A field on the legacy screen that quietly vanished</td>
+<td>The single most common parity defect</td>
+</tr>
+<tr>
+<td>A new NuGet package for something already solved here</td>
+<td>Ask before adding a dependency</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="reviewers-60-second-smoke-test">Reviewer's 60-second smoke test</h2>
+<p>If you only have a minute, do this — it catches most of what matters:</p>
+<ol>
+<li>Open the <strong>legacy</strong> screen and the new one side by side. Count the fields. They should match.</li>
+<li>Save an invalid record. You should get a readable message, not a stack trace and not silence.</li>
+<li>Save a duplicate. Same.</li>
+<li>Open a record, then open a second one. The row token must have changed.</li>
+<li>Search <code>grep</code> the diff for <code>SELECT</code>, <code>&lt;script</code>, <code>onclick=</code>, <code>style="</code>. All four should be absent.</li>
+</ol>
+</div></div>
+<script>
+(function(){
+ function put(t){
+  if(navigator.clipboard&&navigator.clipboard.writeText)return navigator.clipboard.writeText(t);
+  return new Promise(function(res,rej){
+   var a=document.createElement('textarea');a.value=t;a.setAttribute('readonly','');
+   a.style.cssText='position:fixed;top:0;left:0;opacity:0';document.body.appendChild(a);
+   a.select();var ok=false;try{ok=document.execCommand('copy')}catch(e){}
+   document.body.removeChild(a);ok?res():rej()});
+ }
+ function flash(el,txt,ms){
+  var was=el.textContent;el.classList.add('done');if(txt)el.textContent=txt;
+  setTimeout(function(){el.classList.remove('done');if(txt)el.textContent=was},ms||1200);
+ }
+ function copy(text,el,okTxt){
+  put(text).then(function(){flash(el,okTxt)},function(){
+   if(okTxt){var w=el.textContent;el.textContent='Ctrl+C';setTimeout(function(){el.textContent=w},2000)}});
+ }
+ document.querySelectorAll('pre').forEach(function(pre){
+  if(pre.classList.contains('txtdoc'))return;
+  var b=document.createElement('button');
+  b.type='button';b.className='copy';b.textContent='Copy';
+  b.setAttribute('aria-label','Copy this code block to the clipboard');
+  b.addEventListener('click',function(){copy((pre.querySelector('code')||pre).innerText,b,'Copied')});
+  pre.appendChild(b);
+ });
+ document.querySelectorAll('td code').forEach(function(c){
+  if(!c.textContent.trim())return;
+  c.classList.add('cp');c.tabIndex=0;c.setAttribute('role','button');
+  c.title='Click to copy';
+  c.addEventListener('click',function(){copy(c.textContent,c)});
+  c.addEventListener('keydown',function(e){
+   if(e.key==='Enter'||e.key===' '){e.preventDefault();copy(c.textContent,c)}});
+ });
+})();
+</script>
+</body></html>

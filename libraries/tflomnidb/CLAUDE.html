@@ -1,0 +1,932 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>CLAUDE.md</title>
+<style>
+:root{color-scheme:light dark}
+*{box-sizing:border-box}
+body{margin:0;background:#f6f8fa;color:#1f2328;font:16px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif}
+.wrap{max-width:900px;margin:0 auto;padding:32px 24px 96px}
+.card{background:#fff;border:1px solid #d0d7de;border-radius:10px;padding:40px 48px}
+h1,h2,h3{line-height:1.25;font-weight:600}
+h1{font-size:1.9rem;margin:0 0 .3em;padding-bottom:.3em;border-bottom:1px solid #d8dee4}
+h2{font-size:1.4rem;margin:1.8em 0 .6em;padding-bottom:.25em;border-bottom:1px solid #eaeef2}
+h3{font-size:1.12rem;margin:1.4em 0 .5em}
+p,li{margin:.5em 0}
+a{color:#0969da;text-decoration:none}
+a:hover{text-decoration:underline}
+code{font-family:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;font-size:.86em;background:#eff1f3;padding:.15em .4em;border-radius:6px}
+pre{background:#f6f8fa;border:1px solid #d8dee4;border-radius:8px;padding:14px 16px;overflow:auto}
+pre code{background:none;padding:0;font-size:.85em;line-height:1.45}
+blockquote{margin:1em 0;padding:.4em 1em;color:#3d444d;border-left:4px solid #d0d7de;background:#f6f8fa;border-radius:0 6px 6px 0}
+blockquote>:first-child{margin-top:0}blockquote>:last-child{margin-bottom:0}
+table{border-collapse:collapse;width:100%;margin:1em 0;display:block;overflow:auto}
+th,td{border:1px solid #d0d7de;padding:8px 12px;text-align:left;vertical-align:top}
+th{background:#f6f8fa;font-weight:600}
+tr:nth-child(2n) td{background:#f6f8fa}
+hr{border:0;border-top:1px solid #d8dee4;margin:2em 0}
+pre{position:relative}
+pre>button.copy{position:absolute;top:8px;right:8px;padding:5px 9px;cursor:pointer;
+  font:600 .68rem/1 ui-monospace,SFMono-Regular,Consolas,monospace;letter-spacing:.03em;
+  color:#636c76;background:#fff;border:1px solid #d0d7de;border-radius:6px;
+  opacity:0;transition:opacity .12s}
+pre:hover>button.copy,pre>button.copy:focus{opacity:1}
+pre>button.copy.done{color:#0a3622;background:#dafbe1;border-color:#4ac26b}
+@media(hover:none){pre>button.copy{opacity:1}}
+td code.cp{cursor:pointer}
+td code.cp:hover,td code.cp:focus{outline:1px solid #8c959f;outline-offset:1px}
+td code.cp.done{color:#0a3622;background:#dafbe1}
+.docnav{margin:0 0 20px;font-size:.85rem;color:#636c76}
+.docnav a{color:#636c76}
+ul{padding-left:1.4em}ol{padding-left:1.4em}
+@media(max-width:640px){.card{padding:24px 18px}.wrap{padding:16px 10px 64px}}
+@media(prefers-color-scheme:dark){
+ body{background:#0d1117;color:#e6edf3}
+ .card{background:#161b22;border-color:#30363d}
+ h1{border-color:#30363d}h2{border-color:#21262d}
+ code{background:#262c34}
+ pre{background:#0d1117;border-color:#30363d}
+ blockquote{background:#161b22;border-color:#30363d;color:#9198a1}
+ th,td{border-color:#30363d}th{background:#161b22}tr:nth-child(2n) td{background:#12171e}
+ a{color:#4493f8}.docnav,.docnav a{color:#9198a1}
+ hr{border-color:#30363d}
+ pre>button.copy{color:#9198a1;background:#161b22;border-color:#30363d}
+ pre>button.copy.done{color:#aff5b4;background:#1b4721;border-color:#2ea043}
+ td code.cp.done{color:#aff5b4;background:#1b4721}
+}
+</style></head>
+<body><div class="wrap"><div class="card">
+<div class="docnav"><a href="../../index.html">&#8592; All docs</a></div>
+<h1 id="claudemd">CLAUDE.md</h1>
+<p>This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.</p>
+<h2 id="status">Status</h2>
+<p>Provider-agnostic data-access layer for a banking application. Targets <strong>SQL
+Server, Oracle, and PostgreSQL</strong> and ships in two parallel runtime legs that
+share the same product surface:</p>
+<table>
+<thead>
+<tr>
+<th>Leg</th>
+<th>Folder</th>
+<th>TFM</th>
+<th>C#</th>
+<th>Status</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Fx</strong> (.NET Framework 4.8)</td>
+<td><code>TflOmniDbFx*/</code></td>
+<td><code>net48</code></td>
+<td>7.3</td>
+<td>Production-shipped, <strong>332 / 332 live tests green</strong></td>
+</tr>
+<tr>
+<td><strong>Net10</strong> (.NET 10)</td>
+<td><code>TflOmniDb*/</code></td>
+<td><code>net10.0</code></td>
+<td>latest</td>
+<td>Modernized port, <strong>521 / 521 live tests green</strong> (adds streaming, plus bulk-insert, column projection, stored procedures, transient-fault retry, and raw-SQL complex queries that are also on Fx)</td>
+</tr>
+</tbody>
+</table>
+<p>Both legs are fully verified end-to-end against live SQL Server, PostgreSQL,
+and Oracle instances — CRUD, transactions, optimistic concurrency, sensitive-
+column redaction, filtered queries + paging, SQL-injection guards, dirty-read
+hints, bulk insert (<code>SqlBulkCopy</code> / Npgsql binary <code>COPY</code> / <code>OracleBulkCopy</code>),
+column projection on <code>GetAsync</code> / <code>GetAllAsync</code>, stored procedures (multiple
+result sets, OUT / INOUT params, return value, scalar / non-query, TVP / array
+params), opt-in transient-fault retry (deadlock / connection-error resiliency +
+<code>ExecuteInTransactionAsync</code>), raw-SQL complex queries (GROUP BY / UNION / EXISTS /
+sub-query into POCOs, untyped rows, scalar / EXISTS helpers), and (net10 only)
+<code>IAsyncEnumerable</code> streaming reads, partial-column / set-based updates, typed scalar
+aggregates (<code>MaxAsync</code> … <code>AnyAsync</code>), and the <code>UseCommandTimeout</code> per-scope timeout
+override.</p>
+<p>The two legs are <strong>independent assemblies</strong> (<code>TflOmniDbFx.dll</code> vs <code>TflOmniDb.dll</code>)
+that share <code>TflOmniDb.slnx</code> and <code>TflOmniDb.runsettings</code> at the product root. The
+outer directory naming (<code>AdDataAccessComponent</code>) is historical and doesn't match
+the code's namespaces.</p>
+<h3 id="active-development-scope-per-user-directive-standing-rule">Active development scope (per user directive — STANDING RULE)</h3>
+<ul>
+<li><strong>Work on the net10 (<code>TflOmniDb*</code>) projects ONLY. The Fx (<code>TflOmniDbFx*</code>) projects are
+  frozen.</strong> Do <strong>not</strong> edit, build, test, or otherwise touch any <code>TflOmniDbFx*</code> project
+  (<code>TflOmniDbFx</code>, <code>TflOmniDbFx.Demo</code>, <code>TflOmniDbFx.Tests</code>) — no new features, no fixes, no
+  mirroring. They stay exactly as-is <strong>unless the user explicitly asks</strong> for an Fx change.
+  When a change to shared/library code has an Fx-target side (e.g. the scaffolder's
+  <code>--target fx</code> output), leave that side untouched.</li>
+<li><strong>Every feature ships with both a test and a demo.</strong> When adding/changing a feature,
+  always update <code>TflOmniDb.Tests</code> (unit + live-3-DB integration as appropriate) <strong>and</strong> add
+  or extend a <code>TflOmniDb.Demo/Demos/*</code> entry wired into <code>Program.cs</code> — not just the library.</li>
+</ul>
+<h2 id="repository-layout">Repository layout</h2>
+<pre><code>AdDataAccessComponent/TflOmniDb/        ← product umbrella
+├── TflOmniDbFx/                        ← Fx library  (net48, legacy non-SDK csproj)
+├── TflOmniDbFx.Demo/                   ← Fx demo     (net48 console exe)
+├── TflOmniDbFx.Tests/                  ← Fx tests    (net48, xUnit)
+├── TflOmniDb/                          ← Net10 library  (net10.0, SDK-style, NRT, records)
+├── TflOmniDb.Demo/                     ← Net10 demo     (net10.0 console exe)
+├── TflOmniDb.Tests/                    ← Net10 tests    (net10.0, xUnit)
+├── TflOmniDb.Benchmarks/               ← Net10 perf benchmarks (BenchmarkDotNet, net10.0)
+├── TflOmniDb.Scaffold/                 ← Net10 entity-generator CLI (console, thin shell)
+├── TflOmniDb.Scaffold.Web/             ← Net10 entity-generator web UI (Minimal API + static page)
+├── TflOmniDbMigration/                 ← Net10 table-migration CLI (console, thin shell over Migration/)
+├── TflOmniDb.slnx                      ← solution (hosts both legs in two solution folders)
+├── TflOmniDb.runsettings               ← shared runsettings (env vars for the 3 connection strings)
+└── CLAUDE.md                           ← this file
+</code></pre>
+<h2 id="entity-generator-scaffolding-net10-only">Entity generator / scaffolding (net10 only)</h2>
+<p>Reverse-engineers a database schema into <code>[DbTable]</code> / <code>[DbColumn]</code>-annotated
+entity classes for SQL Server, Oracle, and PostgreSQL. <strong>All logic lives in the
+<code>TflOmniDb</code> library</strong> under <code>Scaffolding/</code>; two thin front-ends call one
+<code>ScaffoldFacade</code>:
+- <strong><code>TflOmniDb.Scaffold</code></strong> — console CLI (<code>generate</code>, <code>emit-script</code>, <code>list-tables</code>).
+  <strong>Run with no arguments for an interactive, menu-driven prompt</strong> (<code>RunInteractiveAsync</code>):
+  it asks for command, provider, source (live conn / dump), schema, all-tables-vs-single,
+  output, namespace, and offers numbered menus for every enum (provider / language / target
+  / casing / naming) and Y/N for the boolean flags. Whole-DB generation is just "All tables"
+  (omit <code>--table</code>). <strong>Tables whose name starts with <code>_</code> are skipped by default</strong> in
+  whole-schema mode (configurable via <code>--skip-table-prefix &lt;csv&gt;</code>, default <code>_</code>; opt out with
+  <code>--include-all-tables</code>) — applies to <code>generate</code> and <code>list-tables</code>. The filter lives on
+  <code>ScaffoldRequest.TableNameSkipPrefixes</code> + <code>ScaffoldFacade.ListTablesAsync(skipPrefixes)</code>
+  (whole-schema only; ignored when a single <code>--table</code> is named).
+  <strong>Interactive prompt defaults are seeded from an optional <code>appsettings.json</code> <code>"Scaffold"</code>
+  section</strong> (<code>Command</code> (the top generate/list/emit menu) / <code>Provider</code> / <code>Source</code> / <code>Tables</code> (all/one) / <code>Namespace</code> / <code>OutputDir</code> / <code>Language</code> / <code>Target</code> /
+  <code>Casing</code> / <code>Naming</code> / <code>Partial</code> / <code>SkipUnderscoreColumns</code> / <code>SkipUnderscoreTables</code> /
+  <code>Advanced</code> (the "configure advanced options" Y/N prompt) / <code>SkipTablePrefix</code>, plus a per-provider <code>Connections</code> block keyed <code>SqlServer</code>/<code>Oracle</code>/
+  <code>PostgreSql</code> with <code>ConnectionString</code> (<code>env:VAR</code> supported) + <code>Schema</code>). The wizard shows the
+  configured value as each prompt's default — <strong>Enter accepts it, typing overrides it for that
+  run</strong> (the file is never rewritten). The <code>Choose</code> menus gained a <code>(default)</code> option that Enter
+  selects. Binding lives in <code>ScaffoldDefaults.FromConfiguration</code> (unit-tested no-DB via
+  <code>ScaffoldDefaultsTests</code>); a missing file / section ⇒ all-null defaults ⇒ the original
+  hard-coded fallbacks. <strong>Config seeds the interactive path only — the flag-driven CLI is
+  unchanged.</strong>
+- <strong><code>TflOmniDb.Scaffold.Web</code></strong> — Minimal-API + static page. In the UI the
+  air-gap flow is labelled <strong>“Script &amp; paste”</strong> and the connected flow
+  <strong>“Direct connection”</strong> (the word <em>air-gap</em> is kept only in code/docs). The
+  script-&amp;-paste box is the primary UX. Bind to localhost (connected mode takes a
+  connection string; nothing is persisted). App-level setting
+  <strong><code>Scaffold:RequireTable</code></strong> (<code>appsettings.json</code>, default <code>true</code>) makes the
+  table name mandatory — single-table generation by default; set it to <code>false</code>
+  to allow whole-schema generation. A single generated file downloads directly;
+  multiple files use per-file / <code>.zip</code> download.</p>
+<p>Two acquisition modes converge on one provider-neutral <code>SchemaModel</code>, so the
+generator is written once:
+- <strong>Connected</strong> — open a live <code>DbConnection</code> (<code>DataAccess.OpenConnectionAsync</code>),
+  query catalog views (<code>CatalogSql</code>), map rows to <code>ColumnSchema</code>.
+- <strong>Air-gap</strong> — <code>SchemaScriptEmitter</code> emits a provider SQL script the DBA runs on
+  a locked-down server; they paste the pipe-delimited output back;
+  <code>SchemaDumpParser</code> reads it. (Oracle script prefixes the SQL*Plus session
+  settings; PG uses <code>\pset</code>; both NULL-guard concatenation.) The connected reader
+  and the dump parser are asserted <strong>byte-identical</strong> by the integration tests
+  (run the live script, parse, compare).</p>
+<p>Single-table generation is supported in both modes (console <code>--table</code>, web Table
+field). To pick a table on a large schema, <code>list-tables</code> (console command / web
+"List tables" button → autocomplete) enumerates the base tables from a live
+connection or a pasted dump. The reverse type mappers
+invert the dialect <code>*TypeMapper</code>s; ambiguous native-type collapses (e.g.
+<code>NVARCHAR(MAX)</code>→<code>NClob</code>, Oracle <code>RAW(16)</code>→<code>Binary</code>, <code>NUMBER(1,0)</code>→<code>Boolean</code>,
+<code>(19,4)</code>→<code>Money</code>) resolve by documented heuristic and emit a <code>// note:</code> for the
+reviewer. What the catalog can't infer is opt-in: <code>IsSensitive</code> (<code>--sensitive</code>),
+<code>IsRowVersion</code> (<code>--rowversion-pattern</code>).</p>
+<p><strong>Naming — two independent axes:</strong> the DB identifier in the attribute is
+casing-critical (the DAL always quotes), defaulting to <strong><code>--case upper</code></strong> (most
+portable across all three engines — Oracle folds unquoted DDL to upper, SQL
+Server is case-insensitive; <strong>create PostgreSQL tables with quoted uppercase
+names</strong> so they match). The C# / VB class &amp; member name is cosmetic, defaulting to
+<strong><code>--naming upper</code></strong> — the class/member matches the table/column name verbatim
+(<code>B_ACCOUNT</code> → class <code>B_ACCOUNT</code>, <code>ACCOUNT_ID</code> → property <code>ACCOUNT_ID</code>); <code>pascal</code>
+(<code>ACCOUNT_BALANCE</code> → <code>AccountBalance</code>) and <code>verbatim</code> are also available. <code>--target net10|fx</code>
+picks the C# output style (net10 = file-scoped ns + nullable strings; fx = braced ns
++ non-nullable strings). Generated <strong>net10</strong> files are self-contained: the <code>// &lt;auto-generated&gt;</code>
+header turns Roslyn's nullable context off, so the emitter writes <code>#nullable enable</code> (else the
+nullable strings fail with CS8669) plus <code>using System;</code> (so <code>DateTime</code>/<code>Guid</code> resolve without
+the project's <code>ImplicitUsings</code>). <strong><code>--lang csharp|vbnet</code></strong> picks the language (default <code>csharp</code>) —
+VB emits <code>Imports</code> / <code>&lt;DbColumn(...)&gt;</code> / <code>Public Overridable Property … As T?</code> into <code>.vb</code>
+files and is orthogonal to <code>--target</code> (which only chooses the namespace). The generated
+<strong>file name is the DB table name</strong> (<code>B_ACCOUNT</code> → <code>B_ACCOUNT.cs</code>/<code>.vb</code>), not the PascalCase
+class. Default <code>--namespace</code> is <strong><code>TflEntities</code></strong> (console + web). Classes are emitted
+<strong><code>partial</code> / <code>Partial</code> by default</strong> (console <code>--no-partial</code> to disable; web checkbox)
+so hand-written members live in a sibling file (e.g. <code>B_ACCOUNT.Custom.cs</code>) the
+generator never overwrites on regeneration. <strong>net10 entities also get a nested
+<code>public static class Cols</code></strong> of strongly-typed <code>TflOmniDb.Query.Col</code> column tokens
+(<code>B_ACCOUNT.Cols.ACCOUNT_ID</code>, plus a <code>Cols.Table</code> constant) for the <code>SqlQuery</code> composer —
+the token field name follows <code>--naming</code>, the <code>new Col("…")</code> argument follows <code>--case</code>. <strong>On
+by default; net10 target only</strong> (console <code>--no-column-tokens</code> / wizard prompt / <code>Scaffold:EmitColumnTokens</code>
+config; <code>--target fx</code> never emits it — the Fx library has no <code>Col</code> and the fx output stays untouched).
+The web UI exposes only Provider /
+Language / Schema / Table; everything else uses these defaults. Generated files can
+be copied, downloaded individually (<code>.cs</code>/<code>.vb</code>), or downloaded together as a <code>.zip</code>.</p>
+<pre><code class="language-powershell"># Air-gap: emit a script for the DBA, then generate from their pasted output.
+dotnet run --project TflOmniDb.Scaffold -- emit-script --provider oracle --schema OMNIDB --out dump.oracle.sql
+dotnet run --project TflOmniDb.Scaffold -- generate --provider oracle --from-dump dump.txt --out ./Entities --target fx
+
+# Connected:
+dotnet run --project TflOmniDb.Scaffold -- generate --provider sqlserver \
+    --conn env:TFLOMNIDB_SQLSERVER_CONN --schema dbo --out ./Entities --namespace Bank.Entities
+
+# Web UI:
+dotnet run --project TflOmniDb.Scaffold.Web   # then open the printed localhost URL
+</code></pre>
+<h2 id="table-migration-net10-only">Table migration (net10 only)</h2>
+<p>Copies a single table's <strong>structure and/or data</strong> from one database to another —
+possibly across providers (e.g. SQL Server → Oracle). <strong>All logic lives in the
+<code>TflOmniDb</code> library</strong> under <code>Migration/</code>; the <strong><code>TflOmniDbMigration</code></strong> console is a
+thin interactive shell (mirrors the Scaffold wizard). Reuses the existing schema
+reader, reverse type mappers, raw-SQL helpers, and the bulk-copy path.</p>
+<ul>
+<li><strong><code>MigrationFacade</code></strong> (public) — two phases: <code>PrepareAsync(request)</code> reads the
+  source schema, maps columns, emits the CREATE TABLE DDL, and counts source rows
+  <strong>without writing</strong> (powers dry-run/preview); <code>ExecuteAsync(request, plan)</code> applies
+  the destination-exists behaviour, creates the table, bulk-copies the rows, and
+  verifies the destination row count. <code>RunAsync</code> does both.</li>
+<li><strong><code>MigrationRequest</code></strong> — source/dest provider+conn+schema+table, <code>What</code>
+  (<code>Structure</code> / <code>Data</code> / <code>Both</code>), optional <code>WhereCriteria</code> (+ params) for big-table
+  subsets, <code>ExistsBehaviour</code> (<code>Fail</code> / <code>CreateIfMissing</code> / <code>DropAndRecreate</code> /
+  <code>TruncateThenLoad</code>), <code>OracleUppercase</code> (default true). <strong>Identity/PK values are
+  preserved</strong> (<code>KeepIdentities</code> is forced on; dest identity columns are emitted
+  <code>GENERATED BY DEFAULT</code> / <code>IDENTITY(1,1)</code>).</li>
+<li><strong><code>CreateTableEmitter</code></strong> (public) — the general-purpose CREATE TABLE generator the
+  library previously lacked (fills the "DDL generation" gap): columns + nullability +
+  preserved identity + table-level PK + best-effort <code>DEFAULT</code> translation
+  (<code>DefaultTranslator</code>), dialect-quoted, <strong>Oracle identifiers uppercased</strong> so
+  <code>OracleBulkCopy</code> can reach the table. v1 does <strong>not</strong> copy indexes / FKs / check
+  constraints / computed columns.</li>
+<li><strong><code>MigrationColumn</code></strong> (public, runtime column with no <code>[DbColumn]</code> entity) +
+  <strong><code>MigrationColumnFactory</code></strong> — built from a <code>TableSchema</code> via the source provider's
+  reverse type mapper; ambiguous-mapping notes surface as warnings.</li>
+<li><strong>Bulk seam</strong>: a small internal <code>IBulkColumn</code> (<code>ColumnName</code> + <code>ClrType</code>) that both
+  <code>ColumnDescriptor</code> and <code>MigrationColumn</code> implement, so the provider bulk-insert path
+  serves both the typed <code>Repository&lt;T&gt;</code> and the runtime migration path. Public
+  <strong><code>DataAccess.BulkCopyAsync(schema, table, IReadOnlyList&lt;MigrationColumn&gt;, rows,
+  options)</code></strong> is the non-generic entry point.</li>
+<li><strong>Console</strong> (<code>TflOmniDbMigration</code>): interactive wizard (source/dest provider + conn</li>
+<li>schema + table, scope, optional WHERE, exists-behaviour) → <strong>dry-run preview</strong>
+  (DDL + column mapping + source count + warnings) → confirm → execute → row-count
+  verification. Prompt defaults come from an optional <code>appsettings.json</code> <code>"Migration"</code>
+  section (<code>Source</code>/<code>Dest</code> legs, each with <code>Provider</code>/<code>Schema</code>/<code>Table</code> + per-provider
+  <code>Connections</code> keyed <code>SqlServer</code>/<code>Oracle</code>/<code>PostgreSql</code>, <code>ConnectionString</code> <code>env:VAR</code>
+  supported). A newly typed connection string can be <strong>saved back</strong> to appsettings.json
+  (<code>ConnectionStringWriter</code>, System.Text.Json — verbatim, so <code>env:NAME</code> stays a
+  reference). Extra features: <strong>emit DDL to a <code>.sql</code> file</strong>, and the dry-run preview.</li>
+</ul>
+<pre><code class="language-powershell"># Interactive (no args): wizard → preview → confirm → copy + verify.
+dotnet run --project TflOmniDbMigration
+</code></pre>
+<p><code>TflOmniDb.Scaffold</code> is intentionally left untouched. Unit-tested no-DB (emitter per
+dialect, column factory, config binder, connection-string writer); a gated SQL Server →
+Oracle integration test + the net10 demo (#20 <code>TableMigration</code>) exercise it live.</p>
+<h2 id="product-surface-same-on-both-legs">Product surface (same on both legs)</h2>
+<ul>
+<li><strong><code>Core/</code></strong> — <code>Entity</code> base, <code>[DbTable]</code> / <code>[DbColumn]</code> attributes, neutral
+  <code>CoreDataType</code> / <code>KeyGenerationStrategy</code> / <code>DefaultValueKind</code> enums. Provider-
+  neutral by design; per-provider type overrides live as optional string
+  properties (<code>SqlServerType</code>, <code>OracleType</code>, <code>PostgresType</code>) on the column
+  attribute as an escape hatch. <code>IsRowVersion = true</code> marks an optimistic-
+  concurrency token column. <code>IsSensitive = true</code> marks values that get redacted
+  in log output.</li>
+<li><strong><code>Metadata/</code></strong> — <code>EntityDescriptor</code>, <code>ColumnDescriptor</code>, <code>MetadataReader</code>.
+  Reflection runs once per <code>Type</code>, cached for the AppDomain lifetime. Validation
+  rules fail fast at descriptor build (e.g., <code>Size &gt; 0</code> for variable-length
+  strings, <code>SequenceName</code> required for <code>KeyGeneration.Sequence</code>, at most one
+  <code>IsRowVersion</code> per entity).</li>
+<li><strong><code>Dialect/</code></strong> — <code>ISqlDialect</code> plus per-provider implementations:
+  <code>SqlServerDialect</code> (<code>[name]</code>, <code>@p0</code>, <code>SCOPE_IDENTITY()</code>), <code>OracleDialect</code>
+  (<code>"name"</code>, <code>:p0</code>, <code>RETURNING ... INTO :ret</code>), <code>PostgresDialect</code> (<code>"name"</code>,
+  <code>@p0</code>, <code>INSERT ... RETURNING</code>). Each ships a sibling <code>*TypeMapper</code> translating
+  <code>CoreDataType</code> to native types.</li>
+<li><strong><code>Sql/</code></strong> — <code>SqlGenerator</code> produces <code>StatementSet</code>s (SELECT-by-key /
+  SELECT-all / INSERT / UPDATE / DELETE) per descriptor + dialect + schema.
+  Cached. <code>ExpressionTranslator</code> converts LINQ predicates to parameterized
+  WHERE clauses.</li>
+<li><strong><code>Providers/</code></strong> — <code>DbProvider</code> enum + <code>IProviderRuntime</code> + one runtime per
+  provider. On the <strong>net10 leg</strong> <code>ProviderRegistry</code> dispatches through a
+  <code>FrozenDictionary&lt;DbProvider, IProviderRuntime&gt;</code> built once at static init;
+  on the <strong>Fx leg</strong> it's a switch statement. Same external behavior.</li>
+<li><strong><code>Repository/</code></strong> — <code>IRepository&lt;T&gt;</code>, <code>Repository&lt;T&gt;</code>, <code>DataAccess</code>,
+  <code>IUnitOfWork</code>, <code>UnitOfWork</code>, <code>CommandLogger</code>, <code>ConcurrencyException</code>,
+  <code>DataAccessOptions</code>, <code>DataAccessOptionsBuilder</code>, <code>BulkInsertOptions</code>.</li>
+</ul>
+<h2 id="bulk-insert-both-legs">Bulk insert (both legs)</h2>
+<p><code>IRepository&lt;T&gt;.BulkInsertAsync(IReadOnlyList&lt;T&gt; entities, BulkInsertOptions?, ct)</code>
+takes the provider's fast path — orders of magnitude faster than <code>InsertAsync</code>
+in a loop for batches &gt; ~50 rows. Per-provider implementations:</p>
+<table>
+<thead>
+<tr>
+<th>Provider</th>
+<th>Underlying API</th>
+<th>Async?</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>SQL Server</td>
+<td><code>Microsoft.Data.SqlClient.SqlBulkCopy</code> + <code>EntityDataReader</code> adapter</td>
+<td>yes</td>
+</tr>
+<tr>
+<td>PostgreSQL</td>
+<td><code>NpgsqlBinaryImporter</code> (binary <code>COPY</code> protocol)</td>
+<td>yes</td>
+</tr>
+<tr>
+<td>Oracle</td>
+<td><code>Oracle.ManagedDataAccess.Client.OracleBulkCopy</code></td>
+<td>sync, wrapped in <code>Task.Run</code></td>
+</tr>
+</tbody>
+</table>
+<p><strong>v1 limitations</strong>:
+- Identity columns are NOT round-tripped back into entities. Use
+  <code>InsertAsync</code> per row if you need the generated Ids.
+- Row-version columns are inserted verbatim from the entity — caller's
+  responsibility to set an initial value if the DB doesn't default it.
+- <strong>Oracle bulk insert only works on tables created with unquoted
+  (uppercase) names.</strong> OracleBulkCopy's OCI direct-path API strips quotes
+  and uppercases identifiers, so <code>CREATE TABLE "Widget"</code> (mixed-case
+  quoted) is unreachable via bulk. Use <code>InsertAsync</code> for those tables.
+  The integration test creates a self-contained <code>WIDGET</code> (unquoted) table
+  to demonstrate the working path.</p>
+<p><code>BulkInsertOptions</code> knobs: <code>BatchSize</code>, <code>TimeoutSeconds</code>, <code>KeepIdentities</code>,
+<code>EnableTableLock</code> (SqlServer only), <code>FireTriggers</code> (SqlServer only).</p>
+<h2 id="column-projection-on-getasync-getallasync-both-legs">Column projection on GetAsync / GetAllAsync (both legs)</h2>
+<p><code>IRepository&lt;T&gt;.GetAsync(object[] keys, params Expression&lt;Func&lt;T, object?&gt;&gt;[] columns)</code>
+and <code>IRepository&lt;T&gt;.GetAllAsync(params Expression&lt;Func&lt;T, object?&gt;&gt;[] columns)</code>
+emit a SELECT containing only the projected columns plus the PK (always
+included for round-trip identity). Properties not in the projection stay at
+their default on the returned entity.</p>
+<pre><code class="language-csharp">// Just need Id + Name for a dropdown list — avoid the wide row read.
+var summaries = await repo.GetAllAsync(x =&gt; x.Id, x =&gt; x.Name);
+</code></pre>
+<p><strong>net10 also has a projected <code>WhereAsync</code></strong> — same filter / order / paging as the normal
+<code>WhereAsync</code>, but the SELECT carries only the chosen columns (+ PK). The column array is the
+2nd argument (distinct overload, no ambiguity with the unprojected <code>WhereAsync</code>):</p>
+<pre><code class="language-csharp">// filter by login, but only read ORGELEMENTID (+ PK) — not the whole 19-column row
+var u = (await repo.WhereAsync(x =&gt; x.LOGINNAME == loginName, [x =&gt; x.ORGELEMENTID], take: 1))
+    .FirstOrDefault();   // u.ORGELEMENTID populated; other properties stay default
+</code></pre>
+<p>Limitation: each projection must be a simple property access. Computed
+expressions and method calls throw <code>ArgumentException</code> — for derived values
+drop to <code>QueryAsync</code>. The <code>ColumnSelector</code> helper unwraps compiler-inserted
+<code>Convert(...)</code> for boxed value-type access (e.g. <code>x =&gt; x.Id</code> where Id is
+<code>long?</code>).</p>
+<h2 id="targeted-updates-partial-column-set-based-net10">Targeted updates — partial-column &amp; set-based (net10)</h2>
+<p><code>UpdateAsync(entity)</code> writes <strong>every</strong> updatable column. Two narrower forms exist for
+targeted writes (the <code>UpdateAsync</code> overloads are the write-side mirror of the projected
+<code>GetAsync</code>):</p>
+<pre><code class="language-csharp">// Partial-column: write only the named columns (matched by PK); the rest of the row
+// is left as stored. No prior read needed — PK + changed columns is enough.
+await repo.UpdateAsync(new Widget { Id = 42, Name = &quot;renamed&quot; }, x =&gt; x.Name);
+
+// Set-based: UPDATE ... SET ... WHERE &lt;predicate&gt;, no PK required, multiple rows.
+await repo.UpdateAsync(x =&gt; x.Price &lt; 50m, [ (x =&gt; x.Notes, &quot;on sale&quot;) ]);
+</code></pre>
+<ul>
+<li><strong>Partial</strong> <code>UpdateAsync(entity, params columns)</code> (net10: <code>SqlGenerator.BuildUpdatePartial</code>,
+  not cached — column set varies). Each selector must be a simple property access; a
+  PK / read-only / computed column, or an empty list, throws <code>ArgumentException</code>. <strong>Row-version
+  is always enforced</strong>: if the entity has an <code>IsRowVersion</code> column it's incremented in SET and
+  checked in WHERE even when not listed, so the entity must carry the current version (a stale
+  value throws <code>ConcurrencyException</code>).</li>
+<li><strong>Set-based</strong> <code>UpdateAsync(predicate, assignments)</code> is a thin alias of <code>UpdateWhereAsync</code>
+  (the canonical name) — predicate translated like <code>WhereAsync</code> (provider-portable), no PK and
+  no row-version semantics. Use it for predicate-driven bulk changes. <code>DeleteWhereAsync</code> is the
+  delete counterpart.</li>
+</ul>
+<h2 id="scalar-aggregates-maxasync-minasync-sumasync-avgasync-maxkeyasync-anyasync-net10">Scalar aggregates — <code>MaxAsync</code> / <code>MinAsync</code> / <code>SumAsync</code> / <code>AvgAsync</code> / <code>MaxKeyAsync</code> / <code>AnyAsync</code> (net10)</h2>
+<p>Thin typed aggregate helpers on <code>IRepository&lt;T&gt;</code> — the write-once equivalent of the legacy
+<code>Max(type, criteria)</code> / <code>MaxPrimaryKeyValue(type)</code> idiom. Each builds <code>SELECT &lt;FUNC&gt;("col")
+FROM table [WHERE …]</code> via <code>SqlGenerator.BuildAggregate</code> (column dialect-quoted; the optional
+predicate translated by the same <code>ExpressionTranslator</code> as <code>CountAsync</code>, so it's parameterized,
+injection-safe, and provider-portable), then reads the single scalar through the existing
+owned-connection + retry path (<code>DataAccess.DirtyReadsActive</code> honored).</p>
+<pre><code class="language-csharp">decimal max  = await repo.MaxAsync&lt;decimal&gt;(x =&gt; x.Price);                       // whole table
+decimal hi   = await repo.MaxAsync&lt;decimal&gt;(x =&gt; x.Price, x =&gt; x.Status == 1);   // filtered (the Max(type,&quot;criteria&quot;) form)
+decimal sum  = await repo.SumAsync&lt;decimal&gt;(x =&gt; x.Price, x =&gt; x.Price &gt;= 30m);
+long    next = await repo.MaxKeyAsync&lt;long&gt;();                                   // MaxPrimaryKeyValue shortcut (single-PK only)
+bool    any  = await repo.AnyAsync(x =&gt; x.Price &gt; 999m);                         // EXISTS-style; cheaper than CountAsync(...) &gt; 0
+</code></pre>
+<ul>
+<li><strong><code>MaxAsync</code> / <code>MinAsync</code> / <code>SumAsync</code> / <code>AvgAsync</code></strong> <code>&lt;TResult&gt;(column, predicate?)</code> — the column
+  selector must be a simple property access (computed expr throws <code>ArgumentException</code>; drop to
+  <code>ExecuteScalarAsync</code> / <code>SqlQuery</code> <code>Agg</code>). Empty set / all-NULL ⇒ <code>default(TResult)</code>; use a <strong>nullable</strong>
+  <code>TResult</code> (e.g. <code>MaxAsync&lt;decimal?&gt;</code>) to distinguish "no rows" from a real default (same idiom as
+  <code>ExecuteScalarAsync</code>). <code>SUM</code> of an <code>int</code> column stays <code>int</code> on SQL Server — pick a wide <code>TResult</code> to
+  avoid overflow. <code>AVG</code> follows the engine's native rule (integer column ⇒ integer/truncated on SQL
+  Server &amp; Oracle) — average a decimal column or cast in raw SQL for a fractional result.</li>
+<li><strong><code>MaxKeyAsync&lt;TResult&gt;()</code></strong> — <code>MAX(pk)</code>; requires exactly one PK column (composite/keyless throws
+  <code>InvalidOperationException</code>).</li>
+<li><strong><code>AnyAsync(predicate?)</code></strong> — <code>SELECT 1 FROM table [WHERE …]</code>, read as a scalar (non-null first cell ⇒
+  a row exists). Deliberately the portable <code>SELECT 1</code> form, not <code>EXISTS(...)</code>, to avoid the Oracle
+  <code>FROM DUAL</code> split.</li>
+<li>Transactional automatically via <code>uow.Repository&lt;T&gt;()</code> (the repo handles the attached transaction).
+  Unit-tested no-DB per dialect (<code>AggregateSqlTests</code>) + live SQL Server (<code>SqlServerAggregateTests</code>);
+  demo menu #22 <code>Aggregates</code>.</li>
+</ul>
+<h2 id="stored-procedures-both-legs">Stored procedures (both legs)</h2>
+<p>The DAL executes stored procedures through a non-generic API on <code>DataAccess</code>
+(and <code>IUnitOfWork</code> for the transactional path), since a procedure isn't tied to
+one entity. A fluent <code>StoredProcedureCall</code> describes the call; the result object
+carries everything back:</p>
+<pre><code class="language-csharp">var call = new StoredProcedureCall(&quot;usp_Transfer&quot;)     // optional schema arg; defaults to DefaultSchema
+    .Input(&quot;p_from&quot;, 1001)
+    .Input(&quot;p_amount&quot;, 500m, CoreDataType.Money)
+    .InputOutput(&quot;p_note&quot;, &quot;ref&quot;, CoreDataType.UnicodeString, size: 50)
+    .Output(&quot;p_new_balance&quot;, CoreDataType.Money)
+    .ReturnValue();                                     // SQL Server / Oracle only
+
+StoredProcedureResult r = await data.ExecuteProcedureAsync(call);
+decimal bal   = r.GetOutput&lt;decimal&gt;(&quot;p_new_balance&quot;); // OUT / INOUT by name (prefix stripped)
+int?    code  = r.ReturnValue;                          // SQL Server RETURN / Oracle function result
+var     rows  = r.FirstResultSet;                       // raw: ColumnNames + Rows (object?[]) + AsDictionaries()
+</code></pre>
+<ul>
+<li><strong><code>DataAccess.ExecuteProcedureAsync</code></strong> → full <code>StoredProcedureResult</code>
+  (<code>ResultSets</code> + <code>Output</code> + <code>ReturnValue</code>). Result sets are <strong>raw/untyped</strong> by
+  design (column names + values); map them yourself.</li>
+<li><strong><code>ExecuteScalarProcedureAsync</code></strong> / <strong><code>ExecuteNonQueryProcedureAsync</code></strong> —
+  convenience for "returns one value" / "just does work, returns rows-affected".</li>
+<li><strong><code>IUnitOfWork.ExecuteProcedure*Async</code></strong> — same three, enlisted in the
+  transaction (commit/rollback covers the procedure's writes).</li>
+<li><strong>net10 only</strong>: <code>Repository&lt;T&gt;.StreamProcedureAsync(call)</code> →
+  <code>IAsyncEnumerable&lt;T&gt;</code> streams the <strong>first</strong> result set materialized into <code>T</code>
+  (reuses the <code>StreamQueryAsync</code> pipeline; OUT params / further sets aren't
+  surfaced here).</li>
+</ul>
+<p>Pass parameter names <strong>without</strong> the <code>@</code> / <code>:</code> prefix — the DAL adds the
+provider's. List parameters in the procedure's declared order (PostgreSQL binds
+positionally). Sensitive inputs (<code>Input(..., sensitive: true)</code>) are redacted in
+command logs exactly like <code>[DbColumn(IsSensitive = true)]</code>. Everything routes
+through the same <code>CommandLogger</code> (command pairing, correlation id, timeout).</p>
+<p>Provider mechanics differ — the call surfaces them and unsupported combinations
+throw a clear <code>NotSupportedException</code>:</p>
+<table>
+<thead>
+<tr>
+<th>Feature</th>
+<th>SQL Server</th>
+<th>Oracle</th>
+<th>PostgreSQL</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Invocation</td>
+<td><code>CommandType.StoredProcedure</code></td>
+<td>same + <code>BindByName=true</code></td>
+<td>Npgsql <code>CALL</code></td>
+</tr>
+<tr>
+<td>Multiple result sets</td>
+<td>multiple SELECTs (inline)</td>
+<td>OUT <strong>REF CURSOR</strong> params — add <code>.Cursor("c")</code></td>
+<td>(procs return via OUT/INOUT, not result sets)</td>
+</tr>
+<tr>
+<td>Return value</td>
+<td><code>.ReturnValue()</code></td>
+<td>function result via <code>.ReturnValue()</code></td>
+<td><strong>not supported</strong> → throws</td>
+</tr>
+<tr>
+<td>Collection param</td>
+<td><strong>TVP</strong> <code>.Table(name, dataTable, "dbo.Type")</code> (needs a pre-created TABLE TYPE)</td>
+<td><strong>PL/SQL assoc array</strong> <code>.Table(name, array)</code> (proc declares an index-by type)</td>
+<td><strong>native array</strong> <code>.Table(name, array)</code></td>
+</tr>
+</tbody>
+</table>
+<p>Oracle REF CURSORs are surfaced as reader result sets (one <code>do/while
+NextResult</code> loop covers all three providers). Schema-qualified names are quoted
+via the dialect — honor the Oracle/PG uppercase-naming convention (same as
+elsewhere in the DAL; an unquoted-uppercase Oracle proc must be called by its
+UPPERCASE name, e.g. <code>new StoredProcedureCall("PR_G_AUTHENTICATEUSER")</code>, since the
+DAL always quotes). Verified live on all three engines (Fx leg) plus SQL
+Server on net10; unit tests pin the type map, name qualification, builder, and
+capability guards. <strong>Param <code>DbType</code> binding is provider-aware</strong> (<code>CoreTypeDbType.Map(type,
+provider)</code>): Oracle's managed provider rejects <code>DbType.DateTime2</code> on a parameter
+(<code>OracleParameter.DbType</code> throws <em>"Value does not fall within the expected range"</em>), so a
+<code>CoreDataType.DateTime</code> param folds to <code>DbType.DateTime</code> (bound as TIMESTAMP) on Oracle while
+SQL Server / PostgreSQL keep the full-precision <code>DateTime2</code>.</p>
+<h2 id="transient-fault-retry-resiliency-both-legs">Transient-fault retry / resiliency (both legs)</h2>
+<p>Opt-in retry for transient DB faults (deadlocks, dropped connections, transport
+blips). <strong>Off by default</strong> — set <code>DataAccessOptions.Retry</code> to a <code>RetryOptions</code> to
+enable; leaving it <code>null</code> preserves today's exact behavior.</p>
+<pre><code class="language-csharp">var options = new DataAccessOptions
+{
+    Provider = DbProvider.SqlServer,
+    ConnectionString = cs,
+    Retry = new RetryOptions { MaxAttempts = 3, BaseDelay = TimeSpan.FromMilliseconds(200) },
+};
+</code></pre>
+<p><code>RetryOptions</code>: <code>MaxAttempts</code> (total tries, default 3), <code>BaseDelay</code> (200 ms),
+<code>MaxDelay</code> (5 s), <code>RetryOnTimeout</code> (default <strong>false</strong>), <code>UseJitter</code> (true).
+Backoff is exponential — <code>min(MaxDelay, BaseDelay × 2^(n-1))</code> — with optional
+full jitter. Each retry logs a Warning.</p>
+<ul>
+<li><strong>Auto-retry</strong> wraps the <strong>owned-connection</strong> path only: single CRUD,
+  <code>WhereAsync</code> / <code>CountAsync</code> / <code>QueryAsync</code>, and stored-procedure calls. Each
+  attempt opens a fresh connection.</li>
+<li><strong><code>DataAccess.ExecuteInTransactionAsync(uow =&gt; { ... })</code></strong> retries an entire
+  unit of work — rolling back and reopening a fresh connection + transaction per
+  attempt. This is the only safe way to retry multi-statement work (a single
+  command inside an open transaction can't be replayed). Make the delegate
+  idempotent — it may run more than once.</li>
+<li><strong>Excluded</strong> from auto-retry: a single command enlisted in an open transaction
+  (use <code>ExecuteInTransactionAsync</code>), <strong>bulk insert</strong> (a partial batch / PG binary
+  <code>COPY</code> can't resume), and <strong>streaming</strong> (rows already yielded mid-enumeration).</li>
+</ul>
+<p><strong>Write-safety.</strong> Deadlocks (the engine already rolled back) and pre-send
+connection/transport errors are always retried; <strong>command timeouts are NOT
+retried unless <code>RetryOnTimeout = true</code></strong> — a timed-out non-idempotent write may
+have committed on the server, so retrying could double-apply it. Leave it off for
+write paths.</p>
+<p><code>IProviderRuntime.IsTransient(ex, includeTimeouts)</code> classifies per engine:
+SQL Server by <code>SqlException.Number</code> (deadlock 1205, transport/Azure-transient
+233/64/53/10061/10053/54/60/40197/40501/40613/49918-20/4060/4221/11001, timeout
+-2 gated), Oracle by <code>OracleException.Number</code> (deadlock 60; transport
+3113/3114/12541/12537/12560/12571/etc.; 25408 safe-replay; 12170/1013 gated),
+PostgreSQL by <code>PostgresException.SqlState</code> (40P01 deadlock, 40001 serialization,
+57P0x shutdown, 08xxx connection; 08007 gated) plus bare <code>NpgsqlException</code>
+(socket). The lists are the documented/tunable set. Unit-tested deterministically
+via <code>RetryExecutor</code> + a fake transient predicate; the demo's resiliency entry
+forces a real command timeout to show the loop live.</p>
+<h2 id="complex-ad-hoc-queries-both-legs">Complex / ad-hoc queries (both legs)</h2>
+<p>The typed API deliberately generates <strong>no joins / GROUP BY / sub-queries</strong> (the
+"no cartesian explosions… drop to raw SQL" philosophy). Complex reads —
+GROUP BY / aggregates, sub-queries, UNION, EXISTS, CTEs — are <strong>raw SQL</strong>, run
+through ergonomic non-entity helpers on <code>DataAccess</code> (and <code>IUnitOfWork</code> for the
+transactional path). All route through <code>CommandLogger</code> and the owned-connection +
+retry path (reads are retry-eligible when <code>DataAccessOptions.Retry</code> is set).</p>
+<pre><code class="language-csharp">// GROUP BY → a plain POCO (no [DbTable]/PK/Entity; columns map to props by name)
+public sealed class CustomerSummary { public int CustomerId; public int OrderCount; public decimal TotalAmount; }
+var rows = await data.QueryAsync&lt;CustomerSummary&gt;(
+    &quot;SELECT CustomerId, COUNT(*) AS OrderCount, SUM(Amount) AS TotalAmount FROM Orders GROUP BY CustomerId&quot;);
+
+// UNION / ad-hoc → untyped dictionaries
+IReadOnlyList&lt;IReadOnlyDictionary&lt;string, object?&gt;&gt; r = await data.QueryAsync(
+    &quot;SELECT 'low' AS Bucket, COUNT(*) AS N FROM Orders WHERE Amount &lt; 60 UNION ALL SELECT 'high', COUNT(*) FROM Orders WHERE Amount &gt;= 60&quot;);
+
+decimal total = await data.ExecuteScalarAsync&lt;decimal&gt;(&quot;SELECT SUM(Amount) FROM Orders&quot;);          // scalar
+bool any   = await data.ExistsAsync(&quot;SELECT 1 FROM Orders WHERE CustomerId = @id&quot;, pars);          // EXISTS
+int rows   = await data.ExecuteNonQueryAsync(&quot;UPDATE Orders SET Amount = Amount + @b WHERE Id = @id&quot;, pars); // write
+</code></pre>
+<ul>
+<li><strong><code>QueryAsync&lt;TResult&gt;(sql, params)</code></strong> — maps each row to a plain POCO by
+  column→property name (case-insensitive); honors <code>[DbColumn(ColumnName=…)]</code> as an
+  alias. No <code>[DbTable]</code> / primary key / <code>Entity</code> base required (unlike
+  <code>Repository&lt;T&gt;.QueryAsync</code>). Columns with no matching property are ignored.</li>
+<li><strong><code>QueryAsync(sql, params)</code></strong> — untyped rows (<code>IReadOnlyDictionary&lt;string,object?&gt;</code>).</li>
+<li><strong><code>ExecuteScalarAsync&lt;TScalar&gt;(sql, params)</code></strong> — first column of first row, coerced.</li>
+<li><strong><code>ExistsAsync(sql, params)</code></strong> — true if the SQL yields ≥1 row (pass <code>SELECT 1 … WHERE …</code> or a full <code>EXISTS</code>).</li>
+<li><strong><code>ExecuteNonQueryAsync(sql, params)</code></strong> — raw write (UPDATE / INSERT / DELETE / DDL),
+  returns rows-affected. The raw-SQL counterpart of the entity <code>Repository&lt;T&gt;</code> writes —
+  for targeted partial updates the typed API doesn't generate. Logged at
+  <code>MutationLogLevel</code>; retry-eligible on the owned-connection path (keep idempotent if
+  <code>Retry</code> is set). Also on <code>IUnitOfWork</code> for the transactional path.</li>
+<li><strong>net10 only</strong>: <code>StreamQueryAsync&lt;TResult&gt;</code> / untyped <code>StreamQueryAsync</code> (<code>IAsyncEnumerable</code>).</li>
+</ul>
+<p>Parameter keys include the provider prefix (<code>"@id"</code> / <code>":id"</code>). The SQL text is the
+caller's responsibility (the documented raw-SQL escape hatch). The SQL itself is
+<strong>not</strong> made provider-portable — GROUP BY/UNION/EXISTS are standard, but identifier
+quoting and dialect functions differ; quote with the dialect (see the generated-SQL
+comparison demo) or write provider-aware text. <strong>Non-goals</strong> (by design): no GROUP
+BY/JOIN generation, no EXISTS/<code>.Any()</code> inside <code>WhereAsync</code>, no fluent query builder.
+<code>PocoMaterializer</code> is unit-tested via a <code>DataTableReader</code>; live coverage across all
+three engines via integration tests + the complex-query demo.</p>
+<h2 id="query-composition-fn-sqlquery-both-legs-namespace-query">Query composition — <code>Fn</code> + <code>SqlQuery</code> (both legs, namespace <code>*.Query</code>)</h2>
+<p>A thin, provider-aware layer over the raw-SQL helpers above, built for the
+stored-procedure-to-C# migration (see <code>docs/StoredProcMigration.md</code>). It generates
+SQL + bound parameters and <strong>delegates to the existing <code>DataAccess</code> / <code>IUnitOfWork</code>
+raw-SQL pipeline</strong> — so logging, retry, redaction, correlation, and <code>UseDirtyReads</code>
+keep working. It never opens connections or owns transactions. <strong>Not an ORM / not a
+query compiler</strong>: it doesn't parse SQL, build an expression tree, auto-quote
+identifiers, or model window / CTE / PIVOT (those stay raw <code>QueryAsync&lt;T&gt;</code>).</p>
+<ul>
+<li><strong><code>SqlFunctions.For(provider)</code></strong> (alias <code>SqlQuery.Fn</code>) — the cross-dialect scalar
+  vocabulary that pays down the pervasive <code>ISNULL</code> / <code>GETDATE</code> / <code>+</code>-concat tax. Each
+  method returns a SQL <strong>text fragment</strong> rendered per dialect: <code>Coalesce</code> (→ <code>COALESCE</code>
+  everywhere, replaces <code>ISNULL</code>/<code>NVL</code>), <code>Concat</code> (<code>+</code> on SqlServer, <code>||</code> on Oracle/PG),
+  <code>Now</code> (<code>SYSDATETIME()</code>/<code>SYSTIMESTAMP</code>/<code>now()</code>), <code>CharIndex</code> (hides the
+  <code>CHARINDEX</code>/<code>INSTR</code>/<code>POSITION</code> operand-order flip), <code>Substring</code>, <code>Length</code>
+  (<code>LEN</code>/<code>LENGTH</code>), <code>Upper</code>/<code>Lower</code>/<code>Trim</code>, and <code>Cast(expr, CoreDataType, …)</code>.</li>
+<li><strong><code>SqlQuery.From(table, alias, provider)</code></strong> — fluent <code>Select</code> / <code>InnerJoin</code> / <code>LeftJoin</code>
+  / <code>Where</code> / <strong><code>WhereIf</code></strong> / <code>GroupBy</code> / <code>Having</code> / <code>OrderBy</code> / <code>Page</code>. <code>WhereIf</code> is the
+  headline: conditional predicate composition that replaces both the "8 near-identical
+  branches" report pattern and runtime dynamic-SQL string building (and is index-friendly,
+  unlike the <code>col = COALESCE(@p, col)</code> idiom). Placeholders use the neutral <code>@name</code> prefix;
+  <code>Build()</code> rewrites them to the dialect prefix (<code>@</code>→<code>:</code> on Oracle) and dedups reused names.
+  Fragments (select / join / predicate) pass through verbatim — bind values as parameters.</li>
+<li><strong>Typed (token) overloads</strong> — for refactor-safe, auto-quoted column references without string
+  fragments: <code>Col</code> (a column name + optional alias, <code>.As("a")</code> for joins) and <code>Agg</code>
+  (<code>Count</code>/<code>Sum</code>/<code>Avg</code>/<code>Min</code>/<code>Max</code>, rendering <code>FUNC(col) AS alias</code>). <code>SqlQuery</code> gains
+  <code>SelectCols(params Col[])</code> / <code>Select(params Agg[])</code> / <code>GroupBy(params Col[])</code> / <code>OrderBy(Col, desc)</code>
+  and <code>Where(Col, op, value)</code> (operator whitelisted; value bound to an auto-named, letter-leading
+  parameter so Oracle accepts it). <code>From&lt;TEntity&gt;(alias, provider)</code> pulls the table name from the
+  entity's <code>[DbTable]</code>; <strong><code>InnerJoin&lt;TRight&gt;(alias, leftCol, rightCol)</code> / <code>LeftJoin&lt;TRight&gt;</code></strong> take the
+  joined table from <code>TRight</code>'s <code>[DbTable]</code> and the ON from <code>Col</code> tokens (composite ON via
+  <code>params (Col,Col)[]</code>); the string <code>InnerJoin(table, on)</code> stays as the escape hatch for views /
+  mixed-case tables. <strong><code>Distinct()</code></strong> emits <code>SELECT DISTINCT</code> (DB-side dedup; ORDER BY cols must be
+  selected). The <strong>scaffolder emits a nested <code>Cols</code> class of <code>Col</code> tokens per entity</strong>
+  (<code>B_ACCOUNT.Cols.ACCOUNT_ID</code>) so the columns are compile-checked. Identifiers are dialect-quoted;
+  aggregate output aliases are left unquoted so an unquoted <code>OrderBy("alias")</code> matches across
+  dialects. Zero expression-tree / GC overhead (the tokens are structs over strings).</li>
+<li><strong>Execution:</strong> <code>ToListAsync&lt;T&gt;</code> / <code>ToDictionariesAsync</code> / <code>ScalarAsync&lt;T&gt;</code> / <code>ExistsAsync</code>
+  taking a <code>DataAccess</code> (owned + retry) or <code>IUnitOfWork</code> (transactional); net10 adds
+  <code>StreamAsync&lt;T&gt;</code>. <code>Build()</code> returns the <code>(sql, parameters)</code> if you want to run it yourself.</li>
+</ul>
+<p>Unit-tested with no DB (per-dialect rendering + clause assembly + <code>WhereIf</code> + Oracle
+prefix rewrite + paging); end-to-end coverage via the SQL Server complex-query
+integration test (GROUP BY + <code>WhereIf</code> + scalar) and demonstrated live across all three
+providers by the net10 <strong><code>ComplexQueryDemo</code></strong> (menu #17), which shows the composer
+(GROUP BY + HAVING, <code>WhereIf</code>, INNER JOIN + column projection, typed <code>Col</code>/<code>Agg</code> tokens,
+<code>Fn</code>, scalar) alongside the raw-SQL equivalents. The typed-token rendering is unit-tested
+in <code>QueryComposerTests</code> (<code>Col</code> quoting, <code>Agg</code>, typed <code>Where</code> auto-param + Oracle prefix,
+<code>From&lt;TEntity&gt;</code>). Also added: raw-write <strong><code>ExecuteNonQueryAsync</code></strong> on
+<code>DataAccess</code> / <code>IUnitOfWork</code> (above).</p>
+<h2 id="safe-row-access-rowaccess-extensions-both-legs-namespace-repository">Safe row access — <code>RowAccess</code> extensions (both legs, namespace <code>*.Repository</code>)</h2>
+<p>Ergonomic, null-safe accessors for the DAL's <strong>untyped</strong> row shapes, so raw-column results
+read cleanly instead of hand-casting <code>object?</code> and guarding four failure modes (null result
+set, missing row, missing column, SQL NULL). The only untyped row shape is
+<code>IReadOnlyDictionary&lt;string, object?&gt;</code> — what <code>DataAccess.QueryAsync(sql)</code> returns and what
+<code>StoredProcResultSet.AsDictionaries()</code> produces — so the extensions attach there and on
+<code>StoredProcResultSet</code>. (Typed paths — <code>QueryAsync&lt;T&gt;</code>, <code>GetAsync</code>, <code>GetAllAsync</code> — already
+return entities and need none of this.)</p>
+<ul>
+<li><strong>On a row (<code>IReadOnlyDictionary&lt;string, object?&gt;</code>):</strong> <code>Get&lt;T&gt;(col)</code> (coerced; <code>default</code>
+  if missing/NULL), <code>GetAs&lt;T&gt;(col)</code> (reference cast for <code>byte[]</code>/<code>string</code> — <code>as T</code>, where
+  <code>ChangeType</code> would throw), <code>TryGet&lt;T&gt;(col, out value)</code>, <code>HasColumn(col)</code>, <code>IsNull(col)</code>,
+  and typed getters <code>GetString/GetInt32/GetInt64/GetDecimal/GetDouble/GetBoolean/GetDateTime/
+  GetGuid/GetBytes</code> (nullable, plus <code>(col, fallback)</code> non-null overloads).</li>
+<li><strong>On <code>StoredProcResultSet</code> (null-safe receiver — works on <code>result.FirstResultSet</code>):</strong>
+  <code>Get&lt;T&gt;(rowIndex, col)</code> / <code>Get&lt;T&gt;(col)</code> (row 0), <code>GetAs&lt;T&gt;(…)</code>, <code>Row(rowIndex)</code> / <code>FirstRow()</code>
+  (→ a row dict to chain the typed getters), and <strong><code>ToList&lt;T&gt;()</code> / <code>First&lt;T&gt;()</code> /
+  <code>FirstOrDefault&lt;T&gt;()</code></strong> mapping rows to a POCO (buffered SP→POCO; gives Fx a
+  <code>StreamProcedureAsync</code> equivalent). Same three on <code>StoredProcedureResult</code> over <code>FirstResultSet</code>.</li>
+</ul>
+<p>Coercion is the shared <code>PocoMaterializer.Coerce</code> (enum / Guid / <code>Nullable&lt;T&gt;</code> unwrap /
+culture-invariant <code>Convert.ChangeType</code>); <code>PocoMaterializer</code> gained a buffered
+<code>Map&lt;T&gt;(columns, values)</code> overload. <code>Get&lt;T&gt;</code> returns <code>default</code> on missing/NULL (so <code>Get&lt;int&gt;</code>
+→ <code>0</code>, <code>Get&lt;int?&gt;</code> → <code>null</code>). Unit-tested no-DB on both legs; demonstrated live across all
+three providers by the <strong><code>RowAccess</code></strong> demo (net10 demo menu #18).</p>
+<h2 id="benchmarks-net10-only">Benchmarks (net10 only)</h2>
+<p><code>TflOmniDb.Benchmarks/</code> is a separate console project using BenchmarkDotNet.
+Covers:</p>
+<ul>
+<li><strong>MetadataBenchmarks</strong> — <code>MetadataReader.For&lt;T&gt;()</code> cold vs warm cache hit.</li>
+<li><strong>SqlGenerationBenchmarks</strong> — <code>SqlGenerator.For(desc)</code> cached lookup,
+  <code>BuildSelectWhere</code> per-call cost (simple and compound predicates),
+  <code>BuildCount</code> with no predicate.</li>
+<li><strong>StreamingVsBufferedBenchmarks</strong> — validates the O(1)-vs-O(n) memory
+  claim for <code>StreamAllAsync</code> vs <code>GetAllAsync</code> against a live SQL Server.</li>
+<li><strong>BulkInsertVsLoopBenchmarks</strong> — <code>BulkInsertAsync</code> vs N × <code>InsertAsync</code> for
+  100 and 1000 rows.</li>
+</ul>
+<pre><code class="language-powershell"># List all benchmarks:
+dotnet run --project TflOmniDb.Benchmarks -c Release -- --list flat
+
+# Run everything:
+dotnet run --project TflOmniDb.Benchmarks -c Release -- --filter '*'
+
+# Run just the in-memory ones (no DB needed):
+dotnet run --project TflOmniDb.Benchmarks -c Release -- --filter '*Metadata*' '*Generation*'
+</code></pre>
+<p>The streaming and bulk-insert benchmarks require <code>TFLOMNIDB_SQLSERVER_CONN</code>
+in the environment — they spin up their own <code>BenchWidget</code> / <code>BenchBulkWidget</code>
+tables and tear them down on cleanup.</p>
+<h2 id="whats-different-on-the-net10-leg">What's different on the net10 leg</h2>
+<p>The net10 leg has the same public API plus <strong>additive modern affordances</strong>:</p>
+<ul>
+<li><strong><code>IAsyncEnumerable&lt;T&gt;</code> streaming reads</strong> on <code>IRepository&lt;T&gt;</code>:</li>
+<li><code>StreamAllAsync(ct)</code> — streams every row, no <code>List&lt;T&gt;</code> buffer.</li>
+<li><code>StreamWhereAsync(predicate, orderBy, descending, skip, take, ct)</code></li>
+<li><code>StreamQueryAsync(sql, parameters, ct)</code> — raw-SQL streaming.
+  Mid-stream cancellation works via <code>[EnumeratorCancellation]</code>. Existing
+  <code>Task&lt;IReadOnlyList&lt;T&gt;&gt;</code> overloads preserved — streaming is <em>added</em>, not a
+  replacement.</li>
+<li><strong>Records</strong> for value-shape types: <code>EntityDescriptor</code>, <code>ColumnDescriptor</code>,
+  <code>StatementSet</code>, <code>GeneratedStatement</code>, <code>RowVersionBindingInfo</code>,
+  <code>InsertIdentityReturn</code>, <code>DynamicStatement</code>.</li>
+<li><strong><code>required init</code></strong> on <code>DataAccessOptions.Provider</code> and <code>ConnectionString</code> —
+  compile-time enforcement of the two non-optional knobs.</li>
+<li><strong><code>System.Threading.Lock</code></strong> (net9+ ref-typed lock) replaces <code>object _sync</code>
+  patterns throughout. Same <code>lock (_sync) { ... }</code> syntax, better semantics.</li>
+<li><strong><code>FrozenDictionary</code> for <code>ProviderRegistry</code></strong> — populated-once + read-many
+  lookup.</li>
+<li><strong><code>ConfigureAwait(false)</code></strong> on every library await.</li>
+<li><strong>NRT enabled</strong> (<code>&lt;Nullable&gt;enable&lt;/Nullable&gt;</code> + <code>&lt;TreatWarningsAsErrors&gt;true&lt;/TreatWarningsAsErrors&gt;</code>).</li>
+<li><strong><code>IsAotCompatible=true</code> / <code>IsTrimmable=true</code></strong> on the library csproj.
+  Surfaces analyzer warnings for unsafe-for-AOT reflection at compile time —
+  guardrails for future source-generator work.</li>
+<li><strong>Modern packages</strong>: <code>Microsoft.Data.SqlClient</code> 6.0.2,
+  <code>Oracle.ManagedDataAccess.Core</code> 23.7.0, <code>Npgsql</code> 9.0.2,
+  <code>Microsoft.Extensions.Logging.Abstractions</code> 9.0.4.</li>
+</ul>
+<p>What's deliberately <em>not</em> on the net10 leg yet:
+- Source generators replacing <code>MetadataReader</code> reflection (scoped out — the
+  cache already amortizes the one-shot reflection cost per type for the AppDomain
+  lifetime). Code is structured so a source generator can drop in later by
+  replacing <code>MetadataReader.For&lt;T&gt;()</code> with <code>Metadata&lt;T&gt;.Descriptor</code> constants.</p>
+<h2 id="build-test">Build &amp; test</h2>
+<p>The solution file lives at the product root:</p>
+<pre><code class="language-powershell">$mb = 'C:\Program Files\Microsoft Visual Studio\18\Enterprise\MSBuild\Current\Bin\MSBuild.exe'
+&amp; $mb TflOmniDb.slnx /t:Restore
+&amp; $mb TflOmniDb.slnx /p:Configuration=Debug
+</code></pre>
+<p>Why VS msbuild specifically: the Fx library is a legacy non-SDK csproj with
+<code>PackageReference</code>. VS msbuild auto-injects NuGet's target wiring; <code>dotnet build</code>
+does not, and fails with "Microsoft.Data not found" etc. The Net10 projects
+are SDK-style and <code>dotnet build</code> works fine for them in isolation, but the
+solution build must go through VS msbuild to cover the Fx leg.</p>
+<h3 id="running-tests">Running tests</h3>
+<pre><code class="language-powershell"># Required env vars (same keys serve both legs):
+$env:TFLOMNIDB_POSTGRES_CONN  = 'Host=localhost;Port=5432;Database=omnidb;Username=omnidb;Password=devpass'
+$env:TFLOMNIDB_SQLSERVER_CONN = 'Server=DBSRV1\TSSIPL2016;Database=Trustbank_SUDAN_UAT;User Id=sa;Password=sql@2016;TrustServerCertificate=true'
+$env:TFLOMNIDB_ORACLE_CONN    = 'User Id=omnidb;Password=devpass;Data Source=localhost:1521/FREEPDB1;'
+
+# Fx leg (net48) — 332 tests, via vstest:
+$vstest = 'C:\Program Files\Microsoft Visual Studio\18\Enterprise\Common7\IDE\Extensions\TestPlatform\vstest.console.exe'
+&amp; $vstest TflOmniDbFx.Tests\bin\Debug\net48\TflOmniDbFx.Tests.dll /Logger:console`;verbosity=minimal
+
+# Net10 leg — 521 tests, via dotnet test:
+dotnet test TflOmniDb.Tests\TflOmniDb.Tests.csproj --no-build --logger 'console;verbosity=minimal'
+</code></pre>
+<p>Integration-test connection strings come from one of two sources (env var
+wins). The helper <code>*Tests/Fixtures/TestConfig.cs</code> on each leg checks both:
+- Environment variables <code>TFLOMNIDB_*_CONN</code> (used by CI, <code>.runsettings</code>
+  <code>&lt;EnvironmentVariables&gt;</code>, and user-level env vars). Names are <strong>product-
+  scoped</strong> (no <code>FX</code> or <code>NET10</code> suffix) — the same keys serve both legs.
+- <code>TflOmniDbFx.Tests/App.config</code> or <code>TflOmniDb.Tests/App.config</code> <code>&lt;appSettings&gt;</code>
+  (local-dev fallback for when VS Test Explorer's runsettings handling is flaky).</p>
+<h3 id="demo-configuration">Demo configuration</h3>
+<ul>
+<li><strong>Fx demo</strong> reads config from <code>App.config</code> <code>&lt;appSettings&gt;</code> keys prefixed with
+  <code>TflOmniDbFx:</code> (matches the Fx library's <code>DataAccessOptionsBuilder.DefaultPrefix</code>).
+  Logging goes through Enterprise Library / AdDiagnostics (.NET Framework-only).</li>
+<li><strong>Net10 demo</strong> reads config from <code>appsettings.json</code> (<code>Microsoft.Extensions.
+  Configuration</code>) under the <code>TflOmniDb</code> section. Logging goes through
+  <code>Microsoft.Extensions.Logging.Console</code>. It is <strong>multi-provider</strong>: a CSV
+  <code>Providers</code> (e.g. <code>"SqlServer,Oracle,PostgreSql"</code>) plus a per-provider
+  <code>Connections</code> block (<code>ConnectionString</code> + <code>DefaultSchema</code>). Each connection
+  string resolves <strong>env-var-first</strong> (<code>TFLOMNIDB_SQLSERVER_CONN</code> /
+  <code>TFLOMNIDB_ORACLE_CONN</code> / <code>TFLOMNIDB_POSTGRES_CONN</code>, same names as the tests),
+  then the config value. <strong>Every demo runs against each active provider in turn</strong>
+  (per-demo banner + a demo×provider summary matrix); set <code>Providers</code> to one
+  value to scope the run to a single engine. A provider with a blank/unreachable
+  connection is <strong>skipped</strong> (preflight <code>OpenConnectionAsync</code>), not failed.
+  <code>DemoSchema</code> emits provider-correct DDL so the demos are portable; the
+  stored-procedure demo uses each engine's own SP model (T-SQL / Oracle REF
+  CURSOR / PG <code>CALL</code>); a no-DB "generated-SQL comparison" entry prints the three
+  dialects side by side. (The Fx demo stays single-provider.)</li>
+</ul>
+<h2 id="conventions-in-play">Conventions in play</h2>
+<ul>
+<li>Attribute-driven mapping; no fluent / no convention-based mapping. Every
+  persisted column declares an <code>[DbColumn]</code>.</li>
+<li>Entity property types are typically <code>Nullable&lt;T&gt;</code> so all-args constructors can
+  accept partial rows; <code>ColumnDescriptor.SetValue</code> handles <code>DBNull</code> and width
+  coercion (e.g., <code>int</code> → <code>decimal?</code>).</li>
+<li>Properties are <code>virtual</code> on entities — door left open for proxy-based change
+  tracking later.</li>
+<li>Async-first: the repository exposes only <code>*Async</code> methods. No sync overloads.</li>
+<li>Schema is <strong>connection-level</strong> config (<code>DataAccessOptions.DefaultSchema</code>,
+  defaults to <code>"dbo"</code>). Not on the table attribute. Table names must be
+  identical across all three databases — see <code>DbTableAttribute.cs</code>.</li>
+<li>Identifier casing is preserved on Oracle and PostgreSQL by always quoting.</li>
+<li><strong>Optimistic concurrency is app-managed.</strong> A column marked <code>IsRowVersion = true</code>
+  is an integer (Int16/Int32/Int64/Decimal) the repository auto-increments on
+  UPDATE and checks in the WHERE clause. Zero matched rows → <code>ConcurrencyException</code>.
+  Same on all three providers — no dialect-specific RowVersion / xmin / ORA_ROWSCN.</li>
+<li><strong>Transactions opt in.</strong> Non-transactional <code>data.Repository&lt;T&gt;()</code> opens a
+  fresh connection per call; for multi-write atomicity wrap in a unit of work:
+  <code>using (var uow = await data.BeginTransactionAsync()) { ... }</code>. Disposing
+  without <code>CommitAsync</code> rolls back automatically.</li>
+<li><strong>Logging is opt-in.</strong> When <code>DataAccessOptions.LoggerFactory</code> is null,
+  <code>NullLogger</code> swallows everything. Set a factory to surface every command at
+  Debug and failures at Error. <code>LogParameterValues = true</code> includes parameter
+  values in the log — off by default because banking data is sensitive.</li>
+<li><strong><code>DirtyReads</code> is opt-in.</strong> <code>using (data.UseDirtyReads()) { ... }</code> applies
+  <code>WITH(NOLOCK)</code> to SELECTs on SQL Server; no-op on Oracle/PG (which have MVCC
+  by design).</li>
+<li><strong>Command timeout is per-instance, overridable per-scope.</strong>
+  <code>DataAccessOptions.CommandTimeoutSeconds</code> (null ⇒ provider default) governs every
+  command. <code>using (data.UseCommandTimeout(seconds)) { ... }</code> (net10) overrides it for
+  the current async flow only — CRUD, filtered reads, scalar aggregates, raw SQL, and
+  stored procedures inside the scope use that value; nested scopes shadow then restore;
+  <code>0</code> = no timeout. Same <code>AsyncLocal</code> shape as <code>UseDirtyReads()</code> (precedence centralized
+  in <code>DataAccess.ResolveCommandTimeout</code>; the three executors' <code>ApplyTimeout</code> all defer to
+  it). It's the <strong>server-side</strong> timeout — distinct from a client-side <code>CancellationToken</code>
+  deadline. Bulk insert keeps its own <code>BulkInsertOptions.TimeoutSeconds</code>. Unit-tested
+  (<code>CommandTimeoutScopeTests</code>) + live both-directions proof (<code>SqlServerCommandTimeoutTests</code>);
+  demo menu #23 <code>CommandTimeout</code>.</li>
+</ul>
+<h2 id="security-guarantees">Security guarantees</h2>
+<p>Every value the caller can influence reaches the database as a <strong>bound
+<code>DbParameter</code></strong>, never inlined text:</p>
+<ul>
+<li><strong>CRUD paths</strong> (<code>InsertAsync</code>, <code>UpdateAsync</code>, <code>DeleteAsync</code>, <code>GetAsync</code>):
+  values come from entity property reads, bound via <code>BuildParameter</code>.</li>
+<li><strong><code>WhereAsync</code> / <code>CountAsync</code> / <code>Stream*Async</code> predicates</strong>: every constant,
+  captured local, closure, and IN-list item is appended via
+  <code>ExpressionTranslator.AppendParameter</code>. LIKE patterns escape the LIKE
+  metacharacters (<code>%</code>, <code>_</code>, <code>[</code>, <code>]</code>) and bind the result as a parameter.</li>
+<li><strong><code>QueryAsync</code> / <code>StreamQueryAsync</code> parameter dictionary</strong>: each value becomes
+  a <code>DbParameter</code>. The SQL TEXT in raw-SQL calls is the <strong>caller's
+  responsibility</strong> — this is the explicit escape hatch.</li>
+<li><strong>Identifier paths</strong> (table names, column names, schema name): pulled from
+  compile-time attribute metadata or constructor-time configuration, then run
+  through the dialect's <code>QuoteIdentifier</code>. Never sourced from request data.</li>
+<li><strong>Paging integers</strong>: <code>int?</code> for <code>skip</code> / <code>take</code> — the CLR type system
+  precludes string content; <code>Int32.ToString()</code> is culture-invariant.</li>
+</ul>
+<p><code>SqlInjectionTests.cs</code> (8 tests on each leg) pins this down with malicious
+payloads across all three dialects.</p>
+<h2 id="performance-notes">Performance notes</h2>
+<p>What the DAL caches (cheap on repeat use):</p>
+<ul>
+<li><strong><code>EntityDescriptor</code> per type</strong> — <code>MetadataReader</code> cache, AppDomain lifetime.</li>
+<li><strong><code>StatementSet</code> per (descriptor, dialect, schema, dirtyReads)</strong> —
+  <code>SqlGenerator</code> ConcurrentDictionary pin.</li>
+</ul>
+<p>What's recomputed per call:</p>
+<ul>
+<li><strong><code>WhereAsync</code> / <code>CountAsync</code> SQL</strong> — translated each call (predicates are
+  dynamic). Cost ~10–50 μs per translation, negligible vs. SQL round-trip.</li>
+<li><strong>Closure values inside predicates</strong> — <code>ExpressionTranslator.TryEvaluate</code>
+  walks the tree manually for the common shapes (literals, captured-local
+  field/property chains, Convert wrappers); ~5 μs per closure. Falls back to
+  <code>Expression.Lambda(...).Compile().DynamicInvoke()</code> only for arbitrary
+  expressions the fast path can't resolve.</li>
+</ul>
+<p>What we explicitly DON'T do (sidestepping classic EF pain):</p>
+<ul>
+<li><strong>No N+1</strong> — no navigation properties, no lazy loading.</li>
+<li><strong>No cartesian explosions</strong> — no joins. Drop to <code>QueryAsync</code> / <code>StreamQueryAsync</code> for those.</li>
+<li><strong>No change tracking</strong> — repository is stateless. Each call constructs fresh entities.</li>
+<li><strong>No materialization proxies</strong> — <code>PropertyInfo.SetValue</code> writes directly.</li>
+</ul>
+<p>The dominant cost per CRUD call is the network round-trip; DAL CPU overhead is
+in the low microseconds per operation.</p>
+<h2 id="whats-still-missing">What's still missing</h2>
+<p>These are net-new work on either leg if requested:</p>
+<ul>
+<li>Schema diff / DDL generation from descriptors.</li>
+<li>Audit-column auto-population (<code>CreatedBy / CreatedOn / ModifiedBy / ModifiedOn</code>)
+  via an ambient <code>ICurrentUser</code>.</li>
+<li>Explicit <code>DbType</code> / provider-specific type precision on parameter binding.</li>
+<li>DB-native row-version support (SQL Server <code>ROWVERSION</code>, PG <code>xmin</code>) — the
+  current implementation is app-managed integer only.</li>
+<li>Bulk insert with identity round-trip (current <code>BulkInsertAsync</code> is
+  fire-and-forget — doesn't write generated Ids back into the entities).</li>
+<li>Oracle bulk insert against mixed-case quoted tables (OracleBulkCopy
+  limitation — currently requires Oracle's unquoted-uppercase naming).</li>
+<li><strong>Net10 leg only</strong>: source generators replacing <code>MetadataReader</code> reflection
+  for zero-reflection startup + native-AOT compatibility.</li>
+</ul>
+<p>Type mappings exercised in live tests across both legs:
+- SqlServer: <code>BIGINT / NVARCHAR / NUMERIC / DATETIME2</code>
+- PostgreSQL: <code>BIGINT / VARCHAR / CHAR / NUMERIC / TIMESTAMP</code>
+- Oracle: <code>NUMBER(19,0) / NUMBER(10,0) / NVARCHAR2 / CHAR(n CHAR) / TIMESTAMP</code></p>
+<p><strong>Not yet exercised</strong> (no entity uses them): <code>JSONB</code>, <code>BYTEA</code>, <code>UUID</code>,
+<code>TIMESTAMPTZ</code>, <code>XML</code> on PG; <code>INTERVAL</code>, <code>TIMESTAMP WITH TIME ZONE</code>, <code>XMLTYPE</code>,
+native <code>JSON</code> on Oracle.</p>
+<p>If a request lands on any of these, treat it as net-new — confirm the shape
+before extending the contracts.</p>
+</div></div>
+<script>
+(function(){
+ function put(t){
+  if(navigator.clipboard&&navigator.clipboard.writeText)return navigator.clipboard.writeText(t);
+  return new Promise(function(res,rej){
+   var a=document.createElement('textarea');a.value=t;a.setAttribute('readonly','');
+   a.style.cssText='position:fixed;top:0;left:0;opacity:0';document.body.appendChild(a);
+   a.select();var ok=false;try{ok=document.execCommand('copy')}catch(e){}
+   document.body.removeChild(a);ok?res():rej()});
+ }
+ function flash(el,txt,ms){
+  var was=el.textContent;el.classList.add('done');if(txt)el.textContent=txt;
+  setTimeout(function(){el.classList.remove('done');if(txt)el.textContent=was},ms||1200);
+ }
+ function copy(text,el,okTxt){
+  put(text).then(function(){flash(el,okTxt)},function(){
+   if(okTxt){var w=el.textContent;el.textContent='Ctrl+C';setTimeout(function(){el.textContent=w},2000)}});
+ }
+ document.querySelectorAll('pre').forEach(function(pre){
+  if(pre.classList.contains('txtdoc'))return;
+  var b=document.createElement('button');
+  b.type='button';b.className='copy';b.textContent='Copy';
+  b.setAttribute('aria-label','Copy this code block to the clipboard');
+  b.addEventListener('click',function(){copy((pre.querySelector('code')||pre).innerText,b,'Copied')});
+  pre.appendChild(b);
+ });
+ document.querySelectorAll('td code').forEach(function(c){
+  if(!c.textContent.trim())return;
+  c.classList.add('cp');c.tabIndex=0;c.setAttribute('role','button');
+  c.title='Click to copy';
+  c.addEventListener('click',function(){copy(c.textContent,c)});
+  c.addEventListener('keydown',function(e){
+   if(e.key==='Enter'||e.key===' '){e.preventDefault();copy(c.textContent,c)}});
+ });
+})();
+</script>
+</body></html>

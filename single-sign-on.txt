@@ -1,0 +1,306 @@
+==============================================================================
+ SINGLE SIGN-ON (SSO) - TrustBank CBS (.NET 10)
+==============================================================================
+ How a user logs in ONCE and is recognized across every CBS host (the full
+ host, the thin per-module hosts, and future bundle hosts) sitting behind one
+ gateway origin.
+
+
+==============================================================================
+ 1. BOTTOM LINE UP FRONT
+==============================================================================
+  - The SSO in this solution is INTERNAL CROSS-HOST SSO within the CBS family.
+    CBS is BOTH the identity authority AND the consumer.
+  - There is NO external identity provider, NO SAML, NO OAuth/OIDC federation.
+    (Microsoft.IdentityModel.Protocols.OpenIdConnect appears only as a
+    transitive dependency of the crypto/token libraries - there is no OIDC/
+    SAML/OAuth/ExternalLogin code anywhere.)
+  - The mechanism is a shared-DataProtection-key ENCRYPTED COOKIE plus a
+    shared DB-backed REVOCATION table.
+  - Direction: INBOUND within the CBS family only. CBS is the service provider
+    AND the token issuer for its own sibling hosts. No outbound tokens to
+    third-party apps; no acceptance of external-IdP logins.
+  - Status: fully implemented and proven end-to-end (Workstreams B1-B3 + D1);
+    only a few admin trigger wire-ups remain in BACKLOG.
+
+
+==============================================================================
+ 2. WHY (the problem SSO solves)
+==============================================================================
+The app is a MODULAR MONOLITH being split into multiple hosts:
+  - the full host (TflCbs.Host.Main)
+  - thin per-module hosts (e.g. TflCbs.Host.Lockers - Lockers + core only)
+  - a YARP gateway (TflCbs.Gateway) that gives all hosts ONE origin.
+
+Without SSO a user would have to log in again every time the gateway routed
+them to a different host process. SSO lets them authenticate once on the
+central login and carry that identity to any sibling host.
+
+
+==============================================================================
+ 3. THE FLOW (who / what / how)
+==============================================================================
+  1. AUTHORITY / IdP
+     The CBS Authentication web module (/Account/Login on the default/central
+     host). There is no external IdP. `Auth:LoginUrl` points every host at
+     that one authority.
+
+  2. PROTOCOL
+     An ASP.NET Core COOKIE authentication scheme named "CbsAuth" carrying a
+     compact JSON "session ticket" claim. Not SAML/OIDC.
+
+  3. TOKEN / ASSERTION VALIDATION
+     The cookie is encrypted + signed by ASP.NET Data Protection. Cross-host
+     trust comes from a SHARED DATA-PROTECTION KEY RING stored in the DB
+     (CBS_DATAPROTECTIONKEYS) plus a stable DP application name, so ANY host
+     can decrypt a cookie ANY other host issued. No signature keys are
+     exchanged out-of-band.
+
+  4. CBS SESSION ESTABLISHMENT (after a host jump)
+     On a jumped-to host, CbsAccessMiddleware reads the validated cookie
+     ticket, rebuilds the in-memory SessionHelper (CbsSessionStore.AdoptSession)
+     and RELOADS THAT HOST'S MENU from the DB (menu/AllowedUrls are
+     deliberately NOT in the cookie - kept small). The fail-closed URL/menu
+     access check still runs locally per host.
+
+  5. GLOBAL LOGOUT / REVOCATION
+     ISessionRevocationStore records revoked session ids in a shared table
+     (CBS_SESSIONREVOCATIONS). Every host rejects a revoked session within a
+     ~30s cache window even though the self-validating cookie is still present.
+
+  How it ties into the three named components:
+    - CbsSessionStore    - per-host in-memory session (GUID in IMemoryCache);
+                           AdoptSession establishes the rehydrated session on a
+                           jumped-to host.
+    - AuthenticationService / AccountController
+                         - issues the CbsAuth cookie on login; revokes + signs
+                           out on logout.
+    - CbsAccessMiddleware - does the rehydration, the single-session re-check
+                           (ISessionValidator), and the revocation rejection.
+
+
+==============================================================================
+ 4. KEY FILES (relative to TflCbsNet10Sol\)
+==============================================================================
+CORE SSO FRAMEWORK (TflCbs.Framework\)
+  Auth\CbsAuthCookie.cs
+      The "CbsAuth" scheme. SignInAsync builds a ClaimsPrincipal with claims
+      cbs:ticket (JSON CbsSessionTicket), cbs:sid (session id), name/
+      nameidentifier, and signs a non-persistent cookie. TryReadSession
+      deserializes the ticket back into a SessionHelper (null on tampered/old
+      ticket => treated unauthenticated).
+  Auth\CbsSessionTicket.cs
+      The compact serializable slice carried in the cookie: User, module id/
+      name, LoginOrgElementId, working-date, financial-year, branch connection
+      name, HO-login flag, last-login text. EXCLUDES menu/AllowedUrls and
+      row-token nonces (menu reloaded per host).
+  Auth\SessionRevocation.cs
+      ISessionRevocationStore + three impls: NullSessionRevocationStore (Off),
+      InMemorySessionRevocationStore (default, single-process, 12h retention),
+      TflOmniDbSessionRevocationStore (shared, 30s check cache). Defines the
+      CBS_SESSIONREVOCATIONS entity with inline DDL (SQL Server / Oracle / PG).
+  Infrastructure\CbsAccessMiddleware.cs
+      The fail-closed guard. Cross-host rehydration from the cookie ticket;
+      global-logout revocation rejection (clears session + cookie, redirects to
+      login reason=sessionexpired); Auth:LoginUrl (default /Account/Login);
+      per-request single-session re-check via ISessionValidator.
+  Infrastructure\TflOmniDbXmlRepository.cs
+      Custom IXmlRepository persisting the DP key ring to
+      CBS_DATAPROTECTIONKEYS via Repository<T> (provider-agnostic). "The
+      foundation of cross-host SSO."
+  Infrastructure\DataProtectionKeyEntity.cs
+      The CBS_DATAPROTECTIONKEYS entity + DDL.
+  Services\CbsSessionStore.cs
+      AdoptSession / Stash / Adopt, SetMenu (derives AllowedUrls), Clear. Still
+      in-memory single-node (TODO: distributed).
+  Infrastructure\RequestLoggingMiddleware.cs
+      Sources cross-host correlation SessionId/user from cbs:sid before session
+      adoption.
+  DependencyInjection\CbsFrameworkExtensions.cs
+      The wiring: AddCbsDataProtection (KeyRing switch), AddCbsAuthCookie
+      (cookie options), Auth:SessionRevocation switch; UseCbsFramework adds
+      UseSession() + UseAuthentication() before the access middleware.
+
+LOGIN / LOGOUT / MODULE (controllers)
+  TflCbs.Core.Authentication.Web\Controllers\AccountController.cs
+      Login (CbsAuthCookie.SignInAsync), logout (revocations.RevokeAsync +
+      SignOutAsync), IsSafeReturnUrl open-redirect guard (honors local URLs or
+      Auth:AllowedReturnHosts).
+  TflCbs.Core.Authentication\AuthenticationService.cs
+      Credential/session service (login-attempt lockout, TraceLogoutTimeAsync,
+      session-active validation); the ISessionValidator port lives here.
+  TflCbs.Core.Authentication\AuthenticationModule.cs
+      Module registration (own assembly so thin hosts can AddCbsModules it).
+  TflCbs.Core.Shell.Web\Controllers\ModulesController.cs
+      Re-issues the CbsAuth cookie after module selection so the ticket carries
+      the chosen module (a later host jump lands straight in the module).
+
+THE MULTI-HOST TOPOLOGY (all run in shared-SSO mode)
+  Thin per-module hosts (each: domain module + core auth/shell only):
+      TflCbs.Host.Lockers          :5200 http / :7200 https
+      TflCbs.Host.Hr               :5300 http / :7300 https
+      TflCbs.Host.RetailBanking    :5400 http / :7400 https
+      TflCbs.Host.Administration   :5500 http / :7500 https
+      Each: appsettings.json sets DataProtection:KeyRing=TflOmniDb,
+      Auth:SessionRevocation=TflOmniDb, Auth:AllowedReturnHosts=["localhost"];
+      appsettings.Development.json points Auth:LoginUrl at the HTTPS gateway.
+      Program.cs loads the linked logmasking.json from AppContext.BaseDirectory
+      (see the linked-config note in section 6).
+  TflCbs.Gateway\
+      YARP reverse proxy on :5100/7100 giving the hosts one origin (one cookie
+      domain = the precondition for cross-host SSO). Routes /<Area>/* and its
+      _content to the owning thin host; everything else -> default host.
+      appsettings.Development.json overrides every cluster to its HTTPS backend
+      port (dev-only DangerousAcceptAnyServerCertificate), so a plain
+      `dotnet run` per project brings the whole HTTPS topology up.
+  TflCbs.Host.Main (default host)
+      Joins the shared cluster via the `https (shared-sso)` launch profile
+      (bakes KeyRing=TflOmniDb + SessionRevocation=TflOmniDb + AllowedReturn-
+      Hosts). Its plain https/http profiles stay single-host (FileSystem keys /
+      InMemory revocation) so everyday dev isn't coupled to the SSO tables.
+
+NOTES / HISTORY
+  BACKLOG.md   - "Cross-host SSO follow-ups (plumbing shipped in Workstream B)".
+  CHANGELOG.md - B1/B2/B3, C1/C2/C3, D1 thin host + proof, the interactive
+                 round-trip, and the routecutover.json fix (dated 2026-07-01).
+  .claude\memory\thin-host-linked-config-basedir.md - the linked-config lesson.
+
+
+==============================================================================
+ 5. CONFIGURATION KEYS
+==============================================================================
+Present in TflCbs.Host.Main\appsettings.json (default host) and
+TflCbs.Host.Lockers\appsettings.json (multi-host):
+
+  DataProtection:ApplicationName   default "TrustBankCBS" - MUST match across hosts.
+  DataProtection:KeyRing           TflOmniDb (shared, needed for SSO) | FileSystem (default) | Local
+  DataProtection:KeyRingPath       App_Data/DataProtection-Keys (FileSystem mode)
+  Auth:LoginUrl                    central login authority absolute URL on thin
+                                   hosts (http://localhost:5100/Account/Login);
+                                   local /Account/Login on the default host
+  Auth:SessionRevocation           TflOmniDb (shared) | InMemory (default) | Off
+  Auth:AllowedReturnHosts          array of trusted hosts for the post-login
+                                   open-redirect guard
+  Auth:Cookie:Name                 default "CbsAuth"
+  Auth:Cookie:Domain               cookie domain
+  Auth:Cookie:SameSite             default Lax
+  Auth:Cookie:SecurePolicy         default SameAsRequest
+  Auth:Cookie:ExpireMinutes        default 480 (sliding)
+
+For SSO across hosts, every host must share:
+  - the SAME DataProtection:ApplicationName,
+  - DataProtection:KeyRing = TflOmniDb (same DB),
+  - Auth:SessionRevocation = TflOmniDb (same DB),
+  - one gateway origin (one cookie domain).
+
+
+==============================================================================
+ 6. LINKED-CONFIG GOTCHA (bit the SSO demo once)
+==============================================================================
+Every thin host's csproj LINKS ..\config\logmasking.json with
+CopyToOutputDirectory=PreserveNewest. A linked file lands only in bin/, so
+Program.cs must load it via:
+    Path.Combine(AppContext.BaseDirectory, "logmasking.json")
+A relative AddJsonFile under `dotnet run` (content root = project dir) silently
+MISSES it. This is not SSO code, but its failure (then on routecutover.json,
+which was retired 2026-08-24) denied every migrated screen on the thin host and
+broke the cross-host demo. The same trap now applies to logmasking.json, which
+is loaded optional:false so a miss stops the host instead of silently disabling
+PII masking. (appsettings.json itself loads normally - it physically lives in
+the thin-host project dir.)
+
+
+==============================================================================
+ 7. HOW TO RUN THE SSO DEMO
+==============================================================================
+  1. The two shared tables must exist on the DB (already created on the dev
+     SQL Server AND Oracle; DDL lives in SessionRevocation.cs /
+     DataProtectionKeyEntity.cs): CBS_DATAPROTECTIONKEYS, CBS_SESSIONREVOCATIONS.
+  2. Run the processes - a plain `dotnet run` per project brings the HTTPS
+     topology up (the dev config is baked into launch profiles /
+     appsettings.Development.json, no launch-time args):
+        - gateway       TflCbs.Gateway            (:7100)
+        - default host  TflCbs.Host.Main           launch profile `https (shared-sso)`
+        - thin host(s)  TflCbs.Host.Hr            (:7300)
+                        TflCbs.Host.Lockers       (:7200)
+                        TflCbs.Host.RetailBanking (:7400)
+                        TflCbs.Host.Administration(:7500)   (any subset works)
+  3. Through the gateway (https://localhost:7100):
+        a. GET a thin-host screen unauthenticated -> 302 to the central login
+           with returnUrl.
+        b. Log in ONCE on the default host -> CbsAuth cookie issued (Secure).
+        c. Select a module.
+        d. Jump to /Hr/State, /Lockers/LockerType, /RetailBanking/
+           AccHoldingAmount, or /Administration/Module -> HTTP 200, NO re-login.
+        e. Global logout -> re-jump -> 302 back to login (revoked everywhere).
+
+
+==============================================================================
+ 8. IMPLEMENTED vs. MISSING
+==============================================================================
+IMPLEMENTED AND PROVEN
+  - Shared DP key ring (B1); the shared tables exist on the dev SQL Server AND
+    Oracle.
+  - Encrypted identity cookie + per-host rehydration (B2)
+  - Central-login redirect + global-logout revocation (B3)
+  - Gateway + FOUR thin hosts (Hr, Lockers, RetailBanking, Administration),
+    each proven end-to-end over HTTPS: login once -> jump renders 200 with no
+    re-login (cookie Secure=True); global logout revokes across all hosts.
+  - Permanent dev topology: HTTPS gateway/cluster config + thin-host LoginUrl
+    in appsettings.Development.json; default host joins via the
+    `https (shared-sso)` launch profile.
+  - SINGLE LOGIN AUTHORITY (login-defer): a host whose Auth:LoginUrl is an
+    absolute URL on a DIFFERENT origin refuses to serve its own login page --
+    AccountController 302s Login GET and POST to that authority (carrying
+    returnUrl/reason). Rule: the authority MINTS the CbsAuth cookie, every
+    other host only VALIDATES it. Loop-proof by origin comparison; relative/
+    empty LoginUrl (the default host) = "I am the authority", serve login
+    locally. To run a thin host truly standalone, override Auth:LoginUrl to
+    empty/relative.
+  - GATEWAY-ORIGIN CONSISTENCY (ForwardedHeaders): each host's Program.cs
+    calls app.UseCbsForwardedHeaders(config) as its FIRST middleware; when
+    "ForwardedHeaders": { "Enabled": true } (set on all 5 hosts) it honours
+    X-Forwarded-Proto/Host from the trusted proxy, so returnUrl and every
+    generated URL present the GATEWAY origin (no more backend-port leak).
+    YARP sends the headers by default -- no gateway change. Trust = loopback
+    by default (dev); set ForwardedHeaders:KnownProxies to the gateway IP(s)
+    in prod. Default (section absent) = off = standalone behaviour.
+
+DEPLOYMENT STANCE (decided 2026-07-07)
+  - Production "gateway-only" isolation of backend hosts is achieved by
+    NETWORK HARDENING: bind thin hosts to internal interfaces, restrict
+    inbound to the gateway via firewall/security groups (ClusterIP-style
+    internal services in containers). No app-level shared-secret header and
+    no mTLS (revisit only on a compliance/PKI driver). The soft canonical
+    redirect (bouncing arbitrary direct hits to the gateway origin) was
+    evaluated and DROPPED as not required -- login-defer + ForwardedHeaders
+    remove the harmful cases; in prod the network makes direct hits
+    impossible; in dev the entry point is the gateway by convention.
+
+MISSING / BACKLOG (BACKLOG.md)
+  - Admin force-logout UI/endpoint calling RevokeAsync.
+  - Password-change flow calling RevokeAsync (awaits change-password screen
+    migration).
+  - Deep-link returnUrl through module selection (a cross-host deep jump
+    currently lands on the module chooser first when no module is in the cookie).
+  - CbsSessionStore is still single-node in-memory (session externalization is
+    a separate backlog item).
+  - Denied-attempt audit is a TODO in the middleware.
+
+
+==============================================================================
+ 9. GLOSSARY
+==============================================================================
+  CbsAuth              the ASP.NET Core cookie authentication scheme used for SSO.
+  CbsSessionTicket     the compact identity slice serialized into the cookie.
+  Data Protection      ASP.NET Core's encrypt/sign subsystem; the shared key
+                       ring is what makes one host's cookie readable by another.
+  Key ring             the set of DP keys; stored in CBS_DATAPROTECTIONKEYS for
+                       SSO (KeyRing=TflOmniDb).
+  Revocation store     shared table (CBS_SESSIONREVOCATIONS) of killed sessions;
+                       enables global logout across hosts.
+  Rehydration          rebuilding the in-memory session on a jumped-to host from
+                       the cookie ticket (CbsSessionStore.AdoptSession).
+  Gateway              YARP reverse proxy giving all hosts one origin/cookie
+                       domain - the precondition for cross-host SSO.
+==============================================================================

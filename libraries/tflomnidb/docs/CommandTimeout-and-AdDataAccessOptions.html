@@ -1,0 +1,644 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Command timeout &amp;amp; the options bag — AdDataAccessOptions → DataAccessOptions</title>
+<style>
+:root{color-scheme:light dark}
+*{box-sizing:border-box}
+body{margin:0;background:#f6f8fa;color:#1f2328;font:16px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif}
+.wrap{max-width:900px;margin:0 auto;padding:32px 24px 96px}
+.card{background:#fff;border:1px solid #d0d7de;border-radius:10px;padding:40px 48px}
+h1,h2,h3{line-height:1.25;font-weight:600}
+h1{font-size:1.9rem;margin:0 0 .3em;padding-bottom:.3em;border-bottom:1px solid #d8dee4}
+h2{font-size:1.4rem;margin:1.8em 0 .6em;padding-bottom:.25em;border-bottom:1px solid #eaeef2}
+h3{font-size:1.12rem;margin:1.4em 0 .5em}
+p,li{margin:.5em 0}
+a{color:#0969da;text-decoration:none}
+a:hover{text-decoration:underline}
+code{font-family:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;font-size:.86em;background:#eff1f3;padding:.15em .4em;border-radius:6px}
+pre{background:#f6f8fa;border:1px solid #d8dee4;border-radius:8px;padding:14px 16px;overflow:auto}
+pre code{background:none;padding:0;font-size:.85em;line-height:1.45}
+blockquote{margin:1em 0;padding:.4em 1em;color:#3d444d;border-left:4px solid #d0d7de;background:#f6f8fa;border-radius:0 6px 6px 0}
+blockquote>:first-child{margin-top:0}blockquote>:last-child{margin-bottom:0}
+table{border-collapse:collapse;width:100%;margin:1em 0;display:block;overflow:auto}
+th,td{border:1px solid #d0d7de;padding:8px 12px;text-align:left;vertical-align:top}
+th{background:#f6f8fa;font-weight:600}
+tr:nth-child(2n) td{background:#f6f8fa}
+hr{border:0;border-top:1px solid #d8dee4;margin:2em 0}
+pre{position:relative}
+pre>button.copy{position:absolute;top:8px;right:8px;padding:5px 9px;cursor:pointer;
+  font:600 .68rem/1 ui-monospace,SFMono-Regular,Consolas,monospace;letter-spacing:.03em;
+  color:#636c76;background:#fff;border:1px solid #d0d7de;border-radius:6px;
+  opacity:0;transition:opacity .12s}
+pre:hover>button.copy,pre>button.copy:focus{opacity:1}
+pre>button.copy.done{color:#0a3622;background:#dafbe1;border-color:#4ac26b}
+@media(hover:none){pre>button.copy{opacity:1}}
+td code.cp{cursor:pointer}
+td code.cp:hover,td code.cp:focus{outline:1px solid #8c959f;outline-offset:1px}
+td code.cp.done{color:#0a3622;background:#dafbe1}
+.docnav{margin:0 0 20px;font-size:.85rem;color:#636c76}
+.docnav a{color:#636c76}
+ul{padding-left:1.4em}ol{padding-left:1.4em}
+@media(max-width:640px){.card{padding:24px 18px}.wrap{padding:16px 10px 64px}}
+@media(prefers-color-scheme:dark){
+ body{background:#0d1117;color:#e6edf3}
+ .card{background:#161b22;border-color:#30363d}
+ h1{border-color:#30363d}h2{border-color:#21262d}
+ code{background:#262c34}
+ pre{background:#0d1117;border-color:#30363d}
+ blockquote{background:#161b22;border-color:#30363d;color:#9198a1}
+ th,td{border-color:#30363d}th{background:#161b22}tr:nth-child(2n) td{background:#12171e}
+ a{color:#4493f8}.docnav,.docnav a{color:#9198a1}
+ hr{border-color:#30363d}
+ pre>button.copy{color:#9198a1;background:#161b22;border-color:#30363d}
+ pre>button.copy.done{color:#aff5b4;background:#1b4721;border-color:#2ea043}
+ td code.cp.done{color:#aff5b4;background:#1b4721}
+}
+</style></head>
+<body><div class="wrap"><div class="card">
+<div class="docnav"><a href="../../../index.html">&#8592; All docs</a></div>
+<h1 id="command-timeout-the-options-bag-addataaccessoptions-dataaccessoptions">Command timeout &amp; the options bag — <code>AdDataAccessOptions</code> → <code>DataAccessOptions</code></h1>
+<p>The deep-dive referenced from
+<a href="AdDataAccessComponent-vs-TflOmniDb.html">AdDataAccessComponent-vs-TflOmniDb.md</a> and
+<a href="Migration-from-AdDataAccessComponent.html">Migration-from-AdDataAccessComponent.md</a> §3a–3b: how the legacy
+per-call <code>CommandTimeout</code> worked, what replaced it, exactly how precedence resolves, and how the rest of the
+old god-options bag decomposed.</p>
+<p><strong>The one-line answer:</strong> the legacy per-call <code>AdDataAccessOptions.CommandTimeout</code> became <strong>connection-level
+config plus an ambient scope</strong> — <code>DataAccessOptions.CommandTimeoutSeconds</code> for the durable default,
+<code>data.UseCommandTimeout(n)</code> for the one operation that needs more headroom.</p>
+<hr />
+<h2 id="contents">Contents</h2>
+<ol>
+<li><a href="#1-how-the-legacy-component-did-it">How the legacy component did it</a></li>
+<li><a href="#2-how-tflomnidb-does-it">How TflOmniDb does it</a></li>
+<li><a href="#3-precedence-exactly">Precedence, exactly</a></li>
+<li><a href="#4-where-the-timeout-is-applied--and-where-it-isnt">Where the timeout is applied — and where it isn't</a></li>
+<li><a href="#5-server-side-timeout-vs-cancellationtoken">Server-side timeout vs <code>CancellationToken</code></a></li>
+<li><a href="#6-the-options-bag-field-by-field">The options bag, field by field</a></li>
+<li><a href="#7-binding-from-configuration">Binding from configuration</a></li>
+<li><a href="#8-worked-examples">Worked examples</a></li>
+<li><a href="#9-migration-map">Migration map</a></li>
+<li><a href="#10-gotchas">Gotchas</a></li>
+<li><a href="#11-coverage">Coverage</a></li>
+</ol>
+<hr />
+<h2 id="1-how-the-legacy-component-did-it">1. How the legacy component did it</h2>
+<p><code>AdDataAccessComponent</code> carried a single mutable <code>AdDataAccessOptions</code> bag through every call —
+<code>Insert</code> / <code>Update</code> / <code>Delete</code> / <code>Select</code> / <code>Count</code> / <code>Max</code> / <code>Execute</code> all took the same class. Alongside
+<code>Entity</code>, <code>Criteria</code>, <code>PkValue</code>, <code>Query</code>, <code>ColumnName</code>, <code>StoredProcedureName</code>, <code>ConnectionInfo</code>, <code>Transaction</code>
+and the <code>NewPkValue</code> out-param, it carried <strong><code>CommandTimeout</code></strong>.</p>
+<p>Two consequences shaped the replacement:</p>
+<ul>
+<li><strong>The timeout was per call.</strong> Every call site could set its own, which sounds flexible and in practice meant
+  the value was copy-pasted, drifted between call sites, and was invisible in one place.</li>
+<li><strong>The fallback was a global.</strong> When the bag left <code>CommandTimeout</code> unset, the Enterprise Library configuration
+  (<code>ConfigManager.CommandTimeOut</code>) supplied it — a process-wide static reached from anywhere.</li>
+</ul>
+<p>So the legacy model was <em>ambient global, overridable per call</em>. TflOmniDb keeps that shape but makes both halves
+explicit and scoped.</p>
+<hr />
+<h2 id="2-how-tflomnidb-does-it">2. How TflOmniDb does it</h2>
+<p>Two levels, and a third for bulk:</p>
+<pre><code class="language-csharp">// 1 ── durable default: connection-level, set once
+var data = new DataAccess(new DataAccessOptions
+{
+    Provider              = DbProvider.SqlServer,
+    ConnectionString      = cs,
+    CommandTimeoutSeconds = 60,          // legacy AdDataAccessOptions.CommandTimeout = 60
+});
+
+// 2 ── ambient override: this block only
+using (data.UseCommandTimeout(300))      // 5 minutes
+{
+    var report = await data.QueryAsync&lt;Summary&gt;(heavyReportSql);
+}                                        // reverts to 60 on dispose
+
+// 3 ── bulk insert has its own knob (different underlying API)
+await repo.BulkInsertAsync(rows, new BulkInsertOptions { TimeoutSeconds = 600 });
+</code></pre>
+<p><code>CommandTimeoutSeconds</code> sits with the other connection-level settings (<code>DefaultSchema</code>, <code>Retry</code>, the logging
+switches) because it is the same kind of thing: a property of <em>this connection to this database</em>, not of one
+statement.</p>
+<p><code>UseCommandTimeout</code> is the escape hatch for the genuine exception — a nightly report, a large batch read, a slow
+procedure — without standing up a second <code>DataAccess</code>. It mirrors <code>UseDirtyReads()</code> exactly: an
+<code>AsyncLocal&lt;int?&gt;</code> that flows through <code>await</code>, across threads, nests (an inner scope shadows an outer one) and
+restores the previous value on dispose.</p>
+<pre><code class="language-csharp">public IDisposable UseCommandTimeout(int seconds)   // net10 leg
+</code></pre>
+<ul>
+<li><code>seconds</code> must be <strong>non-negative</strong> — a negative value throws <code>ArgumentOutOfRangeException</code>.</li>
+<li><strong><code>0</code> means no timeout</strong> (wait indefinitely), matching ADO.NET semantics.</li>
+<li>The scope is process-flow-local, <strong>not</strong> per <code>DataAccess</code> instance: the backing field is static, so the scope
+  affects any <code>DataAccess</code> used inside it. In practice a host has one instance per database, so this is what you
+  want — but be aware of it in a multi-database process.</li>
+</ul>
+<hr />
+<h2 id="3-precedence-exactly">3. Precedence, exactly</h2>
+<p>One method decides, and every executor defers to it:</p>
+<pre><code class="language-csharp">internal static int? ResolveCommandTimeout(int? optionsValue) =&gt; _commandTimeoutOverride.Value ?? optionsValue;
+</code></pre>
+<table>
+<thead>
+<tr>
+<th>Scope active?</th>
+<th><code>CommandTimeoutSeconds</code></th>
+<th>Effective <code>DbCommand.CommandTimeout</code></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>yes (<code>n</code>)</td>
+<td>anything</td>
+<td><strong><code>n</code></strong> — the scope always wins</td>
+</tr>
+<tr>
+<td>yes (<code>0</code>)</td>
+<td>anything</td>
+<td><strong>no timeout</strong></td>
+</tr>
+<tr>
+<td>no</td>
+<td><code>60</code></td>
+<td><strong>60</strong></td>
+</tr>
+<tr>
+<td>no</td>
+<td><code>null</code></td>
+<td><strong>provider default</strong> (30 s on SqlClient) — the DAL does not touch <code>CommandTimeout</code> at all</td>
+</tr>
+</tbody>
+</table>
+<p>The rule is deliberately dull: <strong>innermost scope wins; otherwise the instance value; otherwise the provider
+default.</strong> Because it lives in one place (<code>DataAccess.ResolveCommandTimeout</code>), that is also the single line to
+change if the rule ever moves — the executors have no opinion of their own.</p>
+<p>Nested scopes shadow and restore in order:</p>
+<pre><code class="language-csharp">// instance default: 60
+using (data.UseCommandTimeout(300))
+{
+    // 300 here
+    using (data.UseCommandTimeout(10))
+    {
+        // 10 here
+    }
+    // back to 300
+}
+// back to 60
+</code></pre>
+<hr />
+<h2 id="4-where-the-timeout-is-applied-and-where-it-isnt">4. Where the timeout is applied — and where it isn't</h2>
+<p><strong>Applied.</strong> All three executors call the same resolver:</p>
+<table>
+<thead>
+<tr>
+<th>Path</th>
+<th>Call site</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Typed CRUD, filtered reads, projections, scalar aggregates</td>
+<td><code>Repository&lt;T&gt;.ApplyTimeout(cmd)</code></td>
+</tr>
+<tr>
+<td>Raw SQL — <code>QueryAsync</code>, <code>ExecuteScalarAsync</code>, <code>ExistsAsync</code>, <code>ExecuteNonQueryAsync</code>, streaming</td>
+<td><code>RawQueryExecutor</code></td>
+</tr>
+<tr>
+<td>Stored procedures — all three entry points</td>
+<td><code>StoredProcedureExecutor</code></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Not applied.</strong></p>
+<ul>
+<li><strong>Bulk insert</strong> keeps <code>BulkInsertOptions.TimeoutSeconds</code>. The provider bulk APIs (<code>SqlBulkCopy</code>,
+  <code>NpgsqlBinaryImporter</code>, <code>OracleBulkCopy</code>) expose a separate <code>BulkCopyTimeout</code> that is not <code>DbCommand.CommandTimeout</code>
+  — one knob could not honestly cover both.</li>
+<li><strong>Enumeration time on a streaming read.</strong> <code>CommandTimeout</code> bounds <em>command execution</em> — up to the point the
+  provider returns the first result — not the time you then spend enumerating the reader. A <code>StreamAllAsync</code> that
+  takes ten minutes to consume will not trip a 30-second command timeout. Bound that with a <code>CancellationToken</code>.</li>
+</ul>
+<hr />
+<h2 id="5-server-side-timeout-vs-cancellationtoken">5. Server-side timeout vs <code>CancellationToken</code></h2>
+<p>They are different mechanisms and a robust call site often wants both:</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th><code>CommandTimeout</code> / <code>UseCommandTimeout</code></th>
+<th><code>CancellationToken</code></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Enforced by</td>
+<td>The <strong>provider/server</strong> — it aborts the command</td>
+<td>The <strong>client</strong> — it stops waiting</td>
+</tr>
+<tr>
+<td>Bounds</td>
+<td>Command execution</td>
+<td>The whole async operation, including enumeration</td>
+</tr>
+<tr>
+<td>On expiry</td>
+<td>A provider timeout exception (SQL Server: <code>SqlException</code> number −2)</td>
+<td><code>OperationCanceledException</code></td>
+</tr>
+<tr>
+<td>Retryable?</td>
+<td>Only when <code>RetryOptions.RetryOnTimeout = true</code> — <strong>off by default</strong>, because a timed-out non-idempotent write may already have committed on the server</td>
+<td>Not a transient fault; never retried</td>
+</tr>
+</tbody>
+</table>
+<pre><code class="language-csharp">using var cts = new CancellationTokenSource(TimeSpan.FromMinutes(2));
+using (data.UseCommandTimeout(90))
+{
+    var rows = await data.QueryAsync&lt;Summary&gt;(sql, pars, cts.Token);
+}
+</code></pre>
+<p>Every async method on the DAL takes a <code>CancellationToken</code>, so a per-call <em>client</em> deadline needs no ambient
+scope at all.</p>
+<hr />
+<h2 id="6-the-options-bag-field-by-field">6. The options bag, field by field</h2>
+<p><code>DataAccessOptions</code> is the durable half of what <code>AdDataAccessOptions</code> used to carry. Everything here is
+connection-level; nothing here is per call.</p>
+<table>
+<thead>
+<tr>
+<th>Member</th>
+<th>Type</th>
+<th>Default</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>Provider</code></td>
+<td><code>DbProvider</code></td>
+<td>—</td>
+<td><strong><code>required init</code></strong> on the net10 leg. Carrying it here is what removes <code>if (provider == SqlServer)</code> from call sites</td>
+</tr>
+<tr>
+<td><code>ConnectionString</code></td>
+<td><code>string</code></td>
+<td>—</td>
+<td><strong><code>required init</code></strong></td>
+</tr>
+<tr>
+<td><code>DefaultSchema</code></td>
+<td><code>string?</code></td>
+<td><code>"dbo"</code></td>
+<td>Per-deployment, not per entity — <code>dbo</code> in production, a per-tenant schema in QA. Empty/null emits unqualified table names</td>
+</tr>
+<tr>
+<td><code>CommandTimeoutSeconds</code></td>
+<td><code>int?</code></td>
+<td><code>null</code></td>
+<td><code>null</code> ⇒ provider default. See §3</td>
+</tr>
+<tr>
+<td><code>Retry</code></td>
+<td><code>RetryOptions?</code></td>
+<td><code>null</code></td>
+<td><code>null</code> ⇒ <strong>no retry</strong>, unchanged behaviour</td>
+</tr>
+<tr>
+<td><code>LoggerFactory</code></td>
+<td><code>ILoggerFactory?</code></td>
+<td><code>null</code></td>
+<td><code>null</code> ⇒ <code>NullLogger</code> — logging is opt-in</td>
+</tr>
+<tr>
+<td><code>LoggingEnabled</code></td>
+<td><code>bool</code></td>
+<td><code>true</code></td>
+<td>Per-instance switch for the "starting/completed" entries. Errors log regardless</td>
+</tr>
+<tr>
+<td><code>LogParameterValues</code></td>
+<td><code>bool</code></td>
+<td><code>false</code></td>
+<td><strong>Off by default</strong> — values may carry PII or account numbers</td>
+</tr>
+<tr>
+<td><code>MutationLogLevel</code></td>
+<td><code>LogLevel</code></td>
+<td><code>Information</code></td>
+<td>INSERT / UPDATE / DELETE — high enough to survive a prod filter, so the write trail stays visible</td>
+</tr>
+<tr>
+<td><code>QueryLogLevel</code></td>
+<td><code>LogLevel</code></td>
+<td><code>Debug</code></td>
+<td>Reads — low enough that high-volume SELECTs don't drown the log</td>
+</tr>
+<tr>
+<td><code>GloballyEnabled</code></td>
+<td><code>static bool</code></td>
+<td><code>true</code></td>
+<td><strong>Process-wide</strong> kill switch, ANDed on top of every instance. Designed to be flipped from an admin UI without a restart. An explicit <code>EnableLogging()</code> scope still wins over it</td>
+</tr>
+</tbody>
+</table>
+<p>Note the asymmetry that mirrors the timeout design: <code>LoggingEnabled</code> is per instance, <code>GloballyEnabled</code> is
+process-wide, and the <code>SuppressLogging()</code> / <code>EnableLogging()</code> scopes override both for a block — the same
+<em>durable value + ambient scope</em> shape.</p>
+<hr />
+<h2 id="7-binding-from-configuration">7. Binding from configuration</h2>
+<p><code>DataAccessOptionsBuilder</code> reads the host's <strong><code>&lt;appSettings&gt;</code></strong> through <code>System.Configuration.ConfigurationManager</code>,
+under a configurable key prefix (<code>DefaultPrefix = "TflOmniDb"</code>):</p>
+<pre><code class="language-csharp">var opts = DataAccessOptionsBuilder.FromAppSettings();          // or FromAppSettings(&quot;MyApp:Db&quot;)
+opts.LoggerFactory = myLoggerFactory;                            // not expressible in config
+var data = new DataAccess(opts);
+</code></pre>
+<table>
+<thead>
+<tr>
+<th>Key (default prefix)</th>
+<th>Maps to</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>TflOmniDb:Provider</code></td>
+<td><code>Provider</code></td>
+<td>Case-insensitive <code>SqlServer</code> / <code>Oracle</code> / <code>PostgreSql</code>. Absent ⇒ <code>SqlServer</code>. Unrecognised ⇒ <code>ConfigurationErrorsException</code></td>
+</tr>
+<tr>
+<td><code>TflOmniDb:ConnectionString</code></td>
+<td><code>ConnectionString</code></td>
+<td>Absent ⇒ empty string</td>
+</tr>
+<tr>
+<td><code>TflOmniDb:DefaultSchema</code></td>
+<td><code>DefaultSchema</code></td>
+<td>An <strong>empty-string</strong> value is honoured (unqualified table names)</td>
+</tr>
+<tr>
+<td><code>TflOmniDb:CommandTimeoutSeconds</code></td>
+<td><code>CommandTimeoutSeconds</code></td>
+<td>Non-numeric values are ignored, leaving the existing value</td>
+</tr>
+<tr>
+<td><code>TflOmniDb:LoggingEnabled</code></td>
+<td><code>LoggingEnabled</code></td>
+<td></td>
+</tr>
+<tr>
+<td><code>TflOmniDb:LogParameterValues</code></td>
+<td><code>LogParameterValues</code></td>
+<td></td>
+</tr>
+<tr>
+<td><code>TflOmniDb:GloballyEnabled</code></td>
+<td><code>DataAccessOptions.GloballyEnabled</code></td>
+<td><strong>Side effect</strong> — assigns the process-wide static, not the instance. Absent ⇒ the static keeps its current value</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Not bindable</strong>, by nature: <code>LoggerFactory</code> (an object), <code>Retry</code> (a nested policy), <code>MutationLogLevel</code> /
+<code>QueryLogLevel</code>. Set those programmatically.</p>
+<p><code>ApplyAppSettings(options, prefix)</code> patches the <strong>mutable</strong> properties onto an existing instance — safe to layer
+config over programmatic defaults, since an absent key leaves its property untouched. It cannot patch <code>Provider</code>
+or <code>ConnectionString</code>: on the net10 leg those are <code>required init</code> and only <code>FromAppSettings</code> can supply them, at
+construction.</p>
+<blockquote>
+<p><strong>Which configuration system?</strong> <code>DataAccessOptionsBuilder</code> reads <code>&lt;appSettings&gt;</code> (app.config / web.config).
+A modern host using <code>appsettings.json</code> binds <code>Microsoft.Extensions.Configuration</code> itself and constructs
+<code>DataAccessOptions</code> directly — which is what <code>TflOmniDb.Demo</code> does under its <code>TflOmniDb</code> section. Both end at
+the same object; only the reader differs.</p>
+</blockquote>
+<hr />
+<h2 id="8-worked-examples">8. Worked examples</h2>
+<p><strong>One slow report, everything else normal.</strong> The common case, and the reason the scope exists.</p>
+<pre><code class="language-csharp">using (data.UseCommandTimeout(600))
+    return await SqlQuery.From(&quot;LEDGER&quot;, &quot;l&quot;, data.Options.Provider)
+        .Select(&quot;l.BRANCH_ID&quot;, &quot;SUM(l.AMOUNT) AS TOTAL&quot;)
+        .WhereIf(from is not null, &quot;l.POSTED_ON &gt;= @from&quot;, (&quot;from&quot;, from))
+        .GroupBy(&quot;l.BRANCH_ID&quot;)
+        .ToListAsync&lt;BranchTotal&gt;(data);
+</code></pre>
+<p><strong>A whole transaction with more headroom.</strong> The scope covers everything inside it, including the unit of work.</p>
+<pre><code class="language-csharp">using (data.UseCommandTimeout(120))
+await using (var uow = await data.BeginTransactionAsync())
+{
+    await uow.Repository&lt;B_ACCOUNT&gt;().UpdateAsync(debited);
+    await uow.ExecuteNonQueryAsync(slowReconcileSql);
+    await uow.CommitAsync();
+}
+</code></pre>
+<p><strong>Tighten, don't only loosen.</strong> A scope can also shorten the timeout — useful on a user-facing path that must
+fail fast rather than hold a request thread.</p>
+<pre><code class="language-csharp">using (data.UseCommandTimeout(3))
+    return await repo.AnyAsync(x =&gt; x.STATUS == 1);
+</code></pre>
+<p><strong>Both bounds on a user request.</strong></p>
+<pre><code class="language-csharp">using (data.UseCommandTimeout(30))                       // server aborts the command at 30s
+    return await repo.WhereAsync(predicate, take: 100,
+                                 ct: httpContext.RequestAborted);   // client gives up if the caller disconnects
+</code></pre>
+<p><strong>Legacy per-call sites, mechanically.</strong> Wherever the old code set the bag's <code>CommandTimeout</code> for one call:</p>
+<pre><code class="language-vb">' legacy
+Dim opts As New AdDataAccessOptions()
+opts.CommandTimeout = 300
+opts.Query = heavySql
+AdDataAccess.Execute(opts)
+</code></pre>
+<pre><code class="language-csharp">// TflOmniDb
+using (data.UseCommandTimeout(300))
+    await data.ExecuteNonQueryAsync(heavySql);
+</code></pre>
+<p><strong>When a second <code>DataAccess</code> is still right.</strong> If two workloads have durably different profiles — an OLTP path
+and a reporting path — give them separate instances rather than wrapping every reporting call in a scope. Ambient
+scopes are for exceptions; durable differences belong in configuration.</p>
+<hr />
+<h2 id="9-migration-map">9. Migration map</h2>
+<p>The rest of the old bag, for completeness (expanded from
+<a href="Migration-from-AdDataAccessComponent.html">Migration-from-AdDataAccessComponent.md</a> §3a):</p>
+<table>
+<thead>
+<tr>
+<th><code>AdDataAccessOptions</code> field</th>
+<th>TflOmniDb home</th>
+<th>Kind</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>ConnectionInfo</code></td>
+<td><code>DataAccessOptions.ConnectionString</code> + <code>Provider</code></td>
+<td>durable config</td>
+</tr>
+<tr>
+<td><code>CommandTimeout</code></td>
+<td><code>DataAccessOptions.CommandTimeoutSeconds</code> + <code>UseCommandTimeout(n)</code></td>
+<td>durable config + ambient scope</td>
+</tr>
+<tr>
+<td><code>Entity</code> / <code>EntityType</code></td>
+<td>the <code>Repository&lt;T&gt;</code> type parameter and the entity argument</td>
+<td>type system</td>
+</tr>
+<tr>
+<td><code>Criteria</code> (string WHERE)</td>
+<td><code>Expression&lt;Func&lt;T,bool&gt;&gt;</code> predicate argument</td>
+<td>typed argument</td>
+</tr>
+<tr>
+<td><code>PkValue</code></td>
+<td>the <code>keys</code> argument to <code>GetAsync</code></td>
+<td>typed argument</td>
+</tr>
+<tr>
+<td><code>Query</code> (raw SQL)</td>
+<td>the <code>sql</code> argument to <code>QueryAsync</code> / <code>ExecuteNonQueryAsync</code></td>
+<td>typed argument</td>
+</tr>
+<tr>
+<td><code>ColumnName</code> (for <code>Max</code> / <code>Min</code>)</td>
+<td>the <code>x =&gt; x.Col</code> selector on <code>MaxAsync</code> / <code>MinAsync</code></td>
+<td>typed argument</td>
+</tr>
+<tr>
+<td><code>StoredProcedureName</code> + <code>StoredProcedureParamList</code></td>
+<td><code>StoredProcedureCall</code> in, <code>StoredProcedureResult</code> out</td>
+<td>typed objects</td>
+</tr>
+<tr>
+<td><code>Transaction</code></td>
+<td>an <code>IUnitOfWork</code> from <code>BeginTransactionAsync</code></td>
+<td>scope, not a field</td>
+</tr>
+<tr>
+<td><code>NewPkValue</code> (out)</td>
+<td>written back into the entity by <code>InsertAsync</code></td>
+<td>return path</td>
+</tr>
+<tr>
+<td><em>(bulk tuning)</em></td>
+<td><code>BulkInsertOptions</code></td>
+<td>per-operation options</td>
+</tr>
+<tr>
+<td><em>(EntLib <code>ConfigManager.CommandTimeOut</code>)</em></td>
+<td><code>DataAccessOptionsBuilder</code> + <code>TflOmniDb:CommandTimeoutSeconds</code></td>
+<td>config binding</td>
+</tr>
+</tbody>
+</table>
+<p>The through-line: <strong>durable config is set once and lives in one object; per-call inputs are strongly-typed
+method arguments; genuinely ambient concerns (timeout, dirty reads, correlation, logging) are <code>using</code> scopes
+that restore themselves.</strong> Nothing is a mutable field poked onto a shared bag.</p>
+<hr />
+<h2 id="10-gotchas">10. Gotchas</h2>
+<table>
+<thead>
+<tr>
+<th>Symptom</th>
+<th>Cause</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>The scope seems to have no effect</td>
+<td>The scope must be entered <strong>before</strong> the <code>await</code>, and the operation must run inside it. <code>using (...) ;</code> followed by a later call is a no-op. It is also flow-local — starting a fire-and-forget <code>Task</code> outside the scope will not carry it</td>
+</tr>
+<tr>
+<td><code>ArgumentOutOfRangeException</code> from <code>UseCommandTimeout</code></td>
+<td>A negative value. <code>0</code> is legal and means <em>no timeout</em></td>
+</tr>
+<tr>
+<td>A scope of <code>0</code> hangs forever</td>
+<td>That is what <code>0</code> means. Pair it with a <code>CancellationToken</code></td>
+</tr>
+<tr>
+<td>Bulk insert ignores the scope</td>
+<td>By design — use <code>BulkInsertOptions.TimeoutSeconds</code></td>
+</tr>
+<tr>
+<td>A long <code>await foreach</code> times out anyway, or doesn't</td>
+<td><code>CommandTimeout</code> bounds command execution, not enumeration. Bound long enumerations with a token</td>
+</tr>
+<tr>
+<td>Timeouts are never retried</td>
+<td>Correct by default. <code>RetryOptions.RetryOnTimeout = true</code> opts in — do that only for idempotent reads</td>
+</tr>
+<tr>
+<td>A timeout set in config didn't apply</td>
+<td>Check the key prefix (<code>TflOmniDb:</code> unless you passed another), and remember non-numeric values are silently ignored. If the host binds <code>appsettings.json</code> itself, <code>DataAccessOptionsBuilder</code> is not in the picture at all</td>
+</tr>
+<tr>
+<td>Two databases in one process, wrong timeout</td>
+<td>The override is a process-flow static, so a scope entered around calls to <em>both</em> instances applies to both</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="11-coverage">11. Coverage</h2>
+<table>
+<thead>
+<tr>
+<th>Level</th>
+<th>What</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Unit, no DB</td>
+<td><code>CommandTimeoutScopeTests</code> — precedence, nesting/shadowing, restore on dispose, <code>0</code> and negative handling</td>
+</tr>
+<tr>
+<td>Live</td>
+<td><code>SqlServerCommandTimeoutTests</code> — proves it in both directions: a command that times out under a tight scope and completes under a wide one</td>
+</tr>
+<tr>
+<td>Demo</td>
+<td>Menu entry <strong>#23 <code>CommandTimeout</code></strong> in <code>TflOmniDb.Demo</code>; the resiliency entry forces a real command timeout to show the retry loop</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<p><strong>See also:</strong> <a href="usage-guide.html#18-command-timeout">usage-guide.md §18 Command timeout</a> ·
+<a href="api-reference.html#dataaccessoptions">api-reference.md — <code>DataAccessOptions</code></a> ·
+<a href="components.html#2-what-each-layer-owns">components.md §2 <code>Repository/</code></a> for where the resolver sits.</p>
+</div></div>
+<script>
+(function(){
+ function put(t){
+  if(navigator.clipboard&&navigator.clipboard.writeText)return navigator.clipboard.writeText(t);
+  return new Promise(function(res,rej){
+   var a=document.createElement('textarea');a.value=t;a.setAttribute('readonly','');
+   a.style.cssText='position:fixed;top:0;left:0;opacity:0';document.body.appendChild(a);
+   a.select();var ok=false;try{ok=document.execCommand('copy')}catch(e){}
+   document.body.removeChild(a);ok?res():rej()});
+ }
+ function flash(el,txt,ms){
+  var was=el.textContent;el.classList.add('done');if(txt)el.textContent=txt;
+  setTimeout(function(){el.classList.remove('done');if(txt)el.textContent=was},ms||1200);
+ }
+ function copy(text,el,okTxt){
+  put(text).then(function(){flash(el,okTxt)},function(){
+   if(okTxt){var w=el.textContent;el.textContent='Ctrl+C';setTimeout(function(){el.textContent=w},2000)}});
+ }
+ document.querySelectorAll('pre').forEach(function(pre){
+  if(pre.classList.contains('txtdoc'))return;
+  var b=document.createElement('button');
+  b.type='button';b.className='copy';b.textContent='Copy';
+  b.setAttribute('aria-label','Copy this code block to the clipboard');
+  b.addEventListener('click',function(){copy((pre.querySelector('code')||pre).innerText,b,'Copied')});
+  pre.appendChild(b);
+ });
+ document.querySelectorAll('td code').forEach(function(c){
+  if(!c.textContent.trim())return;
+  c.classList.add('cp');c.tabIndex=0;c.setAttribute('role','button');
+  c.title='Click to copy';
+  c.addEventListener('click',function(){copy(c.textContent,c)});
+  c.addEventListener('keydown',function(e){
+   if(e.key==='Enter'||e.key===' '){e.preventDefault();copy(c.textContent,c)}});
+ });
+})();
+</script>
+</body></html>

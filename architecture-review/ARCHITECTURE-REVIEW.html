@@ -1,0 +1,1102 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>TrustBank CBS (.NET 10) — Principal-Level Architecture Review</title>
+<style>
+:root{color-scheme:light dark}
+*{box-sizing:border-box}
+body{margin:0;background:#f6f8fa;color:#1f2328;font:16px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif}
+.wrap{max-width:900px;margin:0 auto;padding:32px 24px 96px}
+.card{background:#fff;border:1px solid #d0d7de;border-radius:10px;padding:40px 48px}
+h1,h2,h3{line-height:1.25;font-weight:600}
+h1{font-size:1.9rem;margin:0 0 .3em;padding-bottom:.3em;border-bottom:1px solid #d8dee4}
+h2{font-size:1.4rem;margin:1.8em 0 .6em;padding-bottom:.25em;border-bottom:1px solid #eaeef2}
+h3{font-size:1.12rem;margin:1.4em 0 .5em}
+p,li{margin:.5em 0}
+a{color:#0969da;text-decoration:none}
+a:hover{text-decoration:underline}
+code{font-family:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;font-size:.86em;background:#eff1f3;padding:.15em .4em;border-radius:6px}
+pre{background:#f6f8fa;border:1px solid #d8dee4;border-radius:8px;padding:14px 16px;overflow:auto}
+pre code{background:none;padding:0;font-size:.85em;line-height:1.45}
+blockquote{margin:1em 0;padding:.4em 1em;color:#3d444d;border-left:4px solid #d0d7de;background:#f6f8fa;border-radius:0 6px 6px 0}
+blockquote>:first-child{margin-top:0}blockquote>:last-child{margin-bottom:0}
+table{border-collapse:collapse;width:100%;margin:1em 0;display:block;overflow:auto}
+th,td{border:1px solid #d0d7de;padding:8px 12px;text-align:left;vertical-align:top}
+th{background:#f6f8fa;font-weight:600}
+tr:nth-child(2n) td{background:#f6f8fa}
+hr{border:0;border-top:1px solid #d8dee4;margin:2em 0}
+pre{position:relative}
+pre>button.copy{position:absolute;top:8px;right:8px;padding:5px 9px;cursor:pointer;
+  font:600 .68rem/1 ui-monospace,SFMono-Regular,Consolas,monospace;letter-spacing:.03em;
+  color:#636c76;background:#fff;border:1px solid #d0d7de;border-radius:6px;
+  opacity:0;transition:opacity .12s}
+pre:hover>button.copy,pre>button.copy:focus{opacity:1}
+pre>button.copy.done{color:#0a3622;background:#dafbe1;border-color:#4ac26b}
+@media(hover:none){pre>button.copy{opacity:1}}
+td code.cp{cursor:pointer}
+td code.cp:hover,td code.cp:focus{outline:1px solid #8c959f;outline-offset:1px}
+td code.cp.done{color:#0a3622;background:#dafbe1}
+.docnav{margin:0 0 20px;font-size:.85rem;color:#636c76}
+.docnav a{color:#636c76}
+ul{padding-left:1.4em}ol{padding-left:1.4em}
+@media(max-width:640px){.card{padding:24px 18px}.wrap{padding:16px 10px 64px}}
+@media(prefers-color-scheme:dark){
+ body{background:#0d1117;color:#e6edf3}
+ .card{background:#161b22;border-color:#30363d}
+ h1{border-color:#30363d}h2{border-color:#21262d}
+ code{background:#262c34}
+ pre{background:#0d1117;border-color:#30363d}
+ blockquote{background:#161b22;border-color:#30363d;color:#9198a1}
+ th,td{border-color:#30363d}th{background:#161b22}tr:nth-child(2n) td{background:#12171e}
+ a{color:#4493f8}.docnav,.docnav a{color:#9198a1}
+ hr{border-color:#30363d}
+ pre>button.copy{color:#9198a1;background:#161b22;border-color:#30363d}
+ pre>button.copy.done{color:#aff5b4;background:#1b4721;border-color:#2ea043}
+ td code.cp.done{color:#aff5b4;background:#1b4721}
+}
+</style></head>
+<body><div class="wrap"><div class="card">
+<div class="docnav"><a href="../index.html">&#8592; All docs</a></div>
+<h1 id="trustbank-cbs-net-10-principal-level-architecture-review">TrustBank CBS (.NET 10) — Principal-Level Architecture Review</h1>
+<p><strong>System:</strong> TrustBank Core Banking System — strangler-fig migration from ASP.NET WebForms / VB.NET / .NET 4.8 to .NET 10 / C# MVC
+<strong>Solution:</strong> <code>TflCbsNet10Sol</code> (26 projects)
+<strong>Review date:</strong> 2026-07-10
+<strong>Reviewer posture:</strong> Principal Software Architect / Enterprise Solution Architect — formal pre-production architecture review of a mission-critical, regulated banking system.
+<strong>Method:</strong> Full source inspection across all layers (solution structure, framework, services/data, presentation/hosts, security/config, testing/DevOps). Every material finding is anchored to <code>file:line</code>. Headline Critical findings were re-verified directly against source.</p>
+<blockquote>
+<p><strong>One-paragraph verdict.</strong> This is, at the <em>code-craft</em> level, one of the cleaner migration codebases you will review: a genuinely well-factored horizontal framework, a disciplined <code>Result</code>-returning service layer with end-to-end <code>async</code>/<code>CancellationToken</code>, real transactions on the money paths that exist, parameterized SQL, no god classes, and an enforced framework⊥screen boundary. It is <strong>not production-ready</strong> for a bank, and the gap is not craft — it is <strong>security hardening, operational maturity, and migration completeness</strong>. There is a config-reachable authentication bypass, no CSRF protection on any POST, passwords stored under reversible encryption, production credentials committed to config, no source control, no CI/CD, no metrics/tracing, no DB change management, and no DR/HA posture. Roughly <strong>&lt;2% of the ~1,458-screen / ~5,300-proc legacy scope</strong> has been migrated — so what exists is best understood as an <strong>excellent reference architecture and vertical slice</strong>, not a shippable core banking system. Fix the security-critical items before <em>any</em> production exposure; treat the rest as the roadmap the (already strong) foundation was built to carry.</p>
+<p><strong>⟳ Remediation progress — updated 2026-07-17</strong> <em>(this note post-dates the 2026-07-10 review; the findings below are preserved as the original baseline).</em> Active hardening has closed <strong>4 of the 8 gate items</strong>. <strong>Done:</strong> <strong>C-1</strong> authentication bypass (fail-closed guard + a pinned DB-free test); <strong>C-2</strong> reversible passwords → salted <strong>PBKDF2</strong> end-to-end (new <code>PasswordHash</code> primitive in <code>TflSecurityCrypto</code>; all 1,731 users migrated; login now verifies against <code>a_user.PASSWORDHASH</code>; anonymous pre-login change-password screen shipped); <strong>H-1</strong> global CSRF/antiforgery (<code>AutoValidateAntiforgeryToken</code> registered once in <code>AddCbsFramework</code>, token header wired for the AJAX helpers); <strong>H-2</strong> DB credentials removed from every committed <code>appsettings.json</code> (real creds now in gitignored <code>appsettings.Development.json</code> + prod env/secret-store; <strong><code>sa</code> password rotation and a least-privilege login remain external follow-ups</strong>). <strong>Remaining gate items:</strong> H-3 (git + CI), H-4 (guard-ordering assertion), H-6 (optimistic concurrency), security headers. <strong>Score: 62 → ~70</strong>, trending to the ~74 gate as the last items close. Per-item status is annotated in the Risk Matrix (§12) and the Production-Readiness Checklist (§15).</p>
+</blockquote>
+<hr />
+<h2 id="1-executive-summary">1. Executive Summary</h2>
+<h3 id="what-this-is">What this is</h3>
+<p>A staged <strong>strangler-fig</strong> rewrite. The legacy WebForms/VB app keeps running; screens are peeled off one at a time into a .NET 10 MVC application composed of per-domain Razor Class Libraries over a shared framework and a <code>Result</code>-returning services layer. The team has invested heavily — and effectively — in the <em>scaffolding for scale</em>: a reusable framework, reusable UI components, a modular-monolith module system, four deployment shapes (IIS single/multi, Docker single/multi) fronted by a YARP gateway, and unusually thorough documentation.</p>
+<h3 id="the-headline">The headline</h3>
+<p>The engineering discipline is high and the architecture <em>decisions</em> are mostly sound. The blockers to production are concentrated and fixable, but several are <strong>severe</strong> for a banking context:</p>
+<table>
+<thead>
+<tr>
+<th>Rank</th>
+<th>Blocker</th>
+<th>Severity</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td><strong>Config-reachable authentication bypass</strong> — when the <code>MFA_AD_LOGIN_ENABLED</code> bank variable is non-zero, the password check is skipped and no alternative auth runs → any password logs in a valid user</td>
+<td><strong>Critical</strong></td>
+</tr>
+<tr>
+<td>2</td>
+<td><strong>Reversible password encryption</strong> (not a salted hash) — a DB compromise yields recoverable plaintext passwords</td>
+<td><strong>Critical</strong></td>
+</tr>
+<tr>
+<td>3</td>
+<td><strong>No CSRF/antiforgery</strong> on any of ~30 POST actions (Login, Logout, all CRUD, dev DB-switch)</td>
+<td><strong>High</strong></td>
+</tr>
+<tr>
+<td>4</td>
+<td><strong>Production DB credentials committed</strong> in base <code>appsettings.json</code> (loaded in Production) using the <code>sa</code> sysadmin account</td>
+<td><strong>High</strong></td>
+</tr>
+<tr>
+<td>5</td>
+<td><strong>No source control, no CI/CD, no IaC</strong> — the working tree is not even a git repository</td>
+<td><strong>High</strong></td>
+</tr>
+<tr>
+<td>6</td>
+<td><strong>No optimistic concurrency anywhere</strong> — read-modify-write lost updates on a banking write path</td>
+<td><strong>High</strong></td>
+</tr>
+<tr>
+<td>7</td>
+<td><strong>No security headers</strong> (CSP / X-Frame-Options / X-Content-Type-Options)</td>
+<td><strong>Medium</strong></td>
+</tr>
+<tr>
+<td>8</td>
+<td>~~<strong>No metrics / tracing / APM</strong>~~ (✅ instrumented — OTel); <strong>no DB migration tooling</strong>; <strong>no DR/HA</strong></td>
+<td><strong>Medium</strong></td>
+</tr>
+</tbody>
+</table>
+<p>Items 1–4 are explicitly acknowledged in the team's own <code>BACKLOG.md</code> ("Security hardening: antiforgery… lockout… security headers… PII masking") — they are known and deferred, not unknown. That is a governance point as much as a technical one: <strong>a banking system cannot go live with these deferred.</strong></p>
+<h3 id="overall-score-77-100-current-2026-07-31-up-from-62-at-first-review-strong-foundation-past-the-gate-number-but-not-yet-green">Overall score: <strong>~77 / 100</strong> <em>(current, 2026-07-31 — up from </em><em>62</em><em> at first review)</em> — <em>"Strong foundation; past the gate number, but not yet green."</em></h3>
+<p>A mid-migration reference implementation that earns praise for craft. As first reviewed (62) it was <strong>rejected for production</strong> on security/operational grounds; since then C-1, C-2, H-1, H-4, and M-1 (security headers) have been fixed, H-2 partially, plus <strong>Observability</strong> instrumentation done early and the <strong>H-6 State pilot</strong> landed (→ <strong>~74</strong>), <strong>#12 DB migration tooling + versioned DDL</strong> shipped (→ <strong>~75</strong>), and the <strong>controller/HTTP + browser test tiers</strong> landed, closing the ~90-band "Controller + E2E test coverage" row outright (→ <strong>~76</strong>), <strong>M-4 (PII masking on the thin hosts)</strong> was closed (→ <strong>~76.5</strong>), and <strong>M-3 (login rate limiting on every host)</strong> with it (→ <strong>~77</strong>). Numerically past the gate, but the "defensible to deploy" <strong>green</strong> state still needs <strong>H-6 rolled out to the remaining write services</strong> and <strong>H-3 (git + CI)</strong> — neither of which a score can substitute for.</p>
+<blockquote>
+<p><strong>2026-07-31 — M-3 closed: login rate limiting on every host, ~76.5 → ~77.</strong> The ~90-band row <em>"Login-specific rate limiting on all hosts"</em> is <strong>✅ done</strong>, and like M-4 the finding was <strong>two gaps reported as one</strong>. "Absent on the direct host" is the half everyone reads; the other half is that the gateway's limiter — the one that <em>was</em> present — is <strong>volumetric, not credential-specific</strong>: 600 requests/60 s per IP over all traffic permits ~600 password guesses a minute, which is no brute-force control at all. So the single-host shapes had nothing, and the multi-host shape had something that wouldn't trip. <strong>Fix:</strong> a <code>cbs-login</code> policy registered in <code>AddCbsFramework</code> with <code>UseRateLimiter()</code> inserted <strong>first</strong> inside <code>UseCbsFramework()</code> — ahead of session load, identity-cookie decryption and any DB round-trip, so a throttled attempt is refused at the cheapest possible point. The two credential-accepting POSTs (<code>/Account/Login</code>, <code>/Account/ChangePassword</code>) opt in via <code>[EnableRateLimiting]</code>, and because <code>AccountController</code> ships in <code>TflCbs.Core.Authentication.Web</code> — an application part in <strong>all five hosts</strong> — one attribute covers every deployment shape rather than five copies that can drift. Partition is <strong>client IP + request path</strong> (a burst on login cannot exhaust change-password's budget), default <strong>10 / 60 s</strong> via <code>Security:LoginRateLimit</code>, rejection <strong>429 + <code>Retry-After</code></strong> logged under the <code>Security</code> category. Two deliberate limits, stated rather than papered over: the <strong>per-username</strong> dimension stays with the DB lockout (<code>MAXIMUMLOGINATTEMPT</code>), because partitioning on the posted username needs a synchronous form-body read that Kestrel disables by default; and there is <strong>no response body</strong> on the 429, because the middleware owns the status code around <code>OnRejected</code> and writing a body risks starting the response before it is set. Config that is <em>off</em> still <strong>registers</strong> the policy as a no-limiter — an unregistered policy name is a request-time 500 on the login page, so a flag must not be able to break sign-in — and a zero/negative size is a <strong>startup error</strong>, never a silent "off". <strong>The prerequisite was closed the same day, and it was the more interesting half.</strong> The partition is only per-client if the gateway's <code>X-Forwarded-For</code> is trusted, and the Docker multi-host stack shipped with trust <strong>commented out</strong> — not by oversight but because <code>UseCbsForwardedHeaders</code> read <code>KnownProxies</code> (exact IPs) only, while a Compose service's IP is reassigned on every <code>up</code>. Untrusted, every backend sees the <em>gateway</em> as the client, which collapses three controls at once: the new limiter throttles the whole bank as one bucket, <code>b_LoginPolicy.RemoteHostLoginAttempt</code> counts everyone's failures against one row, and request logs name the gateway as the caller. So the framework gained CIDR <code>KnownNetworks</code> support (feeding <code>KnownIPNetworks</code> — the <code>KnownNetworks</code> <em>property</em> is obsolete in .NET 10), <code>compose.multi.yaml</code> now trusts the bridge pool and <code>compose.multi.https.yaml</code> tightens that back to the single static gateway IP, and <strong>a malformed entry in either list now fails the host at startup</strong> instead of being silently skipped — the old <code>TryParse</code>-and-ignore left a typo'd address reading as a trust list that wasn't in force, with symptoms pointing elsewhere entirely. Pinned by <strong>25 tests</strong> (9 <code>LoginRateLimitTests</code> + 12 <code>ForwardedProxyTrustTests</code> + 4 <code>UntrustedForwardedHeaderWarningTests</code>), seven of which boot the real host on purpose: the parser unit tests would all still pass if the config key were renamed, and the production symptom of that is a silently untrusted gateway, not a crash. One test earns its place for a different reason — the first draft's <code>ConfigureAppConfiguration</code> override never reached the framework's eager config read, so the throttling tests passed against the shipped budget instead of the pinned one; a fixture guard now fails loudly if that recurs. Because the whole failure mode is <em>invisible</em> — nothing throws, every page renders — <code>UseCbsForwardedHeaders</code> also gained a <strong>detector</strong>: one <code>Security</code>-category warning per host start when an <code>X-Forwarded-For</code> arrives and is discarded as untrusted (the header still standing with no <code>X-Original-For</code>, which is the marker the framework middleware writes for what it consumed). Silent when correct and when no proxy exists, and it names both the fix and what is degraded meanwhile; 4 tests, which need an <code>IStartupFilter</code> to stamp a non-loopback peer because TestServer's null <code>RemoteIpAddress</code> makes ASP.NET skip the trust check entirely. ⬜ Not covered: IIS farms still pin <code>KnownProxies</code> by hand — now <em>detectable</em> rather than silent, but not enforced (<code>deploy-cbs-iis.ps1</code> prints the reminder and what breaks without it) — and the gateway keeps its volumetric limiter as a separate edge layer.</p>
+<p><strong>2026-07-31 — M-4 closed: PII masking now applies on every host, ~76 → ~76.5.</strong> The ~90-band row <em>"PII masking shared to thin hosts"</em> is <strong>✅ done</strong>, and the finding turned out to be <strong>worse than M-4 described</strong>. The review recorded it as "masking would not apply on those hosts"; the actual behaviour was more insidious. <code>MaskingOptions</code> defaults <code>Keys</code> to the banking PII/secret list but defaults <code>Patterns</code> to <strong>empty</strong>, so the four thin hosts were not running unmasked — they were running <strong>half-masked</strong>: property-name redaction worked, and <strong>value-regex redaction (PAN / Aadhaar sitting inside a free-text message) silently did not</strong>. Nothing threw, nothing logged, and §3's own strength claim ("recursive PII/secret masking … wired into every host") read as true because the <em>enricher</em> was indeed wired in every host — only its config was not. A config-shaped gap that presents as a working feature is exactly the class of defect a review is supposed to catch, and this one was under-stated. <strong>Fix:</strong> the block was extracted to a canonical <code>TflCbs.Host.Main/logmasking.json</code>, <strong>deleted</strong> from <code>appsettings.json</code> so no second copy exists, linked into all four thin hosts (the <code>routecutover.json</code> pattern), and loaded in each <code>Program.cs</code> before <code>ConfigureTflLogging()</code> — from <code>AppContext.BaseDirectory</code>, since a linked file is absent from the content root under <code>dotnet run</code>. Loaded <strong><code>optional: false</code></strong>: a missing file would degrade to half-masked logging with nothing to notice, so the host now refuses to start instead. Each host re-adds <code>AddEnvironmentVariables()</code> afterwards, because <code>AddJsonFile</code> <em>appends</em> a provider and would otherwise shadow <code>TflLog__Masking__*</code> set in compose or an IIS <code>web.config</code>. Held in place by <strong><code>LogMaskingConfigTests</code></strong> (4 facts: the canonical file defines both <code>Keys</code> and non-empty <code>Patterns</code>; every <code>Sdk.Web</code> host that builds a TflOmniLog pipeline ships it, loads it non-optionally <em>before</em> the pipeline, and re-adds the env provider; no host <code>appsettings.json</code> re-declares the section) — <strong>verified by mutation</strong>, i.e. both regressions were reintroduced and confirmed to fail the suite. The full <strong>+0.5</strong> is taken because the fix ships with the build regardless of CI; the <em>guard's</em> value is what H-3 still discounts. Two caveats keep this from being "PII in logs is solved": <strong>M-5</strong> (<code>Database:LogParameterValues</code> can log parameter values) is untouched, and nothing asserts end-to-end that a PAN written through a thin host's real log file comes out redacted — the enricher and the config delivery are each tested, their join is not.</p>
+<p><strong>2026-07-30 — the test pyramid's top two tiers landed: Testability 5 → 7, overall ~75 → ~76.</strong> The ~90-band row <em>"Controller + end-to-end (Playwright) test coverage"</em> is now <strong>✅ done in both halves</strong>: <code>TflCbs.IntegrationTests</code> (2026-07-29, 23 tests) boots the real <code>Program</code> pipeline in-process so middleware <strong>order</strong> is what is under test, and <code>TflCbs.E2E</code> (2026-07-30, 80 tests, exit 0) drives a real browser. Together they close the <em>"no controller/E2E tests"</em> dock on Testability outright. The cell stops at <strong>7</strong>, not the 8 the plan projected, because the other two docks are untouched — the <strong>DAL is still not mockable</strong> (<code>DataAccess</code> is <code>sealed</code> with no <code>IDataAccess</code>) and both new suites still depend on a <strong>live database</strong> for their authenticated half — and because <strong>H-3 (CI) is not started</strong>, so nothing runs any of this automatically; a suite no pipeline executes catches regressions only when someone remembers to look. For the same reason the row's <strong>+1.5</strong> is banked as <strong>~+1</strong> on the holistic number rather than taken in full. Three real defects were found by the browser tier, each pinned with <code>test.fail()</code> (green suite, documented bug, unexpected-pass alarm on fix) and now carried as <strong>risk rows 22–24</strong> in §12: a signed identity cookie whose session has closed causes an <strong>infinite <code>/Account/Login</code> ⇄ <code>/Modules</code> redirect loop</strong> with no way back to the login form (the multi-host SSO shape exactly); <code>cbs-account-picker.js</code> <strong>undoes <code>Model.Disabled</code> at runtime</strong>, though this is <strong>latent rather than live</strong> — the only production consumer, <code>AccHoldingAmount</code>, sets <code>Disabled</code> only in edit mode where the account is populated, which takes the safe <code>lock()</code> branch; and the component showcase wires <code>clearTargets</code> on the child picker, so the reference demo developers copy from is backwards. A fourth finding came from the work rather than the tests and is <strong>row 21</strong>: a login <em>attempt</em> on a dormant account <strong>deactivates it</strong> (<code>a_User.STATUS = 3</code>) with no recovery path short of a DBA <code>UPDATE</code> — it happened twice while choosing a test login. Evidence: <a href="../../TflCbs.E2E/README.html"><code>TflCbs.E2E/README.md</code></a>.</p>
+<p><strong>2026-07-30 — account-list performance work: real gain, no score movement (holds at ~75).</strong> The account picker was converted to a single server-side join: <strong>24 round-trips → 1</strong>, ~2× faster at every branch size, equivalence verified on SQL Server <em>and</em> Oracle. It is recorded as <strong>partial</strong> against finding #10 and does <strong>not</strong> lift the Performance cell, because that cell is docked for <em>"load-all patterns, no caching, no retry"</em> and all three remain true. Two things are worth carrying forward from the measurement rather than the code: <strong>(a)</strong> DB-side paging — the fix this row originally prescribed — was measured as a <strong>3.6–11× regression</strong> on 54 of 55 branches and is blocked on a DBA index, not on coding effort; <strong>(b)</strong> the same exercise found that three-provider portability is <strong>unproven on PostgreSQL</strong> (<code>SqlQuery.From&lt;TEntity&gt;</code> emits table names unquoted, which PostgreSQL folds to lower case, affecting every <code>SqlQuery</code> caller) — a pre-existing gap now documented, and a candidate dock against Database Design if it is not closed. Evidence: <a href="../perf/AccountList-baseline-2026-07-30.html"><code>docs/perf/AccountList-baseline-2026-07-30.md</code></a>.</p>
+</blockquote>
+<hr />
+<h2 id="2-architecture-overview">2. Architecture Overview</h2>
+<h3 id="21-topology">2.1 Topology</h3>
+<pre><code>                         ┌──────────────────────────┐
+   Browser ──────────────►  TflCbs.Gateway (YARP)   │   single external origin
+                         │  path-routing + rate-limit│   (cookie-domain for SSO)
+                         └───┬───────┬───────┬───────┘
+             /Hr/**         │        │       │        /RetailBanking/**  … {**}→default
+        ┌────────────┐  ┌───▼───┐ ┌──▼────┐ ┌▼─────────────┐ ┌──────────────┐
+        │ Host.Hr    │  │Host.  │ │Host.  │ │Host.         │ │ TrustBankCBS │
+        │ (thin)     │  │Lockers│ │Retail │ │Administration│ │ .UI (all mods)│
+        └─────┬──────┘  └───┬───┘ └──┬────┘ └──────┬───────┘ └──────┬───────┘
+              └─────────────┴────────┴─────────────┴────────────────┘
+                                     │  each host composes:
+             ┌───────────────────────▼───────────────────────────────┐
+             │  Modules.&lt;Area&gt;.Web (RCL)  +  Core.Auth.Web + Shell.Web │  presentation
+             │  TflCbs.Web.Shared (layout/partials/wwwroot RCL)  │
+             │  TflCbs.Framework (access guard, session, cache,  │  framework
+             │     RowToken, search, health, DI composition)           │
+             │  TflCbsServices (Result-returning module services)      │  business/data
+             │  TflOmniDb DAL (multi-provider) → TflCbs.Entities (3,680)  │  DAL + entities
+             │  TflOmniLog (structured logging)                        │  cross-cutting
+             └────────────────────────┬───────────────────────────────┘
+                                       ▼
+                       SQL Server (prod) / Oracle / PostgreSQL
+</code></pre>
+<h3 id="22-layering-verified-acyclic">2.2 Layering (verified acyclic)</h3>
+<p><code>TflOmniLog → TflCbsServices → TflCbs.Framework → TflCbs.Web.Shared → Modules.*.Web → Host.*</code>
+No module→module references at the project level (enforced by NetArchTest). This is a clean dependency spine.</p>
+<h3 id="23-key-architectural-choices">2.3 Key architectural choices</h3>
+<ul>
+<li><strong>Horizontal split</strong>: <code>TflCbs.Framework</code> (reusable web plumbing) ⊥ screen code, compiler-enforced + arch-tested.</li>
+<li><strong>Modular monolith</strong>: business layer sliced into per-domain module folders (<code>General</code>, <code>HR</code>, <code>RetailBanking</code>, <code>Lockers</code>, <code>Clearing</code>, <code>Accounts</code>, <code>Administration</code>) with <code>ICbsModule</code> self-registration and config gating (<code>Modules:Enabled</code>). One process, one DB in steady state — the doc explicitly warns against drifting into microservices.</li>
+<li><strong>Multi-host as a deployment shape, not a distributed system</strong>: the same assemblies can be split behind a gateway for isolation; SSO works via a shared DataProtection key ring + a cross-host auth cookie.</li>
+<li><strong>Reusable UI components</strong>: record picker, account picker, date picker, search modal — vanilla-JS, config-driven, server-side paged.</li>
+<li><strong>Capability tokens</strong>: opaque, DataProtection-encrypted, single-use <code>RowToken</code>s replace raw PKs in the UI.</li>
+</ul>
+<hr />
+<h2 id="3-strengths-what-senior-architects-would-praise">3. Strengths (what senior architects would praise)</h2>
+<ol>
+<li><strong>Framework layer is genuinely excellent.</strong> 48 files, largest 281 lines, zero god classes, zero utility dumping grounds, all interfaces 1–4 members (ISP respected), no captive dependencies (middlewares method-inject scoped services — the correct pattern), correct <code>async</code>/<code>ConfigureAwait(false)</code> hygiene. This is the strongest part of the codebase.</li>
+<li><strong>Services layer discipline.</strong> Every public method returns <code>Result</code>/<code>Result&lt;T&gt;</code>; no exceptions cross the boundary; <code>CancellationToken</code> threaded end-to-end; <strong>no</strong> sync-over-async anywhere; real <code>ExecuteInTransactionAsync</code> unit-of-work wrapping multi-step money/maker-checker operations; parameterized SQL throughout (no injection found in production code).</li>
+<li><strong>Fail-closed access model.</strong> <code>CbsAccessMiddleware</code> denies by default; unknown menu → <code>/AccessDenied</code>; menu-load error → empty menu; server-side URL-based menu authorization from a <code>HashSet.Contains</code> (0 DB hits per request in the single-host steady state).</li>
+<li><strong>Strong client-security defaults.</strong> XSS-safe rendering (<code>td.textContent</code>, no user data into <code>innerHTML</code>), overposting defense via hand-written Form DTOs + <code>[Bind(Prefix="Form")]</code> + server-side token-derived PKs, session-fixation handled correctly (session re-mint on login), open-redirect guard on <code>returnUrl</code>.</li>
+<li><strong>Production-grade structured logging</strong> (<code>TflOmniLog</code>): categories, correlation IDs, recursive PII/secret masking (Password/Pin/Otp/AccountNo/CardNo/Cvv/Pan), buffered async SQL sink that never throws, audit trail with before/after. Wired into every host. <em>(Correction, 2026-07-31: "wired into every host" was true of the enricher but </em><em>not</em><em> of its config — the regex half of masking was configured on the default host only, which is finding M-4. The claim is true as written since M-4 was closed; before that it over-stated the control, and the way it over-stated it — a feature that is present, half-configured, and silent about the difference — is worth remembering when reading any other "wired everywhere" claim in this review.)</em></li>
+<li><strong>Mature health-check split</strong>: <code>/health</code> (liveness, no dependency checks) vs <code>/health/ready</code> (provider-aware DB probe), wired into all deploy shapes.</li>
+<li><strong>Reference cache</strong> (<code>IReferenceCache</code>): generation-token O(1) flush, per-key stampede guard, <strong>fail-open</strong> (never throws, falls back to loader), Redis-optional. Well-engineered.</li>
+<li><strong>Documentation is exceptional</strong> for a codebase this age: 29 Markdown docs with generated HTML twins, architecture decision records, a costed migration estimate (~10,550 person-days), deployment runbooks with troubleshooting tables. Agent-maintained to stay current.</li>
+<li><strong>Modular-monolith boundaries are arch-tested</strong>, including a DI-graph resolvability check that turns a missing registration into a test failure — an unusually good control.</li>
+</ol>
+<hr />
+<h2 id="4-weaknesses-ranked">4. Weaknesses (ranked)</h2>
+<ol>
+<li><strong>Security hardening is deferred, not done</strong> — auth bypass, reversible passwords, no CSRF, no security headers, no login lockout wired at the MVC layer, committed prod secrets. (§7)</li>
+<li><strong>No engineering safety net</strong> — not a git repo, no CI/CD, no IaC, no automated test gate; tests need a live DB and hard-code the <code>sa</code> password. (§11, §12)</li>
+<li><strong>Concurrency correctness</strong> — no optimistic concurrency/rowversion anywhere; read-modify-write lost updates; MAX+1 id generation races mitigated only by a unique-index-dependent retry. (§8)</li>
+<li><strong>Scale ceiling in the session model</strong> — server-side session lives in single-node <code>IMemoryCache</code> (a <code>TODO</code> in code), so multi-host relies on per-request DB rehydration and cannot horizontally scale a single host without a distributed store. (§6)</li>
+<li><strong>In-memory data patterns</strong> — pervasive <code>GetAll()</code>-then-filter/sort/page in memory for list screens; on large transactional tables this materializes a full branch table per request. (§8) <em>(Note: the newer generic search endpoint pages at the DB — but only for SQL Server; see §10.)</em></li>
+<li><strong>DIP/build-hygiene leaks</strong> — Framework <code>ProjectReference</code>s the concrete <code>TflCbsServices</code> assembly (abstractions not extracted); bare-DLL <code>HintPath</code>s point at <strong>Debug</strong> binaries in an out-of-solution <code>_Archive</code> path, so no Release closure exists and there's no build-order edge for <code>TflCbs.Entities</code>. (§11)</li>
+<li><strong>Observability</strong> — ✅ <strong>instrumentation done</strong>: OpenTelemetry traces + metrics + the TflOmniDb DAL <code>ActivitySource</code> (Oracle-inclusive) + log↔trace correlation, config-gated; <strong>gateway→host→DB proven end-to-end</strong>. Remaining is the ops half — prod collector topology, curated dashboards, SLO/alerting, logs→Loki. (§12)</li>
+<li><strong>Operational maturity</strong> — no DB migration tooling (manual DDL), no DR/HA design, <code>sql/</code> folder nearly empty, <code>node_modules</code> committed under <code>docs/</code>, one stale compose file. (§12)</li>
+<li><strong>Anemic domain / primitive obsession</strong> — money is raw <code>decimal</code>, accounts are <code>int</code>/<code>string</code>; all logic is transaction-script in services; no aggregates/value objects/domain events. Defensible for a faithful port, but zero domain richness. (§8)</li>
+</ol>
+<hr />
+<h2 id="5-architecture-smells">5. Architecture Smells</h2>
+<table>
+<thead>
+<tr>
+<th>Smell</th>
+<th>Present?</th>
+<th>Evidence / notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>God class / god service / god repository</td>
+<td><strong>No</strong> (production)</td>
+<td>Framework max 281 lines; services max 492 (<code>LockerTypeService</code>). <em>Watch:</em> the excluded <code>TflCbs.Lab</code> staging project is 16× larger (67k LoC) and is where god services will first appear (<code>Payments/PmbyPolicyService.cs:773</code>).</td>
+</tr>
+<tr>
+<td>Circular dependencies</td>
+<td><strong>No</strong></td>
+<td>Verified acyclic; no module→module edges.</td>
+</tr>
+<tr>
+<td>Tight coupling</td>
+<td>Partial</td>
+<td>Framework→concrete <code>TflCbsServices</code> (DIP leak); UI models carry DOM selectors as data (leaky abstraction between C# and <code>.cshtml</code>).</td>
+</tr>
+<tr>
+<td>Anemic domain model</td>
+<td><strong>Yes (by design)</strong></td>
+<td>3,680 all-nullable UPPERCASE DB-mirror entities; logic in services.</td>
+</tr>
+<tr>
+<td>Primitive obsession</td>
+<td><strong>Yes</strong></td>
+<td>Money = <code>decimal</code>, account = <code>int</code>/<code>string</code>; no <code>Money</code>/<code>AccountNumber</code> types.</td>
+</tr>
+<tr>
+<td>Shotgun surgery</td>
+<td>Emerging</td>
+<td>Pipeline composition copy-pasted across 5 host <code>Program.cs</code> files; a cross-cutting change touches all 5.</td>
+</tr>
+<tr>
+<td>Duplicate logic</td>
+<td><strong>Yes</strong></td>
+<td><code>IsDuplicate</code>/<code>IsForeignKey</code>/<code>Val</code>/<code>Has</code>/<code>Sort</code>/<code>Page</code>/<code>CustomerName</code> helpers duplicated across ~10 services (~40 occurrences).</td>
+</tr>
+<tr>
+<td>Leaky abstractions</td>
+<td>Yes</td>
+<td><code>SearchDescriptor</code>/<code>AccountPickerModel</code> embed client DOM ids; <code>DataAccess</code> registered "Scoped" but returns a cached shared instance.</td>
+</tr>
+<tr>
+<td>Utility dumping ground</td>
+<td><strong>No</strong></td>
+<td>No <code>Utils.cs</code>/<code>Helpers.cs</code> grab-bags.</td>
+</tr>
+<tr>
+<td>Large interfaces</td>
+<td><strong>No</strong></td>
+<td>Max 4 members.</td>
+</tr>
+<tr>
+<td>Fat controllers</td>
+<td><strong>No</strong></td>
+<td>Largest (355 lines) hosts two screens; logic is in services.</td>
+</tr>
+<tr>
+<td>Service locator</td>
+<td>Minor</td>
+<td><code>RequestServices.GetService</code> for <em>optional</em> ports (intentional) + <code>Notify</code> static extensions.</td>
+</tr>
+<tr>
+<td>Cyclic references / inappropriate inheritance</td>
+<td><strong>No</strong></td>
+<td>—</td>
+</tr>
+<tr>
+<td>Feature envy</td>
+<td>Minor</td>
+<td>Some cross-field UI validation lives in controllers that arguably belongs in services (<code>LockerTypeController.ValidateWrite</code>).</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="6-scalability-analysis">6. Scalability Analysis</h2>
+<p><strong>Test method:</strong> reasoning from architecture + measured per-request cost, not load testing (no load harness exists).</p>
+<table>
+<thead>
+<tr>
+<th>Users (concurrent-ish)</th>
+<th>Verdict</th>
+<th>Where it strains</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>100</strong></td>
+<td>✅ Fine</td>
+<td>Single host, warm session = 0 DB hits/request for the access guard. Comfortable.</td>
+</tr>
+<tr>
+<td><strong>1,000</strong></td>
+<td>✅ Mostly fine</td>
+<td>In-memory list/filter on large tables (accounts/holds/employees) starts to cost CPU + allocations per search. Reference data re-read per request (no service-layer cache).</td>
+</tr>
+<tr>
+<td><strong>10,000</strong></td>
+<td>⚠️ Strains</td>
+<td>(a) Full-table materialization per search on transactional tables → GC pressure, LOH risk on big result sets. (b) Per-request <code>IsSessionActiveAsync</code> + revocation DB/cache round-trips when auth module wired. (c) Single-node session store becomes a memory-pressure eviction risk → silent session loss + rehydration storms.</td>
+</tr>
+<tr>
+<td><strong>100,000</strong></td>
+<td>❌ Fails without rework</td>
+<td>Single-node <code>IMemoryCache</code> session is the wall. Horizontal scale-out requires either a distributed session store or gateway <strong>session affinity</strong> (neither present; <code>SessionAffinity</code> not configured on YARP). Every non-sticky request to a fresh backend triggers a <strong>DB menu reload</strong>. In-memory paging paths saturate DB + app memory.</td>
+</tr>
+<tr>
+<td><strong>1,000,000</strong></td>
+<td>❌ Not designed for it</td>
+<td>Would require: distributed session/cache (Redis), DB read replicas + CQRS read models, DB-side paging on all providers, connection-pool + transient-retry tuning, per-module horizontal scale behind the gateway with affinity, and a caching tier for reference data. The modular-monolith <em>can</em> be scaled per-module behind YARP, but the shared single DB and in-memory patterns are the ceiling.</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Bottleneck ranking:</strong> (1) single-node session store, (2) load-all-then-filter on large tables <em>(⏳ partial — the account picker's 24 round-trips are now 1 and it is ~2× faster, but the load-all remains and 6 services are untouched)</em>, (3) shared single database with no read-replica/CQRS story, (4) per-request auth DB round-trips, (5) no service-layer caching of read-mostly reference data <em>(infra ready — <code>IReferenceCache</code> is distributed + fail-open and proven by <code>BankVars</code>; which masters to cache is a deferred </em><em>decision</em><em>, not missing engineering)</em>, (6) no transient-fault retry (Polly) so DB blips cascade to user errors <em>(backlogged 2026-07-30; seam settled at the DAL chokepoint, gated on agreeing write-idempotency rules)</em>.</p>
+<p><strong>Highest-leverage fixes:</strong> distributed session (Redis) + gateway session affinity; push filtering/sorting/paging into the DB for the high-volume list screens (provider-dialected); cache reference data via the existing <code>IReferenceCache</code> — <strong>infra already built, only the scope decision is outstanding</strong>; add Polly transient-retry on DB calls — <strong>backlogged, gated on idempotency classification</strong> (see <code>BACKLOG.md</code>).</p>
+<hr />
+<h2 id="7-security-analysis">7. Security Analysis</h2>
+<p>Severity is estimated for a <strong>core-banking</strong> context. Positive controls are listed too — several are genuinely good and worth preserving.</p>
+<h3 id="critical">Critical</h3>
+<ul>
+<li><strong>C-1 — Authentication bypass via <code>MFA_AD_LOGIN_ENABLED</code>.</strong> <a href="../../TflCbs.Core.Authentication/AuthenticationService.cs#L299">AuthenticationService.cs:299</a>: <code>if (storedPassword != password &amp;&amp; mfaAdLoginEnabled == 0)</code>. When the <code>MFA_AD_LOGIN_ENABLED</code> bank variable is non-zero, the password mismatch branch never fires, <code>error</code>/<code>isLoginFailed</code> stay unset, and execution falls through to success (line 368+). <strong>No AD/alternative authentication is implemented anywhere in the method</strong> — the flag gates <em>out</em> the password check without gating <em>in</em> a replacement. Any password authenticates a valid username. Verified directly against source. <strong>Fix:</strong> never allow the success path when the primary credential is unverified; if AD auth is intended, implement and require it, otherwise remove the flag branch.</li>
+<li><strong>C-2 — Reversible password storage.</strong> <a href="../../TflCbs.Core.Authentication/AuthenticationService.cs#L296">AuthenticationService.cs:296-299</a>: submitted password is <code>TflSecurityCrypto.Encrypt</code>-ed and compared as a Latin1 string to a recoverable <code>varbinary</code>. No bcrypt/PBKDF2/Argon2, no per-user salt. A DB compromise = mass plaintext password recovery (and credential-stuffing against other systems). Legacy-parity constraint, but unacceptable at go-live. <strong>Fix:</strong> migrate to a salted adaptive hash (Argon2id/PBKDF2) with a transparent rehash-on-login upgrade path.</li>
+</ul>
+<h3 id="high">High</h3>
+<ul>
+<li><strong>H-1 — No CSRF protection anywhere.</strong> Zero <code>[ValidateAntiForgeryToken]</code> / <code>AutoValidateAntiforgeryToken</code> / <code>AddAntiforgery</code> across ~30 POST actions in 12 controllers (Login, Logout, all Save/Update/Delete/Authorize, the dev DB-switch). Confirmed independently by two review passes. Single-use <code>RowToken</code>s partially mitigate <em>record-scoped</em> writes but do nothing for Save (new record), Login, or Logout. The app <em>emits</em> antiforgery cookies but never validates them. <strong>Fix:</strong> global <code>AutoValidateAntiforgeryToken</code> + <code>@Html.AntiForgeryToken()</code>; inject the token header on the <code>fetch</code>-based search/JSON endpoints.</li>
+<li><strong>H-2 — Committed production DB credentials + <code>sa</code>.</strong> Base <code>appsettings.json</code> (loaded in <strong>all</strong> environments) in <code>TflCbs.Host.Main</code> and every <code>TflCbs.Host.*</code> carries <code>User Id=sa;Password=sql@2019;TrustServerCertificate=true</code>. Sysadmin principal, no least-privilege, and <code>TrustServerCertificate=true</code> disables TLS validation to SQL Server (MITM). <strong>Fix:</strong> move secrets to a secret store / user-secrets / env; use a least-privilege app login; issue a real SQL TLS cert.</li>
+<li><strong>H-3 — No source control / CI gate</strong> (see §12) means none of the above is caught by an automated pipeline before deploy.</li>
+<li><strong>H-4 — Latent fail-open on middleware ordering.</strong> ✅ <strong>FIXED (2026-07-18).</strong> <a href="../../TflCbs.Framework/Infrastructure/CbsAccessMiddleware.cs#L48">CbsAccessMiddleware.cs:48</a>: if <code>GetEndpoint()</code> is null the guard passes. If <code>UseCbsFramework()</code> is ever ordered before <code>UseRouting()</code>, <strong>every</strong> request has a null endpoint → the entire fail-closed guard is silently skipped. Was protected only by a doc comment. <strong>Fixed:</strong> <code>UseCbsFramework()</code> now calls <code>EnsureEndpointRoutingRegistered()</code> as its first line, throwing at startup if routing hasn't run; pinned by 2 tests (<code>GuardOrderingTests</code>).</li>
+</ul>
+<h3 id="medium">Medium</h3>
+<ul>
+<li><strong>M-1 — No security headers</strong>: ✅ <strong>FIXED (2026-07-18).</strong> Was: no CSP, X-Frame-Options, X-Content-Type-Options, Referrer-Policy, Permissions-Policy — clickjacking + MIME-sniffing exposure on an authenticated banking UI. <strong>Fixed:</strong> <code>UseCbsSecurityHeaders</code> (framework, first middleware in all 5 hosts) emits all five on every response incl. static files, with a <strong>fully strict enforced CSP</strong> (<code>script-src</code>/<code>style-src 'self'</code>, no nonce, no <code>unsafe-inline</code>); all inline scripts/handlers/styles were refactored out so nothing is exempted.</li>
+<li><strong>M-2 — Cookie hardening in committed config</strong>: auth cookie <code>SecurePolicy=SameAsRequest</code> (can ride HTTP); session cookie sets <code>HttpOnly</code> but not Secure/SameSite. Docker overrides fix it; IIS/other deploys must remember to.</li>
+<li><strong>M-3 — No login-specific / direct-host rate limiting.</strong> ✅ <strong>FIXED (2026-07-31).</strong> Was: rate limiting existed only on the gateway (600/60s per IP, not login-specific) and was absent entirely on the direct <code>TflCbs.Host.Main</code> host, so brute-force defense relied solely on the DB lockout policy being configured. <strong>Fixed:</strong> a <code>cbs-login</code> policy registered in <code>AddCbsFramework</code> and applied by <code>UseCbsFramework</code> — so <strong>all 5 hosts</strong> get it by construction, single-host shapes included — partitioned by <strong>client IP + request path</strong>, default <strong>10 attempts / 60 s</strong>, opted into by the two credential-accepting POSTs (<code>/Account/Login</code>, <code>/Account/ChangePassword</code>) via <code>[EnableRateLimiting]</code>. Rejections are <strong>429 + <code>Retry-After</code></strong>, logged under the <code>Security</code> category, and are refused <em>first</em> in the pipeline — before session load, cookie decryption or any DB round-trip. Config: <code>Security:LoginRateLimit</code> (<code>Enabled=false</code> to disable; a zero/negative value is a startup error, never a silent "off"). Pinned by 9 tests (<code>LoginRateLimitTests</code>, incl. a fixture guard that the pinned limit really reaches the framework). <strong>Two limits deliberately kept:</strong> the gateway's global limiter stays (volumetric abuse at the edge), and the DB lockout policy stays the <strong>per-account</strong> control — a middleware limiter cannot partition on the submitted username without a synchronous form-body read, which Kestrel disables by default. <strong>Deployment prerequisite — also closed (2026-07-31).</strong> The partition key is only the real client IP if <code>ForwardedHeaders</code> is enabled <em>and</em> the gateway is trusted; untrusted, every user shares one partition. The Docker multi-host stack shipped with trust <strong>commented out</strong> because the framework read <code>KnownProxies</code> (exact IPs) only and a compose service's IP is dynamic. <code>UseCbsForwardedHeaders</code> now also accepts <code>ForwardedHeaders:KnownNetworks</code> (CIDR), <code>compose.multi.yaml</code> trusts the bridge pool (<code>172.16.0.0/12</code> — safe: only the gateway publishes a port), and <code>compose.multi.https.yaml</code> tightens that back to the single static gateway IP. A malformed entry in either list is now a <strong>startup failure</strong> rather than being silently skipped. 16 tests (12 <code>ForwardedProxyTrustTests</code> + 4 <code>UntrustedForwardedHeaderWarningTests</code>), 7 of which boot the real host so neither a config-key rename nor a lost detector can pass unnoticed. A <em>missing</em> entry is caught at runtime too: a discarded <code>X-Forwarded-For</code> logs one <code>Security</code> warning per host start. ⬜ IIS farms still set <code>KnownProxies</code> by hand — <code>deploy-cbs-iis.ps1</code> prints the reminder and the consequences.</li>
+<li><strong>M-4 — PII masking config missing on thin hosts.</strong> ✅ <strong>FIXED (2026-07-31).</strong> Was: the <code>TflLog</code> <code>Masking</code> block existed in <code>TflCbs.Host.Main</code> but not in the <code>Host.*</code> appsettings. <strong>The original wording under-stated it</strong> — the effect was not "masking would not apply" but something quieter: <code>MaskingOptions</code> defaults <code>Keys</code> to the banking PII list and defaults <code>Patterns</code> to <strong>empty</strong>, so the thin hosts ran <strong>half-masked</strong> — name-based redaction on, value-regex redaction (PAN/Aadhaar in free text) silently off, with nothing thrown or logged to say so. <strong>Fixed:</strong> the block moved to a canonical <a href="../../config/logmasking.json"><code>logmasking.json</code></a> (deleted from <code>appsettings.json</code>, so there is no second copy to drift), linked into all four thin hosts like <code>routecutover.json</code>, loaded from <code>AppContext.BaseDirectory</code> before <code>ConfigureTflLogging()</code> and <strong><code>optional: false</code></strong> so a missing file stops the host instead of degrading it, with <code>AddEnvironmentVariables()</code> re-added after (an appended JSON provider would otherwise shadow <code>TflLog__Masking__*</code>). Guarded by <a href="../../TflCbs.ArchTests/LogMaskingConfigTests.cs"><code>LogMaskingConfigTests</code></a> (4 facts, mutation-verified). <strong>Still open in this area: M-5</strong>, and no end-to-end assertion that a PAN survives a real thin-host log file redacted.</li>
+<li><strong>M-5 — <code>Database:LogParameterValues</code></strong> can log SQL parameter values (account numbers, balances, PII) at Information level; gated to Dev by config but the switch exists.</li>
+<li><strong>M-6 — RouteCutover privilege-escalation surface.</strong> ✅ <strong>CLOSED (2026-08-24).</strong> Was: a misconfigured mapping in <code>routecutover.json</code> pointing a legacy URL at a <em>different</em> screen's route granted that screen's access (<code>AllowedUrls</code> derives from node URLs), with no validation. The legacy WebForms app no longer reads the CBS database, so the whole config layer was <strong>deleted</strong> — <code>RouteCutover</code>, <code>RouteCutoverOptions</code>, <code>config/routecutover.json</code> and its wiring in all five hosts — and the new route now lives in <code>a_Menus.NavigateURL</code> itself (<a href="../../TflCbs.Tools.DbMigrator/Migrations/sqlserver/0004_menu_routes_cutover.sql"><code>0004_menu_routes_cutover.sql</code></a>). <code>MenuService</code> no longer rewrites anything. <strong>The surface is not eliminated, it is relocated:</strong> a wrong <code>NavigateURL</code> still grants the wrong screen. What changed is that it now takes a reviewed, journalled migration rather than an unvalidated config edit that reloads at runtime, and there is one source of truth instead of two that could disagree. ⬜ Still no validation that a row's route belongs to that row's screen.</li>
+<li><strong>M-7 — Thin-host <code>Auth:LoginUrl</code> committed as plain HTTP</strong> — credentials would 302 to an HTTP origin unless overridden.</li>
+</ul>
+<h3 id="low-info-positive-controls-to-preserve">Low / Info (positive controls to preserve)</h3>
+<ul>
+<li>Session fixation handled (session re-mint on login); logout invalidation thorough (closes log rows, revokes cross-host session, signs out cookie); account/IP <strong>lockout policy exists</strong> in the service; SSO authority-deferral with open-redirect allowlist; RowTokens are AES+HMAC via DataProtection, screen+session-bound, single-use; <code>SecurityElement.Escape</code> on stored IP/User-Agent; the one <code>Html.Raw</code> serializes server-derived menu JSON (low risk, though the JSON island isn't <code>&lt;/script&gt;</code>-escaped — tighten it); docker publishes only the gateway port (backends internal-only); ForwardedHeaders defaults to loopback-only trust (remote spoofing blocked unless misconfigured) — <em>and since 2026-07-31 the opposite error is no longer silent either: a host that </em><em>discards</em><em> a proxy's <code>X-Forwarded-For</code> because the peer isn't trusted says so once per start in the <code>Security</code> log, so the safe default can't quietly cost you per-client rate limiting, per-IP lockout and log attribution</em>.</li>
+</ul>
+<p><strong>Note on the RowToken cross-host limitation:</strong> RowTokens are bound to the per-host in-memory session GUID, so a token minted on host A fails on host B. In a multi-host jump mid-flow, on-screen row tokens invalidate. Functional/robustness issue rather than a vulnerability, but undocumented.</p>
+<hr />
+<h2 id="8-performance-analysis">8. Performance Analysis</h2>
+<ul>
+<li><strong>N+1: largely avoided.</strong> Related-entity loads are batched with chunked <code>IN</code> lists (Oracle-safe ≤500). Good.</li>
+<li><strong>Load-all-then-filter/sort/page in memory: pervasive</strong> for list screens — <code>GetAllAsync()</code> + in-memory LINQ across ~7+ services (<code>StateService</code>, <code>DistrictService</code>, <code>TalukaService</code>, <code>RoleService</code>, <code>ModuleService</code>, <code>DiscipActionHistoryService</code>, <code>AccountService</code>). On small lookup tables this is fine; on <strong>accounts/holds/employees</strong> it materializes a full branch table per request → CPU, excessive allocations, and Large Object Heap risk on big pages. The code comments are candid about it.</li>
+<li><strong>Partially addressed 2026-07-30 — the chattiness, not the load-all.</strong> <code>AccountService</code> (the worst case: the account picker) was converted from load-branch-then-rebuild-the-joins-in-memory to <strong>one server-side join</strong> via the dialected <code>SqlQuery</code> builder. Round-trips per page view fell from <code>4 + ceil(distinctClients/500)</code> — <strong>24</strong> on the largest branch — to <strong>1</strong>, and median latency improved ~2× (330/125/48 ms vs 526/239/70 on 20,480 / 7,516 / 1,392-account branches), overtaking the legacy <code>pr_b_GetAccountList</code> it ports. Verified equivalent on SQL Server <strong>and</strong> Oracle (identical row Totals). <strong>The load-all itself is unchanged</strong> — the branch's result set is still materialized per request, so the CPU/allocation/LOH concern in this bullet stands as written, and the remaining six services are untouched. Measurements: <a href="../perf/AccountList-baseline-2026-07-30.html"><code>docs/perf/AccountList-baseline-2026-07-30.md</code></a>.</li>
+<li><strong>In-memory pagination</strong>: <code>list.Skip().Take()</code> after full materialization in 8 services; <code>Total = list.Count</code>. <em>Originally noted counterpoint:</em> the generic <code>SearchQueryService</code> paged at the DB with <code>OFFSET/FETCH</code>, but that path was <strong>SQL Server-only</strong>, so the multi-provider promise broke there. <strong>Resolved 2026-07-29 — in the provider direction, not the perf one:</strong> <code>SearchQueryService</code> was deleted and its two callers (Locker Type, Disciplinary Action History) converted to <code>Repository&lt;T&gt;</code> + in-memory paging, so no framework code assembles SQL and nothing is provider-specific. The trade was made deliberately: <strong>in-memory paging is now universal, so this weakness is broader than when first written</strong> — every list screen materializes its (branch-scoped) set. Fine for the lookup masters converted so far; the accounts/holds/employees concern below is unchanged and still the one to fix, now with no DB-paging precedent left in the codebase to build on. <strong>Update 2026-07-30 — DB-side paging measured and deliberately deferred.</strong> A <code>SqlQuery</code> prototype (4 joins + <code>ORDER BY … OFFSET/FETCH</code> + <code>COUNT(*)</code>) was benchmarked against the account list on the production-scale dev DB and is a <strong>regression on 54 of 55 branches</strong>: 1.15× faster on the largest branch but <strong>3.6× slower on the median and 11× slower on the small one</strong> (715 ms flat vs 196/65 ms). Cause: the paged join full-scans <code>G_GLOBALCLIENT</code> — <strong>166,404 logical reads to return 15 rows</strong> — and neither <code>OPTION (RECOMPILE)</code>, <code>OPTION (FAST 15)</code>, nor paging a derived table first changes it (a forced <code>LOOP JOIN</code> is 6.9 s). The legacy proc escapes it only by embedding literals in dynamic SQL. Also established: paging <strong>cannot</strong> run on <code>B_ACCOUNT</code> alone — 30 of 1,392 accounts on one branch are dropped by the title join <em>before</em> paging, which is what makes <code>Total</code> correct. So DB-side paging is blocked on a supporting index on <code>B_ACCOUNT(ORGELEMENTID, ACCOUNTSTATUSCODE, ACCOUNTNUMBERFORDISPLAY)</code>, not on code. Evidence: <a href="../perf/AccountList-baseline-2026-07-30.html"><code>docs/perf/AccountList-baseline-2026-07-30.md</code></a>.</li>
+<li><strong>No service-layer caching</strong> of read-mostly reference data (titles, codes, account heads, modules) — re-read from DB every request despite being pulled fully into memory anyway. Obvious <code>IReferenceCache</code> candidates.</li>
+<li><strong>Reframed 2026-07-30 — this is a scoping decision, not missing engineering.</strong> The infrastructure exists and is production-proven: <a href="../../TflCbs.Framework/Caching/IReferenceCache.cs"><code>IReferenceCache</code></a> is <code>IDistributedCache</code>-backed (in-memory / Redis / SQL Server is a <code>Cache:Provider</code> config choice, not a code change), <strong>fail-open</strong> by design (a cache fault falls back to the loader, logs, and throws nothing at the caller), with <code>IReferenceCatalog</code> TTLs per category and a <code>/Bank/ReferenceCache</code> inspector + eviction screen. Applying it to a master is <em>wiring</em>: register a category, wrap the existing loader in <code>GetOrCreateAsync</code>, evict on that master's CRUD. <strong>Only <code>BankVars</code> (bank/branch variables) consumes it today</strong>, and <strong>which masters to cache is deferred by decision, not blocked</strong> — the measured per-request offenders are catalogued in <a href="../../BACKLOG.html"><code>BACKLOG.md</code></a> ("Cache-adjacent"): <code>DiscipActionHistoryService</code> (<code>GetAllAsync()</code> over all of <code>G_TITLE</code> + <code>G_DESIGNATION</code> per list render), <code>SearchAccountHeadsAsync</code> (all 1,695 <code>G_ACCOUNTHEAD</code> rows), <code>LockerTypeService</code>/<code>GeneralGrp11Service</code> (<code>B_CODE</code>). The account list's titles/codes/heads no longer qualify — they became a server-side join on 2026-07-30.</li>
+<li><strong>No transient-fault handling</strong> (Polly/retry/circuit-breaker) on any DB call — a transient SQL/Oracle blip surfaces directly as a user error. Material for Azure SQL / networked DBs.</li>
+<li><strong>Confirmed still absent and formally backlogged 2026-07-30</strong> (no Polly package in <code>Directory.Packages.props</code>, no retry on any DB path) — see <a href="../../BACKLOG.html"><code>BACKLOG.md</code></a> → "Resilience — transient-fault handling (Polly)". The implementation seam is settled: one policy at TflOmniDb's single execution chokepoint <code>CommandLogger.ExecuteAsync</code>, the same place <code>BindByName</code> and the OTel <code>ActivitySource</code> already live, so every provider and call site inherits it. <strong>The open work is idempotency classification, not wiring</strong> — in a core banking system a blindly-retried write can double-post, so the policy needs a transient error-code allowlist, free retry on reads, and writes only where the failure provably preceded commit. Deferred until that classification is agreed.</li>
+<li><strong>Concurrency / lost updates (High).</strong> No rowversion/optimistic concurrency token anywhere. The standard update pattern (load full row → mutate → <code>UpdateAsync</code> rewrites every column) is <strong>last-writer-wins with silent lost updates</strong> under concurrent editors. <code>ScrollService.CreateAsync</code> MAX+1 numbering has an acknowledged duplicate-key race mitigated by a <strong>unique-index-dependent</strong> 3× retry — <em>verify that unique constraint exists in every target DB, or the retry cannot fire.</em></li>
+<li><strong>Async: excellent.</strong> No sync-over-async in services or hot framework paths (the only <code>.GetAwaiter().GetResult()</code> is in the DataProtection XML repo — a synchronous ASP.NET contract, startup-only, documented). No <code>async void</code>.</li>
+<li><strong>The real money path is not yet migrated.</strong> <code>AccountService.GetWithdrawableAmountAsync</code> is a stub; the transaction engine lives only in the excluded <code>Lab</code> project. So transaction/concurrency guarantees are proven on holds/CRUD but <strong>unproven on the highest-risk balance-movement path.</strong></li>
+</ul>
+<hr />
+<h2 id="9-maintainability-analysis">9. Maintainability Analysis</h2>
+<p><strong>Strong.</strong> Single-responsibility files, consistent conventions (PascalCase types, <code>_camelCase</code> fields, UPPERCASE entity props by generation), clear namespace/folder organization, dedicated Form DTOs, a well-designed <code>CbsScreenController</code> base that centralizes the token lifecycle, and reusable components with safe-default extension points. Documentation is a standout.</p>
+<p><strong>Debt:</strong>
+- <strong>5× duplicated host <code>Program.cs</code></strong> (~40 lines each, differ by 2 lines) — extract <code>builder.AddCbsHost(...)</code> / <code>app.UseCbsHost(...)</code>.
+- <strong>~40 duplicated helper methods</strong> across services — extract a shared <code>ServiceHelpers</code>/base.
+- <strong>Bare-DLL Debug-path references</strong> to <code>TflOmniDb</code>/<code>TflSecurityCrypto</code>/<code>TflCbs.Entities</code> — fragile, no Release closure, no build-order edge.
+- <strong>9 projects share <code>RootNamespace=TflCbs.Host.Main</code></strong> (including the misleadingly-named "Framework") — a namespace-collision surface the team already hit once (Lab got a distinct namespace to avoid CS0433).
+- <strong>Stale docs</strong>: <code>CLAUDE.md</code> describes a <code>name="command"</code> POST-dispatch pattern the migrated screens no longer use (they use per-action <code>formaction</code> routes — which is the better pattern; update the doc). <code>compose.multi.yaml</code> still references deleted Misc/Accounts modules.
+- <strong><code>node_modules</code> committed</strong> under <code>docs/migration-estimate/</code> (~560 files); <strong>empty unreferenced <code>_CommonPackages</code></strong> folder; ~351 junk/backup DB tables mirrored into <code>TflCbs.Entities</code> (<code>A_ROLEONMENU29072024</code>, <code>AAA</code>, <code>ABC</code>…). Carried-over DB typos faithfully reproduced (<code>LASTMODOFIEDON</code>).</p>
+<hr />
+<h2 id="10-design-pattern-analysis">10. Design Pattern Analysis</h2>
+<table>
+<thead>
+<tr>
+<th>Pattern</th>
+<th>Usage</th>
+<th>Assessment</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Repository</strong></td>
+<td><code>Repository&lt;T&gt;</code> (TflOmniDb)</td>
+<td>Correct, used consistently. <code>UpdateAsync</code> rewrites all columns (load-first discipline required — a footgun the team documents).</td>
+</tr>
+<tr>
+<td><strong>Unit of Work</strong></td>
+<td><code>ExecuteInTransactionAsync(IUnitOfWork)</code></td>
+<td>Correct and idiomatic where used; the money-movement path that would exercise it most isn't migrated yet.</td>
+</tr>
+<tr>
+<td><strong>Result / Railway</strong></td>
+<td><code>Result</code>/<code>Result&lt;T&gt;</code></td>
+<td>Sound, immutable, ~100% adoption, no boundary exceptions. A model example.</td>
+</tr>
+<tr>
+<td><strong>Ports &amp; Adapters (DIP)</strong></td>
+<td><code>ISessionValidator</code>/<code>IMenuSource</code>/<code>IBankVariableSource</code>/<code>IBroadcastSource</code> + <code>Null*</code> defaults</td>
+<td>Correct intent; leaked by Framework→concrete-<code>TflCbsServices</code> project reference (extract an Abstractions assembly).</td>
+</tr>
+<tr>
+<td><strong>Strategy</strong></td>
+<td><code>DatabaseSelector</code> provider switch; per-column match operators</td>
+<td>Reasonable. <em>(2026-07-29: <code>SearchColumn.Match</code> is now advisory metadata only — the per-column operator is applied by each screen's search service, not by shared framework code.)</em></td>
+</tr>
+<tr>
+<td><strong>Factory</strong></td>
+<td>DI factory registrations</td>
+<td>Fine.</td>
+</tr>
+<tr>
+<td><strong>Capability token</strong></td>
+<td><code>RowToken</code></td>
+<td>Strong crypto design (AES+HMAC, screen/session-bound, single-use).</td>
+</tr>
+<tr>
+<td><strong>Module/Composition</strong></td>
+<td><code>ICbsModule</code> + config gating + arch-tested DI graph</td>
+<td>Good modular-monolith seam.</td>
+</tr>
+<tr>
+<td><strong>CQRS</strong></td>
+<td>Absent</td>
+<td>Not needed yet; would become relevant for read-scale (replicas/read models) at 100k+ users.</td>
+</tr>
+<tr>
+<td><strong>Mediator</strong></td>
+<td>Absent</td>
+<td>Acceptable — thin controllers over services don't need MediatR; adding it now would be YAGNI.</td>
+</tr>
+<tr>
+<td><strong>Specification</strong></td>
+<td>Absent</td>
+<td>In-memory LINQ predicates play this role; a spec pattern could unify filter logic if it grows.</td>
+</tr>
+<tr>
+<td><strong>Builder</strong></td>
+<td><code>SqlQuery.From&lt;&gt;()...</code> fluent builder</td>
+<td>Present in the DAL usage.</td>
+</tr>
+<tr>
+<td><strong>Domain events / Aggregates / Value objects (DDD)</strong></td>
+<td>Absent</td>
+<td>Anemic-by-design; primitive obsession on money/account.</td>
+</tr>
+</tbody>
+</table>
+<p><strong>KISS/DRY/YAGNI/SOLID:</strong> KISS is well-served (thin controllers, no gratuitous abstraction). DRY is violated in host bootstrap <em>(service helpers: resolved 2026-07-29 — extracted to <code>ServiceQuery</code>/<code>DbErrors</code> in <code>TflCbs.Abstractions</code> and locked by an arch test; see §11)</em>. YAGNI is mostly respected (no speculative MediatR/CQRS) — the one over-engineering candidate is the <strong>multi-provider DAL</strong> (Oracle/PG support, and per-method perf harnesses) if SQL Server is the only production target. <em>(Amended 2026-07-29: the "DB-side search paging is SQL-Server-only, so multi-provider isn't fully real" evidence no longer holds — that path was deleted, and the service layer is now provider-neutral throughout. The right-sizing question in §14.7 stands on its own merits.)</em> SOLID scored in §13.</p>
+<hr />
+<h2 id="11-project-by-project-review">11. Project-by-Project Review</h2>
+<ul>
+<li><strong>TflCbs.Entities</strong> (3,680 generated files, 15.6 MB DLL) — faithful 1:1 DB mirror, zero hand edits (safe to regenerate), but ~10% is junk/backup-table noise and carries DB typos. Referenced by <strong>bare Debug-path DLL</strong>, creating build-order fragility (no MSBuild edge; relies on incidental slnx ordering). Recommend a table allowlist for generation.</li>
+<li><strong>TflCbsServices</strong> (35 files, ~4,100 LoC) — the crown jewel of discipline (Result, async, transactions, parameterized SQL). Weaknesses: in-memory paging, ~~duplicated helpers~~, no caching, no concurrency tokens. Folder structure matches the modular-monolith doc. <em>(</em><em>Duplicated helpers resolved 2026-07-29:</em><em> the ~37 byte-identical private members across 8 services — <code>Has</code>/<code>Eq</code>/<code>Val</code>/<code>Paged</code>/<code>IsDuplicate</code>/<code>IsForeignKey</code> + the page-size consts — were extracted to <code>ServiceQuery</code>/<code>DbErrors</code> in <code>TflCbs.Abstractions</code> and consumed via <code>using static</code>, so no call site changed. Placed in Abstractions rather than <code>TflCbsServices</code> because that assembly dissolves under the modular-monolith plan. <code>SharedServiceHelperTests</code> now fails the build on a private re-declaration — mutation-verified — since two of the copies had been added </em>after<em> this finding was first written.)</em></li>
+<li><strong>TflCbs.Lab / .Lab.Demo</strong> (excluded from build) — 67k LoC staging ground, 16× the production layer; a 406 KB single-file Roslyn promotion driver. Where god-service risk lives; fine as a staging area but keep it out of the shipped closure (it is).</li>
+<li><strong>TflCbs.Framework</strong> (48 files) — excellent (see §3). Fix: extract Abstractions assembly (DIP), fix bare-DLL refs, add an ordering assertion for the access guard, audit denied access attempts (a <code>TODO</code>), prune the never-pruned <code>_gates</code> semaphore dictionary.</li>
+<li><strong>TflCbs.Web.Shared</strong> — clean RCL; XSS-safe; one JSON island to tighten; ships unused jQuery/validation (~13k lines dead weight — prune).</li>
+<li><strong>Modules.*.Web</strong> (Bank/Hr/Lockers/RetailBanking/Administration) — thin, arch-boundaried, no cross-module refs. Bank is backed by the General service (a documented naming footgun). ~9 functional screens migrated + 2 stubs.</li>
+<li><strong>Core.Authentication(.Web)</strong> — login/logout, SSO deferral, lockout policy. Contains C-1/C-2. Otherwise solid session/logout handling.</li>
+<li><strong>Core.Shell.Web</strong> — Home/Modules/Error/AccessDenied infra screens.</li>
+<li><strong>TflCbs.Gateway</strong> (YARP, 38 lines) — genuinely thin, config-driven routing, per-IP rate limit, own health path. No session affinity (scale concern). Trust model is network-only.</li>
+<li><strong>TflCbs.Host.*</strong> (4 thin hosts, 62 lines each) — near-identical; DRY debt. Correctly handle the linked-config <code>AppContext.BaseDirectory</code> issue.</li>
+<li><strong>TflCbs.Host.Main</strong> — full host + composition root; owns canonical <code>appsettings.json</code>.</li>
+<li><strong>TflCbs.Tests</strong> (15 files, 105 facts) — integration tests against a live DB, <strong>no mocks</strong> (DAL not behind an interface), thin value assertions (can't seed data), <strong>hard-codes the <code>sa</code> password</strong>, collapse to ~0 cases without infra. Real edge coverage only on failure paths.</li>
+<li><strong>TflCbs.Demo</strong> — 739-line manual cross-provider smoke harness; agent-synced; useful now, dead weight post-cutover.</li>
+<li><strong>TflOmniLog(.Tests/.Demo)</strong> — production-grade logging library with 20 real unit tests. A genuine asset.</li>
+<li><strong>TflCbs.ArchTests</strong> (22 passing) — enforces framework⊥screen + module⊥module + DI-graph resolvability. Good, though allowlist-style (new namespaces silently unguarded); redundant per its own docs now that the split is compiler-enforced.</li>
+<li><strong>TflCbs.IntegrationTests</strong> <em>(added 2026-07-29; 23 tests, ~2s)</em> — the controller/HTTP tier. <code>WebApplicationFactory</code>/TestServer boots the real <code>Program</code>, so middleware <strong>order</strong> is the subject, not a directly-called controller. The guard/antiforgery half needs <strong>no database</strong> (an anonymous request short-circuits before any service resolves) and is CI-ready as-is; the authenticated half mints a <code>CbsAuth</code> cookie with the host's own key ring so authorization is decided by real <code>a_UserMenu</code>/<code>a_Menus</code> data, and skips without a connection string. Read-only. One seam stubbed (<code>ISessionValidator</code>), and that seam's unstubbed behaviour is itself covered.</li>
+<li><strong>TflCbs.E2E</strong> <em>(added 2026-07-30; 80 tests, exit 0 — 69 pass, 11 skip, 3 pinned defects)</em> — the browser tier. TypeScript + Playwright, outside the <code>.slnx</code>, <strong>no app source changes required</strong>. Split by identity: <code>guest</code> needs neither credentials nor a database; <code>app</code> shares one login. Reusable-component coverage runs against the Development-gated <code>/Dev/Components</code> showcase (canned in-memory data, TempData-only notifications), so pickers, the search modal and the notification split are covered <strong>without touching the bank database</strong>. Real-screen coverage is self-calibrating against menu rights and skips with a reason rather than pretending. Notable rigour: the CSP spec injects an inline script and asserts it is <strong>refused</strong>, so those assertions cannot pass vacuously.</li>
+</ul>
+<hr />
+<h2 id="12-risk-matrix">12. Risk Matrix</h2>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Issue</th>
+<th>Severity</th>
+<th>Impact</th>
+<th>Recommendation</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td><code>MFA_AD_LOGIN_ENABLED</code> auth bypass</td>
+<td><strong>Critical</strong> · ✅ <strong>FIXED</strong> (C-1)</td>
+<td>Any password logs in a valid user when flag set</td>
+<td>~~Block success on unverified credential~~ — done: fail-closed guard + pinned test</td>
+</tr>
+<tr>
+<td>2</td>
+<td>Reversible password encryption</td>
+<td><strong>Critical</strong> · ✅ <strong>FIXED</strong> (C-2)</td>
+<td>DB compromise → mass plaintext recovery</td>
+<td>~~Salted PBKDF2 + rehash~~ — done: PBKDF2 primitive, all users migrated, login/change-password verify it</td>
+</tr>
+<tr>
+<td>3</td>
+<td>No CSRF on any POST</td>
+<td><strong>High</strong> · ✅ <strong>FIXED</strong> (H-1)</td>
+<td>Forged Save/Login/Logout/DB-switch</td>
+<td>~~Global <code>AutoValidateAntiforgeryToken</code>~~ — done: registered in <code>AddCbsFramework</code> + AJAX token header</td>
+</tr>
+<tr>
+<td>4</td>
+<td>Committed <code>sa</code> prod creds + <code>TrustServerCertificate=true</code></td>
+<td><strong>High</strong> · ⚠️ <strong>MOSTLY</strong> (H-2)</td>
+<td>Credential leak, MITM, no least-privilege</td>
+<td>Secrets externalized (out of committed config) · <strong>remaining: rotate <code>sa</code>, least-priv login, real TLS cert</strong></td>
+</tr>
+<tr>
+<td>5</td>
+<td>No git / CI / IaC</td>
+<td><strong>High</strong></td>
+<td>No history, no automated gate, unrepeatable infra</td>
+<td>Init repo; pipeline (build+test+scan); IaC for infra</td>
+</tr>
+<tr>
+<td>6</td>
+<td>No optimistic concurrency</td>
+<td><strong>High</strong> · ⏳ <strong>PATTERN ON STATE</strong> (H-6)</td>
+<td>Silent lost updates on banking writes</td>
+<td>Reference impl on State master — TflOmniDb-native row-version (<code>[DbColumn(IsRowVersion=true)]</code> → auto-increment + WHERE guard + <code>ConcurrencyException</code>; conflict test passes on dev DB); rollout to remaining write services pending</td>
+</tr>
+<tr>
+<td>7</td>
+<td>Latent fail-open on guard ordering</td>
+<td><strong>High (latent)</strong> · ✅ <strong>FIXED</strong> (H-4)</td>
+<td>Total access-control bypass on misordering</td>
+<td>~~Startup assertion routing ran~~ — done: <code>EnsureEndpointRoutingRegistered()</code> + 2 pinned tests</td>
+</tr>
+<tr>
+<td>8</td>
+<td>No security headers</td>
+<td><strong>Medium</strong> · ✅ <strong>FIXED</strong> (M-1)</td>
+<td>Clickjacking, MIME-sniffing</td>
+<td>~~Add CSP/X-Frame-Options/X-Content-Type-Options middleware~~ — done: <code>UseCbsSecurityHeaders</code>, fully strict CSP + 4 companion headers</td>
+</tr>
+<tr>
+<td>9</td>
+<td>Single-node in-memory session</td>
+<td><strong>Medium</strong></td>
+<td>Scale ceiling + session loss under pressure</td>
+<td>Distributed session (Redis) + gateway affinity</td>
+</tr>
+<tr>
+<td>10</td>
+<td>Load-all-then-filter on large tables</td>
+<td><strong>Medium</strong> · ⏳ <strong>PARTIAL</strong></td>
+<td>CPU/memory/LOH at scale</td>
+<td>Account picker converted to <strong>one server-side join</strong> (24→1 round-trips, ~2× faster, SQL Server + Oracle verified). Load-all itself remains, 6 services untouched. <strong>DB-side paging measured as a regression</strong> (3.6–11× slower; the paged join full-scans <code>G_GLOBALCLIENT</code>, 166k reads for 15 rows) → blocked on an index, not code. See <code>docs/perf/AccountList-baseline-2026-07-30.md</code></td>
+</tr>
+<tr>
+<td>11</td>
+<td>No metrics/tracing/APM</td>
+<td><strong>Medium</strong> · ✅ <strong>INSTRUMENTED</strong></td>
+<td>Blind in production</td>
+<td>~~OpenTelemetry traces+metrics~~ — done: <code>AddCbsObservability</code> (traces incl. DAL/Oracle spans, RED + runtime metrics, correlated; gateway→host→DB proven). Remaining: dashboards / SLO alerting / logs→Loki</td>
+</tr>
+<tr>
+<td>12</td>
+<td>No DB migration tooling</td>
+<td><strong>Medium</strong> · ✅ <strong>FIXED</strong></td>
+<td>Unrepeatable, un-versioned schema changes for a regulated cutover</td>
+<td>~~DbUp/EF/Flyway; version DDL~~ — done: <code>TflCbs.Tools.DbMigrator</code> (DbUp), versioned DDL in <code>Migrations/&lt;provider&gt;/NNNN_*.sql</code>, <code>CbsSchemaVersions</code> journal, <code>status</code>/<code>preview</code>/<code>upgrade</code>/<code>baseline</code>; deploy-script check + Docker <code>migrate</code> profile. Remaining: a <code>0000</code> legacy-schema baseline; PostgreSQL scripts unrun on a live instance (SQL Server + Oracle verified)</td>
+</tr>
+<tr>
+<td>13</td>
+<td>No DR/HA posture</td>
+<td><strong>Medium</strong></td>
+<td>No RTO/RPO, single-replica in-memory sessions</td>
+<td>DR runbook, DB HA (Always On), distributed session</td>
+</tr>
+<tr>
+<td>14</td>
+<td>No transient-fault retry</td>
+<td><strong>Medium</strong> · 📋 <strong>BACKLOGGED</strong> (2026-07-30)</td>
+<td>DB blips → user errors</td>
+<td>Polly retry + circuit breaker at TflOmniDb's single <code>CommandLogger.ExecuteAsync</code> chokepoint (one policy, all providers). Confirmed absent; <strong>gated on write-idempotency classification</strong> — a blindly-retried write can double-post. <code>BACKLOG.md</code> → "Resilience"</td>
+</tr>
+<tr>
+<td>15</td>
+<td>Bare-DLL Debug-path refs / no Release closure</td>
+<td><strong>Medium</strong></td>
+<td>Release ships Debug binaries; fragile builds</td>
+<td>ProjectReference or NuGet; Release paths; build-order edge</td>
+</tr>
+<tr>
+<td>16</td>
+<td>Framework→concrete services (DIP leak)</td>
+<td><strong>Medium</strong></td>
+<td>Architecture inversion</td>
+<td>Extract <code>*.Abstractions</code> assembly</td>
+</tr>
+<tr>
+<td>17</td>
+<td>Login rate limiting absent on direct host</td>
+<td><strong>Medium</strong> · ✅ <strong>FIXED</strong> (M-3)</td>
+<td>Credential stuffing</td>
+<td>~~Login-specific limiter on all hosts~~ — done: <code>cbs-login</code> policy in <code>AddCbsFramework</code>/<code>UseCbsFramework</code> (all 5 hosts), per client IP + path, 10/60s, 429 + <code>Retry-After</code>, on both credential POSTs. Its prerequisite shipped with it — CIDR <code>KnownNetworks</code> so the Docker multi-host stack actually trusts the gateway, malformed trust entries failing startup, and a once-per-start warning when a proxy's header is discarded as untrusted. 25 pinned tests. Gateway limiter and DB lockout both retained as complementary layers</td>
+</tr>
+<tr>
+<td>18</td>
+<td>PII masking missing on thin hosts</td>
+<td><strong>Medium</strong> · ✅ <strong>FIXED</strong> (M-4)</td>
+<td>Half-masked logging on 4 of 5 hosts — name redaction on, <strong>regex redaction silently off</strong> (empty <code>Patterns</code> default), so PAN/Aadhaar in free text was written in clear</td>
+<td>~~Share masking config across hosts~~ — done: canonical <code>logmasking.json</code> linked into every host, loaded <code>optional: false</code> before the pipeline, env provider re-added after; <code>LogMaskingConfigTests</code> (mutation-verified). Remaining in-area: <strong>M-5</strong> (<code>LogParameterValues</code>)</td>
+</tr>
+<tr>
+<td>19</td>
+<td>Duplicated host bootstrap + service helpers</td>
+<td><strong>Low</strong></td>
+<td>Shotgun surgery</td>
+<td>Extract <code>AddCbsHost</code>/<code>UseCbsHost</code> + shared helpers</td>
+</tr>
+<tr>
+<td>20</td>
+<td>Committed <code>node_modules</code>, empty <code>_CommonPackages</code>, junk entities</td>
+<td><strong>Low</strong></td>
+<td>Repo bloat/confusion</td>
+<td>gitignore; delete; generation allowlist</td>
+</tr>
+<tr>
+<td>21</td>
+<td>Login <em>attempt</em> deactivates a dormant account</td>
+<td><strong>Medium</strong> · ⚠️ <strong>NEW (2026-07-30)</strong></td>
+<td><code>AuthenticationService</code> runs the dormancy sweep during login and writes <code>a_User.STATUS = 3</code> when the last logout is older than <code>b_LoginPolicy.DeactivateDays</code> (90). The failed attempt is what deactivates the account, and there is <strong>no self-service or admin path back</strong> — only a DBA <code>UPDATE</code>. Two accounts were deactivated this way while building the E2E suite.</td>
+<td>Add a reactivate action to <code>/Administration/ConnectedUsers</code> (the screen already exists and is password-gated); consider making the sweep a scheduled job rather than a login side-effect, so a login attempt reads policy instead of enforcing it</td>
+</tr>
+<tr>
+<td>22</td>
+<td>Signed cookie + closed session ⇒ infinite redirect loop</td>
+<td><strong>Medium</strong> (High in multi-host) · ⚠️ <strong>NEW (2026-07-30)</strong></td>
+<td><code>/Account/Login</code> is <code>[CbsAllowAnonymous]</code>, so <code>CbsAccessMiddleware</code> never validates the session there. The controller sees the rehydrated cookie, treats the caller as authenticated and redirects to <code>/Modules</code>; <code>/Modules</code> <strong>is</strong> guarded, finds no open <code>b_UserLogTime</code> row, and redirects back — <code>ERR_TOO_MANY_REDIRECTS</code>. <strong>The user cannot reach the login form to recover</strong> without clearing cookies. Reachable in normal operation: admin force-logout via <code>/Administration/ConnectedUsers</code>, logout on another host holding the shared SSO cookie, or a server session that lapsed while the cookie lives. Proven in a real browser.</td>
+<td>On the login GET, treat a cookie whose session is not open as anonymous — sign out and render the form — instead of redirecting; the guard's own <code>reason=sessionexpired</code> bounce should also clear the cookie</td>
+</tr>
+<tr>
+<td>23</td>
+<td><code>Model.Disabled</code> undone at runtime on the account picker</td>
+<td><strong>Low (latent)</strong> · ⚠️ <strong>NEW (2026-07-30)</strong></td>
+<td>Razor renders Go <code>disabled</code> and the segments <code>readonly</code>, then <code>cbs-account-picker.js</code> init runs <code>unlock(cfg)</code> — <code>goBtn(cfg, false)</code> + <code>el.readOnly = !cfg.goEnabled</code> — neither consulting the disabled state (the config carries no <code>disabled</code> flag). A disabled <strong>and empty</strong> picker comes back editable, letting a read-only screen change the posted account id. <strong>Latent, not live:</strong> the one production consumer (<code>AccHoldingAmount</code>, <code>Disabled = isEdit</code>) always has a populated account in edit mode, which takes the safe <code>lock()</code> branch. It bites the first screen that renders a disabled picker with no value.</td>
+<td>Pass <code>disabled</code> through in the <code>data-cbs-account</code> config and have <code>lock</code>/<code>unlock</code> honour it</td>
+</tr>
+<tr>
+<td>24</td>
+<td>Component showcase demonstrates <code>clearTargets</code> backwards</td>
+<td><strong>Low</strong> · ⚠️ <strong>NEW (2026-07-30)</strong></td>
+<td><code>Views/Components/Index.cshtml:167</code> puts <code>clearTargets</code> on the <strong>child</strong> picker pointing at its own fields, so the dependent lookup blanks itself on every pick and can never hold a value. <code>clearTargets</code> means “downstream fields this selection invalidates” and belongs on the parent — <code>Views/Taluka/Index.cshtml:59</code> is correct. The component is fine; the <strong>reference demo developers copy from</strong> is wrong.</td>
+<td>Move <code>clearTargets</code> to the parent State picker in the showcase</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="13-architecture-scorecard">13. Architecture Scorecard</h2>
+<table>
+<thead>
+<tr>
+<th>Category</th>
+<th style="text-align: right;">Score /10</th>
+<th>Basis</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Solution Structure</td>
+<td style="text-align: right;">8</td>
+<td>Clean acyclic layering, modular monolith, arch-tested; docked for bare-DLL refs + shared root namespace</td>
+</tr>
+<tr>
+<td>Maintainability</td>
+<td style="text-align: right;">7</td>
+<td>Excellent factoring; docked for host/helper duplication + stale docs</td>
+</tr>
+<tr>
+<td>Scalability</td>
+<td style="text-align: right;">4</td>
+<td>Fine to ~1–10k; single-node session + in-memory paging cap it beyond</td>
+</tr>
+<tr>
+<td>Performance</td>
+<td style="text-align: right;">5</td>
+<td>Great async; account picker's round-trips fixed (24→1, ~2× faster, 2026-07-30). <strong>Still docked for all three original reasons</strong> — <em>load-all</em> (blocked on a DBA index, measured), <em>no caching</em> (infra built + fail-open + proven by <code>BankVars</code>; <strong>scope deferred by decision</strong>, only <code>BankVars</code> wired), <em>no retry</em> (<strong>backlogged</strong>, gated on write-idempotency rules). Nothing yet lifts the cell</td>
+</tr>
+<tr>
+<td>Security</td>
+<td style="text-align: right;">3</td>
+<td>Auth bypass, reversible passwords, no CSRF, committed secrets</td>
+</tr>
+<tr>
+<td>Testability</td>
+<td style="text-align: right;">7</td>
+<td>Service + arch suites, plus a controller/HTTP tier (<code>…UI.IntegrationTests</code>, real pipeline in-process) and a browser tier (<code>TflCbs.E2E</code>, Playwright) — the "no controller/E2E tests" dock is cleared. Still docked for the unmockable DAL (<code>DataAccess</code> is <code>sealed</code>, no <code>IDataAccess</code>), a live-DB dependency in every authenticated tier, and <strong>no CI to run any of it</strong> (H-3)</td>
+</tr>
+<tr>
+<td>Extensibility</td>
+<td style="text-align: right;">8</td>
+<td>Module system, reusable components with safe defaults, config-driven cutover</td>
+</tr>
+<tr>
+<td>Code Quality</td>
+<td style="text-align: right;">8</td>
+<td>Consistent, single-responsibility, well-documented</td>
+</tr>
+<tr>
+<td>Database Design</td>
+<td style="text-align: right;">6</td>
+<td>Sound schema reuse + real transactions; versioned DDL + a migration runner (#12) and a concurrency-token pattern (H-6) now exist; docked for the H-6 rollout still pending, no <code>0000</code> schema baseline, junk tables</td>
+</tr>
+<tr>
+<td>API Design</td>
+<td style="text-align: right;">6</td>
+<td>Clean MVC + attribute routing + DTOs; no REST/versioning story (server-rendered app), no antiforgery</td>
+</tr>
+<tr>
+<td>Dependency Management</td>
+<td style="text-align: right;">6</td>
+<td>CPM centralized; docked for bare-DLL Debug refs + DIP leak</td>
+</tr>
+<tr>
+<td>Deployment Readiness</td>
+<td style="text-align: right;">5</td>
+<td>Four deploy shapes + good scripts/health checks; no CI/CD/IaC, root-user containers</td>
+</tr>
+<tr>
+<td>Observability</td>
+<td style="text-align: right;">7</td>
+<td>Logging/correlation + OpenTelemetry traces/metrics/DAL spans, correlated, gateway→host→DB proven; docked for prod dashboards / SLO-alerting / logs→Loki</td>
+</tr>
+<tr>
+<td>Documentation</td>
+<td style="text-align: right;">9</td>
+<td>Exceptional and current</td>
+</tr>
+</tbody>
+</table>
+<p><strong>SOLID (1–10):</strong> SRP <strong>8</strong> (small cohesive units), OCP <strong>7</strong> (module/port extension points, config gating), LSP <strong>7</strong> (little inheritance, no obvious violations), ISP <strong>9</strong> (tiny interfaces), DIP <strong>6</strong> (ports pattern correct but Framework references concrete services + service-locator for optional ports).</p>
+<h3 id="overall-62-100-as-reviewed-2026-07-10-77-after-remediation-see-the-progress-banner">Overall: <strong>62 / 100</strong> <em>(as reviewed 2026-07-10; </em><em>~77</em><em> after remediation — see the progress banner)</em></h3>
+<p>Craft and structure score high; security, scalability, observability, and deployment maturity pull it down to a <strong>strong pre-production foundation</strong> rather than a shippable banking system. <em>Update (2026-07-18): C-1/C-2/H-1/H-4/M-1 fixed + H-2 partial (Security ~3→~7), plus Observability instrumentation (Observability 4→~6) and the H-6 State pilot — overall to </em><em>~74</em><em>. Update (2026-07-30): </em><em>#12 DB migration tooling</em><em> shipped — versioned per-provider DDL + a journalled runner, verified live on SQL Server and Oracle (Database Design 5→6) — overall to </em><em>~75</em><em>. Update (2026-07-30): the </em><em>controller/HTTP and browser test tiers</em><em> shipped (<code>…UI.IntegrationTests</code> + <code>TflCbs.E2E</code>), closing the ~90-band test row and clearing the largest of Testability's three docks (Testability 5→7) — overall to </em><em>~76</em><em>; held to +1 rather than the row's +1.5 because </em><em>H-3 (CI) still runs none of it</em><em>. Update (2026-07-31): </em><em>M-4 closed</em><em> — PII masking config made canonical and shared to all five hosts; the thin hosts had been </em><em>half-masked</em><em> (name redaction on, regex redaction silently off), not unmasked as the finding said — overall to </em><em>~76.5</em><em>. Update (2026-07-31): </em><em>M-3 closed</em><em> — a <code>cbs-login</code> rate-limit policy in the framework, so all five hosts throttle the credential POSTs and not just the gateway (whose limiter was volumetric, ~600 guesses/min), plus the forwarded-headers trust that makes the per-client partition real in the Docker multi-host stack — overall to </em><em>~77</em><em>. That closes the last ~90-band Security row that is pure application code; what remains under Security is process (threat model, pen test, WAF) and ops (HSTS strengthening, <code>sa</code> rotation). The Security cell stays at its as-reviewed </em><em>3</em><em> (this scorecard records the 2026-07-10 baseline; current Security is ~7 per the banner). Green gate still pends </em><em>H-3 (git + CI)</em><em> and </em><em>H-6 rollout to the remaining write services</em><em> (⏳ pattern proven on State).</em></p>
+<hr />
+<h2 id="14-refactoring-roadmap">14. Refactoring Roadmap</h2>
+<h3 id="critical-must-fix-before-any-production-exposure">Critical — must fix before <em>any</em> production exposure</h3>
+<ul>
+<li>✅ <strong>DONE — auth bypass (C-1)</strong> — fail-closed guard; never succeeds on an unverified credential; pinned test.</li>
+<li>✅ <strong>DONE — salted password hashing (C-2)</strong> — PBKDF2 <code>PasswordHash</code> primitive + full migration (all 1,731 users) + login &amp; change-password verification.</li>
+<li>✅ <strong>DONE — global antiforgery (H-1)</strong> — <code>AutoValidateAntiforgeryToken</code> in <code>AddCbsFramework</code> + AJAX token header.</li>
+<li>⚠️ <strong>MOSTLY — remove committed secrets (H-2)</strong> — secrets out of committed config (gitignored dev creds + prod env/secret-store). <em>Still to do (external): rotate <code>sa</code>, least-privilege login, real TLS cert (drop <code>TrustServerCertificate=true</code>).</em></li>
+<li>✅ <strong>DONE — guard-ordering assertion (H-4)</strong> — <code>EnsureEndpointRoutingRegistered()</code> throws at startup if <code>UseCbsFramework()</code> precedes <code>UseRouting()</code>; 2 pinned tests.</li>
+<li>✅ <strong>DONE — security headers (M-1)</strong> — <code>UseCbsSecurityHeaders</code> (first middleware, all 5 hosts): fully strict enforced CSP (<code>script-src</code>/<code>style-src 'self'</code>, no nonce/no <code>unsafe-inline</code>) + X-Frame-Options/nosniff/Referrer-Policy/Permissions-Policy; inline scripts/handlers/styles refactored out.</li>
+<li><strong>Stand up source control + CI (H-3)</strong> — <em>Medium.</em> ⬅ next. Git repo; pipeline running build + <code>dotnet test</code> + a security scan + secret scan on every change.</li>
+</ul>
+<h3 id="high-priority">High Priority</h3>
+<ul>
+<li><strong>Optimistic concurrency</strong> on write paths — <em>Medium.</em> rowversion + <code>WHERE rowversion=@orig</code>.</li>
+<li><strong>Distributed session + gateway affinity</strong> — <em>Medium–Large.</em> Redis-backed session; YARP <code>SessionAffinity</code>.</li>
+<li>⏳ <strong>PARTIAL — DB-side filter/sort/page</strong> for large list screens, provider-dialected — <em>Medium.</em> The account picker's <strong>round-trips</strong> are fixed (one server-side join, 24→1, ~2× faster, verified on SQL Server + Oracle). <strong>DB-side paging is deferred on evidence</strong>: measured 3.6–11× <em>slower</em> on 54 of 55 branches because the paged join full-scans <code>G_GLOBALCLIENT</code> (166k logical reads for 15 rows), unfixable by query hints or restructuring. Needs an index on <code>B_ACCOUNT(ORGELEMENTID, ACCOUNTSTATUSCODE, ACCOUNTNUMBERFORDISPLAY)</code> — i.e. <strong>DBA work, not coding work</strong> — then re-measure. <code>docs/perf/AccountList-baseline-2026-07-30.md</code>.</li>
+<li>✅ <strong>DONE — Security headers</strong> (M-1: fully strict CSP + X-Frame-Options/X-Content-Type-Options/Referrer-Policy/Permissions-Policy) — see Critical section.</li>
+<li>✅ <strong>DONE — DB migration tooling</strong> (#12) — <code>TflCbs.Tools.DbMigrator</code> (DbUp): the five hand-run <code>.sql</code> files are now numbered, immutable, per-provider migrations embedded in the tool, applied once each and journalled to <code>CbsSchemaVersions</code>. <code>deploy-cbs.ps1</code> checks for drift (opt-in <code>-Migrate</code> applies); Docker exposes a <code>migrate</code> compose profile. Runbook: <code>docs/deploy/db-migrations.md</code>. <em>Verified end-to-end on two live providers: SQL Server (dev) and Oracle (dev <code>TFLCBS</code> — where <code>0001</code>/<code>0002</code> did real work and <code>0003</code>'s already-exists guard fired). Remaining: script the legacy schema as an already-applied <code>0000</code> baseline; the PostgreSQL scripts are still unrun on a live instance.</em></li>
+<li>✅ <strong>DONE — Login rate limiting on all hosts (M-3)</strong> — <code>cbs-login</code> policy registered in <code>AddCbsFramework</code> and inserted first by <code>UseCbsFramework</code>, so every host has it, gateway or not; per client IP + path, 10/60s default, 429 + <code>Retry-After</code>, on both credential POSTs. The gateway's volumetric limiter and the DB per-account lockout are retained as complementary layers. Shipped with its own prerequisite — CIDR <code>KnownNetworks</code> trust for the Docker multi-host stack, malformed trust entries failing startup, and a once-per-start warning when a proxy's <code>X-Forwarded-For</code> is discarded as untrusted (the misconfiguration that would otherwise turn the per-client partition into one shared bucket, silently). 25 pinned tests.</li>
+<li>✅ <strong>DONE — PII masking shared to thin hosts (M-4)</strong> — canonical <code>logmasking.json</code> linked into all five hosts, loaded <code>optional: false</code> before the logging pipeline; the thin hosts were <strong>half-masked</strong> (empty <code>Patterns</code> default), not unmasked. <code>LogMaskingConfigTests</code> pins it, mutation-verified.</li>
+</ul>
+<h3 id="medium-priority">Medium Priority</h3>
+<ul>
+<li>✅ <strong>DONE (instrumentation) — OpenTelemetry</strong> traces + metrics + OTLP + DAL spans + log-trace correlation (<code>AddCbsObservability</code>, all 5 hosts + gateway, off by default). <em>Remaining = ops:</em> stand up the backend/dashboards/SLO alerting (Collector → Prometheus/Tempo + Grafana, or a SaaS APM).</li>
+<li><strong>Polly transient-retry + circuit breaker</strong> on DB calls — <em>Small–Medium.</em></li>
+<li><strong>Extract <code>*.Abstractions</code> assembly</strong> (fix DIP leak) + <strong>fix bare-DLL Debug refs</strong> (ProjectReference/NuGet, Release closure, build-order edge) — <em>Medium.</em></li>
+<li><strong>Extract <code>AddCbsHost</code>/<code>UseCbsHost</code></strong> (kill 5× bootstrap duplication) + <strong>shared service helpers</strong> — <em>Small.</em></li>
+<li><strong>Container hardening</strong>: non-root <code>USER</code>, <code>HEALTHCHECK</code> in the Dockerfile — <em>Small.</em></li>
+<li><strong>DR/HA design</strong>: DB Always-On, RTO/RPO, DR runbook — <em>Large.</em></li>
+</ul>
+<h3 id="nice-to-have">Nice to Have</h3>
+<ul>
+<li>Prune unused jQuery/validation, empty <code>_CommonPackages</code>, committed <code>node_modules</code>, junk entity tables; fix <code>LASTMODOFIEDON</code> typo at generation.</li>
+<li>Update stale docs (<code>CLAUDE.md</code> command-dispatch, <code>compose.multi.yaml</code>).</li>
+<li>Introduce lightweight value types for money/account if the domain grows.</li>
+<li>~~Controller + E2E (Playwright) tests~~ <strong>done 2026-07-29/30</strong> (<code>…UI.IntegrationTests</code> + <code>TflCbs.E2E</code>); <strong>make the DAL mockable for true unit tests</strong> — still open, and now the binding constraint on Testability: every authenticated tier of all four suites needs a live database because <code>DataAccess</code> is <code>sealed</code> with no <code>IDataAccess</code> (<code>IRepository&lt;T&gt;</code> exists, but <code>DataAccess.Repository&lt;T&gt;()</code> hands back the concrete <code>Repository&lt;T&gt;</code>).</li>
+<li>Audit denied-access attempts (framework <code>TODO</code>).</li>
+</ul>
+<h3 id="road-to-100-remaining-work-by-category">Road to 100 — remaining work by category</h3>
+<blockquote>
+<p><strong>Just want the shape of it?</strong> <a href="REMEDIATION-PLAN.html#0-at-a-glance-whats-left">REMEDIATION-PLAN.md §0 — <em>At a glance, what's left</em></a> is a one-screen version: the two items blocking a green gate, the four known open defects, the ~80/~90 bands in a line each, and the migration. The table below stays the authoritative one — owners, bands, effort and per-item progress.
+<em>(Current: </em><em>~77</em><em> — Observability instrumentation, the H-6 State pilot, #12 DB migration tooling, the controller/browser test tiers, M-4 (PII masking) and M-3 (login rate limiting) have landed since the ~72 mark. Grouped by who owns it — </em><em>Coding</em><em> = application code in this repo · </em><em>Infra</em><em> = platform/pipeline/hosting (DevOps + ops) · </em><em>Other</em><em> = DBA credential/cert work + one-off security-process engagements. "Shared" straddles two. </em><em>+pts = tentative overall-score gain</em><em> if that item is completed — a </em><em>holistic estimate for prioritisation, not an exact additive sum</em><em>; the overall is a judgment call, and ship-blockers lift the number more than their own cell because they stop suppressing the whole score. </em><em>Progress</em><em> states how far each item actually is — ✅ done · ⏳ partial (what landed, what is left) · ⬜ not started — so a partially-collected item is never read as finished.)</em></p>
+</blockquote>
+<table>
+<thead>
+<tr>
+<th>Item</th>
+<th>Progress</th>
+<th>Category</th>
+<th>Band</th>
+<th style="text-align: center;">+pts (est.)</th>
+<th style="text-align: center;">Effort</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>H-6</strong> optimistic concurrency (rowversion + guarded UPDATE across write services)</td>
+<td>⏳ <strong><code>StateService</code> DONE — the reference implementation; every other write service must now follow it.</strong> State carries <code>G_STATE.VERSION</code> as <code>[DbColumn(IsRowVersion = true)]</code>, so TflOmniDb auto-increments it in the SET clause, appends <code>AND VERSION = @expected</code> to the WHERE, and throws <code>ConcurrencyException</code> on 0 rows; <code>StateService.UpdateStateAsync</code> catches that and disambiguates "changed by another user" from "already deleted". Proven on the dev DB by a passing conflict theory, and the signature did not change, so there was no controller/view/Demo churn. <strong>The rollout is a repeat of three mechanical steps per service</strong> — (1) add the <code>VERSION</code> column via a migration, (2) mark it <code>IsRowVersion</code> on the entity in a hand-authored partial, (3) call <code>UpdateAsync(entity, cols)</code> and catch <code>ConcurrencyException</code>. Until that is done, <strong>every write path except State is still last-writer-wins.</strong></td>
+<td><strong>Coding</strong></td>
+<td>~74 gate</td>
+<td style="text-align: center;"><strong>+2</strong></td>
+<td style="text-align: center;">M</td>
+</tr>
+<tr>
+<td><strong>H-3</strong> — git init + CI pipeline (build/test/arch/secret-scan/SAST)</td>
+<td>⬜ <strong>Not started.</strong> The single largest remaining gate item — the working tree is still not a repository.</td>
+<td><strong>Infra</strong></td>
+<td>~74 gate</td>
+<td style="text-align: center;"><strong>+2</strong></td>
+<td style="text-align: center;">M</td>
+</tr>
+<tr>
+<td><strong>H-2 finish</strong> — rotate <code>sa</code>, least-privilege SQL login, real TLS cert (drop <code>TrustServerCertificate</code>)</td>
+<td>⏳ <strong>Partial.</strong> Secrets are out of committed config; the three remaining actions are DBA/ops, not code.</td>
+<td><strong>Other</strong> (DBA/ops)</td>
+<td>~74 gate</td>
+<td style="text-align: center;"><strong>+1</strong></td>
+<td style="text-align: center;">S–M</td>
+</tr>
+<tr>
+<td>Distributed session (Redis) + gateway affinity</td>
+<td>⬜ Not started. <code>CbsSessionStore</code> is still single-node in-memory.</td>
+<td><strong>Coding + Infra</strong></td>
+<td>~80</td>
+<td style="text-align: center;">+1.5</td>
+<td style="text-align: center;">M–L</td>
+</tr>
+<tr>
+<td><strong>Observability instrumentation</strong> — OTel traces/metrics + OTLP + log-trace correlation, all 5 hosts + gateway (<code>AddCbsObservability</code>)</td>
+<td>✅ <strong>Instrumentation done</strong> (gateway→host→DB proven). ⬜ Prod backend / dashboards / SLO alerting still to stand up — ops, not code.</td>
+<td><strong>Coding + Infra</strong></td>
+<td>~80</td>
+<td style="text-align: center;"><strong>+1 done · +0.5 ops</strong></td>
+<td style="text-align: center;">M</td>
+</tr>
+<tr>
+<td><strong>Performance — DB-side filter/sort/page on large lists</strong> — see <code>docs/perf/AccountList-baseline-2026-07-30.md</code></td>
+<td>⏳ <strong>One third done.</strong> Account picker converted to one server-side join: 24→1 round-trips, ~2× faster, SQL Server + Oracle verified. DB-side paging <strong>measured as a 3.6–11× regression</strong> (paged join full-scans <code>G_GLOBALCLIENT</code>, 166k reads for 15 rows) → blocked on <code>B_ACCOUNT(ORGELEMENTID, ACCOUNTSTATUSCODE, ACCOUNTNUMBERFORDISPLAY)</code>, i.e. <strong>DBA not Coding</strong>. Of the other two thirds: <strong>reference caching</strong> — infra is built (<code>IReferenceCache</code>: distributed, fail-open, proven by <code>BankVars</code>), scope <strong>deferred by decision</strong>; <strong>Polly retry</strong> — <strong>backlogged</strong>, seam settled at TflOmniDb's <code>CommandLogger.ExecuteAsync</code>, gated on write-idempotency classification. Both tracked in <code>BACKLOG.md</code>.</td>
+<td><strong>Coding</strong> (paging: <strong>Other</strong>/DBA)</td>
+<td>~80</td>
+<td style="text-align: center;"><strong>+0.5 done · +1.0 left</strong></td>
+<td style="text-align: center;">M</td>
+</tr>
+<tr>
+<td><strong>DB migration tooling + versioned DDL</strong> — <code>TflCbs.Tools.DbMigrator</code> (DbUp), per-provider numbered scripts, <code>CbsSchemaVersions</code> journal, deploy-script drift check, Docker <code>migrate</code> profile</td>
+<td>✅ <strong>Done</strong>, verified live on SQL Server and Oracle. ⬜ Remaining: a <code>0000</code> legacy-schema baseline (so an empty DB is reproducible) and a live PostgreSQL run.</td>
+<td><strong>Coding + Infra</strong></td>
+<td>~80</td>
+<td style="text-align: center;"><strong>+1 done</strong></td>
+<td style="text-align: center;">M</td>
+</tr>
+<tr>
+<td>~~Controller + end-to-end (Playwright) test coverage~~</td>
+<td>✅ <strong>DONE (both halves).</strong> <code>TflCbs.IntegrationTests</code> (2026-07-29, 23 tests, ~2s) boots the real <code>Program</code> via <code>WebApplicationFactory</code>, so middleware <strong>order</strong> is under test; its guard/antiforgery half needs no database. <code>TflCbs.E2E</code> (2026-07-30, 80 tests, exit 0) drives a real browser — Playwright/TypeScript, outside the <code>.slnx</code>, <strong>no app source changes</strong>. Components are covered against the Development-gated <code>/Dev/Components</code> showcase (canned data, TempData-only notifications), so the bank database is never written; real screens self-calibrate against menu rights and skip with a reason. Found and pinned <strong>3 real defects</strong> (<code>Model.Disabled</code> undone at runtime on the account picker; the showcase's dependent picker clearing itself; a signed-cookie/closed-session <strong>infinite redirect loop</strong> on <code>/Account/Login</code>). <strong>Banked as ~+1, not +1.5</strong> — nothing runs these automatically until <strong>H-3 (CI)</strong> lands.</td>
+<td><strong>Coding</strong></td>
+<td>~90</td>
+<td style="text-align: center;">~~+1.5~~ banked</td>
+<td style="text-align: center;">M</td>
+</tr>
+<tr>
+<td>Row-token bypass tests + multi-host SSO browser flow (residue of the row above)</td>
+<td>⬜ <strong>Not started — named separately so "test coverage ✅" does not read as "everything tested."</strong> <code>RowToken</code> makes four promises (unforgeable / screen-bound / session-bound / single-use) and <strong>none of the negative cases is covered</strong>; the suites only prove a <em>valid</em> token round-trips and that ids never travel as bare integers. Each is a distinct bypass if it regresses. This was blocked at the integration tier (tokens embed the session id, the consumed-nonce set is server-side, and a tokenless POST 400s at antiforgery before the token check) — <strong>the browser tier removes that blocker</strong>, since a cookie jar and antiforgery round-trip are free in Playwright, making this now the cheapest place to close it. Also open: the gateway login / global-logout flow across the multi-host farm, verified by hand once with nothing pinning it.</td>
+<td><strong>Coding</strong></td>
+<td>~90</td>
+<td style="text-align: center;">+0.5</td>
+<td style="text-align: center;">S–M</td>
+</tr>
+<tr>
+<td>IaC / Kubernetes (repeatable infra)</td>
+<td>⬜ Not started. Four deploy shapes are scripted but not declarative.</td>
+<td><strong>Infra</strong></td>
+<td>~90</td>
+<td style="text-align: center;">+1.5</td>
+<td style="text-align: center;">L</td>
+</tr>
+<tr>
+<td>DR / HA / backup posture</td>
+<td>⬜ Not started. No RTO/RPO defined.</td>
+<td><strong>Infra</strong></td>
+<td>~90</td>
+<td style="text-align: center;">+1</td>
+<td style="text-align: center;">L</td>
+</tr>
+<tr>
+<td>Penetration test</td>
+<td>⬜ Not started (external engagement).</td>
+<td><strong>Other</strong> (security process)</td>
+<td>~90</td>
+<td style="text-align: center;">+1</td>
+<td style="text-align: center;">External</td>
+</tr>
+<tr>
+<td>Container hardening (non-root, HEALTHCHECK, image scan)</td>
+<td>⬜ Not started. Containers still run as root.</td>
+<td><strong>Infra</strong></td>
+<td>~90</td>
+<td style="text-align: center;">+0.5</td>
+<td style="text-align: center;">S–M</td>
+</tr>
+<tr>
+<td>WAF in front of the app</td>
+<td>⬜ Not started (procurement decision).</td>
+<td><strong>Infra</strong></td>
+<td>~90</td>
+<td style="text-align: center;">+0.5</td>
+<td style="text-align: center;">S (procure)</td>
+</tr>
+<tr>
+<td>~~PII masking shared to thin hosts~~</td>
+<td>✅ <strong>DONE (2026-07-31).</strong> The finding was <strong>under-stated</strong>: the thin hosts were <strong>half-masked</strong>, not unmasked — <code>MaskingOptions</code> defaults <code>Keys</code> to the banking PII list but defaults <code>Patterns</code> to <strong>empty</strong>, so name-based redaction worked while value-regex redaction (PAN/Aadhaar in free text) silently did not, on the four hosts that serve the domain screens. Config extracted to a canonical <code>TflCbs.Host.Main/logmasking.json</code> (<strong>deleted</strong> from <code>appsettings.json</code> — no second copy), linked into all four thin hosts like <code>routecutover.json</code>, loaded from <code>AppContext.BaseDirectory</code> <strong>before</strong> <code>ConfigureTflLogging()</code> and <strong><code>optional: false</code></strong> (a missing file would degrade to half-masked logging silently, so the host now refuses to start), with <code>AddEnvironmentVariables()</code> re-added after so <code>TflLog__Masking__*</code> still overrides. Pinned by <code>LogMaskingConfigTests</code> (4 facts, <strong>mutation-verified</strong>). <strong>Full +0.5 taken</strong> — the fix ships with the build whether or not CI exists; only the guard's value waits on H-3. ⬜ Not covered: <strong>M-5</strong> (<code>Database:LogParameterValues</code>) and an end-to-end assertion on a real log file.</td>
+<td><strong>Coding</strong></td>
+<td>~90</td>
+<td style="text-align: center;"><strong>+0.5 done</strong></td>
+<td style="text-align: center;">S</td>
+</tr>
+<tr>
+<td>~~Login-specific rate limiting on all hosts (not just the gateway)~~</td>
+<td>✅ <strong>DONE (2026-07-31).</strong> The finding was <strong>two gaps, not one</strong>: the gateway's limiter was <em>volumetric</em> (600/60 s over all traffic — ~600 password guesses a minute) <em>and</em> absent from any host reached without it, including the whole single-host shape. Both closed by one control in the framework: <code>AddCbsFramework</code> registers the <code>cbs-login</code> policy, <code>UseCbsFramework</code> inserts <code>UseRateLimiter()</code> <strong>first</strong> (cheapest possible rejection — before session, cookie decryption or DB), and the two credential POSTs opt in with <code>[EnableRateLimiting]</code>. Since <code>AccountController</code> lives in <code>TflCbs.Core.Authentication.Web</code> — an application part in <strong>all 5 hosts</strong> — one attribute covers every deployment shape. Partition = <strong>client IP + path</strong>, so a burst on login can't lock everyone out of change-password. Default 10/60 s, <code>Security:LoginRateLimit</code>; disabled still <strong>registers</strong> the policy as a no-limiter (an unregistered name would 500 the login page), and a zero/negative value is a <strong>startup error</strong>, never a silent "off". Pinned by 9 tests, incl. a fixture guard proving the pinned limit reaches the framework (the first draft silently didn't — eager config reads don't see <code>ConfigureAppConfiguration</code>). ⬜ Not covered: the <strong>per-username</strong> dimension stays with the DB lockout (<code>MAXIMUMLOGINATTEMPT</code>) — partitioning on the posted username needs a sync form-body read, which Kestrel disables; the per-user partition behind the gateway is now real (<code>ForwardedHeaders</code> gained CIDR <code>KnownNetworks</code>, the Docker multi-host stack trusts the gateway, malformed trust entries fail startup and a <em>missing</em> one is warned about once per host start — 16 further tests), but <strong>IIS farms still set <code>KnownProxies</code> by hand</strong> — now detectable in the log rather than silent, though still not enforced.</td>
+<td><strong>Coding</strong></td>
+<td>~90</td>
+<td style="text-align: center;"><strong>+0.5 done</strong></td>
+<td style="text-align: center;">S</td>
+</tr>
+<tr>
+<td>Threat model</td>
+<td>⬜ Not started (workshop).</td>
+<td><strong>Other</strong> (security process)</td>
+<td>~90</td>
+<td style="text-align: center;">+0.5</td>
+<td style="text-align: center;">S (workshop)</td>
+</tr>
+<tr>
+<td>HSTS strengthening (1-yr max-age + <code>includeSubDomains</code>/<code>preload</code>)</td>
+<td>⬜ Not started — deliberately deferred; <code>preload</code> is hard to reverse.</td>
+<td><strong>Other</strong> (ops decision)</td>
+<td>backlog</td>
+<td style="text-align: center;">+0.5</td>
+<td style="text-align: center;">S</td>
+</tr>
+<tr>
+<td><strong>Migration completeness</strong> — port the remaining ~98% of screens</td>
+<td>⏳ <strong>~2% ported.</strong> 12 domain screens / 47 views across 8 promoted domains — the vertical slice is proven; the volume is not.</td>
+<td><strong>Coding</strong></td>
+<td>~100</td>
+<td style="text-align: center;"><strong>+9</strong></td>
+<td style="text-align: center;">XL</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Band subtotals (ladder from the original ~72 baseline; now at ~77):</strong> gate items <strong>+5 → ~76–77</strong> · ~80-band shared/perf <strong>+5.5 → ~81–82</strong> · ~90-band hardening/test/security <strong>+5.5 → ~89–90</strong> · migration completeness <strong>+9 → ~99–100</strong>. (Totals ~+25 remaining, on top of the ~+2 already banked — ~+1 for the test row, +0.5 for PII masking, +0.5 for login rate limiting; treat as directional.)</p>
+<p><strong>How to prioritise with this:</strong> best <strong>points-per-effort</strong> are the two gate items — <strong>H-6 (pure Coding) and H-3 (pure Infra)</strong> — cheap, high-value, and parallelisable across people; do them first. The ~80-band shared items (Redis, OTel, DB-side paging) are the next-best ratio. The ~90 band is many small-to-medium items with diminishing per-item returns (mostly Infra + security process). The last <strong>+9 to 100 is the migration itself</strong> — by far the largest effort and unavoidable, but pure volume, not architecture: nothing there needs a redesign (structure already scores 8/10).</p>
+<p><strong>Observability (OTel) — what the +1.5 buys, and the shape of the work.</strong> Of the three pillars (logs / metrics / traces), only <strong>logs</strong> are present (<code>TflLog</code>: structured, correlation <code>Reference</code>, categories incl. Performance/Request, per-request middleware). <strong>Metrics and traces are missing</strong> — no request rate / p95–p99 latency / error rate, and no gateway→host→DB span tree — which is the "blind in production" gap: you learn of problems from user complaints, and there's nothing to alert on. OpenTelemetry is <strong>vendor-neutral</strong> — instrument once (<strong>turnkey auto-instrumentation</strong> for ASP.NET Core + <code>HttpClient</code>, and <strong>DB spans free for SQL Server via <code>Microsoft.Data.SqlClient</code> and for PostgreSQL via Npgsql's built-in OTel</strong>), export to any backend. <em>(Oracle's managed provider emits no OTel spans; and because </em><em>TflOmniDb is editable in-house source</em><em> — not a bare DLL — uniform DB spans across all three providers, with the SQL/provider/row-count/correlation-id the DAL already tracks, come from adding a </em><em>single <code>ActivitySource</code> at the DAL's existing central command seam</em><em> — one place, not per-call-site.)</em> High-value 80/20: <strong>RED metrics</strong> (rate/errors/duration per endpoint) + auto-traces, with <strong>W3C <code>traceparent</code> propagated across the YARP gateway</strong> so a request is a single trace, and the OTel trace-id <strong>unified with the existing correlation <code>Reference</code></strong> so a log line links to its trace. The real cost is <strong>Infra/ops, not code</strong>: standing up and operating the backend — OTel Collector → Prometheus/Tempo + Grafana (<strong>self-hosted</strong>, for data-residency) or <strong>SaaS</strong> (App Insights/Datadog) — with retention, dashboards and SLO alerting. Post-gate Medium (the app runs; logs give forensics) — best paired with the Redis stood up for distributed session and with H-3's pipeline. <strong>Decision that drives it: self-hosted vs SaaS backend (data-residency + ops capacity).</strong></p>
+<hr />
+<h2 id="15-production-readiness-checklist">15. Production Readiness Checklist</h2>
+<table>
+<thead>
+<tr>
+<th>Area</th>
+<th>Status</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Authentication sound (no bypass, hashed passwords)</td>
+<td>✅ <strong>Fixed</strong> (C-1 guard + C-2 PBKDF2)</td>
+</tr>
+<tr>
+<td>CSRF protection</td>
+<td>✅ <strong>Fixed</strong> (H-1 global antiforgery)</td>
+</tr>
+<tr>
+<td>Secrets externalized, least-privilege DB</td>
+<td>⚠️ <strong>Partial</strong> (H-2: externalized; <code>sa</code> rotation + least-priv login pending)</td>
+</tr>
+<tr>
+<td>Security headers / HSTS / secure cookies</td>
+<td>✅ <strong>Headers fixed</strong> (M-1: strict CSP + companions); ⚠️ HSTS stock/prod-only (strengthening backlogged); cookie flags deploy-dependent</td>
+</tr>
+<tr>
+<td>Source control + CI/CD + automated tests gate</td>
+<td>❌ Missing</td>
+</tr>
+<tr>
+<td>DB change management / migrations</td>
+<td>❌ Missing</td>
+</tr>
+<tr>
+<td>Concurrency correctness on writes</td>
+<td>❌ Missing</td>
+</tr>
+<tr>
+<td>Horizontal scalability (distributed session)</td>
+<td>❌ Missing</td>
+</tr>
+<tr>
+<td>Health checks (liveness/readiness)</td>
+<td>✅ Present</td>
+</tr>
+<tr>
+<td>Structured logging + correlation</td>
+<td>✅ Present</td>
+</tr>
+<tr>
+<td>PII redaction in logs</td>
+<td>✅ <strong>Present on every host</strong> (M-4 fixed 2026-07-31: canonical <code>logmasking.json</code>, name + regex redaction, <code>optional: false</code>, test-guarded); ⚠️ <strong>M-5 open</strong> — <code>Database:LogParameterValues</code> can still log parameter values if enabled outside Dev</td>
+</tr>
+<tr>
+<td>Metrics / tracing / APM</td>
+<td>✅ <strong>Instrumented</strong> (OTel traces+metrics via <code>AddCbsObservability</code>); ⚠️ prod backend/dashboards/alerting = ops</td>
+</tr>
+<tr>
+<td>DR / HA / backup posture</td>
+<td>❌ Missing</td>
+</tr>
+<tr>
+<td>Container hardening (non-root, healthcheck)</td>
+<td>⚠️ Partial</td>
+</tr>
+<tr>
+<td>Rate limiting / brute-force defense</td>
+<td>✅ <strong>Present on every host</strong> (M-3 fixed 2026-07-31: <code>cbs-login</code> policy on both credential POSTs, 429 + <code>Retry-After</code>, test-guarded) + gateway volumetric limiter + DB per-account/IP lockout; proxy trust (which decides whether the partition is per-user or per-gateway) is now wired in the Docker multi-host stack, fails startup if malformed, and logs a <code>Security</code> warning once per host start if a proxy's header is being discarded; ⚠️ IIS farms still set <code>KnownProxies</code> by hand — detectable in the log, not enforced</td>
+</tr>
+<tr>
+<td>Access control fail-closed</td>
+<td>✅ Present (H-4: ordering now asserted at startup)</td>
+</tr>
+<tr>
+<td>Migration completeness</td>
+<td>❌ ~&lt;2% of screens</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Gate decision: DO NOT DEPLOY</strong> to production banking use until the Critical + High rows are green. The foundation is sound enough that closing them is a matter of focused work, not redesign.</p>
+<hr />
+<h2 id="16-enterprise-readiness-verdict">16. Enterprise Readiness Verdict</h2>
+<p><em>If a senior engineer at Microsoft / Google / Amazon / Netflix / Stripe submitted this:</em></p>
+<ul>
+<li><strong>Would it pass an architecture review?</strong> As a <strong>mid-migration reference architecture / vertical slice</strong> — yes, with commendation for the framework, the Result discipline, the module system, and the docs. As a <strong>production core banking system</strong> — no; it would be sent back on security and operational readiness.</li>
+<li><strong>What they'd praise:</strong> the horizontal framework factoring, <code>Result</code> + async discipline, arch-tested boundaries, the reusable-component design, the reference cache, the structured logging library, and the documentation quality. Several reviewers would ask to <em>reuse</em> the framework/logging patterns.</li>
+<li><strong>What they'd criticize:</strong> the auth bypass and reversible passwords (a Stripe/Amazon security reviewer would treat C-1 as a launch-blocking incident), no CSRF, committed secrets, and — culturally striking — <strong>no source control or CI</strong>. They'd flag the single-node session store as a scale-out blocker and the absence of metrics/tracing as "flying blind."</li>
+<li><strong>What they'd ask to redesign:</strong> password/credential handling; session/state for horizontal scale; DB-side query/paging for large tables; the bare-DLL/Debug reference scheme; extraction of the abstractions assembly.</li>
+<li><strong>What they'd reject completely:</strong> shipping to production with C-1/C-2/H-1/H-2 open. Everything else is roadmap, not rejection.</li>
+</ul>
+<hr />
+<h2 id="17-final-recommendations">17. Final Recommendations</h2>
+<ol>
+<li><strong>Treat this as a foundation, not a product.</strong> The architecture is a well-built chassis. Do not let its polish mask that &lt;2% of the banking surface is migrated and the highest-risk money-movement path is still in the excluded Lab project.</li>
+<li><strong>Close the four security blockers first (C-1, C-2, H-1, H-2)</strong> — they are small-to-medium effort and non-negotiable for a bank. C-1 (auth bypass) is a same-day fix and should be done immediately.</li>
+<li><strong>Stand up the engineering safety net now, not later</strong> — git + CI (build/test/secret-scan/SAST) will catch the <em>next</em> C-1 before it ships. Its current absence is the single biggest process risk.</li>
+<li><strong>Solve concurrency and horizontal scale before load, not after</strong> — add rowversion concurrency checks and move session to a distributed store with gateway affinity; both are architecture-shaping and cheaper now than post-launch.</li>
+<li><strong>Add the observability and DB-migration pillars</strong> — OpenTelemetry ✅ (instrumentation done — traces/metrics/DAL spans/correlation, gateway→host→DB proven; prod backend/dashboards remain) + a versioned migration tool (still to do) are prerequisites for operating a regulated system, independent of feature progress.</li>
+<li><strong>Preserve what's good.</strong> The framework, Result pattern, module system, reusable components, logging library, and documentation are genuine assets — the roadmap above hardens them; it does not replace them.</li>
+<li><strong>Right-size the multi-provider investment.</strong> If SQL Server is the only production target, the Oracle/PG DAL and per-method perf harnesses are cost without payoff. Decide explicitly. <em>(Updated 2026-07-29: the original "and the SQL-Server-only search paging already breaks the promise" caveat is gone — that path was removed, so the multi-provider claim is now consistent end-to-end. The decision is a cost/benefit one, not a "the promise is already broken" one.)</em></li>
+</ol>
+<p><strong>Bottom line:</strong> Excellent craft on an incomplete, not-yet-secure system. Fix the concentrated Critical/High items, add the missing operational pillars, and this becomes a genuinely strong enterprise platform. Ship it as-is and it fails an audit on day one.</p>
+<hr />
+<p><em>Prepared as a formal architecture review. All findings are anchored to source; headline Critical findings were verified directly against the code. Where a claim depends on runtime config (e.g. the <code>MFA_AD_LOGIN_ENABLED</code> flag state, the presence of the <code>X_SCROLL</code> unique constraint), the review says so — those warrant confirmation against the live environment before sign-off.</em></p>
+</div></div>
+<script>
+(function(){
+ function put(t){
+  if(navigator.clipboard&&navigator.clipboard.writeText)return navigator.clipboard.writeText(t);
+  return new Promise(function(res,rej){
+   var a=document.createElement('textarea');a.value=t;a.setAttribute('readonly','');
+   a.style.cssText='position:fixed;top:0;left:0;opacity:0';document.body.appendChild(a);
+   a.select();var ok=false;try{ok=document.execCommand('copy')}catch(e){}
+   document.body.removeChild(a);ok?res():rej()});
+ }
+ function flash(el,txt,ms){
+  var was=el.textContent;el.classList.add('done');if(txt)el.textContent=txt;
+  setTimeout(function(){el.classList.remove('done');if(txt)el.textContent=was},ms||1200);
+ }
+ function copy(text,el,okTxt){
+  put(text).then(function(){flash(el,okTxt)},function(){
+   if(okTxt){var w=el.textContent;el.textContent='Ctrl+C';setTimeout(function(){el.textContent=w},2000)}});
+ }
+ document.querySelectorAll('pre').forEach(function(pre){
+  if(pre.classList.contains('txtdoc'))return;
+  var b=document.createElement('button');
+  b.type='button';b.className='copy';b.textContent='Copy';
+  b.setAttribute('aria-label','Copy this code block to the clipboard');
+  b.addEventListener('click',function(){copy((pre.querySelector('code')||pre).innerText,b,'Copied')});
+  pre.appendChild(b);
+ });
+ document.querySelectorAll('td code').forEach(function(c){
+  if(!c.textContent.trim())return;
+  c.classList.add('cp');c.tabIndex=0;c.setAttribute('role','button');
+  c.title='Click to copy';
+  c.addEventListener('click',function(){copy(c.textContent,c)});
+  c.addEventListener('keydown',function(e){
+   if(e.key==='Enter'||e.key===' '){e.preventDefault();copy(c.textContent,c)}});
+ });
+})();
+</script>
+</body></html>

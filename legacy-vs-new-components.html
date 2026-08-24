@@ -1,0 +1,966 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>TrustBank CBS — Legacy → New Component Guide</title>
+<style>
+:root{color-scheme:light dark}
+*{box-sizing:border-box}
+body{margin:0;background:#f6f8fa;color:#1f2328;font:16px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif}
+.wrap{max-width:900px;margin:0 auto;padding:32px 24px 96px}
+.card{background:#fff;border:1px solid #d0d7de;border-radius:10px;padding:40px 48px}
+h1,h2,h3{line-height:1.25;font-weight:600}
+h1{font-size:1.9rem;margin:0 0 .3em;padding-bottom:.3em;border-bottom:1px solid #d8dee4}
+h2{font-size:1.4rem;margin:1.8em 0 .6em;padding-bottom:.25em;border-bottom:1px solid #eaeef2}
+h3{font-size:1.12rem;margin:1.4em 0 .5em}
+p,li{margin:.5em 0}
+a{color:#0969da;text-decoration:none}
+a:hover{text-decoration:underline}
+code{font-family:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;font-size:.86em;background:#eff1f3;padding:.15em .4em;border-radius:6px}
+pre{background:#f6f8fa;border:1px solid #d8dee4;border-radius:8px;padding:14px 16px;overflow:auto}
+pre code{background:none;padding:0;font-size:.85em;line-height:1.45}
+blockquote{margin:1em 0;padding:.4em 1em;color:#3d444d;border-left:4px solid #d0d7de;background:#f6f8fa;border-radius:0 6px 6px 0}
+blockquote>:first-child{margin-top:0}blockquote>:last-child{margin-bottom:0}
+table{border-collapse:collapse;width:100%;margin:1em 0;display:block;overflow:auto}
+th,td{border:1px solid #d0d7de;padding:8px 12px;text-align:left;vertical-align:top}
+th{background:#f6f8fa;font-weight:600}
+tr:nth-child(2n) td{background:#f6f8fa}
+hr{border:0;border-top:1px solid #d8dee4;margin:2em 0}
+pre{position:relative}
+pre>button.copy{position:absolute;top:8px;right:8px;padding:5px 9px;cursor:pointer;
+  font:600 .68rem/1 ui-monospace,SFMono-Regular,Consolas,monospace;letter-spacing:.03em;
+  color:#636c76;background:#fff;border:1px solid #d0d7de;border-radius:6px;
+  opacity:0;transition:opacity .12s}
+pre:hover>button.copy,pre>button.copy:focus{opacity:1}
+pre>button.copy.done{color:#0a3622;background:#dafbe1;border-color:#4ac26b}
+@media(hover:none){pre>button.copy{opacity:1}}
+td code.cp{cursor:pointer}
+td code.cp:hover,td code.cp:focus{outline:1px solid #8c959f;outline-offset:1px}
+td code.cp.done{color:#0a3622;background:#dafbe1}
+.docnav{margin:0 0 20px;font-size:.85rem;color:#636c76}
+.docnav a{color:#636c76}
+ul{padding-left:1.4em}ol{padding-left:1.4em}
+@media(max-width:640px){.card{padding:24px 18px}.wrap{padding:16px 10px 64px}}
+@media(prefers-color-scheme:dark){
+ body{background:#0d1117;color:#e6edf3}
+ .card{background:#161b22;border-color:#30363d}
+ h1{border-color:#30363d}h2{border-color:#21262d}
+ code{background:#262c34}
+ pre{background:#0d1117;border-color:#30363d}
+ blockquote{background:#161b22;border-color:#30363d;color:#9198a1}
+ th,td{border-color:#30363d}th{background:#161b22}tr:nth-child(2n) td{background:#12171e}
+ a{color:#4493f8}.docnav,.docnav a{color:#9198a1}
+ hr{border-color:#30363d}
+ pre>button.copy{color:#9198a1;background:#161b22;border-color:#30363d}
+ pre>button.copy.done{color:#aff5b4;background:#1b4721;border-color:#2ea043}
+ td code.cp.done{color:#aff5b4;background:#1b4721}
+}
+</style></head>
+<body><div class="wrap"><div class="card">
+<div class="docnav"><a href="index.html">&#8592; All docs</a></div>
+<h1 id="trustbank-cbs-legacy-new-component-guide">TrustBank CBS — Legacy → New Component Guide</h1>
+<p>Developer reference for the <strong>strangler-fig migration</strong> (ASP.NET WebForms / VB.NET → .NET 10 / C# MVC). For each <strong>core reusable</strong> legacy control it gives the new counterpart, a property mapping, a copy-paste usage recipe, and the key differences.</p>
+<blockquote>
+<p>This file is the <strong>source of truth</strong>. The <code>.txt</code> / <code>.html</code> / <code>.pdf</code> siblings are generated from it by <code>docs/build-docs.mjs</code> — do not hand-edit them. The <code>component-docs-sync</code> subagent keeps all of these current.</p>
+<p><strong>Live demo:</strong> <code>/Dev/Components</code> (Development only) renders every reusable component below with dummy data and all options. Maintained by the <code>component-demo</code> agent.</p>
+</blockquote>
+<h2 id="how-to-read-this">How to read this</h2>
+<p><strong>Where things live</strong></p>
+<ul>
+<li>Legacy controls: <code>…\Trust.Bank.Publish\UserControls\*.ascx(.vb)</code> (+ paired <code>*.aspx</code> popups).</li>
+<li>New models: <code>TflCbs.Framework\Models\{Shared,Search}\*.cs</code></li>
+<li>New services / infra: <code>TflCbs.Framework\{Services,Infrastructure}\*.cs</code></li>
+<li>New partials: <code>TflCbs.Host.Main\Views\Shared\_*.cshtml</code></li>
+<li>New client JS: <code>TflCbs.Host.Main\wwwroot\js\*.js</code></li>
+</ul>
+<p><strong>Four cross-cutting changes that touched every component</strong></p>
+<ol>
+<li><strong>The server owns the query.</strong> Legacy shipped (encrypted) SQL in the popup URL; new screens never send SQL/columns/table to the client. The controller owns the query; only values cross the wire (<code>SearchRequest</code>).</li>
+<li><strong>Opaque row ids.</strong> Grid rows carry a <code>RowToken</code> (AES, bound to screen + session, single-use on write) instead of raw primary keys.</li>
+<li><strong>Fail-closed access.</strong> Every route is guarded by <code>CbsAccessMiddleware</code> (authenticated + module selected + URL in the user's menu) unless explicitly attributed.</li>
+<li><strong>One in-page AJAX modal.</strong> A single shared modal (<code>_SearchModal</code> + <code>cbs-search.js</code>) replaces per-control <code>window.showModalDialog</code> popups.</li>
+</ol>
+<h2 id="index">Index</h2>
+<table>
+<thead>
+<tr>
+<th>Legacy control</th>
+<th>New counterpart</th>
+<th>Status</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>TssiplDatePicker.ascx</code></td>
+<td><code>_DatePicker</code> + <code>DatePickerModel</code> + <code>cbs-datepicker.js</code></td>
+<td>Available</td>
+</tr>
+<tr>
+<td><code>TssiplRecordSelector(.ascx)</code> V1/V2 + <code>RecordSelector.aspx</code></td>
+<td><code>_RecordPicker</code> + <code>RecordPickerModel</code> + <code>cbs-search.js</code></td>
+<td>Available</td>
+</tr>
+<tr>
+<td><code>TssiplSearchBox.ascx</code> + <code>RecordSelector.aspx</code> (grid)</td>
+<td><code>_SearchModal</code> + <code>SearchDescriptor</code> + <code>SearchEndpoint</code> + <code>RowToken</code></td>
+<td>Available</td>
+</tr>
+<tr>
+<td>ad-hoc <code>alert()</code> / result popups</td>
+<td><code>Notify</code> + <code>_Notification</code> (ack modal) + <code>cbsNotify</code> (toast)</td>
+<td>Available</td>
+</tr>
+<tr>
+<td><code>MainMenu.ascx</code> + <code>CollapsablePanelStart/End.ascx</code></td>
+<td><code>_MenuOverlay</code> / <code>_MenuGrid</code> + <code>MenuService</code></td>
+<td>Available</td>
+</tr>
+<tr>
+<td><code>ActionButtons.ascx</code></td>
+<td><code>_ActionBar</code> + command-dispatch POST</td>
+<td>Available</td>
+</tr>
+<tr>
+<td><code>Account.ascx</code> (3-segment composite) + COA/Account <code>TssiplRecordSelector</code> + <code>AccountSelector.aspx</code></td>
+<td><code>_AccountPicker</code> (3 typed segment boxes) + <code>AccountPickerModel</code> + <code>_AccountSearchModal</code> + <code>cbs-account-picker.js</code> + <code>AccountService</code></td>
+<td>Available — selection plus opt-in <code>cbs:account-picked</code> / <code>cbs:account-cleared</code> host events (maker-checker deferred)</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="a-date-picker">A. Date Picker</h2>
+<p>Calendar-free Day / Month / Year input.</p>
+<p><strong>At a glance</strong></p>
+<ul>
+<li>Legacy: <code>UserControls\TssiplDatePicker.ascx(.vb)</code> — three dropdowns + a hidden value, server <code>ServerValidate</code> event, <strong>no calendar</strong>.</li>
+<li>New: <code>Views\Shared\_DatePicker.cshtml</code> · <code>Framework\Models\Shared\DatePickerModel.cs</code> · <code>wwwroot\js\cbs-datepicker.js</code>.</li>
+</ul>
+<p><strong>Mapping</strong></p>
+<table>
+<thead>
+<tr>
+<th>Legacy</th>
+<th>New</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>uxDate</code> / <code>uxMonth</code> / <code>uxYear</code> dropdowns</td>
+<td>three <code>select</code> (Day/Month/Year)</td>
+<td>display-only (no name)</td>
+</tr>
+<tr>
+<td><code>uxHiddenValue</code></td>
+<td>hidden field named <code>Name</code></td>
+<td>posts ISO <code>yyyy-MM-dd</code>, binds to <code>DateTime?</code></td>
+</tr>
+<tr>
+<td><code>RequiredField</code></td>
+<td><code>[Required]</code> on the <code>DateTime?</code> form property</td>
+<td>the picker has no <code>Required</code> prop — the selects post nothing, so required-ness belongs to the bound property</td>
+</tr>
+<tr>
+<td><code>ServerValidate</code> event</td>
+<td>model binding + DataAnnotations</td>
+<td>no event; standard MVC validation</td>
+</tr>
+<tr>
+<td>client/server day fixups</td>
+<td><code>cbs-datepicker.js</code> leap-year day-clamp</td>
+<td>Feb 29 / 30-day months handled</td>
+</tr>
+<tr>
+<td>(new) <code>MinYear</code> / <code>MaxYear</code></td>
+<td>year range, default <code>1900</code>–<code>2100</code></td>
+<td>ascending dropdown; also sets <code>min</code>/<code>max</code> on the calendar input</td>
+</tr>
+<tr>
+<td>(new) <code>HideDay</code></td>
+<td>month/year-only mode</td>
+<td>day pinned to the 1st at render, as legacy did</td>
+</tr>
+<tr>
+<td>(none — legacy had no calendar)</td>
+<td>📅 button → the browser's native picker</td>
+<td><code>showPicker()</code> on a collapsed <code>&lt;input type="date"&gt;</code>; a pick fills the three dropdowns</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Usage recipe</strong></p>
+<pre><code class="language-csharp">// Controller — seed the value (e.g. the working date for a new record)
+vm.Form.ActionDate = session.WorkingDate?.WorkingDate ?? DateTime.Now.Date;
+</code></pre>
+<pre><code class="language-cshtml">@* View — bind the hidden field to a DateTime? form property *@
+@{
+    var actionDate = new DatePickerModel
+    {
+        Name = &quot;Form.ActionDate&quot;,
+        Id = &quot;Form_ActionDate&quot;,
+        Value = Model.Form.ActionDate,
+    };
+}
+&lt;label class=&quot;req&quot;&gt;Action Date&lt;/label&gt;
+&lt;partial name=&quot;_DatePicker&quot; model=&quot;actionDate&quot; /&gt;
+&lt;span asp-validation-for=&quot;Form.ActionDate&quot;&gt;&lt;/span&gt;
+</code></pre>
+<pre><code class="language-csharp">// Form model — the bound target
+public DateTime? ActionDate { get; set; }
+</code></pre>
+<p><strong>Key differences / gotchas</strong></p>
+<ul>
+<li>The three selects have no <code>name</code>; only the hidden ISO field posts. Always point <code>Name</code>/<code>Id</code> at the same <code>DateTime?</code>.</li>
+<li>Required-ness is <code>[Required]</code> on the form property plus <code>&lt;label class="req"&gt;</code> for the visual cue; the picker itself has no flag for it.</li>
+<li>Year is a dropdown (type-ahead works); change <code>MinYear</code>/<code>MaxYear</code> per screen if the default range is wrong.</li>
+<li>The calendar is the <strong>browser's own</strong> (<code>showPicker()</code>), not a JS library — so it can't be restyled and looks a little different per browser. It needs Chrome/Edge 99+, Firefox 101+ or Safari 16+; anywhere else the button is inert and the three dropdowns still work.</li>
+<li>The dropdowns remain the accessible path (each has an <code>aria-label</code>); the calendar input is <code>tabindex="-1"</code> and <code>aria-hidden</code>, i.e. a mouse convenience layered on top.</li>
+</ul>
+<hr />
+<h2 id="b-record-picker">B. Record Picker</h2>
+<p>Single-value lookup: a text box with Go / Pick / Clear, backed by the shared search modal.</p>
+<p><strong>At a glance</strong></p>
+<ul>
+<li>Legacy: <code>UserControls\TssiplRecordSelector.ascx(.vb)</code> (V1) and <code>TssiplRecordSelectorV2.ascx(.vb)</code> + <code>RecordSelector(V2).aspx</code> popup.</li>
+<li>New: <code>Views\Shared\_RecordPicker.cshtml</code> · <code>Framework\Models\Shared\RecordPickerModel.cs</code> · <code>Framework\Models\Search\SearchDescriptor.cs</code> · <code>wwwroot\js\cbs-search.js</code>.</li>
+</ul>
+<p><strong>Mapping</strong></p>
+<table>
+<thead>
+<tr>
+<th>Legacy property / event</th>
+<th>New</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>SelectQuery</code> (SQL in URL)</td>
+<td>server-owned <code>Command</code> handler</td>
+<td>no SQL on the wire</td>
+</tr>
+<tr>
+<td><code>DataValueField</code></td>
+<td><code>PickValueKey</code> (+ <code>IdKey</code>)</td>
+<td>column that fills the hidden id</td>
+</tr>
+<tr>
+<td><code>DataTextField</code></td>
+<td><code>PickTextKey</code></td>
+<td>column that fills the display box</td>
+</tr>
+<tr>
+<td><code>VisibleColumns</code></td>
+<td><code>Descriptor.Columns</code> + <code>Filters</code></td>
+<td>explicit allowlist</td>
+</tr>
+<tr>
+<td><code>HideGridColumns</code></td>
+<td>(whitelist <code>Columns</code> instead)</td>
+<td>inverse approach</td>
+</tr>
+<tr>
+<td><code>ShowSearchFields</code></td>
+<td>presence of <code>Filters</code></td>
+<td>empty → single free-text box</td>
+</tr>
+<tr>
+<td><code>FillRecordsInitially</code></td>
+<td><code>AutoLoad</code></td>
+<td>load on open</td>
+</tr>
+<tr>
+<td><code>RequiredField</code> / <code>ErrorMessage</code></td>
+<td>form DataAnnotations</td>
+<td>server-validated</td>
+</tr>
+<tr>
+<td><code>Enabled = false</code></td>
+<td><code>Disabled</code></td>
+<td>greys control, locks input</td>
+</tr>
+<tr>
+<td><code>ShowNewButton</code> / <code>NewButtonUrl</code></td>
+<td><code>NewUrl</code> / <code>NewText</code></td>
+<td>＋ opens add-record screen</td>
+</tr>
+<tr>
+<td><code>AfterSelectClientAction</code></td>
+<td><code>CallbackName</code></td>
+<td>global fn run after select</td>
+</tr>
+<tr>
+<td><code>AfterClearClientAction</code> / <code>ValueCleared</code></td>
+<td><code>OnClearJs</code></td>
+<td>global fn run after clear</td>
+</tr>
+<tr>
+<td><code>ValuesReturned(Hashtable)</code></td>
+<td><code>PickFields</code> (+ <code>CallbackName</code>)</td>
+<td>fill many fields from the row</td>
+</tr>
+<tr>
+<td><code>ConnectionString</code></td>
+<td><code>DatabaseSelector</code> (global)</td>
+<td>not per-control</td>
+</tr>
+<tr>
+<td>"Go" exact resolve</td>
+<td><code>EnableGo</code> + <code>GoFilterKey</code></td>
+<td>single-field exact, by design</td>
+</tr>
+<tr>
+<td>dependent scoping</td>
+<td><code>DependsOn</code> / <code>DependsRequired</code> / <code>DependsMessage</code> / <code>ClearTargets</code></td>
+<td>e.g. district scoped to state</td>
+</tr>
+<tr>
+<td><code>AutoPostBack</code></td>
+<td>(none — AJAX callback)</td>
+<td>no server round-trip on select</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Usage recipe</strong> (state picker, callback mode — from District)</p>
+<pre><code class="language-cshtml">@{
+    var statePicker = new RecordPickerModel
+    {
+        Label = &quot;State&quot;,
+        ButtonText = &quot;Select State&quot;,
+        Placeholder = &quot;State code&quot;,
+        ValueName = &quot;Form.StateId&quot;,  ValueId = &quot;Form_StateId&quot;,
+        ValueValue = Model.Form.StateId &gt; 0 ? Model.Form.StateId.ToString() : null,
+        TextName = &quot;Form.StateName&quot;, TextId = &quot;Form_StateName&quot;,
+        TextValue = Model.Form.StateName,
+        Descriptor = new SearchDescriptor
+        {
+            Title = &quot;States&quot;,
+            DataUrl = &quot;/Bank/District&quot;,
+            Command = &quot;searchStates&quot;,
+            IdKey = &quot;Id&quot;,
+            Columns = [new SearchColumn(&quot;StateName&quot;, &quot;State&quot;), new SearchColumn(&quot;Code&quot;, &quot;Code&quot;)],
+            Filters = [new SearchFilter(&quot;StateName&quot;, &quot;State&quot;)],
+            GoFilterKey = &quot;Code&quot;,          // Go resolves by code only (single-field, exact)
+            SelectMode = &quot;callback&quot;,
+            PickValueKey = &quot;Id&quot;,
+            PickTextKey = &quot;StateName&quot;,
+        },
+    };
+}
+&lt;partial name=&quot;_RecordPicker&quot; model=&quot;statePicker&quot; /&gt;
+&lt;span asp-validation-for=&quot;Form.StateId&quot;&gt;&lt;/span&gt;
+</code></pre>
+<pre><code class="language-csharp">// Controller — the picker's command; raw id (reference data, re-validated on save)
+private async Task&lt;IActionResult&gt; SearchStatesAsync(SearchRequest req, CancellationToken ct)
+{
+    var resp = await searchEndpoint.RunAsync(async (r, c) =&gt;
+    {
+        r.Filters.TryGetValue(&quot;StateName&quot;, out var name); // dialog browses by name
+        r.Filters.TryGetValue(&quot;Code&quot;, out var code);      // Go resolves by code
+        var term = r.IsGo ? code : name;
+        var res = await svc.SearchStatesAsync(term, r.Sort, r.Desc, r.Page, r.PageSize, c, exact: r.IsGo);
+        return res.IsSuccess ? res.Value : ([], 0);
+    }, &quot;Id&quot;, ScreenKey, req, ct, tokenizeId: false);
+    return Json(resp);
+}
+</code></pre>
+<p><strong>Key differences / gotchas</strong></p>
+<ul>
+<li>All new picker props are additive with safe defaults — set only what a screen needs.</li>
+<li><code>EnableGo = false</code> (dialog-only picker, e.g. Employee) makes the box read-only; the user selects via the dialog.</li>
+<li>Reference-data pickers pass <code>tokenizeId: false</code> (the chosen id is re-validated on save); grids that navigate use tokens.</li>
+<li>Go is <strong>single-field by design</strong> (<code>GoFilterKey</code>, else the first filter) — never the multi-column <code>Q</code> path.</li>
+<li><strong>Keyboard (shared search dialog).</strong> After Search returns at least one row, focus moves into the result grid and the first row is highlighted. With the grid focused, Down / Up move the highlight (scrolling into view) and Enter selects the highlighted row (same as clicking — fills/navigates per <code>SelectMode</code>). Up clamps at the first row. Down at the last row of the page moves focus to the <strong>"Next ›"</strong> pager button when a next page exists (the button is enabled); the highlight does <strong>not</strong> auto-advance — you press <strong>Enter</strong> on that focused Next button to load the next page, after which focus returns to the first row of the new page. (The Prev button is not auto-focused; Up stays clamped.) Esc closes. Arrows and Enter act only while the grid has focus; in the filter boxes arrow keys still move the text caret and Enter behaves as Tab, so you reach the grid by clicking Search.</li>
+</ul>
+<hr />
+<h2 id="c-search-box-lookup-dialog">C. Search Box / Lookup dialog</h2>
+<p>The browse-and-pick grid behind a Search button or a picker.</p>
+<p><strong>At a glance</strong></p>
+<ul>
+<li>Legacy: <code>UserControls\TssiplSearchBox.ascx</code> + the <code>RecordSelector.aspx</code> popup grid.</li>
+<li>New: <code>Views\Shared\_SearchModal.cshtml</code> (one instance in the layout, id <code>cbs-search</code>) · <code>wwwroot\js\cbs-search.js</code> · models <code>SearchDescriptor</code> / <code>SearchColumn</code> / <code>SearchFilter</code> / <code>SearchRequest</code> / <code>SearchResponse</code> · service <code>SearchEndpoint</code> · infra <code>RowToken</code>.</li>
+</ul>
+<p><strong>Mapping</strong></p>
+<table>
+<thead>
+<tr>
+<th>Legacy</th>
+<th>New</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>showModalDialog</code> popup window</td>
+<td>shared in-page modal <code>#cbs-search</code></td>
+<td>one per layout</td>
+</tr>
+<tr>
+<td>SQL in the URL</td>
+<td>a fetch delegate into the screen's <code>Result</code>-returning service</td>
+<td>server owns it</td>
+</tr>
+<tr>
+<td>per-field search inputs</td>
+<td><code>SearchRequest.Filters[key]</code></td>
+<td>validated against <code>Columns</code></td>
+</tr>
+<tr>
+<td>free-text box</td>
+<td><code>SearchRequest.Q</code></td>
+<td>when <code>Filters</code> is empty</td>
+</tr>
+<tr>
+<td><code>uxMaxRowCount</code> + "more records"</td>
+<td>real paging (<code>Page</code> / <code>PageSize</code>) + total + pager</td>
+<td>proper paging</td>
+</tr>
+<tr>
+<td>column sorting</td>
+<td><code>SearchColumn.Sortable</code> + <code>Sort</code> / <code>Desc</code></td>
+<td>server-validated key</td>
+</tr>
+<tr>
+<td>row select returns raw id</td>
+<td><code>RowToken</code> in the <code>IdKey</code> column</td>
+<td>navigate or callback</td>
+</tr>
+<tr>
+<td>open record by id</td>
+<td><code>SelectMode = "navigate"</code> + <code>NavigateTemplate</code></td>
+<td><code>?row={token}</code></td>
+</tr>
+<tr>
+<td>fill a field</td>
+<td><code>SelectMode = "callback"</code> + <code>PickValueKey</code> / <code>PickTextKey</code></td>
+<td>picker mode</td>
+</tr>
+<tr>
+<td>typed filter (string/number/date)</td>
+<td><code>SearchFilter.Type</code> (<code>text</code> / <code>number</code> / <code>date</code>)</td>
+<td>native typed input</td>
+</tr>
+<tr>
+<td>per-datatype operator (string LIKE or numeric/date =)</td>
+<td><code>SearchColumn.Match</code> (<code>contains</code> / <code>starts</code> / <code>equals</code>)</td>
+<td>advisory metadata; the service applies it, default <code>contains</code></td>
+</tr>
+<tr>
+<td><code>SearchCriteria.MaxLength</code> (per field)</td>
+<td><code>SearchFilter.MaxLength</code></td>
+<td>renders the dialog input's <code>maxlength</code></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Usage recipe</strong> (grid search, navigate mode — from District)</p>
+<pre><code class="language-cshtml">@{
+    var searchDescriptor = new SearchDescriptor
+    {
+        Title = &quot;Districts&quot;,
+        DataUrl = &quot;/Bank/District&quot;,
+        IdKey = &quot;Id&quot;,
+        Columns = [new SearchColumn(&quot;StateName&quot;, &quot;State&quot;), new SearchColumn(&quot;DistrictName&quot;, &quot;District&quot;)],
+        Filters = [new SearchFilter(&quot;StateName&quot;, &quot;State&quot;), new SearchFilter(&quot;DistrictName&quot;, &quot;District&quot;)],
+        SelectMode = &quot;navigate&quot;,
+        NavigateTemplate = &quot;/Bank/District?row={token}&quot;,
+    };
+}
+&lt;button type=&quot;button&quot; class=&quot;btn btn-ghost&quot; data-cbs-search='@Json.Serialize(searchDescriptor)'&gt;Search&lt;/button&gt;
+</code></pre>
+<pre><code class="language-csharp">// Controller — POST dispatch + the searchData handler (fetch delegate, tokenized)
+[HttpPost]
+public Task&lt;IActionResult&gt; Submit(DistrictForm Form, string? command, SearchRequest search, CancellationToken ct) =&gt;
+    command switch
+    {
+        &quot;searchData&quot;   =&gt; SearchDistrictsAsync(search, ct),
+        &quot;searchStates&quot; =&gt; SearchStatesAsync(search, ct),
+        &quot;Update&quot;       =&gt; UpdateAsync(Form, ct),
+        &quot;Delete&quot;       =&gt; DeleteAsync(Form, ct),
+        _              =&gt; SaveAsync(Form, ct),
+    };
+
+private async Task&lt;IActionResult&gt; SearchDistrictsAsync(SearchRequest req, CancellationToken ct)
+{
+    var resp = await searchEndpoint.RunAsync(async (r, c) =&gt;
+    {
+        r.Filters.TryGetValue(&quot;StateName&quot;, out var sn);
+        r.Filters.TryGetValue(&quot;DistrictName&quot;, out var dn);
+        var res = await svc.SearchDistrictsAsync(sn ?? r.Q, dn ?? r.Q, r.Sort, r.Desc, r.Page, r.PageSize, c);
+        return res.IsSuccess ? res.Value : ([], 0);
+    }, &quot;Id&quot;, ScreenKey, req, ct);
+    return Json(resp);
+}
+</code></pre>
+<p><code>SearchEndpoint</code> has exactly one entry point — the fetch delegate above. There is no base-SELECT overload: filtering, sorting and paging live in the screen's <code>TflCbsServices</code> method (<code>Repository&lt;T&gt;</code> over the entity set), so no SQL is assembled in the framework and nothing is provider-specific.</p>
+<p><strong>Key differences / gotchas</strong></p>
+<ul>
+<li>One overload: the fetch delegate (any TflOmniDb call; <code>tokenizeId</code> optional — pass <code>false</code> for reference pickers whose id is re-validated on save).</li>
+<li>A filter's <code>Key</code> and a sort key should match a <code>Columns</code> key; the service decides what it honours and ignores anything else.</li>
+<li>On open by token use <code>RowToken.TryResolve</code>; on write use <code>TryConsume</code> (single-use) — never trust a raw id from the client.</li>
+<li><code>SearchColumn.Match</code> (default <code>contains</code>) is advisory metadata only: the screen's search service owns the comparison, and by convention applies contains for text and equals for numeric/date fields.</li>
+<li><strong>Keyboard.</strong> When Search returns at least one row the grid <code>tbody</code> (<code>#cbs-search-body</code>, made focusable with <code>tabIndex = -1</code>) takes focus and highlights the first row (<code>.is-selected</code>, an inset accent left-border). While the grid is focused Down / Up move the highlight (scrolled into view) and Enter selects it. Up clamps at the first row. Down at the last row of the page moves focus to the <strong>"Next ›"</strong> pager button (tagged <code>data-cbs-page-next</code>) when a next page exists — <code>move()</code> focuses the button instead of clamping; the highlight does <strong>not</strong> auto-advance, so you press <strong>Enter</strong> on the focused Next button to load the next page (focus then returns to the first row of the new page). Prev is not auto-focused. Esc closes; mouse hover and click-to-select are unchanged. The Arrow/Enter handling is gated by a <code>gridActive()</code> check on <code>document.activeElement</code>, so the filter inputs keep native caret arrows and the app-wide Enter-as-Tab navigation; once the Next button is focused, native button activation handles Enter.</li>
+</ul>
+<hr />
+<h2 id="d-notifications">D. Notifications</h2>
+<p>Two tiers: server outcomes vs client guards.</p>
+<p><strong>At a glance</strong></p>
+<ul>
+<li>Legacy: ad-hoc <code>alert()</code> / result <code>showModalDialog</code> popups scattered per screen.</li>
+<li>New: <code>Framework\Infrastructure\Notify.cs</code> + <code>Views\Shared\_Notification.cshtml</code> (blocking ack modal <code>#cbs-ack-modal</code>) for server outcomes; <code>wwwroot\js\site.js</code> <code>cbsNotify</code> (transient toast, class <code>cbs-client-alert</code>) for client guards.</li>
+</ul>
+<p><strong>Mapping</strong></p>
+<table>
+<thead>
+<tr>
+<th>Legacy</th>
+<th>New</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>result popup after insert/update/delete</td>
+<td><code>this.NotifySuccess/Info/Warning/Error(...)</code> → ack modal</td>
+<td>blocking; dismiss with OK / ✕ / Esc</td>
+</tr>
+<tr>
+<td>exception shown to user</td>
+<td><code>NotifyError(text, ex)</code></td>
+<td>full exception logged with a reference id; detail shown only in Development</td>
+</tr>
+<tr>
+<td>client-side <code>alert("pick X")</code></td>
+<td><code>cbsNotify(text, cls, opts)</code> / <code>cbsNotifyError(text)</code></td>
+<td>transient toast, auto-dismiss</td>
+</tr>
+<tr>
+<td>message survives redirect</td>
+<td>TempData JSON (read-once)</td>
+<td>shows once after post/redirect-get</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Usage recipe</strong></p>
+<pre><code class="language-csharp">// Controller — server CRUD outcome (rendered by _Notification in the layout)
+var result = await svc.SaveDistrictAsync(form.StateId, form.DistrictName, UserId, ct);
+if (!result.IsSuccess)
+{
+    this.NotifyError(result.ErrorString);                 // or NotifyError(&quot;friendly&quot;, ex)
+    return View(nameof(Index), new EditViewModel&lt;DistrictForm&gt; { Form = form });
+}
+this.NotifySuccess(&quot;Record saved successfully.&quot;);
+return Redirect(HostUrl);
+</code></pre>
+<pre><code class="language-javascript">// Client guard — transient toast (no server round-trip)
+if (!stateId) { cbsNotifyError(&quot;Please select a State first.&quot;); return; }
+</code></pre>
+<p><strong>Key differences / gotchas</strong></p>
+<ul>
+<li>Server outcomes must be <strong>acknowledged</strong> (the ack modal blocks); client guards are <strong>transient</strong> toasts — pick the right tier.</li>
+<li><code>Notify</code> messages are read-once from TempData, so a refresh won't re-show them.</li>
+<li>Never put a raw exception in the user text — pass <code>ex</code> to <code>NotifyError</code>; it logs the detail and shows a reference id.</li>
+</ul>
+<hr />
+<h2 id="e-menu-layout">E. Menu / Layout</h2>
+<p>Application navigation + collapsible sections.</p>
+<p><strong>At a glance</strong></p>
+<ul>
+<li>Legacy: <code>UserControls\MainMenu.ascx</code> (nested <code>CollapsablePanelStart/End.ascx</code>).</li>
+<li>New: <code>Views\Shared\_MenuOverlay.cshtml</code> + <code>_MenuGrid.cshtml</code> · <code>Framework\Services\MenuService.cs</code>.</li>
+</ul>
+<p><strong>Mapping</strong></p>
+<table>
+<thead>
+<tr>
+<th>Legacy</th>
+<th>New</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>MainMenu</code> + nested collapsible panels</td>
+<td><code>_MenuOverlay</code> / <code>_MenuGrid</code></td>
+<td>full-screen overlay</td>
+</tr>
+<tr>
+<td>menu built in markup</td>
+<td><code>MenuService.LoadAsync(...)</code></td>
+<td>rights-filtered, server-side</td>
+</tr>
+<tr>
+<td>legacy <code>~/x.aspx</code> link target</td>
+<td><code>a_Menus.NavigateURL</code> holds the new route</td>
+<td>one DbMigrator script per cutover</td>
+</tr>
+<tr>
+<td>panel show/hide script</td>
+<td>overlay toggle (Esc / close)</td>
+<td>in <code>site.js</code></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Usage recipe</strong> (cut a migrated screen's menu link over to the new route)</p>
+<pre><code class="language-sql">-- TflCbs.Tools.DbMigrator/Migrations/&lt;provider&gt;/NNNN_*.sql — one UPDATE per migrated screen.
+-- Match the WHOLE legacy NavigateURL, not a LIKE fragment (g_State_Mapping.aspx is a different screen).
+-- Point a row ONLY at its own screen's route — AllowedUrls is derived from these.
+UPDATE dbo.A_MENUS SET NavigateURL = '/Hr/District'
+ WHERE LOWER(REPLACE(NavigateURL, '~', '')) = '/ho/bank/g_district.aspx?';
+</code></pre>
+<p><strong>Key differences / gotchas</strong></p>
+<ul>
+<li>The menu is rights-filtered server-side; the same node URLs feed the <code>AllowedUrls</code> access set — so the one column covers both the link and access.</li>
+<li>Point a row only at its own new screen; pointing it elsewhere would grant that page to the row's holders (privilege escalation).</li>
+<li>This area is mostly framework-owned; a screen developer's only routine task is the one-line menu migration.</li>
+</ul>
+<hr />
+<h2 id="f-action-buttons">F. Action Buttons</h2>
+<p>The form toolbar (Save / Update / Delete / Search / Cancel).</p>
+<p><strong>At a glance</strong></p>
+<ul>
+<li>Legacy: <code>UserControls\ActionButtons.ascx</code> — six configurable button slots with <code>CommandArgument</code> + server-side click events.</li>
+<li>New: <code>Views\Shared\_ActionBar.cshtml</code> (a <code>string[]</code> of labels) + the command-dispatch POST convention.</li>
+</ul>
+<p><strong>Mapping</strong></p>
+<table>
+<thead>
+<tr>
+<th>Legacy</th>
+<th>New</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>uxAction1..6</code> + <code>CommandArgument</code></td>
+<td>submit buttons <code>name="command" value="X"</code></td>
+<td>one POST handler switches on <code>command</code></td>
+</tr>
+<tr>
+<td>server <code>Click</code> events</td>
+<td>controller <code>Submit</code> dispatch</td>
+<td><code>command switch { ... }</code></td>
+</tr>
+<tr>
+<td>fixed button control</td>
+<td><code>_ActionBar</code> (labels) or inline buttons</td>
+<td>toolbar vs real submit buttons</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Usage recipe</strong> (command-dispatch — from District)</p>
+<pre><code class="language-cshtml">@* View — submit buttons carry the command *@
+&lt;div class=&quot;action-bar&quot;&gt;
+    &lt;button type=&quot;submit&quot; name=&quot;command&quot; value=&quot;Save&quot;   class=&quot;btn btn-primary&quot;&gt;Save&lt;/button&gt;
+    &lt;button type=&quot;submit&quot; name=&quot;command&quot; value=&quot;Update&quot; class=&quot;btn btn-primary&quot;&gt;Update&lt;/button&gt;
+    &lt;button type=&quot;submit&quot; name=&quot;command&quot; value=&quot;Delete&quot; class=&quot;btn btn-ghost&quot;
+            onclick=&quot;return confirm('Delete this district?');&quot;&gt;Delete&lt;/button&gt;
+    &lt;button type=&quot;button&quot; class=&quot;btn btn-ghost&quot; data-cbs-search='@Json.Serialize(searchDescriptor)'&gt;Search&lt;/button&gt;
+    &lt;a class=&quot;btn btn-ghost&quot; href=&quot;/Bank/District&quot;&gt;Cancel&lt;/a&gt;
+&lt;/div&gt;
+</code></pre>
+<pre><code class="language-csharp">// Controller — single POST, dispatch on command
+[HttpPost]
+public Task&lt;IActionResult&gt; Submit(DistrictForm Form, string? command, SearchRequest search, CancellationToken ct) =&gt;
+    command switch
+    {
+        &quot;searchData&quot; =&gt; SearchDistrictsAsync(search, ct),
+        &quot;Update&quot;     =&gt; UpdateAsync(Form, ct),
+        &quot;Delete&quot;     =&gt; DeleteAsync(Form, ct),
+        _            =&gt; SaveAsync(Form, ct),   // default = Save
+    };
+</code></pre>
+<p><strong>Key differences / gotchas</strong></p>
+<ul>
+<li><code>_ActionBar</code> renders a simple toolbar of <code>type="button"</code> buttons (a quick successor to <code>ActionButtons.ascx</code>); for real form submission, screens use explicit <code>type="submit"</code> buttons with <code>name="command"</code> as above.</li>
+<li>Keep one POST action per screen and branch on <code>command</code> — mirrors the legacy multi-button postback cleanly.</li>
+</ul>
+<hr />
+<h2 id="g-account-picker">G. Account Picker</h2>
+<p>Account lookup behind one inline control with <strong>three typed segment boxes</strong> (Branch code + Head code + Account no — the legacy <code>Account.ascx</code> composite) that returns <strong>both</strong> the chosen account and its chart-of-account. <code>Mode</code> is either <code>coa-account</code> (default — a two-stage dialog: Chart of Account → Account) or <code>account-only</code> (the dialog skips COA; accounts are scoped by an external COA field).</p>
+<p><strong>At a glance</strong></p>
+<ul>
+<li>Legacy: <code>RetailBanking\Transaction\userControls\Account.ascx(.vb)</code> (composite 3-box plus Go plus Select) driven by two <code>UserControls\TssiplRecordSelector.ascx</code> (one for the Chart of Account, one for the Account number) plus the two-stage popup <code>RetailBanking\Transaction\userControls\AccountSelector.aspx</code>.</li>
+<li>New: <code>Views\Shared\_AccountPicker.cshtml</code> (inline control, identical look to <code>_RecordPicker</code>) · <code>Framework\Models\Shared\AccountPickerModel.cs</code> · <code>Views\Shared\_AccountSearchModal.cshtml</code> (one modal, two sequential stages) · <code>wwwroot\js\cbs-account-picker.js</code> (self-contained; does not touch <code>cbs-search.js</code>) · service <code>TflCbsServices\RetailBanking\AccountService.cs</code>.</li>
+</ul>
+<p><strong>Why its own control (not <code>_RecordPicker</code>)</strong>: a record picker fills one value from one text box. The account control is a 3-segment composite, the lookup is sequential (pick a COA, then an account scoped to that COA), and it must fill <strong>two</strong> linked targets (account plus its head) from a single account row. <code>cbs-account-picker.js</code> orchestrates the segments, the two stages and the dual fill; it deliberately stays separate from <code>cbs-search.js</code>.</p>
+<p><strong>The three segment boxes</strong>: Branch code + Head code + Account no. Their max-lengths come from <code>BranchLen</code> / <code>HeadLen</code> / <code>AccountLen</code>, which the controller reads from <code>b_AccountNumberFormat</code> via <code>AccountService.GetAccountNumberFormatAsync</code> (defaults 4 / 5 / 8). <strong>Go</strong> zero-pads each segment to its width, concatenates them into the full account number, and resolves it exactly. A dialog pick splits the picked account number back into the three boxes (by the same widths) using <code>RowAccountNumberKey</code> (default <code>AccountNumber</code>).</p>
+<p><strong>Mapping</strong></p>
+<table>
+<thead>
+<tr>
+<th>Legacy</th>
+<th>New</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>Account.ascx</code> composite 3-box plus Go plus Select</td>
+<td><code>_AccountPicker</code> (three typed segment boxes plus Go / Select / Clear)</td>
+<td>one inline control, look identical to <code>_RecordPicker</code></td>
+</tr>
+<tr>
+<td>the 3 composite segments (Branch / Head / Account no)</td>
+<td><code>BranchCode*</code> / <code>HeadCode*</code> / <code>AccountNo*</code> (Name / Id / Value)</td>
+<td>visible segment inputs</td>
+</tr>
+<tr>
+<td>segment digit widths (from <code>b_AccountNumberFormat</code>)</td>
+<td><code>BranchLen</code> / <code>HeadLen</code> / <code>AccountLen</code> (defaults 4 / 5 / 8)</td>
+<td>controller reads via <code>GetAccountNumberFormatAsync</code>; pad on Go, split on pick</td>
+</tr>
+<tr>
+<td>resolved account key plus head key</td>
+<td>hidden <code>AccountValue*</code> (account id) plus <code>HeadId*</code> (head id)</td>
+<td>the two values returned to the form</td>
+</tr>
+<tr>
+<td>Chart-of-Account <code>TssiplRecordSelector</code> popup</td>
+<td>stage 1 of <code>_AccountSearchModal</code>, fed by <code>CoaDescriptor</code></td>
+<td>COA grid (Command <code>searchAccountHeads</code>); only in <code>coa-account</code> mode</td>
+</tr>
+<tr>
+<td>Account-No <code>TssiplRecordSelector</code> popup</td>
+<td>stage 2 of <code>_AccountSearchModal</code>, fed by <code>AccountDescriptor</code></td>
+<td>Account grid (Command <code>searchAccounts</code>), revealed after a COA pick</td>
+</tr>
+<tr>
+<td><code>AccountSelector.aspx</code> two-stage popup</td>
+<td>the single two-stage <code>_AccountSearchModal</code></td>
+<td>clearable selected-COA banner between stages (Change re-opens stage 1)</td>
+</tr>
+<tr>
+<td>dialog mode (with COA or account-only)</td>
+<td><code>Mode</code> = <code>coa-account</code> (default) or <code>account-only</code></td>
+<td>account-only skips the COA stage</td>
+</tr>
+<tr>
+<td>account-only external COA field</td>
+<td><code>HeadSourceSel</code> (DOM selector) plus <code>HeadRequired</code> / <code>HeadRequiredMessage</code></td>
+<td>accounts scoped by that field; require it before Select/Go when configured</td>
+</tr>
+<tr>
+<td>pick fills account boxes only</td>
+<td>the 3 segments (split) plus hidden <code>AccountValue*</code> plus <code>HeadId*</code></td>
+<td>one account row fills both account and COA</td>
+</tr>
+<tr>
+<td>Go = resolve full account number</td>
+<td><code>GoEnabled</code> plus the account <code>GoFilterKey</code> (exact)</td>
+<td>Go pads plus concatenates the 3 segments; <code>SearchRequest.Mode</code> is <code>go</code>, server reads <code>IsGo</code> for an exact match</td>
+</tr>
+<tr>
+<td>account scoped per-control SQL</td>
+<td><code>AccountService.SearchAccountsAsync</code> (branch from session, optional head)</td>
+<td>parameterized joins, branch supplied by the caller never the client</td>
+</tr>
+<tr>
+<td>COA list proc <code>pr_g_getAccountHead</code></td>
+<td><code>AccountService.SearchAccountHeadsAsync</code></td>
+<td>leaf active heads, optional account-type CSV</td>
+</tr>
+<tr>
+<td>account list proc <code>pr_b_GetAccountList</code></td>
+<td><code>AccountService.SearchAccountsAsync</code></td>
+<td>excludes closed accounts</td>
+</tr>
+<tr>
+<td>(server re-read for validate/display)</td>
+<td><code>AccountService.GetAccountAsync</code></td>
+<td>branch-scoped single-account read</td>
+</tr>
+<tr>
+<td>filter key that scopes stage 2</td>
+<td><code>HeadDependsKey</code> (default <code>AccountHeadId</code>)</td>
+<td>stage 2 posts this with the head id (picked COA or external field)</td>
+</tr>
+<tr>
+<td>display-only side fields</td>
+<td><code>CustomerNameTarget</code> / <code>BalanceTarget</code> / <code>ChartOfAccountTarget</code></td>
+<td>DOM selectors filled from the picked row</td>
+</tr>
+<tr>
+<td>head/number fields carried on the account row</td>
+<td><code>RowHeadIdKey</code> / <code>RowHeadNameKey</code> / <code>RowAccountNumberKey</code></td>
+<td>let Go fill the COA and split the number from the one account row</td>
+</tr>
+<tr>
+<td>(new) host hook after resolve / clear</td>
+<td>DOM events <code>cbs:account-picked</code> / <code>cbs:account-cleared</code></td>
+<td>bubbling <code>CustomEvent</code> on the picker root, <code>detail.accountId</code>; additive, opt-in</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Usage recipe</strong> (from Account Holding Amount — phase 1, selection only)</p>
+<pre><code class="language-csharp">// Controller GET — seed the segment widths from b_AccountNumberFormat (defaults 4/5/8 on failure).
+[HttpGet]
+public async Task&lt;IActionResult&gt; Index(CancellationToken ct)
+{
+    var fmt = await svc.GetAccountNumberFormatAsync(ct);
+    var vm = new AccHoldingAmountForm();
+    if (fmt.IsSuccess) { vm.BranchLen = fmt.Value.Branch; vm.HeadLen = fmt.Value.Head; vm.AccountLen = fmt.Value.Account; }
+    return View(vm);
+}
+</code></pre>
+<pre><code class="language-cshtml">@* View — one AccountPickerModel with BOTH descriptors; the screen owns columns + filters per stage.
+   Three segment boxes (Branch / Head / Account no); their widths come from the form. *@
+@{
+    var accountPicker = new AccountPickerModel
+    {
+        Label = &quot;Account&quot;,
+        DataUrl = &quot;/RetailBanking/AccHoldingAmount&quot;,
+        Mode = AccountPickerModel.ModeCoaAccount,   // or ModeAccountOnly (set HeadSourceSel below)
+
+        BranchLen = Model.BranchLen, HeadLen = Model.HeadLen, AccountLen = Model.AccountLen,
+        BranchCodeName = &quot;BranchCode&quot;, BranchCodeId = &quot;BranchCode&quot;, BranchCodeValue = Model.BranchCode,
+        HeadCodeName = &quot;HeadCode&quot;, HeadCodeId = &quot;HeadCode&quot;, HeadCodeValue = Model.HeadCode,
+        AccountNoName = &quot;AccountNo&quot;, AccountNoId = &quot;AccountNo&quot;, AccountNoValue = Model.AccountNo,
+
+        AccountValueName = &quot;AccountId&quot;, AccountValueId = &quot;AccountId&quot;,
+        AccountValueValue = Model.AccountId &gt; 0 ? Model.AccountId.ToString() : null,
+        HeadIdName = &quot;AccountHeadId&quot;, HeadIdId = &quot;AccountHeadId&quot;,
+        HeadIdValue = Model.AccountHeadId &gt; 0 ? Model.AccountHeadId.ToString() : null,
+
+        // account-only mode (omit in coa-account mode):
+        // HeadSourceSel = &quot;#Form_AccountHeadId&quot;, HeadRequired = true,
+        // HeadRequiredMessage = &quot;Select the Chart of Account first.&quot;,
+
+        CustomerNameTarget = &quot;#acc-customer-name&quot;,
+        BalanceTarget = &quot;#acc-balance&quot;,
+        ChartOfAccountTarget = &quot;#acc-coa&quot;,
+
+        CoaDescriptor = new SearchDescriptor   // stage 1 (skipped in account-only mode)
+        {
+            Title = &quot;Chart of Account&quot;,
+            DataUrl = &quot;/RetailBanking/AccHoldingAmount&quot;,
+            Command = &quot;searchAccountHeads&quot;,
+            IdKey = &quot;Id&quot;,
+            Columns =
+            [
+                new SearchColumn(&quot;HeadName&quot;, &quot;Chart of Account&quot;),
+                new SearchColumn(&quot;AccountHeadCode&quot;, &quot;Code&quot;),
+                new SearchColumn(&quot;AccountTypeCode&quot;, &quot;Type&quot;),
+            ],
+            Filters = [new SearchFilter(&quot;HeadName&quot;, &quot;Name&quot;), new SearchFilter(&quot;AccountHeadCode&quot;, &quot;Code&quot;)],
+            SelectMode = &quot;callback&quot;, PickValueKey = &quot;Id&quot;, PickTextKey = &quot;HeadName&quot;,
+        },
+        AccountDescriptor = new SearchDescriptor   // stage 2
+        {
+            Title = &quot;Account&quot;,
+            DataUrl = &quot;/RetailBanking/AccHoldingAmount&quot;,
+            Command = &quot;searchAccounts&quot;,
+            IdKey = &quot;Id&quot;,
+            Columns =
+            [
+                new SearchColumn(&quot;AccountNumber&quot;, &quot;Account Number&quot;),
+                new SearchColumn(&quot;CustomerName&quot;, &quot;Customer Name&quot;),
+                new SearchColumn(&quot;Title&quot;, &quot;Title&quot;),
+                new SearchColumn(&quot;OldAccountNumber&quot;, &quot;Old A/c No&quot;),
+                new SearchColumn(&quot;Balance&quot;, &quot;Balance&quot;),
+            ],
+            Filters = [new SearchFilter(&quot;AccountNumber&quot;, &quot;Account Number&quot;), new SearchFilter(&quot;CustomerName&quot;, &quot;Customer Name&quot;)],
+            GoFilterKey = &quot;AccountNumber&quot;,
+            SelectMode = &quot;callback&quot;, PickValueKey = &quot;Id&quot;, PickTextKey = &quot;AccountNumber&quot;,
+        },
+    };
+}
+&lt;partial name=&quot;_AccountPicker&quot; model=&quot;accountPicker&quot; /&gt;
+</code></pre>
+<pre><code class="language-csharp">// Controller — POST dispatch; ONE handler per stage, both consumed via the SearchEndpoint delegate
+// overload with tokenizeId:false (reference data, re-validated on a future save).
+[HttpPost]
+public Task&lt;IActionResult&gt; Submit(string? command, SearchRequest search, CancellationToken ct) =&gt;
+    command switch
+    {
+        &quot;searchAccountHeads&quot; =&gt; SearchAccountHeadsAsync(search, ct),
+        &quot;searchAccounts&quot;     =&gt; SearchAccountsAsync(search, ct),
+        _                    =&gt; Task.FromResult&lt;IActionResult&gt;(BadRequest()),
+    };
+
+// Stage 1 — Chart of Account.
+private async Task&lt;IActionResult&gt; SearchAccountHeadsAsync(SearchRequest req, CancellationToken ct)
+{
+    var resp = await searchEndpoint.RunAsync(async (r, c) =&gt;
+    {
+        r.Filters.TryGetValue(&quot;HeadName&quot;, out var name);
+        r.Filters.TryGetValue(&quot;AccountHeadCode&quot;, out var code);
+        var res = await svc.SearchAccountHeadsAsync(name ?? r.Q, code, AccountTypeCsv, r.Sort, r.Desc, r.Page, r.PageSize, c);
+        return res.IsSuccess ? res.Value : ([], 0);
+    }, &quot;Id&quot;, ScreenKey, req, ct, tokenizeId: false);
+    return Json(resp);
+}
+
+// Stage 2 / Go — Account, scoped to the chosen head plus the user's branch (from session, never the client).
+private async Task&lt;IActionResult&gt; SearchAccountsAsync(SearchRequest req, CancellationToken ct)
+{
+    var org = store.Current!.User!.OrgElementId;
+    var resp = await searchEndpoint.RunAsync(async (r, c) =&gt;
+    {
+        r.Filters.TryGetValue(&quot;AccountNumber&quot;, out var number);
+        r.Filters.TryGetValue(&quot;CustomerName&quot;, out var name);
+        r.Filters.TryGetValue(&quot;AccountHeadId&quot;, out var headStr);
+        int? headId = int.TryParse(headStr, out var h) &amp;&amp; h &gt; 0 ? h : null;
+        var res = await svc.SearchAccountsAsync(number ?? r.Q, name, headId, org, r.Sort, r.Desc, r.Page, r.PageSize, c, exact: r.IsGo);
+        return res.IsSuccess ? res.Value : ([], 0);
+    }, &quot;Id&quot;, ScreenKey, req, ct, tokenizeId: false);
+    return Json(resp);
+}
+</code></pre>
+<p><strong>Key differences / gotchas</strong></p>
+<ul>
+<li>The control is now <strong>three typed segment boxes</strong> (Branch / Head / Account no), not one text box. Set all three <code>BranchCode*</code> / <code>HeadCode*</code> / <code>AccountNo*</code> bindings, and seed <code>BranchLen</code> / <code>HeadLen</code> / <code>AccountLen</code> from <code>GetAccountNumberFormatAsync</code> (the <code>b_AccountNumberFormat</code> widths). The earlier single <code>AccountText*</code> and the <code>HeadName*</code> / hidden <code>HeadCode*</code> bindings were removed — the visible code now lives in the segments; only hidden <code>AccountValue*</code> (account id) and <code>HeadId*</code> (head id) post as keys.</li>
+<li>Go pads each segment to its width and concatenates them into the full number for an exact resolve, so the segment widths must match how the account number is stored. A dialog pick splits the picked <code>RowAccountNumberKey</code> value (default <code>AccountNumber</code>) back into the three boxes by the same widths.</li>
+<li><code>Mode</code>: <code>coa-account</code> (default) runs the two-stage dialog; <code>account-only</code> skips the COA stage and scopes accounts by the external COA field at <code>HeadSourceSel</code>. In account-only mode set <code>HeadRequired</code> (plus <code>HeadRequiredMessage</code>) to block Select/Go until that field is filled.</li>
+<li>One model, <strong>two</strong> descriptors: <code>CoaDescriptor</code> (stage 1, unused in account-only mode) and <code>AccountDescriptor</code> (stage 2). The screen owns the columns and filters for each stage — the client never gets SQL.</li>
+<li>Stage 2 is scoped to the head: the JS posts the head id under <code>HeadDependsKey</code> (default <code>AccountHeadId</code>) — from the picked COA in <code>coa-account</code> mode or the <code>HeadSourceSel</code> field in account-only mode — and the controller reads that filter to scope <code>SearchAccountsAsync</code>. The <code>AccountDescriptor.GoFilterKey</code> (e.g. <code>AccountNumber</code>) is the field Go resolves exactly.</li>
+<li>After a COA is picked the account stage is revealed but <strong>no longer auto-fetches</strong> — the user clicks Search. The modal's Search and Clear buttons stay aligned because the JS toggles <code>cbs-has-filters</code> on the filter bar (same fix as <code>cbs-search.js</code>).</li>
+<li>Go fills <strong>both</strong> parts from one account row, so the account row must carry the head: keep <code>RowHeadIdKey</code> / <code>RowHeadNameKey</code> / <code>RowAccountNumberKey</code> aligned with the account row's keys (defaults <code>AccountHeadId</code> / <code>ChartOfAccount</code> / <code>AccountNumber</code>, which match <code>SearchAccountsAsync</code>'s output). Go that returns many opens stage 2 pre-filtered by the number.</li>
+<li>Branch scope (<code>OrgElementId</code>) comes from the session in the controller — never trust a branch from the client. Rows are returned raw with <code>tokenizeId:false</code> (the chosen id is re-validated on save), same posture as the reference-data pickers.</li>
+<li><strong>Host hook events (additive, opt-in).</strong> When an account is resolved — via a dialog pick OR the Go button (both go through <code>pickAccount</code>) — the picker dispatches a bubbling <code>CustomEvent</code> named <code>cbs:account-picked</code> on the picker root (<code>[data-cbs-account-picker]</code>), with <code>detail: { accountId }</code> (the resolved hidden account id, as a string). After Clear it dispatches <code>cbs:account-cleared</code> (same shape, <code>accountId</code> empty). These always fire with safe defaults — no markup, prop, or CSS changed; a screen opts in by adding a listener. Usage: a host screen listens for the event and reads <code>e.detail.accountId</code> to refresh account-specific figures. Reference consumer: the Account Holding Amount screen (<code>wwwroot\js\acc-holding-amount.js</code>) listens for <code>cbs:account-picked</code> to POST <code>command=accountInfo</code> and fill the "Amount Withheld" box, and for <code>cbs:account-cleared</code> to blank it.</li>
+<li><code>GetAccountAsync</code> exists for server-side validation/display; the maker-checker workflow is deferred.</li>
+<li><strong>Keyboard (both stages).</strong> Each stage grid (<code>tbody</code> made focusable) gets focus and highlights its first row after that stage's Search returns at least one row. With a stage grid focused, Down / Up move the highlight (scrolled into view) and Enter selects the highlighted row — Enter on a COA row reveals the Account stage, Enter on an Account row picks the account, exactly like clicking. Up clamps at the first row. Down at the last row of a stage's page moves focus to that stage's <strong>"Next ›"</strong> pager button (tagged <code>data-cbs-page-next</code>) when a next page exists — <code>moveAcc()</code> focuses the button instead of clamping; the highlight does <strong>not</strong> auto-advance, so you press <strong>Enter</strong> on the focused Next button to load the next page (focus then returns to the first row of the new page). Prev is not auto-focused. Esc closes; hover and click-to-select are unchanged. An <code>activeStage()</code> check gates Arrow/Enter to whichever stage grid is <code>document.activeElement</code> (<code>moveAcc</code> mirrors <code>cbs-search.js</code>'s <code>move</code>), so the segment boxes and dialog filters keep native caret arrows and the global Enter-as-Tab; once a Next button is focused, native button activation handles Enter; you reach a grid by clicking that stage's Search.</li>
+</ul>
+<hr />
+<h2 id="out-of-scope-no-counterpart-yet">Out of scope (no counterpart yet)</h2>
+<p>Not yet migrated — build with the patterns above when their screens come up:</p>
+<ul>
+<li><code>AdTabControl.ascx</code> — tab strip with per-tab validation.</li>
+<li>Domain controls: <code>DDPO.ascx</code>, <code>ClientInfo.ascx</code>, <code>ClientAccountsInfo.ascx</code>, <code>ReceiptPayment.ascx</code>, <code>ucEmiChart.ascx</code>, <code>loanBalanceDetail.ascx</code>, <code>Alerts.ascx</code>, <code>AdReportParameters.ascx</code>, <code>PasswordPolicy.ascx</code>.</li>
+</ul>
+</div></div>
+<script>
+(function(){
+ function put(t){
+  if(navigator.clipboard&&navigator.clipboard.writeText)return navigator.clipboard.writeText(t);
+  return new Promise(function(res,rej){
+   var a=document.createElement('textarea');a.value=t;a.setAttribute('readonly','');
+   a.style.cssText='position:fixed;top:0;left:0;opacity:0';document.body.appendChild(a);
+   a.select();var ok=false;try{ok=document.execCommand('copy')}catch(e){}
+   document.body.removeChild(a);ok?res():rej()});
+ }
+ function flash(el,txt,ms){
+  var was=el.textContent;el.classList.add('done');if(txt)el.textContent=txt;
+  setTimeout(function(){el.classList.remove('done');if(txt)el.textContent=was},ms||1200);
+ }
+ function copy(text,el,okTxt){
+  put(text).then(function(){flash(el,okTxt)},function(){
+   if(okTxt){var w=el.textContent;el.textContent='Ctrl+C';setTimeout(function(){el.textContent=w},2000)}});
+ }
+ document.querySelectorAll('pre').forEach(function(pre){
+  if(pre.classList.contains('txtdoc'))return;
+  var b=document.createElement('button');
+  b.type='button';b.className='copy';b.textContent='Copy';
+  b.setAttribute('aria-label','Copy this code block to the clipboard');
+  b.addEventListener('click',function(){copy((pre.querySelector('code')||pre).innerText,b,'Copied')});
+  pre.appendChild(b);
+ });
+ document.querySelectorAll('td code').forEach(function(c){
+  if(!c.textContent.trim())return;
+  c.classList.add('cp');c.tabIndex=0;c.setAttribute('role','button');
+  c.title='Click to copy';
+  c.addEventListener('click',function(){copy(c.textContent,c)});
+  c.addEventListener('keydown',function(e){
+   if(e.key==='Enter'||e.key===' '){e.preventDefault();copy(c.textContent,c)}});
+ });
+})();
+</script>
+</body></html>

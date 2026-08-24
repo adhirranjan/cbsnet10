@@ -1,0 +1,219 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Framework / screen boundary</title>
+<style>
+:root{color-scheme:light dark}
+*{box-sizing:border-box}
+body{margin:0;background:#f6f8fa;color:#1f2328;font:16px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif}
+.wrap{max-width:900px;margin:0 auto;padding:32px 24px 96px}
+.card{background:#fff;border:1px solid #d0d7de;border-radius:10px;padding:40px 48px}
+h1,h2,h3{line-height:1.25;font-weight:600}
+h1{font-size:1.9rem;margin:0 0 .3em;padding-bottom:.3em;border-bottom:1px solid #d8dee4}
+h2{font-size:1.4rem;margin:1.8em 0 .6em;padding-bottom:.25em;border-bottom:1px solid #eaeef2}
+h3{font-size:1.12rem;margin:1.4em 0 .5em}
+p,li{margin:.5em 0}
+a{color:#0969da;text-decoration:none}
+a:hover{text-decoration:underline}
+code{font-family:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;font-size:.86em;background:#eff1f3;padding:.15em .4em;border-radius:6px}
+pre{background:#f6f8fa;border:1px solid #d8dee4;border-radius:8px;padding:14px 16px;overflow:auto}
+pre code{background:none;padding:0;font-size:.85em;line-height:1.45}
+blockquote{margin:1em 0;padding:.4em 1em;color:#3d444d;border-left:4px solid #d0d7de;background:#f6f8fa;border-radius:0 6px 6px 0}
+blockquote>:first-child{margin-top:0}blockquote>:last-child{margin-bottom:0}
+table{border-collapse:collapse;width:100%;margin:1em 0;display:block;overflow:auto}
+th,td{border:1px solid #d0d7de;padding:8px 12px;text-align:left;vertical-align:top}
+th{background:#f6f8fa;font-weight:600}
+tr:nth-child(2n) td{background:#f6f8fa}
+hr{border:0;border-top:1px solid #d8dee4;margin:2em 0}
+pre{position:relative}
+pre>button.copy{position:absolute;top:8px;right:8px;padding:5px 9px;cursor:pointer;
+  font:600 .68rem/1 ui-monospace,SFMono-Regular,Consolas,monospace;letter-spacing:.03em;
+  color:#636c76;background:#fff;border:1px solid #d0d7de;border-radius:6px;
+  opacity:0;transition:opacity .12s}
+pre:hover>button.copy,pre>button.copy:focus{opacity:1}
+pre>button.copy.done{color:#0a3622;background:#dafbe1;border-color:#4ac26b}
+@media(hover:none){pre>button.copy{opacity:1}}
+td code.cp{cursor:pointer}
+td code.cp:hover,td code.cp:focus{outline:1px solid #8c959f;outline-offset:1px}
+td code.cp.done{color:#0a3622;background:#dafbe1}
+.docnav{margin:0 0 20px;font-size:.85rem;color:#636c76}
+.docnav a{color:#636c76}
+ul{padding-left:1.4em}ol{padding-left:1.4em}
+@media(max-width:640px){.card{padding:24px 18px}.wrap{padding:16px 10px 64px}}
+@media(prefers-color-scheme:dark){
+ body{background:#0d1117;color:#e6edf3}
+ .card{background:#161b22;border-color:#30363d}
+ h1{border-color:#30363d}h2{border-color:#21262d}
+ code{background:#262c34}
+ pre{background:#0d1117;border-color:#30363d}
+ blockquote{background:#161b22;border-color:#30363d;color:#9198a1}
+ th,td{border-color:#30363d}th{background:#161b22}tr:nth-child(2n) td{background:#12171e}
+ a{color:#4493f8}.docnav,.docnav a{color:#9198a1}
+ hr{border-color:#30363d}
+ pre>button.copy{color:#9198a1;background:#161b22;border-color:#30363d}
+ pre>button.copy.done{color:#aff5b4;background:#1b4721;border-color:#2ea043}
+ td code.cp.done{color:#aff5b4;background:#1b4721}
+}
+</style></head>
+<body><div class="wrap"><div class="card">
+<div class="docnav"><a href="../index.html">&#8592; All docs</a></div>
+<h1 id="framework-screen-boundary">Framework / screen boundary</h1>
+<p>Companion to <a href="modular-monolith.html">modular-monolith.md</a>. That doc covers the <strong>vertical</strong> split of
+the business layer into per-domain modules; this one covers the <strong>horizontal</strong> split between the
+reusable web framework and the screens built on it.</p>
+<blockquote>
+<p><strong>Status:</strong> Done and compiler-enforced. <code>TflCbs.Framework</code> is its own assembly and references
+<strong>only</strong> <code>TflCbs.Abstractions</code> (+ <code>TflOmniLog</code> / <code>TflOmniDb</code>) — it can reach neither a screen nor a
+business module. Last reviewed 2026-08-21.</p>
+</blockquote>
+<h2 id="the-rule-in-one-line">The rule, in one line</h2>
+<p><strong><code>TflCbs.Framework</code> = web plumbing (HTTP / session / routing / access guard / search modal /
+tokens / pickers) · service modules = data &amp; business (<code>Result</code>-returning, zero ASP.NET) · web RCLs =
+screens · hosts = composition roots.</strong></p>
+<p>Dependencies run strictly inward: hosts → web RCLs → Web.Shared / Framework → service modules →
+<code>TflCbs.Abstractions</code>. Nothing points back up.</p>
+<h2 id="shape-current">Shape (current)</h2>
+<p>The framework is a plain class library with <code>FrameworkReference Microsoft.AspNetCore.App</code>. App
+developers consume it as an opaque dependency: one <code>builder.Services.AddCbsFramework(config)</code> + one
+<code>app.UseCbsFramework()</code> (extension methods in
+<code>TflCbs.Framework/DependencyInjection/CbsFrameworkExtensions.cs</code>, surfaced via the
+<code>Microsoft.Extensions.DependencyInjection</code> / <code>Microsoft.AspNetCore.Builder</code> namespaces so no <code>using</code>
+is needed). The individual services and middleware are not wired by hand and not visible to screen
+code.</p>
+<p><strong>Four tiers, not three</strong> — the original two-tier <code>Framework</code> / <code>UI</code> shape grew a shared-view RCL and
+a set of per-domain screen RCLs as the module split landed:</p>
+<table>
+<thead>
+<tr>
+<th>Tier</th>
+<th>Projects</th>
+<th>Holds</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Framework</strong></td>
+<td><code>TflCbs.Framework</code></td>
+<td><code>RowToken</code>, <code>Notify</code>, <code>CbsAccessAttributes</code>, <code>CbsAccessMiddleware</code>, <code>CbsSessionStore</code>, <code>MenuService</code>, <code>SearchEndpoint</code>, <code>SearchDescriptor</code>, <code>RecordPickerModel</code> / <code>AccountPickerModel</code> / <code>DatePickerModel</code>, <code>EditViewModel</code>, <code>CbsScreenController</code>, <code>DatabaseSelector</code> + multi-provider <code>DataAccess</code> wiring, <code>IReferenceCache</code>, security headers, forwarded headers, antiforgery, the <code>cbs-login</code> rate limiter, health checks, <code>AddCbsObservability</code>, and SSO (CbsAuth cookie + DataProtection key ring + revocation).</td>
+</tr>
+<tr>
+<td><strong>Shared web</strong></td>
+<td><code>TflCbs.Web.Shared</code> (RCL, no controllers)</td>
+<td>Layout, <code>_ViewImports</code>/<code>_ViewStart</code>, the shared partials (<code>_RecordPicker</code>, <code>_AccountPicker</code>, <code>_DatePicker</code>, <code>_SearchModal</code>, <code>_Notification</code>, <code>_ActionBar</code>, <code>_DbSwitcher</code>) and all shared static assets, served from <code>~/_content/TflCbs.Web.Shared/</code>.</td>
+</tr>
+<tr>
+<td><strong>Screens</strong></td>
+<td><code>TflCbs.Core.Authentication.Web</code>, <code>TflCbs.Core.Shell.Web</code>, and five <code>TflCbs.Modules.&lt;Area&gt;.Web</code> RCLs</td>
+<td>Controllers, views, view models and per-domain JS. Each carries an <code>&lt;Area&gt;WebModuleMarker</code> so a host can <code>AddApplicationPart</code> it.</td>
+</tr>
+<tr>
+<td><strong>Hosts</strong></td>
+<td><code>TflCbs.Host.Main</code> + four <code>TflCbs.Host.&lt;Domain&gt;</code> + <code>TflCbs.Gateway</code></td>
+<td><code>Program.cs</code>, config, composition. <code>TflCbs.Host.Main</code>'s own <code>Views/</code>/<code>wwwroot/</code> are empty but for <code>_ViewImports.cshtml</code>.</td>
+</tr>
+</tbody>
+</table>
+<p>The business tier sits below all of this and is covered by
+<a href="modular-monolith.html">modular-monolith.md</a> — nine service-module assemblies, none of which the
+framework can see.</p>
+<h2 id="namespaces">Namespaces</h2>
+<p><strong>Namespace == assembly</strong>, no exceptions. Framework types live under <code>TflCbs.Framework.*</code>,
+screen types under <code>TflCbs.Modules.&lt;Area&gt;.Web.*</code>, and so on, so a <code>using</code> names the assembly you are
+coupling to. The one sanctioned deviation is extension-method homes in
+<code>Microsoft.Extensions.DependencyInjection</code> / <code>Microsoft.AspNetCore.Builder</code>. Enforced by
+<code>NamespaceDisciplineTests</code> (which also forbids two assemblies sharing a namespace).</p>
+<p><em>(Historical note: framework types were originally left in the <code>TflCbs.Host.Main.*</code> namespace on the
+argument that the assembly boundary, not the namespace, does the enforcing. That was reversed — with
+nine module assemblies and eight RCLs, a <code>using</code> that lies about its assembly costs more than the
+rename did.)</em></p>
+<h2 id="encapsulation-enforced-hiding">Encapsulation (enforced hiding)</h2>
+<ul>
+<li><strong>"Framework must not depend on screens" is compiler-enforced.</strong> <code>Framework</code> has no project
+  reference to any host or RCL; adding one would be a circular reference the compiler rejects.</li>
+<li><strong>"Framework must not depend on a business module" is also compiler-enforced.</strong> The framework
+  references only <code>TflCbs.Abstractions</code>, <code>TflOmniLog</code> and bare-DLL <code>TflOmniDb</code>. Where it genuinely
+  needs business data it declares a <strong>port</strong> in <code>TflCbs.Abstractions</code> and a core module implements
+  it — <code>IBroadcastSource</code>, <code>IBankVariableSource</code>, <code>IMenuSource</code>, <code>ISessionValidator</code>. The framework
+  <code>TryAdd</code>s no-op defaults for the first three and resolves <code>ISessionValidator</code> optionally, so a host
+  runs (degraded) with neither General nor Authentication present.</li>
+<li><strong><code>internal</code> types</strong> (invisible to screens): <code>CbsAccessMiddleware</code>, <code>UrlNormalizer</code>.</li>
+<li>The rest of the framework surface is <strong>public by necessity</strong> — screens genuinely inject and use it
+  (search &amp; session models, the picker models, <code>EditViewModel</code>, <code>Notify</code>, <code>CbsSessionStore</code>,
+  <code>RowToken</code>, <code>SearchEndpoint</code>, <code>MenuService</code>, <code>DatabaseSelector</code>, <code>CbsAccessAttributes</code>,
+  <code>CbsScreenController</code>). That public set <strong>is</strong> the curated API; what is hidden is
+  the plumbing and the one-call wiring.</li>
+<li><strong>XML documentation is generated</strong> for the framework (and the eight other assemblies that ship as
+  prebuilt DLLs to an outside team), so hovering a type in the editor shows its semantics even with
+  no source present.</li>
+</ul>
+<h2 id="enforcement-in-tflcbsarchtests">Enforcement in <code>TflCbs.ArchTests</code></h2>
+<p>The cross-assembly boundaries are compiler-guaranteed, so the arch suite's job is to notice when a
+guarantee <strong>changes level</strong> rather than to be the guarantee itself:</p>
+<ul>
+<li><code>Framework_must_not_reference_any_business_module_assembly</code> asserts on
+  <code>GetReferencedAssemblies()</code> — re-adding a reference fails loudly and says why.</li>
+<li><code>Framework_must_consume_business_modules_only_through_abstraction_ports</code> is a denylist of named
+  concrete types, backed by the assembly-level rule above.</li>
+<li><code>BoundaryGuaranteeTests</code> re-verifies every boundary's declared enforcement level
+  (<code>Enforcement.Namespace</code> vs <code>Enforcement.Reference</code>) against the live reference graph, so a
+  namespace rule cannot quietly become a tautology when a project reference disappears. See
+  <a href="modular-monolith.html#arch-rule-enforcement-levels-and-why-they-are-tracked-2026-07-28">modular-monolith.md</a>.</li>
+<li><code>NamespaceDisciplineTests</code> enforces namespace == assembly.</li>
+</ul>
+<h2 id="resolved-the-shared-view-rcl">Resolved: the shared-view RCL</h2>
+<p>This document previously deferred <code>TflCbs.Web.Shared</code> on the grounds that <code>internal</code> hiding does
+not apply to <code>.cshtml</code>, so an RCL would buy <em>sharing</em>, not <em>hiding</em> — and there was only one host.
+<strong>Four thin hosts and a gateway later, sharing is the whole point</strong>, and the RCL was extracted. The
+three gotchas anticipated then all applied and were handled:</p>
+<ol>
+<li>RCL <code>wwwroot</code> serves from <code>~/_content/TflCbs.Web.Shared/…</code>; <code>_Layout</code>/<code>_LayoutBlank</code> asset
+   references were updated accordingly (and each screen RCL serves its own JS from
+   <code>~/_content/TflCbs.Modules.&lt;Area&gt;.Web/</code>).</li>
+<li>The shared <code>_ViewImports</code> <code>@using</code> set moved into an RCL-level <code>_ViewImports</code>.</li>
+<li>String-named partials (<code>_SearchModal</code>, <code>_RecordPicker</code>, <code>_Notification</code>, …) resolve from the RCL
+   automatically as compiled Razor views — no per-call changes.</li>
+</ol>
+<h2 id="extending-the-framework">Extending the framework</h2>
+<p>Reusable components stay <strong>additive with safe defaults</strong>: a new property on <code>RecordPickerModel</code>,
+<code>SearchDescriptor</code> or <code>DatePickerModel</code> must leave every existing call site rendering exactly as
+before. When a shared component is added or extended, run the <strong>component-docs-sync</strong> agent (keeps
+<code>docs/legacy-vs-new-components.*</code> honest) and the <strong>component-demo</strong> agent (keeps the <code>/Dev/Components</code>
+showcase covering the full surface).</p>
+</div></div>
+<script>
+(function(){
+ function put(t){
+  if(navigator.clipboard&&navigator.clipboard.writeText)return navigator.clipboard.writeText(t);
+  return new Promise(function(res,rej){
+   var a=document.createElement('textarea');a.value=t;a.setAttribute('readonly','');
+   a.style.cssText='position:fixed;top:0;left:0;opacity:0';document.body.appendChild(a);
+   a.select();var ok=false;try{ok=document.execCommand('copy')}catch(e){}
+   document.body.removeChild(a);ok?res():rej()});
+ }
+ function flash(el,txt,ms){
+  var was=el.textContent;el.classList.add('done');if(txt)el.textContent=txt;
+  setTimeout(function(){el.classList.remove('done');if(txt)el.textContent=was},ms||1200);
+ }
+ function copy(text,el,okTxt){
+  put(text).then(function(){flash(el,okTxt)},function(){
+   if(okTxt){var w=el.textContent;el.textContent='Ctrl+C';setTimeout(function(){el.textContent=w},2000)}});
+ }
+ document.querySelectorAll('pre').forEach(function(pre){
+  if(pre.classList.contains('txtdoc'))return;
+  var b=document.createElement('button');
+  b.type='button';b.className='copy';b.textContent='Copy';
+  b.setAttribute('aria-label','Copy this code block to the clipboard');
+  b.addEventListener('click',function(){copy((pre.querySelector('code')||pre).innerText,b,'Copied')});
+  pre.appendChild(b);
+ });
+ document.querySelectorAll('td code').forEach(function(c){
+  if(!c.textContent.trim())return;
+  c.classList.add('cp');c.tabIndex=0;c.setAttribute('role','button');
+  c.title='Click to copy';
+  c.addEventListener('click',function(){copy(c.textContent,c)});
+  c.addEventListener('keydown',function(e){
+   if(e.key==='Enter'||e.key===' '){e.preventDefault();copy(c.textContent,c)}});
+ });
+})();
+</script>
+</body></html>

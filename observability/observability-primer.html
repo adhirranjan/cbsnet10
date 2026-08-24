@@ -1,0 +1,248 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Observability — a plain-language primer</title>
+<style>
+:root{color-scheme:light dark}
+*{box-sizing:border-box}
+body{margin:0;background:#f6f8fa;color:#1f2328;font:16px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif}
+.wrap{max-width:900px;margin:0 auto;padding:32px 24px 96px}
+.card{background:#fff;border:1px solid #d0d7de;border-radius:10px;padding:40px 48px}
+h1,h2,h3{line-height:1.25;font-weight:600}
+h1{font-size:1.9rem;margin:0 0 .3em;padding-bottom:.3em;border-bottom:1px solid #d8dee4}
+h2{font-size:1.4rem;margin:1.8em 0 .6em;padding-bottom:.25em;border-bottom:1px solid #eaeef2}
+h3{font-size:1.12rem;margin:1.4em 0 .5em}
+p,li{margin:.5em 0}
+a{color:#0969da;text-decoration:none}
+a:hover{text-decoration:underline}
+code{font-family:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;font-size:.86em;background:#eff1f3;padding:.15em .4em;border-radius:6px}
+pre{background:#f6f8fa;border:1px solid #d8dee4;border-radius:8px;padding:14px 16px;overflow:auto}
+pre code{background:none;padding:0;font-size:.85em;line-height:1.45}
+blockquote{margin:1em 0;padding:.4em 1em;color:#3d444d;border-left:4px solid #d0d7de;background:#f6f8fa;border-radius:0 6px 6px 0}
+blockquote>:first-child{margin-top:0}blockquote>:last-child{margin-bottom:0}
+table{border-collapse:collapse;width:100%;margin:1em 0;display:block;overflow:auto}
+th,td{border:1px solid #d0d7de;padding:8px 12px;text-align:left;vertical-align:top}
+th{background:#f6f8fa;font-weight:600}
+tr:nth-child(2n) td{background:#f6f8fa}
+hr{border:0;border-top:1px solid #d8dee4;margin:2em 0}
+pre{position:relative}
+pre>button.copy{position:absolute;top:8px;right:8px;padding:5px 9px;cursor:pointer;
+  font:600 .68rem/1 ui-monospace,SFMono-Regular,Consolas,monospace;letter-spacing:.03em;
+  color:#636c76;background:#fff;border:1px solid #d0d7de;border-radius:6px;
+  opacity:0;transition:opacity .12s}
+pre:hover>button.copy,pre>button.copy:focus{opacity:1}
+pre>button.copy.done{color:#0a3622;background:#dafbe1;border-color:#4ac26b}
+@media(hover:none){pre>button.copy{opacity:1}}
+td code.cp{cursor:pointer}
+td code.cp:hover,td code.cp:focus{outline:1px solid #8c959f;outline-offset:1px}
+td code.cp.done{color:#0a3622;background:#dafbe1}
+.docnav{margin:0 0 20px;font-size:.85rem;color:#636c76}
+.docnav a{color:#636c76}
+ul{padding-left:1.4em}ol{padding-left:1.4em}
+@media(max-width:640px){.card{padding:24px 18px}.wrap{padding:16px 10px 64px}}
+@media(prefers-color-scheme:dark){
+ body{background:#0d1117;color:#e6edf3}
+ .card{background:#161b22;border-color:#30363d}
+ h1{border-color:#30363d}h2{border-color:#21262d}
+ code{background:#262c34}
+ pre{background:#0d1117;border-color:#30363d}
+ blockquote{background:#161b22;border-color:#30363d;color:#9198a1}
+ th,td{border-color:#30363d}th{background:#161b22}tr:nth-child(2n) td{background:#12171e}
+ a{color:#4493f8}.docnav,.docnav a{color:#9198a1}
+ hr{border-color:#30363d}
+ pre>button.copy{color:#9198a1;background:#161b22;border-color:#30363d}
+ pre>button.copy.done{color:#aff5b4;background:#1b4721;border-color:#2ea043}
+ td code.cp.done{color:#aff5b4;background:#1b4721}
+}
+</style></head>
+<body><div class="wrap"><div class="card">
+<div class="docnav"><a href="../index.html">&#8592; All docs</a></div>
+<h1 id="observability-a-plain-language-primer">Observability — a plain-language primer</h1>
+<p><em>What "observability" means, the pieces involved, and the dev setup we use to see it — written for someone new to it. This covers the </em><em>backend</em><em> (where telemetry is collected and viewed). Wiring the app to emit telemetry is a separate step (Phase 2).</em></p>
+<hr />
+<h2 id="1-the-problem-it-solves">1. The problem it solves</h2>
+<p>Right now, when something goes wrong in production, about all we can do is <strong>read the log files</strong> after the fact. That answers <em>"what happened for this one request?"</em> — but it can't answer the questions you actually get asked when running a banking system:</p>
+<ul>
+<li><em>Is the app getting slower this week?</em></li>
+<li><em>Which screen is slow — and is it the app, the gateway, or the database?</em></li>
+<li><em>What's our error rate right now? Are we about to hit a resource ceiling?</em></li>
+</ul>
+<p>With only logs you find out about problems from <strong>user complaints</strong>, and there's nothing to <strong>alert</strong> on. <strong>Observability</strong> fixes that by adding two more kinds of signal alongside logs, and a place to chart and alert on them. The industry name for the toolkit is <strong>OpenTelemetry (OTel)</strong> — a vendor-neutral standard for producing this data.</p>
+<hr />
+<h2 id="2-the-three-pillars">2. The three pillars</h2>
+<p>Observability = <strong>logs + metrics + traces</strong>. They answer different questions:</p>
+<table>
+<thead>
+<tr>
+<th>Pillar</th>
+<th>Answers</th>
+<th>Everyday analogy</th>
+<th>This app</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Logs</strong></td>
+<td><em>"What happened?"</em> (individual events)</td>
+<td>A diary — one line per thing that happened</td>
+<td>✅ <strong>We have this</strong> (TflLog)</td>
+</tr>
+<tr>
+<td><strong>Metrics</strong></td>
+<td><em>"How much / how fast / how often?"</em> (numbers over time)</td>
+<td>A car dashboard — speed, fuel, RPM</td>
+<td>❌ Adding it</td>
+</tr>
+<tr>
+<td><strong>Traces</strong></td>
+<td><em>"Where did the time go?"</em> (one request's journey)</td>
+<td>A parcel-tracking timeline — each stop and how long it sat</td>
+<td>❌ Adding it</td>
+</tr>
+</tbody>
+</table>
+<p>A bit more on the two new ones:</p>
+<ul>
+<li><strong>Metrics</strong> are just <strong>numbers sampled over time</strong> — e.g. "requests per second", "95% of requests finished under 200 ms", "2% errored". They're cheap and perfect for <strong>dashboards and alerts</strong> ("page me if error rate &gt; 1%").</li>
+<li><strong>A trace</strong> is the <strong>story of one request as a tree of timed steps</strong> (each step is a "span"). For us a single request might be: <code>gateway → the HR host → a database query</code>. The trace shows each step and exactly how long it took — so you can see <em>the DB query was the slow part</em>, not guess.</li>
+</ul>
+<hr />
+<h2 id="3-the-moving-parts-produce-ship-store-view">3. The moving parts (produce → ship → store → view)</h2>
+<p>Telemetry flows through four jobs. Think of it like mail:</p>
+<pre><code>  Your app  ──OTLP──▶  Collector  ──▶  Tempo   (stores traces)   ─┐
+ (produces the                 └────▶  Prometheus (stores metrics) ─┴──▶  Grafana
+  data)                                                                   (you look here)
+</code></pre>
+<table>
+<thead>
+<tr>
+<th>Job</th>
+<th>What it does</th>
+<th>Mail analogy</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Collector</strong></td>
+<td>Receives all telemetry from the app at one address, then sorts it — traces to the trace store, metrics to the metric store</td>
+<td>The post office sorting centre</td>
+</tr>
+<tr>
+<td><strong>Tempo</strong></td>
+<td>The <strong>trace</strong> database — stores and lets you search the request "stories"</td>
+<td>A filing cabinet for parcel-tracking histories</td>
+</tr>
+<tr>
+<td><strong>Prometheus</strong></td>
+<td>The <strong>metrics</strong> database — stores the numbers over time</td>
+<td>A ledger of readings</td>
+</tr>
+<tr>
+<td><strong>Grafana</strong></td>
+<td>The <strong>UI</strong> — the single web page where you actually <em>look</em> at traces and metrics, build dashboards, and set alerts</td>
+<td>The front desk where you view everything</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Why separate pieces?</strong> Because traces and metrics are <strong>different shapes of data</strong> (a trace is a timed tree; a metric is a number over time), each gets a purpose-built store. The Collector unifies <em>receiving</em>; Grafana unifies <em>viewing</em>. In <strong>production</strong> you'd run these as four separate, independently-scaled services.</p>
+<p><strong>"OTLP"</strong> (mentioned on the arrows) is just the <strong>standard format/protocol</strong> the app uses to send telemetry — like a shipping label everyone understands. Because it's a standard, we can swap any piece later without changing the app.</p>
+<hr />
+<h2 id="4-the-dev-shortcut-one-container-instead-of-four">4. The dev shortcut: one container instead of four</h2>
+<p>For <strong>development</strong>, running four services is overkill. Grafana publishes an all-in-one image, <strong><code>grafana/otel-lgtm</code></strong>, that bundles the Collector + Tempo + Prometheus + Grafana into a <strong>single container</strong>, already wired together. (The name <strong>LGTM</strong> = <strong>L</strong>oki, <strong>G</strong>rafana, <strong>T</strong>empo, <strong>M</strong>imir/Prometheus — the Grafana stack.)</p>
+<p>So our dev backend is literally one service. You start it, point the app at it, and open Grafana — nothing to hand-configure.</p>
+<table>
+<thead>
+<tr>
+<th>Port</th>
+<th>What</th>
+<th>Use</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>4317</strong></td>
+<td>OTLP over gRPC</td>
+<td>where the app (Phase 2) sends telemetry</td>
+</tr>
+<tr>
+<td><strong>4318</strong></td>
+<td>OTLP over HTTP</td>
+<td>same, HTTP flavour (handy for <code>curl</code> tests)</td>
+</tr>
+<tr>
+<td><strong>3000</strong></td>
+<td>Grafana web UI</td>
+<td>where <strong>you</strong> open a browser to look</td>
+</tr>
+</tbody>
+</table>
+<p>Start / stop it (from the solution root):</p>
+<pre><code class="language-bash">docker compose -f compose.observability.yaml up -d      # start
+docker compose -f compose.observability.yaml down        # stop
+</code></pre>
+<p>Then open <strong>http://localhost:3000</strong> for Grafana.</p>
+<hr />
+<h2 id="5-how-youll-actually-use-it">5. How you'll actually use it</h2>
+<p>Once the app is emitting (Phase 2):</p>
+<ul>
+<li><strong>See a request's trace:</strong> Grafana → <strong>Explore</strong> → pick the <strong>Tempo</strong> data source → find a recent trace. You'll see the span tree — <code>gateway → host → database query</code> — with a duration bar on each, so the slow step is obvious at a glance.</li>
+<li><strong>See the metrics:</strong> Grafana → <strong>Explore</strong> → <strong>Prometheus</strong> (or a dashboard) → chart request rate, error rate, and latency per endpoint (the "RED" metrics — <strong>R</strong>ate, <strong>E</strong>rrors, <strong>D</strong>uration).</li>
+<li><strong>Logs and traces line up for free:</strong> our existing log system (TflLog) already tags every log line with the current <strong>trace id</strong> (it's the same value as the <code>Result.Reference</code> you already see in error messages). So a log line and its trace point at each other — you can jump from an error log to the exact trace that produced it.</li>
+</ul>
+<hr />
+<h2 id="6-whats-built-now-vs-next">6. What's built now vs. next</h2>
+<ul>
+<li><strong>Phase 1 (done):</strong> the <strong>backend</strong> (<code>otel-lgtm</code>) and this primer. Proven by sending a <strong>synthetic test span</strong> and finding it in Grafana.</li>
+<li><strong>Phase 2 (done):</strong> the app now emits. A single hook in the database layer (TflOmniDb <code>CommandLogger</code>) turns <strong>every</strong> DB call — SQL Server, Oracle, and PostgreSQL alike — into a span; the web hosts and the gateway are wired for traces + RED/runtime metrics; and it's all <strong>config-gated, off by default</strong> (<code>Observability:Enabled</code>). The log correlation id already equals the trace id, so logs and traces line up for free. <strong>Verified end-to-end:</strong> exercising the app produces a real <strong><code>gateway → host → DB</code></strong> trace (the DB call nested under the host request, which is nested under the gateway's proxy span) plus live RED metrics in this same Grafana — proven on the local IIS farm at <code>https://localhost:8101</code>.</li>
+<li><strong>Still ahead (the "ops half"):</strong> a production-grade collector/back-end (not the single dev container), curated dashboards + SLO alerting, and shipping the app <strong>logs</strong> into Loki so a log line deep-links to its trace inside Grafana (the correlation id is already emitted — it just isn't exported to Loki yet).</li>
+</ul>
+<hr />
+<h2 id="glossary">Glossary</h2>
+<ul>
+<li><strong>OpenTelemetry (OTel)</strong> — the vendor-neutral standard + libraries for producing logs, metrics, and traces.</li>
+<li><strong>OTLP</strong> — OpenTelemetry Protocol; the wire format the app uses to ship telemetry to the collector (ports 4317/4318).</li>
+<li><strong>Span</strong> — one timed step in a trace (e.g. "the DB query"). A <strong>trace</strong> is a tree of spans for one request.</li>
+<li><strong>RED metrics</strong> — <strong>R</strong>ate, <strong>E</strong>rrors, <strong>D</strong>uration — the three highest-value service metrics.</li>
+<li><strong>Collector</strong> — receives telemetry and routes it to the right stores.</li>
+<li><strong>Tempo / Prometheus</strong> — the trace store / metrics store.</li>
+<li><strong>Grafana</strong> — the UI to view traces, metrics, and dashboards, and to alert.</li>
+<li><strong>LGTM</strong> — Grafana's bundled stack (Loki, Grafana, Tempo, Mimir); <code>grafana/otel-lgtm</code> packs it into one dev container.</li>
+</ul>
+</div></div>
+<script>
+(function(){
+ function put(t){
+  if(navigator.clipboard&&navigator.clipboard.writeText)return navigator.clipboard.writeText(t);
+  return new Promise(function(res,rej){
+   var a=document.createElement('textarea');a.value=t;a.setAttribute('readonly','');
+   a.style.cssText='position:fixed;top:0;left:0;opacity:0';document.body.appendChild(a);
+   a.select();var ok=false;try{ok=document.execCommand('copy')}catch(e){}
+   document.body.removeChild(a);ok?res():rej()});
+ }
+ function flash(el,txt,ms){
+  var was=el.textContent;el.classList.add('done');if(txt)el.textContent=txt;
+  setTimeout(function(){el.classList.remove('done');if(txt)el.textContent=was},ms||1200);
+ }
+ function copy(text,el,okTxt){
+  put(text).then(function(){flash(el,okTxt)},function(){
+   if(okTxt){var w=el.textContent;el.textContent='Ctrl+C';setTimeout(function(){el.textContent=w},2000)}});
+ }
+ document.querySelectorAll('pre').forEach(function(pre){
+  if(pre.classList.contains('txtdoc'))return;
+  var b=document.createElement('button');
+  b.type='button';b.className='copy';b.textContent='Copy';
+  b.setAttribute('aria-label','Copy this code block to the clipboard');
+  b.addEventListener('click',function(){copy((pre.querySelector('code')||pre).innerText,b,'Copied')});
+  pre.appendChild(b);
+ });
+ document.querySelectorAll('td code').forEach(function(c){
+  if(!c.textContent.trim())return;
+  c.classList.add('cp');c.tabIndex=0;c.setAttribute('role','button');
+  c.title='Click to copy';
+  c.addEventListener('click',function(){copy(c.textContent,c)});
+  c.addEventListener('keydown',function(e){
+   if(e.key==='Enter'||e.key===' '){e.preventDefault();copy(c.textContent,c)}});
+ });
+})();
+</script>
+</body></html>

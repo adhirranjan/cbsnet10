@@ -1,0 +1,182 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Self-Signed HTTPS Certificate for CBS on IIS (this machine)</title>
+<style>
+:root{color-scheme:light dark}
+*{box-sizing:border-box}
+body{margin:0;background:#f6f8fa;color:#1f2328;font:16px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif}
+.wrap{max-width:900px;margin:0 auto;padding:32px 24px 96px}
+.card{background:#fff;border:1px solid #d0d7de;border-radius:10px;padding:40px 48px}
+h1,h2,h3{line-height:1.25;font-weight:600}
+h1{font-size:1.9rem;margin:0 0 .3em;padding-bottom:.3em;border-bottom:1px solid #d8dee4}
+h2{font-size:1.4rem;margin:1.8em 0 .6em;padding-bottom:.25em;border-bottom:1px solid #eaeef2}
+h3{font-size:1.12rem;margin:1.4em 0 .5em}
+p,li{margin:.5em 0}
+a{color:#0969da;text-decoration:none}
+a:hover{text-decoration:underline}
+code{font-family:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;font-size:.86em;background:#eff1f3;padding:.15em .4em;border-radius:6px}
+pre{background:#f6f8fa;border:1px solid #d8dee4;border-radius:8px;padding:14px 16px;overflow:auto}
+pre code{background:none;padding:0;font-size:.85em;line-height:1.45}
+blockquote{margin:1em 0;padding:.4em 1em;color:#3d444d;border-left:4px solid #d0d7de;background:#f6f8fa;border-radius:0 6px 6px 0}
+blockquote>:first-child{margin-top:0}blockquote>:last-child{margin-bottom:0}
+table{border-collapse:collapse;width:100%;margin:1em 0;display:block;overflow:auto}
+th,td{border:1px solid #d0d7de;padding:8px 12px;text-align:left;vertical-align:top}
+th{background:#f6f8fa;font-weight:600}
+tr:nth-child(2n) td{background:#f6f8fa}
+hr{border:0;border-top:1px solid #d8dee4;margin:2em 0}
+pre{position:relative}
+pre>button.copy{position:absolute;top:8px;right:8px;padding:5px 9px;cursor:pointer;
+  font:600 .68rem/1 ui-monospace,SFMono-Regular,Consolas,monospace;letter-spacing:.03em;
+  color:#636c76;background:#fff;border:1px solid #d0d7de;border-radius:6px;
+  opacity:0;transition:opacity .12s}
+pre:hover>button.copy,pre>button.copy:focus{opacity:1}
+pre>button.copy.done{color:#0a3622;background:#dafbe1;border-color:#4ac26b}
+@media(hover:none){pre>button.copy{opacity:1}}
+td code.cp{cursor:pointer}
+td code.cp:hover,td code.cp:focus{outline:1px solid #8c959f;outline-offset:1px}
+td code.cp.done{color:#0a3622;background:#dafbe1}
+.docnav{margin:0 0 20px;font-size:.85rem;color:#636c76}
+.docnav a{color:#636c76}
+ul{padding-left:1.4em}ol{padding-left:1.4em}
+@media(max-width:640px){.card{padding:24px 18px}.wrap{padding:16px 10px 64px}}
+@media(prefers-color-scheme:dark){
+ body{background:#0d1117;color:#e6edf3}
+ .card{background:#161b22;border-color:#30363d}
+ h1{border-color:#30363d}h2{border-color:#21262d}
+ code{background:#262c34}
+ pre{background:#0d1117;border-color:#30363d}
+ blockquote{background:#161b22;border-color:#30363d;color:#9198a1}
+ th,td{border-color:#30363d}th{background:#161b22}tr:nth-child(2n) td{background:#12171e}
+ a{color:#4493f8}.docnav,.docnav a{color:#9198a1}
+ hr{border-color:#30363d}
+ pre>button.copy{color:#9198a1;background:#161b22;border-color:#30363d}
+ pre>button.copy.done{color:#aff5b4;background:#1b4721;border-color:#2ea043}
+ td code.cp.done{color:#aff5b4;background:#1b4721}
+}
+</style></head>
+<body><div class="wrap"><div class="card">
+<div class="docnav"><a href="../index.html">&#8592; All docs</a></div>
+<h1 id="self-signed-https-certificate-for-cbs-on-iis-this-machine">Self-Signed HTTPS Certificate for CBS on IIS (this machine)</h1>
+<p>How the CBS IIS deployment gets HTTPS <strong>without a public CA</strong> — create a self-signed certificate, trust it, and bind it to the site(s). This is the exact procedure used by the single-host deploy (<code>cbs-single</code>, port 8081) and is reused unchanged by the future multi-host sites.</p>
+<blockquote>
+<p>Self-signed = fine for a <strong>local / internal</strong> machine (dev, demo, LAN). For an internet-facing box use a real CA cert instead. All commands below run in an <strong>elevated</strong> PowerShell (Administrator).</p>
+</blockquote>
+<h2 id="0-why-one-cert-for-every-cbs-site">0. Why one cert for every CBS site</h2>
+<p>We create <strong>one</strong> certificate whose Subject Alternative Names cover every name the browser/<code>curl</code>/the gateway will use on this box — <code>localhost</code>, the machine name <code>COM40</code>, and <code>127.0.0.1</code>. Because the SANs cover all of them, the <em>same</em> cert is bound to every CBS https binding (<code>cbs-single:8081</code> now; <code>cbs-gateway:8101</code>, <code>cbs-default:8111</code>, … later). One cert to create, trust, and eventually renew.</p>
+<h2 id="1-create-the-certificate">1. Create the certificate</h2>
+<pre><code class="language-powershell">$cert = New-SelfSignedCertificate `
+  -DnsName 'localhost','COM40','127.0.0.1' `
+  -CertStoreLocation 'Cert:\LocalMachine\My' `
+  -FriendlyName 'TrustBankCBS-SelfSigned' `
+  -KeyExportPolicy Exportable `
+  -KeyUsage DigitalSignature, KeyEncipherment `
+  -KeyAlgorithm RSA -KeyLength 2048 `
+  -NotAfter (Get-Date).AddYears(5)
+
+$cert.Thumbprint   # e.g. A1B2C3...  — you need this to bind
+</code></pre>
+<ul>
+<li>Lands in <strong><code>LocalMachine\My</code></strong> (the machine's <em>Personal</em> store) — where IIS/HTTP.SYS looks for SSL binding certs. (Not <code>CurrentUser</code>.)</li>
+<li><code>-FriendlyName 'TrustBankCBS-SelfSigned'</code> makes it easy to find later and distinguishes it from the other <code>localhost</code> certs already on this box.</li>
+<li><code>-NotAfter (5 years)</code> avoids the 1-year default expiring mid-use.</li>
+</ul>
+<p>Re-find it any time by friendly name:</p>
+<pre><code class="language-powershell">$cert = Get-ChildItem Cert:\LocalMachine\My |
+        Where-Object FriendlyName -eq 'TrustBankCBS-SelfSigned' |
+        Select-Object -First 1
+</code></pre>
+<h2 id="2-trust-the-certificate-install-into-trusted-root">2. Trust the certificate (install into Trusted Root)</h2>
+<p>A self-signed cert isn't trusted by anything yet, so browsers and <code>curl</code> show a warning. To make it <strong>trusted on this machine</strong>, copy the (public) cert into the machine's <strong>Trusted Root Certification Authorities</strong> store:</p>
+<pre><code class="language-powershell">$root = New-Object System.Security.Cryptography.X509Certificates.X509Store('Root','LocalMachine')
+$root.Open('ReadWrite')
+$root.Add($cert)          # public cert only — no private key leaves My
+$root.Close()
+</code></pre>
+<p>After this, <code>https://localhost:8081/</code> opens <strong>without</strong> a warning in browsers on this machine, and <code>curl https://localhost:8081/health</code> works <strong>without</strong> <code>-k</code>.</p>
+<ul>
+<li><strong>Alternative (skip trust):</strong> don't import to Root and just accept the browser warning / use <code>curl -k</code>. Fine for a throwaway demo; do the Root import for a clean experience.</li>
+<li>To trust it on <em>another</em> machine (e.g. a client hitting this server): export the public cert and import it into that machine's <code>LocalMachine\Root</code> (§4).</li>
+</ul>
+<h2 id="3-use-it-bind-to-the-iis-sites-https-binding">3. Use it — bind to the IIS site's https binding</h2>
+<p>IIS/HTTP.SYS binds a cert to an <strong>IP:port</strong> (SNI optional). For a CBS site on https port <code>8081</code>:</p>
+<pre><code class="language-powershell">Import-Module WebAdministration
+
+# ensure the https binding exists on the site
+New-WebBinding -Name 'cbs-single' -Protocol https -Port 8081 -IPAddress '*'
+
+# attach the cert to that binding (thumbprint from §1, store 'My')
+(Get-WebBinding -Name 'cbs-single' -Protocol https -Port 8081).AddSslCertificate($cert.Thumbprint, 'My')
+</code></pre>
+<p>Equivalent low-level form (no WebAdministration), binds to all IPs on the port:</p>
+<pre><code class="language-powershell">netsh http add sslcert ipport=0.0.0.0:8081 certhash=$($cert.Thumbprint) `
+      appid='{00112233-4455-6677-8899-aabbccddeeff}' certstorename=MY
+</code></pre>
+<p>Reuse the <strong>same</strong> <code>$cert.Thumbprint</code> for every CBS site's https port (8101/8111/8121/8131/8141/8151) — the SANs already cover the hostnames.</p>
+<h2 id="4-verify">4. Verify</h2>
+<pre><code class="language-powershell"># binding is present with a cert hash:
+netsh http show sslcert ipport=0.0.0.0:8081
+
+# trusted (no -k needed once §2 is done):
+curl.exe https://localhost:8081/health          # 200 Healthy
+# still works ignoring trust:
+curl.exe -k https://localhost:8081/health
+</code></pre>
+<p>Browser: <code>https://localhost:8081/</code> → padlock (after §2), or a one-time warning (without §2).</p>
+<p>Export the public cert (to trust on other machines):</p>
+<pre><code class="language-powershell">Export-Certificate -Cert $cert -FilePath 'D:\publish\TrustBankCBS-SelfSigned.cer'
+# on the other machine: Import-Certificate -FilePath ...\TrustBankCBS-SelfSigned.cer -CertStoreLocation Cert:\LocalMachine\Root
+</code></pre>
+<h2 id="5-renew-before-expiry">5. Renew (before expiry)</h2>
+<p>Repeat §1 (new cert), then re-run §2 (trust) and §3 (re-bind with the <strong>new</strong> thumbprint) for every site. Then delete the old one (§6). Set a reminder ~1 month before <code>NotAfter</code>.</p>
+<h2 id="6-rollback-remove">6. Rollback / remove</h2>
+<pre><code class="language-powershell">$t = $cert.Thumbprint
+netsh http delete sslcert ipport=0.0.0.0:8081                 # (repeat per bound port)
+Remove-Item &quot;Cert:\LocalMachine\My\$t&quot;   -Force
+Remove-Item &quot;Cert:\LocalMachine\Root\$t&quot; -Force               # only the one we added
+</code></pre>
+<h2 id="notes">Notes</h2>
+<ul>
+<li><strong>Store matters:</strong> the SSL cert must be in <code>LocalMachine\My</code> (HTTP.SYS reads machine stores; an app-pool identity can't use a <code>CurrentUser</code> cert).</li>
+<li><strong>HTTP still open:</strong> the sites also bind plain http (single host: 8080). <code>UseHttpsRedirection</code> bounces http→https; <code>/health</code> answers on either.</li>
+<li><strong><code>Auth:Cookie:SecurePolicy</code></strong> is <code>SameAsRequest</code> (base config) — the <code>CbsAuth</code> cookie is marked <code>Secure</code> when served over https (8081). For an https-only posture set it to <code>Always</code>.</li>
+<li>Related: <a href="iis-single-host.html">iis-single-host.md</a> (§4 binding), <a href="iis-multi-host.html">iis-multi-host.md</a> (per-site bindings — reuse this same cert).</li>
+</ul>
+</div></div>
+<script>
+(function(){
+ function put(t){
+  if(navigator.clipboard&&navigator.clipboard.writeText)return navigator.clipboard.writeText(t);
+  return new Promise(function(res,rej){
+   var a=document.createElement('textarea');a.value=t;a.setAttribute('readonly','');
+   a.style.cssText='position:fixed;top:0;left:0;opacity:0';document.body.appendChild(a);
+   a.select();var ok=false;try{ok=document.execCommand('copy')}catch(e){}
+   document.body.removeChild(a);ok?res():rej()});
+ }
+ function flash(el,txt,ms){
+  var was=el.textContent;el.classList.add('done');if(txt)el.textContent=txt;
+  setTimeout(function(){el.classList.remove('done');if(txt)el.textContent=was},ms||1200);
+ }
+ function copy(text,el,okTxt){
+  put(text).then(function(){flash(el,okTxt)},function(){
+   if(okTxt){var w=el.textContent;el.textContent='Ctrl+C';setTimeout(function(){el.textContent=w},2000)}});
+ }
+ document.querySelectorAll('pre').forEach(function(pre){
+  if(pre.classList.contains('txtdoc'))return;
+  var b=document.createElement('button');
+  b.type='button';b.className='copy';b.textContent='Copy';
+  b.setAttribute('aria-label','Copy this code block to the clipboard');
+  b.addEventListener('click',function(){copy((pre.querySelector('code')||pre).innerText,b,'Copied')});
+  pre.appendChild(b);
+ });
+ document.querySelectorAll('td code').forEach(function(c){
+  if(!c.textContent.trim())return;
+  c.classList.add('cp');c.tabIndex=0;c.setAttribute('role','button');
+  c.title='Click to copy';
+  c.addEventListener('click',function(){copy(c.textContent,c)});
+  c.addEventListener('keydown',function(e){
+   if(e.key==='Enter'||e.key===' '){e.preventDefault();copy(c.textContent,c)}});
+ });
+})();
+</script>
+</body></html>

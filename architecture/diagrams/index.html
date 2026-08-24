@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>TrustBank CBS — Management Diagrams</title>
+<style>
+  :root { --ink:#1F2937; --muted:#6B7280; --navy:#1F3864; --line:#E3E6EA; }
+  * { box-sizing: border-box; }
+  body { margin:0; padding:32px 24px 64px; background:#F7F8FA; color:var(--ink);
+         font-family:"Segoe UI",Inter,Helvetica,Arial,sans-serif; }
+  header { max-width:1680px; margin:0 auto 28px; }
+  h1 { font-size:24px; margin:0 0 6px; color:var(--navy); }
+  header p { margin:0; color:var(--muted); font-size:14px; }
+  figure { max-width:1680px; margin:0 auto 40px; background:#fff; border:1px solid var(--line);
+           border-radius:10px; padding:20px; box-shadow:0 1px 3px rgba(31,41,55,.06); }
+  figcaption { font-size:13px; color:var(--muted); margin:0 0 14px; padding-bottom:12px;
+               border-bottom:1px solid var(--line); }
+  figcaption b { color:var(--navy); font-size:15px; display:block; margin-bottom:3px; }
+  img { width:100%; height:auto; display:block; }
+  footer { max-width:1680px; margin:0 auto; color:var(--muted); font-size:12.5px; line-height:1.7; }
+  code { background:#F0F1F4; padding:1px 5px; border-radius:3px; font-size:12px; }
+  @media print { body { background:#fff; padding:0; } figure { border:0; box-shadow:none; page-break-after:always; } }
+</style>
+</head>
+<body>
+<header>
+  <h1>TrustBank CBS — .NET 10 Migration: Management Diagrams</h1>
+  <p>Prepared 30 July 2026 · revised 21 August 2026. Every project name, count and test figure is taken from the source tree, not estimated.</p>
+</header>
+
+<figure>
+  <figcaption>
+    <b>1 · Architecture</b>
+    Layered runtime view: clients → gateway → hosts → screen libraries → framework → business modules → foundation and data.
+    The left panel is the legacy estate being retired; the right panel lists the deployment shapes, databases and build-time gates.
+  </figcaption>
+  <img src="cbs-architecture.svg" alt="TrustBank CBS modular monolith architecture"/>
+</figure>
+
+<figure>
+  <figcaption>
+    <b>2 · Features, Technologies &amp; Components</b>
+    What the platform does, what it is built on, and what is reusable across every screen — with the delivered-to-date position.
+  </figcaption>
+  <img src="cbs-features-technologies-components.svg" alt="TrustBank CBS features, technologies and components"/>
+</figure>
+
+<footer>
+  <p>
+    <b>Files in this folder</b><br/>
+    <code>cbs-architecture.svg</code> · <code>cbs-features-technologies-components.svg</code> — vector, insertable directly into
+    PowerPoint or Word (Insert → Pictures → this file) and scalable to any slide or A3 print without blurring.<br/>
+    <code>cbs-architecture.png</code> · <code>cbs-features-technologies-components.png</code> — 2× raster copies for tools that will not take SVG.<br/>
+    <code>index.html</code> — this page; print to PDF for a two-page handout.
+  </p>
+  <p>Source of the underlying figures: <code>docs/architecture/TrustBank-CBS-Architecture-Brief.md</code>.
+     Regenerate the raster copies after editing an <code>.svg</code>:
+     <code>chrome --headless=new --force-device-scale-factor=2 --window-size=W,H --screenshot=x.png x.svg</code>
+     (window size = the file’s <code>viewBox</code>: 1640×1030 and 1640×1240).</p>
+  <p>
+    <b>The same content in prose</b><br/>
+    <a href="../../migrated-vs-new.html">Migrated vs. new</a> — every capability in diagram 2 tagged <i>Ported</i> / <i>Rebuilt</i> / <i>New</i>,
+    the technology stack old→new, and what is <i>not</i> yet migrated (reports, the bulk of the functional screens, the core engine procedures).<br/>
+    <a href="../../FEATURES-SHOWCASE.html">Features showcase</a> — the flat one-line-per-feature inventory behind the same board.<br/>
+    <a href="../../architecture-overview.html">Architecture overview</a> — the per-project detail behind diagram 1, including composition order and request flow.
+  </p>
+</footer>
+</body>
+</html>

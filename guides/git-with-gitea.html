@@ -1,0 +1,2505 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Git with Gitea — from zero to your first pull request</title>
+<style>
+:root{color-scheme:light dark}
+*{box-sizing:border-box}
+body{margin:0;background:#f6f8fa;color:#1f2328;font:16px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif}
+.wrap{max-width:900px;margin:0 auto;padding:32px 24px 96px}
+.card{background:#fff;border:1px solid #d0d7de;border-radius:10px;padding:40px 48px}
+h1,h2,h3{line-height:1.25;font-weight:600}
+h1{font-size:1.9rem;margin:0 0 .3em;padding-bottom:.3em;border-bottom:1px solid #d8dee4}
+h2{font-size:1.4rem;margin:1.8em 0 .6em;padding-bottom:.25em;border-bottom:1px solid #eaeef2}
+h3{font-size:1.12rem;margin:1.4em 0 .5em}
+p,li{margin:.5em 0}
+a{color:#0969da;text-decoration:none}
+a:hover{text-decoration:underline}
+code{font-family:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;font-size:.86em;background:#eff1f3;padding:.15em .4em;border-radius:6px}
+pre{background:#f6f8fa;border:1px solid #d8dee4;border-radius:8px;padding:14px 16px;overflow:auto}
+pre code{background:none;padding:0;font-size:.85em;line-height:1.45}
+blockquote{margin:1em 0;padding:.4em 1em;color:#3d444d;border-left:4px solid #d0d7de;background:#f6f8fa;border-radius:0 6px 6px 0}
+blockquote>:first-child{margin-top:0}blockquote>:last-child{margin-bottom:0}
+table{border-collapse:collapse;width:100%;margin:1em 0;display:block;overflow:auto}
+th,td{border:1px solid #d0d7de;padding:8px 12px;text-align:left;vertical-align:top}
+th{background:#f6f8fa;font-weight:600}
+tr:nth-child(2n) td{background:#f6f8fa}
+hr{border:0;border-top:1px solid #d8dee4;margin:2em 0}
+pre{position:relative}
+pre>button.copy{position:absolute;top:8px;right:8px;padding:5px 9px;cursor:pointer;
+  font:600 .68rem/1 ui-monospace,SFMono-Regular,Consolas,monospace;letter-spacing:.03em;
+  color:#636c76;background:#fff;border:1px solid #d0d7de;border-radius:6px;
+  opacity:0;transition:opacity .12s}
+pre:hover>button.copy,pre>button.copy:focus{opacity:1}
+pre>button.copy.done{color:#0a3622;background:#dafbe1;border-color:#4ac26b}
+@media(hover:none){pre>button.copy{opacity:1}}
+td code.cp{cursor:pointer}
+td code.cp:hover,td code.cp:focus{outline:1px solid #8c959f;outline-offset:1px}
+td code.cp.done{color:#0a3622;background:#dafbe1}
+.docnav{margin:0 0 20px;font-size:.85rem;color:#636c76}
+.docnav a{color:#636c76}
+ul{padding-left:1.4em}ol{padding-left:1.4em}
+@media(max-width:640px){.card{padding:24px 18px}.wrap{padding:16px 10px 64px}}
+@media(prefers-color-scheme:dark){
+ body{background:#0d1117;color:#e6edf3}
+ .card{background:#161b22;border-color:#30363d}
+ h1{border-color:#30363d}h2{border-color:#21262d}
+ code{background:#262c34}
+ pre{background:#0d1117;border-color:#30363d}
+ blockquote{background:#161b22;border-color:#30363d;color:#9198a1}
+ th,td{border-color:#30363d}th{background:#161b22}tr:nth-child(2n) td{background:#12171e}
+ a{color:#4493f8}.docnav,.docnav a{color:#9198a1}
+ hr{border-color:#30363d}
+ pre>button.copy{color:#9198a1;background:#161b22;border-color:#30363d}
+ pre>button.copy.done{color:#aff5b4;background:#1b4721;border-color:#2ea043}
+ td code.cp.done{color:#aff5b4;background:#1b4721}
+}
+</style></head>
+<body><div class="wrap"><div class="card">
+<div class="docnav"><a href="../index.html">&#8592; All docs</a></div>
+<h1 id="git-with-gitea-from-zero-to-your-first-pull-request">Git with Gitea — from zero to your first pull request</h1>
+<blockquote>
+<p>A complete working reference for git as used on this project, written for someone who has
+never used it. Read sections 0–3, do the labs, then keep sections 4–7 open in a tab forever.</p>
+<p>Budget: <strong>~30 minutes to your first commit</strong>, ~90 minutes to finish all the labs.</p>
+<p>Our git server is <strong>Gitea</strong> (self-hosted), not GitHub. Every command here is plain <code>git</code>
+and works against any server. §6 is what is specific to our Gitea server, and §7 is
+Visual Studio 2026. Every tutorial you find online will reach for <code>gh</code>, the <strong>GitHub</strong>
+CLI — it does not work here; §6.6 explains why and names the Gitea equivalent.</p>
+</blockquote>
+<hr />
+<h2 id="your-server-details">Your server details</h2>
+<p>Fill these in once — every example below uses them.</p>
+<table>
+<thead>
+<tr>
+<th>Thing</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Gitea URL</td>
+<td><code>http://192.168.0.22:3000</code></td>
+</tr>
+<tr>
+<td>Your username</td>
+<td><code>Adhir</code></td>
+</tr>
+<tr>
+<td>Commit email</td>
+<td><code>adhirranjan@softtrust.com</code></td>
+</tr>
+<tr>
+<td>Practice repo</td>
+<td><code>http://192.168.0.22:3000/Adhir/git-practice.git</code></td>
+</tr>
+</tbody>
+</table>
+<p>Your account password is <strong>not</strong> written down anywhere in this document, and it should not be:
+git never needs it. You authenticate with a <strong>Personal Access Token</strong> you generate yourself in
+the Gitea UI (§6.1), which Windows then stores encrypted on your behalf.</p>
+<hr />
+<h2 id="contents">Contents</h2>
+<ul>
+<li><a href="#0-before-you-start">0. Before you start</a></li>
+<li><a href="#1-the-model-in-five-minutes">1. The model, in five minutes</a></li>
+<li><a href="#2-the-daily-loop">2. The daily loop</a></li>
+<li><a href="#3-branching-and-pull-requests">3. Branching and pull requests</a></li>
+<li><a href="#31-make-the-branch-and-push-it">3.1 Make the branch and push it</a></li>
+<li><a href="#32-what-a-pull-request-actually-is">3.2 What a pull request actually is</a></li>
+<li><a href="#33-opening-one-in-gitea">3.3 Opening one in Gitea</a></li>
+<li><a href="#34-the-pr-page-tab-by-tab">3.4 The PR page, tab by tab</a></li>
+<li><a href="#35-when-you-are-the-reviewer">3.5 When you are the reviewer</a></li>
+<li><a href="#36-merging-and-cleaning-up">3.6 Merging, and cleaning up</a></li>
+<li><a href="#37-pr-troubleshooting">3.7 PR troubleshooting</a></li>
+<li><a href="#38-branch-naming">3.8 Branch naming</a></li>
+<li><a href="#4-section-a-practical-reference">4. Section A — Practical reference</a></li>
+<li><a href="#41-starting-a-repo">4.1 Starting a repo</a></li>
+<li><a href="#42-looking-around-do-this-before-every-action">4.2 Looking around — do this before every action</a></li>
+<li><a href="#43-staging-and-committing">4.3 Staging and committing</a></li>
+<li><a href="#44-branching">4.4 Branching</a></li>
+<li><a href="#45-syncing-with-gitea">4.5 Syncing with Gitea</a></li>
+<li><a href="#46-undoing-things">4.6 Undoing things</a></li>
+<li><a href="#47-conflicts">4.7 Conflicts</a></li>
+<li><a href="#48-ignoring-files">4.8 Ignoring files</a></li>
+<li><a href="#5-section-b-exhaustive-reference">5. Section B — Exhaustive reference</a></li>
+<li><a href="#51-create-and-configure">5.1 Create and configure</a></li>
+<li><a href="#52-inspect">5.2 Inspect</a></li>
+<li><a href="#53-change-the-working-tree-and-index">5.3 Change the working tree and index</a></li>
+<li><a href="#54-commit-and-rewrite">5.4 Commit and rewrite</a></li>
+<li><a href="#55-branch-merge-and-combine">5.5 Branch, merge, and combine</a></li>
+<li><a href="#56-talk-to-gitea-or-any-server">5.6 Talk to Gitea (or any server)</a></li>
+<li><a href="#57-temporary-storage">5.7 Temporary storage</a></li>
+<li><a href="#58-debugging-and-forensics">5.8 Debugging and forensics</a></li>
+<li><a href="#59-multiple-checkouts-and-nested-repos">5.9 Multiple checkouts and nested repos</a></li>
+<li><a href="#510-maintenance">5.10 Maintenance</a></li>
+<li><a href="#511-things-that-are-not-commands-but-you-must-know">5.11 Things that are not commands, but you must know</a></li>
+<li><a href="#6-gitea-specifics">6. Gitea specifics</a></li>
+<li><a href="#61-log-in-with-a-token-never-your-password">6.1 Log in with a token, never your password</a></li>
+<li><a href="#62-ssh-instead-optional-nicer-once-set-up">6.2 SSH instead (optional, nicer once set up)</a></li>
+<li><a href="#63-the-gitea-web-ui-mapped-to-git-concepts">6.3 The Gitea web UI, mapped to git concepts</a></li>
+<li><a href="#64-merge-styles-gitea-offers-on-a-pr">6.4 Merge styles Gitea offers on a PR</a></li>
+<li><a href="#65-branch-protection-expect-main-to-reject-you">6.5 Branch protection — expect main to reject you</a></li>
+<li><a href="#66-tea-giteas-official-cli-optional">6.6 tea — Gitea's official CLI (optional)</a></li>
+<li><a href="#7-git-in-visual-studio-2026">7. Git in Visual Studio 2026</a></li>
+<li><a href="#71-one-time-setup">7.1 One-time setup</a></li>
+<li><a href="#72-the-two-windows-you-will-live-in">7.2 The two windows you will live in</a></li>
+<li><a href="#73-command-visual-studio-side-by-side">7.3 Command → Visual Studio, side by side</a></li>
+<li><a href="#74-resolving-a-conflict-this-part-vs-genuinely-does-better">7.4 Resolving a conflict — this part VS genuinely does better</a></li>
+<li><a href="#75-visual-studio-gotchas">7.5 Visual Studio gotchas</a></li>
+<li><a href="#76-the-one-workflow-you-cannot-do-in-the-ide">7.6 The one workflow you cannot do in the IDE</a></li>
+<li><a href="#8-oh-no-the-recovery-section">8. "Oh no" — the recovery section</a></li>
+<li><a href="#9-hands-on-labs">9. Hands-on labs</a></li>
+<li><a href="#lab-0-identity-and-an-empty-repo-on-gitea">Lab 0 — Identity and an empty repo on Gitea</a></li>
+<li><a href="#lab-1-your-first-repository-and-commit">Lab 1 — Your first repository and commit</a></li>
+<li><a href="#lab-2-connect-to-gitea-and-push">Lab 2 — Connect to Gitea and push</a></li>
+<li><a href="#lab-3-the-staging-area-properly">Lab 3 — The staging area, properly</a></li>
+<li><a href="#lab-4-a-branch-and-a-real-pull-request">Lab 4 — A branch and a real pull request</a></li>
+<li><a href="#lab-5-make-a-conflict-on-purpose-then-fix-it">Lab 5 — Make a conflict on purpose, then fix it</a></li>
+<li><a href="#lab-6-undo-four-different-ways">Lab 6 — Undo, four different ways</a></li>
+<li><a href="#lab-7-destroy-work-then-get-it-back">Lab 7 — Destroy work, then get it back</a></li>
+<li><a href="#lab-8-stash-i-need-to-switch-branches-right-now">Lab 8 — Stash: "I need to switch branches right now"</a></li>
+<li><a href="#lab-9-be-your-own-colleague">Lab 9 — Be your own colleague</a></li>
+<li><a href="#lab-10-gitignore-and-the-mistake-it-does-not-fix">Lab 10 — .gitignore, and the mistake it does not fix</a></li>
+<li><a href="#lab-11-tags-and-a-gitea-release">Lab 11 — Tags and a Gitea release</a></li>
+<li><a href="#lab-12-two-more-worth-knowing">Lab 12 — Two more worth knowing</a></li>
+<li><a href="#lab-13-do-it-all-again-in-visual-studio-2026">Lab 13 — Do it all again, in Visual Studio 2026</a></li>
+<li><a href="#10-make-git-comfortable">10. Make git comfortable</a></li>
+<li><a href="#aliases-worth-30-seconds-saves-them-back-daily">Aliases — worth 30 seconds, saves them back daily</a></li>
+<li><a href="#other-settings-worth-having">Other settings worth having</a></li>
+<li><a href="#where-settings-live">Where settings live</a></li>
+<li><a href="#11-graduating-the-real-repository">11. Graduating: the real repository</a></li>
+<li><a href="#12-rules-of-thumb">12. Rules of thumb</a></li>
+<li><a href="#13-glossary">13. Glossary</a></li>
+<li><a href="#where-to-go-next">Where to go next</a></li>
+</ul>
+<hr />
+<h2 id="0-before-you-start">0. Before you start</h2>
+<p>Check git is there:</p>
+<pre><code class="language-bash">git --version        # 2.54.0 on this machine — anything 2.30+ is fine
+</code></pre>
+<p><strong>Set your identity. Do this first, before anything else.</strong> Git stamps every commit with a
+name and email; it refuses to commit without them, and commits made under the wrong name
+cannot be relabelled later without rewriting history.</p>
+<pre><code class="language-bash">git config --global user.name  &quot;Adhir Ranjan&quot;
+git config --global user.email &quot;adhirranjan@softtrust.com&quot;
+
+# Use the SAME email as your Gitea account, or Gitea won't link commits to your profile.
+git config --global --list      # verify
+</code></pre>
+<p>Three settings that will save you real pain, set them now:</p>
+<pre><code class="language-bash"># Windows checks out CRLF line endings and commits LF. Without this, whole files
+# show as &quot;changed&quot; when nobody touched them.
+git config --global core.autocrlf true
+
+# `git pull` has two behaviours and picks neither by default; it just errors.
+# &quot;merge&quot; is the beginner-safe one — it never rewrites history.
+git config --global pull.rebase false
+
+# Name the first branch `main` instead of the older `master`. Gitea defaults to main.
+git config --global init.defaultBranch main
+</code></pre>
+<hr />
+<h2 id="1-the-model-in-five-minutes">1. The model, in five minutes</h2>
+<p>Almost every git confusion comes from not knowing <strong>which of four places</strong> your file is in.</p>
+<pre><code>   ┌──────────────┐  git add   ┌──────────────┐  git commit  ┌──────────────┐  git push  ┌──────────────┐
+   │ Working tree │ ─────────► │   Staging    │ ───────────► │ Local repo   │ ─────────► │    Gitea     │
+   │ (your files, │            │    area      │              │  (.git dir,  │            │  (the server,│
+   │  as edited)  │ ◄───────── │  (&quot;index&quot;)   │ ◄─────────── │ your history)│ ◄───────── │  shared)     │
+   └──────────────┘ git restore└──────────────┘  git reset   └──────────────┘  git pull  └──────────────┘
+</code></pre>
+<ul>
+<li><strong>Working tree</strong> — the actual files on disk. Edit freely; git doesn't care yet.</li>
+<li><strong>Staging area</strong> — the shortlist of changes that will go into the <em>next</em> commit. This is the
+  step people find strange; it exists so you can commit <em>some</em> of your edits and not others.</li>
+<li><strong>Local repo</strong> — the <code>.git</code> folder. Your full history. Everything works offline.</li>
+<li><strong>Gitea</strong> — the shared copy. Nothing you do reaches your colleagues until you <code>push</code>.</li>
+</ul>
+<p><strong><code>git status</code> tells you where everything is.</strong> Run it constantly. It is not a stupid question;
+experienced developers run it more often than beginners do.</p>
+<p>A <strong>commit</strong> is a snapshot of the whole project plus a message, an author and a parent commit.
+A <strong>branch</strong> is a sticky note pointing at one commit — that's genuinely all it is, which is why
+creating and deleting branches is instant and cheap.</p>
+<hr />
+<h2 id="2-the-daily-loop">2. The daily loop</h2>
+<p>Nine commands cover ~95% of your day.</p>
+<pre><code class="language-bash">git status                        # 1. where am I, what's changed?      ← run this constantly
+git pull                          # 2. get everyone else's work first
+git switch -c feature/add-taluka  # 3. new branch for your work
+                                  # 4. ... edit files in your editor ...
+git diff                          # 5. review what you changed, before staging
+git add Ledger.cs                 # 6. stage the files you want to commit
+git commit -m &quot;Add taluka lookup&quot; # 7. snapshot them, with a message
+git push -u origin feature/add-taluka  # 8. send the branch to Gitea
+                                  # 9. open a Pull Request in the Gitea web UI
+</code></pre>
+<p>Then repeat 4–8 as many times as you like. Small commits are better than big ones — they are
+easier to review, and easier to undo when one of them turns out to be wrong.</p>
+<p><strong>Commit messages.</strong> First line ≤ 72 characters, imperative mood ("Add taluka lookup", not
+"Added" or "Adding"), explaining <strong>why</strong> if it isn't obvious. This repo's <code>CHANGELOG.md</code>
+convention (<code>feat/fix/docs/refactor/test</code>) makes a good commit prefix too:</p>
+<pre><code>fix: reference cache ignored Cache:Provider
+
+AddControllersWithViews registers a default MemoryDistributedCache before
+AddCbsFramework runs, so the provider switch short-circuited on every startup.
+</code></pre>
+<hr />
+<h2 id="3-branching-and-pull-requests">3. Branching and pull requests</h2>
+<p><strong>Never commit directly to <code>main</code>.</strong> Branch, push, open a PR, get it reviewed, merge. That is the
+whole workflow, and it is the same on every team you will ever join.</p>
+<h3 id="31-make-the-branch-and-push-it">3.1 Make the branch and push it</h3>
+<pre><code class="language-bash">git switch main                     # start from main
+git pull                            # make sure it's current
+git switch -c fix/locker-penal-label   # branch off it
+
+# ... work, add, commit ... (as many commits as you like)
+
+git push -u origin fix/locker-penal-label   # -u only needed the FIRST push of a branch
+</code></pre>
+<p><strong>Pushing a branch changes nothing about <code>main</code>.</strong> Your branch now sits on the server <em>beside</em>
+main, and the two are unrelated until something merges them. That something is the pull request.</p>
+<h3 id="32-what-a-pull-request-actually-is">3.2 What a pull request actually is</h3>
+<p><strong>A pull request is not a git feature.</strong> Git — the program on your machine — knows about commits,
+branches and remotes, and has no idea what a PR is. <code>git help -a</code> will never list one. Pull
+requests were invented by the web platforms (GitHub first, then Gitea, GitLab, Azure DevOps) and
+live entirely on the <strong>server</strong>.</p>
+<p>A PR is a page on Gitea that says <em>"please merge my branch into <code>main</code>"</em>, wrapped around three
+things:</p>
+<ol>
+<li><strong>A diff</strong> — Gitea has both branches, so it computes exactly what changes if the merge happens.</li>
+<li><strong>A conversation</strong> — comments on the change as a whole, and on individual lines of code.</li>
+<li><strong>A merge button</strong> — which performs the merge <em>on the server</em>.</li>
+</ol>
+<p>That is the entire concept: a branch, a computed diff, a comment thread, and a button.</p>
+<p><strong>Why it exists.</strong> Without a PR, "merging your work" means running <code>git merge</code> locally and pushing
+to <code>main</code>. Nobody saw it, nobody could object, and there is no record of why. The PR inserts a
+deliberate pause between <em>"I have finished"</em> and <em>"it is in main"</em> — a place for a second pair of
+eyes, for automated checks to run, and for a written reason that outlives everyone's memory.</p>
+<p><strong>The name is backwards, and it confuses everybody.</strong> You are not pulling anything. <em>You</em> are
+asking <em>the maintainer</em> to pull from your branch — the name survives from the original email-based
+workflow (<code>git request-pull</code>, still listed in §5.6). GitLab calls it a <strong>Merge Request</strong>, which is
+what it actually is. Read "PR" as "merge request" and it stops being strange.</p>
+<p>Where the work lives at each step:</p>
+<pre><code>git switch -c feature/x        LOCAL ONLY   Gitea knows nothing about this yet
+    ...commits...              LOCAL ONLY   still nothing
+git push -u origin feature/x   ON GITEA     your branch now exists, beside main.
+                                            main is UNCHANGED.
+open a PR in the browser       ON GITEA     &quot;compare these two branches for me&quot;
+    review, discussion
+    more commits pushed        ON GITEA     the PR updates itself, automatically
+click Merge                    ON GITEA     the server merges; main moves
+git switch main &amp;&amp; git pull    LOCAL        you bring the result back down
+</code></pre>
+<p><strong>Do them even when you are the only developer.</strong> Solo, a PR costs thirty seconds and still gives
+you one readable view of everything you are about to make permanent in <code>main</code>. That is how you
+catch the committed password.</p>
+<h3 id="33-opening-one-in-gitea">3.3 Opening one in Gitea</h3>
+<p><strong>There is no CLI for this, and there is no Visual Studio button for it</strong> (§7) — Gitea's pull
+requests live behind its own web API, which neither <code>git</code> nor Visual Studio speaks. The browser is
+the way.</p>
+<ol>
+<li>Go to <code>http://192.168.0.22:3000/Adhir/git-practice</code></li>
+<li>Gitea shows a banner: <em>"fix/locker-penal-label had recent pushes — Compare &amp; Pull Request"</em>.
+   Click it. (Or: the <strong>Pull Requests</strong> tab → <strong>New Pull Request</strong>.)</li>
+<li><strong>Check the direction: base <code>main</code> ← compare <code>your-branch</code>.</strong> Getting these backwards is the
+   single most common PR mistake, and it produces a confusing empty or enormous diff.</li>
+<li><strong>Title</strong> — the same rules as a commit subject (§2): short, imperative, specific.
+   <em>"Fix penal-interest label on locker type screen"</em>, not <em>"changes"</em>.</li>
+<li><strong>Description</strong> — what changed, <strong>why</strong>, and how you know it works. If it touches a screen, say
+   which. If it fixes an issue, write <code>Fixes #12</code> and Gitea closes issue 12 automatically when the
+   PR merges.</li>
+<li>Assign a <strong>reviewer</strong>. A PR nobody is assigned to is a PR nobody reads.</li>
+<li><strong>Create Pull Request</strong>.</li>
+</ol>
+<p><strong>Not ready for review yet?</strong> Start the title with <code>WIP:</code> — Gitea treats it as a work-in-progress
+and blocks merging until you remove the prefix. Useful for showing someone a direction early
+without risking an accidental merge.</p>
+<h3 id="34-the-pr-page-tab-by-tab">3.4 The PR page, tab by tab</h3>
+<table>
+<thead>
+<tr>
+<th>Tab</th>
+<th>What it holds</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Conversation</strong></td>
+<td>The description, all comments, and the merge button. The narrative record</td>
+</tr>
+<tr>
+<td><strong>Commits</strong></td>
+<td>Your commits in order. This is why messages matter — a reviewer reads this list first</td>
+</tr>
+<tr>
+<td><strong>Files Changed</strong></td>
+<td>The diff. Where line-by-line review happens</td>
+</tr>
+</tbody>
+</table>
+<p>In <strong>Files Changed</strong>, hover any line and click the <strong>+</strong> to comment on exactly that line. That is
+the whole mechanism of code review: specific comments attached to specific lines, which stay
+attached as the code changes.</p>
+<p><strong>Responding to review is just more commits:</strong></p>
+<pre><code class="language-bash"># still on your branch, in the same folder
+# ... make the requested changes ...
+git commit -am &quot;fix: address review — clamp the rate at 100%&quot;
+git push                      # no -u; the branch is already linked
+</code></pre>
+<p>Refresh the PR — the new commit is in it. <strong>Never close a PR and open a new one</strong> to incorporate
+feedback; you would throw away the entire discussion. The PR tracks the <em>branch</em>, so anything you
+push to that branch is in the PR automatically.</p>
+<h3 id="35-when-you-are-the-reviewer">3.5 When you are the reviewer</h3>
+<p>You will be on this side too, so know what is expected:</p>
+<ul>
+<li>Read the <strong>description</strong> first, then <strong>Commits</strong>, then <strong>Files Changed</strong>. In that order — you
+  need the intent before the diff means anything.</li>
+<li>Comment on lines, not on people. <em>"This throws if the list is empty"</em> — not <em>"you forgot"</em>.</li>
+<li>Distinguish blocking from optional. Prefix nits: <em>"nit: spelling"</em> — the author then knows what
+  must change and what is taste.</li>
+<li><strong>Approve</strong> / <strong>Request changes</strong> / <strong>Comment</strong> are the three verdicts. Choosing "Comment" when
+  you mean "Request changes" leaves the author guessing.</li>
+<li>Pull it down and run it when the change is non-trivial:
+  <code>bash
+  git fetch
+  git switch fix/locker-penal-label   # tracks origin's branch automatically
+  dotnet build &amp;&amp; dotnet test</code></li>
+</ul>
+<h3 id="36-merging-and-cleaning-up">3.6 Merging, and cleaning up</h3>
+<p>Gitea offers four merge styles — see §6.4 for which does what. Ask the team which one to use and
+be consistent.</p>
+<p>Two things Gitea may stop you with, both normal:</p>
+<ul>
+<li><strong>"This branch has conflicts that must be resolved"</strong> — <code>main</code> moved under you. Fix it locally:
+  <code>bash
+  git switch main &amp;&amp; git pull
+  git switch fix/locker-penal-label
+  git merge main            # resolve conflicts here, as in §4.7
+  git push                  # the PR re-checks itself and goes green</code></li>
+<li><strong>"Required approvals not met"</strong> — branch protection (§6.5). Get the review.</li>
+</ul>
+<p>Once merged:</p>
+<pre><code class="language-bash">git switch main
+git pull                                     # bring the merge down
+git branch -d fix/locker-penal-label         # delete local branch (-d refuses if unmerged)
+git fetch --prune                            # drop the stale remote-tracking ref
+</code></pre>
+<p>Gitea can delete the remote branch for you at merge time — take the offer. Stale branches pile up
+fast and nobody ever cleans them later.</p>
+<h3 id="37-pr-troubleshooting">3.7 PR troubleshooting</h3>
+<table>
+<thead>
+<tr>
+<th>Symptom</th>
+<th>Cause and fix</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>The diff is empty</td>
+<td>Base and compare are the same branch, or you never pushed. <code>git push</code> and re-check the direction</td>
+</tr>
+<tr>
+<td>The diff is enormous and full of files you never touched</td>
+<td>Base and compare are backwards, or you branched off the wrong branch. Re-open with the right base</td>
+</tr>
+<tr>
+<td>"Nothing to compare, branches are identical"</td>
+<td>Your commits are still local. <code>git push</code></td>
+</tr>
+<tr>
+<td>Your branch is not in the dropdown</td>
+<td>Not pushed yet, or pushed to a different remote. <code>git push -u origin &lt;branch&gt;</code></td>
+</tr>
+<tr>
+<td>The PR shows commits that are not yours</td>
+<td>You branched off someone else's branch instead of <code>main</code>. Rebase onto main, or re-branch and cherry-pick (§5.4)</td>
+</tr>
+<tr>
+<td>"Merge conflicts"</td>
+<td>See §3.6</td>
+</tr>
+<tr>
+<td>Cannot merge, no button</td>
+<td>Branch protection, unmet approvals, or a <code>WIP:</code> title</td>
+</tr>
+<tr>
+<td>You closed the PR by accident</td>
+<td>Reopen it on the same page — the branch and discussion are intact</td>
+</tr>
+<tr>
+<td>You force-pushed and the review comments now point at nothing</td>
+<td>Comments on rewritten commits become "outdated". Avoid force-pushing a branch that is under review</td>
+</tr>
+</tbody>
+</table>
+<h3 id="38-branch-naming">3.8 Branch naming</h3>
+<p>Pick a convention and stick to it:</p>
+<table>
+<thead>
+<tr>
+<th>Prefix</th>
+<th>For</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>feature/</code></td>
+<td>new functionality</td>
+</tr>
+<tr>
+<td><code>fix/</code></td>
+<td>bug fixes</td>
+</tr>
+<tr>
+<td><code>refactor/</code></td>
+<td>no behaviour change</td>
+</tr>
+<tr>
+<td><code>docs/</code></td>
+<td>documentation only</td>
+</tr>
+<tr>
+<td><code>spike/</code></td>
+<td>throwaway experiments</td>
+</tr>
+</tbody>
+</table>
+<p>One branch, one purpose. A branch that fixes a bug <em>and</em> renames a folder <em>and</em> adds a feature is
+a PR nobody can review properly.</p>
+<hr />
+<h2 id="4-section-a-practical-reference">4. Section A — Practical reference</h2>
+<p>The commands you will actually type. Every one has a purpose, an example, and the gotcha that
+bites people.</p>
+<h3 id="41-starting-a-repo">4.1 Starting a repo</h3>
+<table>
+<thead>
+<tr>
+<th>Command</th>
+<th>Purpose</th>
+<th>Example</th>
+<th>Gotcha</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>git init</code></td>
+<td>Turn the current folder into a repo</td>
+<td><code>git init</code></td>
+<td>Creates <code>.git/</code>. Run it in the project root, never in your home folder.</td>
+</tr>
+<tr>
+<td><code>git clone &lt;url&gt;</code></td>
+<td>Copy an existing repo from Gitea</td>
+<td><code>git clone http://192.168.0.22:3000/Adhir/git-practice.git</code></td>
+<td>Creates a <em>new subfolder</em>. Do not <code>mkdir</code> first.</td>
+</tr>
+<tr>
+<td><code>git clone &lt;url&gt; &lt;dir&gt;</code></td>
+<td>Clone into a named folder</td>
+<td><code>git clone &lt;url&gt; practice</code></td>
+<td>—</td>
+</tr>
+<tr>
+<td><code>git remote -v</code></td>
+<td>Show which server this repo talks to</td>
+<td><code>git remote -v</code></td>
+<td>Two lines (fetch + push) is normal, not a duplicate.</td>
+</tr>
+<tr>
+<td><code>git remote add origin &lt;url&gt;</code></td>
+<td>Point a local repo at Gitea</td>
+<td><code>git remote add origin http://192.168.0.22:3000/Adhir/git-practice.git</code></td>
+<td><code>origin</code> is just a nickname, not a keyword.</td>
+</tr>
+<tr>
+<td><code>git remote set-url origin &lt;url&gt;</code></td>
+<td>Change the server URL</td>
+<td><code>git remote set-url origin https://new-host/x.git</code></td>
+<td>Use this after a server move — do not remove and re-add.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="42-looking-around-do-this-before-every-action">4.2 Looking around — do this before every action</h3>
+<table>
+<thead>
+<tr>
+<th>Command</th>
+<th>Purpose</th>
+<th>Example</th>
+<th>Gotcha</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>git status</code></td>
+<td>What changed, what is staged, which branch</td>
+<td><code>git status</code></td>
+<td>The single most useful command. Its hints name the exact command to undo things.</td>
+</tr>
+<tr>
+<td><code>git status -s</code></td>
+<td>Same, one line per file</td>
+<td><code>git status -s</code></td>
+<td><code>M</code>=modified <code>A</code>=added <code>??</code>=untracked. Left column = staged, right = unstaged.</td>
+</tr>
+<tr>
+<td><code>git diff</code></td>
+<td>Unstaged changes (working tree vs staging)</td>
+<td><code>git diff</code></td>
+<td>Shows <strong>nothing</strong> for files you already added. That confuses everyone once.</td>
+</tr>
+<tr>
+<td><code>git diff --staged</code></td>
+<td>Staged changes (what will be committed)</td>
+<td><code>git diff --staged</code></td>
+<td>Run this right before committing. <code>--cached</code> is a synonym.</td>
+</tr>
+<tr>
+<td><code>git diff main</code></td>
+<td>Your branch vs main</td>
+<td><code>git diff main -- Ledger.cs</code></td>
+<td><code>--</code> separates paths from branch names.</td>
+</tr>
+<tr>
+<td><code>git log</code></td>
+<td>History</td>
+<td><code>git log</code></td>
+<td>Press <code>q</code> to quit the pager.</td>
+</tr>
+<tr>
+<td><code>git log --oneline --graph --all</code></td>
+<td>Readable history with branches</td>
+<td><code>git log --oneline --graph --all -20</code></td>
+<td>Alias this (§10). You will want it hourly.</td>
+</tr>
+<tr>
+<td><code>git log -p &lt;file&gt;</code></td>
+<td>History of one file, with diffs</td>
+<td><code>git log -p Ledger.cs</code></td>
+<td>—</td>
+</tr>
+<tr>
+<td><code>git show &lt;commit&gt;</code></td>
+<td>One commit in full</td>
+<td><code>git show a1b2c3d</code></td>
+<td><code>git show HEAD</code> = the last commit.</td>
+</tr>
+<tr>
+<td><code>git blame &lt;file&gt;</code></td>
+<td>Who last changed each line, and when</td>
+<td><code>git blame Ledger.cs</code></td>
+<td>For understanding, not for blaming. Use <code>-w</code> to ignore whitespace churn.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="43-staging-and-committing">4.3 Staging and committing</h3>
+<table>
+<thead>
+<tr>
+<th>Command</th>
+<th>Purpose</th>
+<th>Example</th>
+<th>Gotcha</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>git add &lt;file&gt;</code></td>
+<td>Stage one file</td>
+<td><code>git add Ledger.cs</code></td>
+<td>—</td>
+</tr>
+<tr>
+<td><code>git add .</code></td>
+<td>Stage everything under the current folder</td>
+<td><code>git add .</code></td>
+<td><strong>Check <code>git status</code> first.</strong> This is how secrets and <code>bin/</code> folders get committed.</td>
+</tr>
+<tr>
+<td><code>git add -p</code></td>
+<td>Stage selected <em>hunks</em> of a file</td>
+<td><code>git add -p Ledger.cs</code></td>
+<td><code>y</code>/<code>n</code>/<code>s</code> (split)/<code>q</code>. Excellent for separating two unrelated edits.</td>
+</tr>
+<tr>
+<td><code>git commit -m "msg"</code></td>
+<td>Commit what is staged</td>
+<td><code>git commit -m "Add taluka lookup"</code></td>
+<td>Commits <strong>only staged</strong> changes. Unstaged edits stay put.</td>
+</tr>
+<tr>
+<td><code>git commit</code></td>
+<td>Commit, writing the message in an editor</td>
+<td><code>git commit</code></td>
+<td>Needed for multi-line messages. Set <code>core.editor</code> if the default is unfamiliar.</td>
+</tr>
+<tr>
+<td><code>git commit -am "msg"</code></td>
+<td>Stage all <em>tracked</em> files and commit</td>
+<td><code>git commit -am "Fix typo"</code></td>
+<td>Does <strong>not</strong> add new/untracked files. A frequent surprise.</td>
+</tr>
+<tr>
+<td><code>git commit --amend</code></td>
+<td>Fix the last commit (message or content)</td>
+<td><code>git commit --amend -m "Better message"</code></td>
+<td><strong>Only if you have not pushed.</strong> It rewrites the commit.</td>
+</tr>
+<tr>
+<td><code>git commit --amend --no-edit</code></td>
+<td>Add a forgotten file to the last commit</td>
+<td><code>git add missed.cs &amp;&amp; git commit --amend --no-edit</code></td>
+<td>Same rule: unpushed only.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="44-branching">4.4 Branching</h3>
+<table>
+<thead>
+<tr>
+<th>Command</th>
+<th>Purpose</th>
+<th>Example</th>
+<th>Gotcha</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>git branch</code></td>
+<td>List local branches</td>
+<td><code>git branch</code></td>
+<td><code>*</code> marks the current one.</td>
+</tr>
+<tr>
+<td><code>git branch -a</code></td>
+<td>List local + remote branches</td>
+<td><code>git branch -a</code></td>
+<td><code>remotes/origin/x</code> is a <em>cached</em> view; refresh with <code>git fetch</code>.</td>
+</tr>
+<tr>
+<td><code>git switch &lt;name&gt;</code></td>
+<td>Move to an existing branch</td>
+<td><code>git switch main</code></td>
+<td>Modern replacement for <code>git checkout &lt;branch&gt;</code>.</td>
+</tr>
+<tr>
+<td><code>git switch -c &lt;name&gt;</code></td>
+<td>Create a branch and move to it</td>
+<td><code>git switch -c feature/x</code></td>
+<td>Branches off wherever you are — <code>git switch main</code> first if you mean main.</td>
+</tr>
+<tr>
+<td><code>git switch -</code></td>
+<td>Back to the previous branch</td>
+<td><code>git switch -</code></td>
+<td>Like <code>cd -</code>.</td>
+</tr>
+<tr>
+<td><code>git branch -d &lt;name&gt;</code></td>
+<td>Delete a merged branch</td>
+<td><code>git branch -d feature/x</code></td>
+<td>Refuses if unmerged — that refusal is a feature.</td>
+</tr>
+<tr>
+<td><code>git branch -D &lt;name&gt;</code></td>
+<td>Force-delete a branch</td>
+<td><code>git branch -D spike/junk</code></td>
+<td>Recoverable via <code>git reflog</code> for ~90 days.</td>
+</tr>
+<tr>
+<td><code>git branch -m &lt;new&gt;</code></td>
+<td>Rename the current branch</td>
+<td><code>git branch -m fix/better-name</code></td>
+<td>If already pushed, delete the old remote branch and push again.</td>
+</tr>
+<tr>
+<td><code>git merge &lt;branch&gt;</code></td>
+<td>Bring another branch's work into this one</td>
+<td><code>git switch main &amp;&amp; git merge feature/x</code></td>
+<td>Merge <em>into</em> where you are standing.</td>
+</tr>
+<tr>
+<td><code>git merge --abort</code></td>
+<td>Undo a merge that hit conflicts</td>
+<td><code>git merge --abort</code></td>
+<td>Puts everything back exactly as it was. Safe.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="45-syncing-with-gitea">4.5 Syncing with Gitea</h3>
+<table>
+<thead>
+<tr>
+<th>Command</th>
+<th>Purpose</th>
+<th>Example</th>
+<th>Gotcha</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>git fetch</code></td>
+<td>Download new commits, change nothing locally</td>
+<td><code>git fetch</code></td>
+<td>The safe way to look before you leap.</td>
+</tr>
+<tr>
+<td><code>git fetch --prune</code></td>
+<td>Fetch, and drop refs for branches deleted on the server</td>
+<td><code>git fetch --prune</code></td>
+<td>Run occasionally or <code>git branch -a</code> fills with ghosts.</td>
+</tr>
+<tr>
+<td><code>git pull</code></td>
+<td>Fetch <strong>and</strong> merge into your branch</td>
+<td><code>git pull</code></td>
+<td>Equals <code>fetch</code> + <code>merge</code>. Can produce conflicts; that is normal.</td>
+</tr>
+<tr>
+<td><code>git push</code></td>
+<td>Send your commits to Gitea</td>
+<td><code>git push</code></td>
+<td>Rejected? Someone else pushed — pull first, then push again.</td>
+</tr>
+<tr>
+<td><code>git push -u origin &lt;branch&gt;</code></td>
+<td>First push of a new branch</td>
+<td><code>git push -u origin feature/x</code></td>
+<td><code>-u</code> links them, so later <code>git push</code>/<code>git pull</code> need no arguments.</td>
+</tr>
+<tr>
+<td><code>git push origin --delete &lt;branch&gt;</code></td>
+<td>Delete a branch on the server</td>
+<td><code>git push origin --delete feature/x</code></td>
+<td>Gitea can do this for you when a PR merges.</td>
+</tr>
+<tr>
+<td><code>git push --force-with-lease</code></td>
+<td>Overwrite the remote branch, safely</td>
+<td><code>git push --force-with-lease</code></td>
+<td><strong>Never on <code>main</code>.</strong> Only your own branch, after a rebase or amend. It refuses if someone else pushed meanwhile — which is exactly why it is not plain <code>--force</code>.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="46-undoing-things">4.6 Undoing things</h3>
+<p>The most important table in this document. <strong>Nothing committed is ever really lost</strong> — see §8.</p>
+<table>
+<thead>
+<tr>
+<th>Command</th>
+<th>Purpose</th>
+<th>Example</th>
+<th>Gotcha</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>git restore &lt;file&gt;</code></td>
+<td>Throw away unstaged edits to a file</td>
+<td><code>git restore Ledger.cs</code></td>
+<td><strong>Destructive and unrecoverable</strong> — those edits were never in git.</td>
+</tr>
+<tr>
+<td><code>git restore --staged &lt;file&gt;</code></td>
+<td>Unstage, keeping your edits</td>
+<td><code>git restore --staged Ledger.cs</code></td>
+<td>The exact opposite of <code>git add</code>. Perfectly safe.</td>
+</tr>
+<tr>
+<td><code>git restore --source=HEAD~2 &lt;file&gt;</code></td>
+<td>Get a file back as it was N commits ago</td>
+<td><code>git restore --source=HEAD~2 Ledger.cs</code></td>
+<td>Does not move your branch, only the file.</td>
+</tr>
+<tr>
+<td><code>git revert &lt;commit&gt;</code></td>
+<td>Undo a commit by making a new, opposite commit</td>
+<td><code>git revert a1b2c3d</code></td>
+<td><strong>The safe undo for anything already pushed.</strong> History is added to, never rewritten.</td>
+</tr>
+<tr>
+<td><code>git reset --soft HEAD~1</code></td>
+<td>Undo last commit, keep changes staged</td>
+<td><code>git reset --soft HEAD~1</code></td>
+<td>Great for "I committed too early".</td>
+</tr>
+<tr>
+<td><code>git reset HEAD~1</code></td>
+<td>Undo last commit, keep changes unstaged</td>
+<td><code>git reset HEAD~1</code></td>
+<td>The default mode (<code>--mixed</code>).</td>
+</tr>
+<tr>
+<td><code>git reset --hard HEAD~1</code></td>
+<td>Undo last commit and <strong>destroy the changes</strong></td>
+<td><code>git reset --hard HEAD~1</code></td>
+<td>The one genuinely dangerous command. Uncommitted work is gone for good. Commit first, always.</td>
+</tr>
+<tr>
+<td><code>git clean -nd</code></td>
+<td><em>Preview</em> deleting untracked files</td>
+<td><code>git clean -nd</code></td>
+<td>Always run the <code>-n</code> preview first.</td>
+</tr>
+<tr>
+<td><code>git clean -fd</code></td>
+<td>Delete untracked files and folders</td>
+<td><code>git clean -fd</code></td>
+<td>Unrecoverable. Respects <code>.gitignore</code> unless you add <code>-x</code>.</td>
+</tr>
+<tr>
+<td><code>git stash</code></td>
+<td>Park uncommitted work temporarily</td>
+<td><code>git stash</code></td>
+<td>For "I need to switch branch right now".</td>
+</tr>
+<tr>
+<td><code>git stash pop</code></td>
+<td>Bring parked work back</td>
+<td><code>git stash pop</code></td>
+<td><code>pop</code> removes it from the stash; <code>apply</code> keeps a copy.</td>
+</tr>
+<tr>
+<td><code>git stash list</code></td>
+<td>See what you parked</td>
+<td><code>git stash list</code></td>
+<td>Easy to forget things here. Check before assuming work is lost.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="47-conflicts">4.7 Conflicts</h3>
+<p>A conflict means two branches changed the <em>same lines</em> and git will not guess. It is routine,
+not a failure.</p>
+<pre><code class="language-text">&lt;&lt;&lt;&lt;&lt;&lt;&lt; HEAD                                    &lt;- what is on YOUR current branch
+    public const string Version = &quot;1.1&quot;;
+=======                                         &lt;- divider
+    public const string Version = &quot;2.0&quot;;
+&gt;&gt;&gt;&gt;&gt;&gt;&gt; feature/x                               &lt;- what is on the branch coming in
+</code></pre>
+<p>To resolve: <strong>open the file, delete all three marker lines, leave the code you want</strong> (which may
+be one side, or a mix, or something new), then:</p>
+<pre><code class="language-bash">git add Ledger.cs        # &quot;I have resolved this file&quot;
+git status               # any files left conflicted? repeat.
+git commit               # completes the merge (git pre-fills the message)
+</code></pre>
+<p>Escape hatches, if it turns into a mess:</p>
+<table>
+<thead>
+<tr>
+<th>Command</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>git merge --abort</code></td>
+<td>Cancel the whole merge, back to exactly before</td>
+</tr>
+<tr>
+<td><code>git checkout --ours &lt;file&gt;</code></td>
+<td>Keep your branch's version of that file entirely</td>
+</tr>
+<tr>
+<td><code>git checkout --theirs &lt;file&gt;</code></td>
+<td>Keep the incoming version entirely</td>
+</tr>
+<tr>
+<td><code>git diff --name-only --diff-filter=U</code></td>
+<td>List just the still-conflicted files</td>
+</tr>
+</tbody>
+</table>
+<h3 id="48-ignoring-files">4.8 Ignoring files</h3>
+<p><code>.gitignore</code> lists what git should pretend does not exist — build output, secrets, local config.
+This repo already has a well-considered one at <a href="../../.gitignore">.gitignore</a>.</p>
+<pre><code class="language-gitignore">bin/                                     # a folder, at any depth
+obj/
+*.user                                   # by extension
+**/appsettings.Development.json          # local DB credentials — never commit
+!appsettings.Development.json.example    # ! un-ignores an exception
+</code></pre>
+<p><strong>The catch:</strong> <code>.gitignore</code> only affects files git is not <em>already</em> tracking. If <code>bin/</code> was
+committed once, ignoring it later changes nothing. Fix it with:</p>
+<pre><code class="language-bash">git rm -r --cached bin/     # stop tracking, keep the files on disk
+git commit -m &quot;Stop tracking build output&quot;
+</code></pre>
+<hr />
+<h2 id="5-section-b-exhaustive-reference">5. Section B — Exhaustive reference</h2>
+<p>Every user-facing ("porcelain") git command, grouped by what it is for. You will not need most
+of these — they are here so that when you meet one in a Stack Overflow answer you know what it
+does before you paste it. Plumbing commands (<code>cat-file</code>, <code>update-ref</code>, <code>hash-object</code>, …) are
+deliberately excluded: they are for writing tools, not for using git.</p>
+<p><strong>Legend:</strong> ★ = in §4, you will use it constantly · ☆ = occasional · ○ = rare/specialist.</p>
+<h3 id="51-create-and-configure">5.1 Create and configure</h3>
+<table>
+<thead>
+<tr>
+<th>Command</th>
+<th>What it does</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>★ <code>git init</code></td>
+<td>Create a new repository in the current folder</td>
+</tr>
+<tr>
+<td>★ <code>git clone</code></td>
+<td>Copy a repository (and its whole history) from a server</td>
+</tr>
+<tr>
+<td>★ <code>git config</code></td>
+<td>Read/write settings. <code>--global</code> = you, <code>--local</code> = this repo, <code>--system</code> = machine</td>
+</tr>
+<tr>
+<td>☆ <code>git help &lt;cmd&gt;</code></td>
+<td>Full manual page for any command. <code>git help -a</code> lists everything</td>
+</tr>
+<tr>
+<td>○ <code>git init --bare</code></td>
+<td>Create a repo with no working files — what a <em>server</em> holds</td>
+</tr>
+</tbody>
+</table>
+<h3 id="52-inspect">5.2 Inspect</h3>
+<table>
+<thead>
+<tr>
+<th>Command</th>
+<th>What it does</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>★ <code>git status</code></td>
+<td>Working tree and staging summary</td>
+</tr>
+<tr>
+<td>★ <code>git diff</code></td>
+<td>Line-by-line changes between any two of: working tree, index, commits</td>
+</tr>
+<tr>
+<td>★ <code>git log</code></td>
+<td>Commit history, filterable a hundred ways</td>
+</tr>
+<tr>
+<td>★ <code>git show</code></td>
+<td>Show one object (commit, tag, blob) in full</td>
+</tr>
+<tr>
+<td>★ <code>git blame</code></td>
+<td>Annotate each line with the commit that last touched it</td>
+</tr>
+<tr>
+<td>☆ <code>git shortlog</code></td>
+<td>History grouped by author — <code>-sn</code> gives a contribution count</td>
+</tr>
+<tr>
+<td>☆ <code>git describe</code></td>
+<td>Human-readable name for a commit, based on the nearest tag</td>
+</tr>
+<tr>
+<td>☆ <code>git grep</code></td>
+<td>Search tracked files. Faster than plain grep and can search <em>old commits</em></td>
+</tr>
+<tr>
+<td>☆ <code>git reflog</code></td>
+<td><strong>Log of where HEAD has been.</strong> Your safety net — see §8</td>
+</tr>
+<tr>
+<td>○ <code>git count-objects -vH</code></td>
+<td>Repository size on disk</td>
+</tr>
+<tr>
+<td>○ <code>git fsck</code></td>
+<td>Check the object database for corruption / find dangling commits</td>
+</tr>
+<tr>
+<td>○ <code>git whatchanged</code></td>
+<td>Older, rougher <code>git log --stat</code>. Superseded</td>
+</tr>
+</tbody>
+</table>
+<h3 id="53-change-the-working-tree-and-index">5.3 Change the working tree and index</h3>
+<table>
+<thead>
+<tr>
+<th>Command</th>
+<th>What it does</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>★ <code>git add</code></td>
+<td>Stage changes for the next commit</td>
+</tr>
+<tr>
+<td>★ <code>git restore</code></td>
+<td>Restore files from the index or a commit (modern, split out of <code>checkout</code>)</td>
+</tr>
+<tr>
+<td>★ <code>git rm</code></td>
+<td>Delete a file <em>and</em> stage the deletion. <code>--cached</code> = untrack but keep on disk</td>
+</tr>
+<tr>
+<td>☆ <code>git mv</code></td>
+<td>Rename/move a file and stage it. Git detects renames anyway — this is convenience</td>
+</tr>
+<tr>
+<td>☆ <code>git clean</code></td>
+<td>Delete untracked files. Preview with <code>-n</code> first, always</td>
+</tr>
+<tr>
+<td>○ <code>git sparse-checkout</code></td>
+<td>Check out only part of a huge repo</td>
+</tr>
+<tr>
+<td>○ <code>git update-index --skip-worktree</code></td>
+<td>Tell git to ignore local changes to a <em>tracked</em> file</td>
+</tr>
+</tbody>
+</table>
+<h3 id="54-commit-and-rewrite">5.4 Commit and rewrite</h3>
+<table>
+<thead>
+<tr>
+<th>Command</th>
+<th>What it does</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>★ <code>git commit</code></td>
+<td>Record the staged snapshot</td>
+</tr>
+<tr>
+<td>★ <code>git revert</code></td>
+<td>Create a new commit that undoes an old one — safe after pushing</td>
+</tr>
+<tr>
+<td>★ <code>git reset</code></td>
+<td>Move the branch pointer. <code>--soft</code> keeps staged, <code>--mixed</code> keeps unstaged, <code>--hard</code> destroys</td>
+</tr>
+<tr>
+<td>☆ <code>git rebase</code></td>
+<td>Replay your commits on top of another branch — a linear history instead of a merge</td>
+</tr>
+<tr>
+<td>☆ <code>git rebase -i</code></td>
+<td><em>Interactive</em>: reorder, squash, reword, drop commits before sharing them</td>
+</tr>
+<tr>
+<td>☆ <code>git cherry-pick</code></td>
+<td>Copy one specific commit from another branch onto this one</td>
+</tr>
+<tr>
+<td>○ <code>git commit --fixup</code> / <code>git rebase --autosquash</code></td>
+<td>Mark a commit as a fix for an earlier one, then fold them together automatically</td>
+</tr>
+<tr>
+<td>○ <code>git filter-repo</code></td>
+<td>Rewrite the entire history (e.g. purge a leaked secret). Not built in; replaces the old <code>filter-branch</code></td>
+</tr>
+<tr>
+<td>○ <code>git replace</code></td>
+<td>Graft a substitute object over another without rewriting</td>
+</tr>
+</tbody>
+</table>
+<h3 id="55-branch-merge-and-combine">5.5 Branch, merge, and combine</h3>
+<table>
+<thead>
+<tr>
+<th>Command</th>
+<th>What it does</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>★ <code>git branch</code></td>
+<td>List, create, rename, delete branches</td>
+</tr>
+<tr>
+<td>★ <code>git switch</code></td>
+<td>Change which branch you are on</td>
+</tr>
+<tr>
+<td>★ <code>git merge</code></td>
+<td>Join two histories together</td>
+</tr>
+<tr>
+<td>☆ <code>git checkout</code></td>
+<td>The old command that did <code>switch</code> <strong>and</strong> <code>restore</code>. Still works; still in every old answer online. Prefer the two new ones</td>
+</tr>
+<tr>
+<td>☆ <code>git tag</code></td>
+<td>Mark a commit permanently — releases, versions. <code>-a</code> for an annotated tag</td>
+</tr>
+<tr>
+<td>☆ <code>git range-diff</code></td>
+<td>Compare two versions of a branch (e.g. before/after a rebase)</td>
+</tr>
+<tr>
+<td>○ <code>git merge --squash</code></td>
+<td>Combine a branch into a single un-committed change set</td>
+</tr>
+<tr>
+<td>○ <code>git rerere</code></td>
+<td>"Reuse recorded resolution" — remembers how you solved a conflict and redoes it next time</td>
+</tr>
+</tbody>
+</table>
+<h3 id="56-talk-to-gitea-or-any-server">5.6 Talk to Gitea (or any server)</h3>
+<table>
+<thead>
+<tr>
+<th>Command</th>
+<th>What it does</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>★ <code>git fetch</code></td>
+<td>Download refs and objects; change nothing you are working on</td>
+</tr>
+<tr>
+<td>★ <code>git pull</code></td>
+<td><code>fetch</code> + integrate (<code>merge</code> by default, <code>rebase</code> with <code>--rebase</code>)</td>
+</tr>
+<tr>
+<td>★ <code>git push</code></td>
+<td>Upload your commits, and create/update/delete remote branches</td>
+</tr>
+<tr>
+<td>★ <code>git remote</code></td>
+<td>Manage the named URLs (<code>origin</code>, and any others)</td>
+</tr>
+<tr>
+<td>☆ <code>git ls-remote</code></td>
+<td>List a server's branches/tags without cloning anything</td>
+</tr>
+<tr>
+<td>○ <code>git bundle</code></td>
+<td>Pack a repo into one file, to move history over a USB stick / air gap</td>
+</tr>
+<tr>
+<td>○ <code>git archive</code></td>
+<td>Export a tree as a <code>.zip</code>/<code>.tar</code> with no <code>.git</code> history</td>
+</tr>
+<tr>
+<td>○ <code>git request-pull</code></td>
+<td>Generate a plain-text PR summary. Predates web PRs</td>
+</tr>
+</tbody>
+</table>
+<h3 id="57-temporary-storage">5.7 Temporary storage</h3>
+<table>
+<thead>
+<tr>
+<th>Command</th>
+<th>What it does</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>★ <code>git stash</code></td>
+<td>Park uncommitted work and clean the tree</td>
+</tr>
+<tr>
+<td>★ <code>git stash pop</code> / <code>apply</code> / <code>list</code> / <code>drop</code></td>
+<td>Retrieve, inspect, discard parked work</td>
+</tr>
+<tr>
+<td>○ <code>git stash -u</code></td>
+<td>Include untracked files (they are otherwise left behind)</td>
+</tr>
+</tbody>
+</table>
+<h3 id="58-debugging-and-forensics">5.8 Debugging and forensics</h3>
+<table>
+<thead>
+<tr>
+<th>Command</th>
+<th>What it does</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>☆ <code>git bisect</code></td>
+<td>Binary-search the history for the commit that introduced a bug. Genuinely magical on a 5000-commit repo — <code>start</code> / <code>bad</code> / <code>good</code>, then test what it checks out, <code>git bisect reset</code> at the end</td>
+</tr>
+<tr>
+<td>☆ <code>git reflog</code></td>
+<td>Recover "lost" commits, branches, and bad resets</td>
+</tr>
+<tr>
+<td>○ <code>git log -S "text"</code></td>
+<td>Find the commit that added or removed a specific string ("pickaxe")</td>
+</tr>
+<tr>
+<td>○ <code>git log -L 10,20:file</code></td>
+<td>History of just those lines of that file</td>
+</tr>
+<tr>
+<td>○ <code>git notes</code></td>
+<td>Attach notes to a commit after the fact, without rewriting it</td>
+</tr>
+</tbody>
+</table>
+<h3 id="59-multiple-checkouts-and-nested-repos">5.9 Multiple checkouts and nested repos</h3>
+<table>
+<thead>
+<tr>
+<th>Command</th>
+<th>What it does</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>☆ <code>git worktree</code></td>
+<td>Check out a second branch into a second folder, sharing one <code>.git</code>. Better than cloning twice</td>
+</tr>
+<tr>
+<td>○ <code>git submodule</code></td>
+<td>Embed another repo at a fixed commit. Powerful, and a well-known source of pain</td>
+</tr>
+<tr>
+<td>○ <code>git subtree</code></td>
+<td>Merge another repo's history into a subfolder. The alternative to submodules</td>
+</tr>
+<tr>
+<td>○ <code>git lfs</code></td>
+<td>Large File Storage — keeps big binaries out of the history. An add-on, not built in</td>
+</tr>
+</tbody>
+</table>
+<h3 id="510-maintenance">5.10 Maintenance</h3>
+<table>
+<thead>
+<tr>
+<th>Command</th>
+<th>What it does</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>○ <code>git gc</code></td>
+<td>Garbage-collect and compress. Runs automatically; rarely needed by hand</td>
+</tr>
+<tr>
+<td>○ <code>git prune</code></td>
+<td>Delete unreachable objects (this is what finally removes reflog-recoverable commits)</td>
+</tr>
+<tr>
+<td>○ <code>git repack</code></td>
+<td>Repack objects for size/speed</td>
+</tr>
+<tr>
+<td>○ <code>git maintenance</code></td>
+<td>Schedule background upkeep on large repos</td>
+</tr>
+</tbody>
+</table>
+<h3 id="511-things-that-are-not-commands-but-you-must-know">5.11 Things that are not commands, but you must know</h3>
+<table>
+<thead>
+<tr>
+<th>Thing</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>HEAD</code></td>
+<td>Where you are right now — normally the tip of the current branch</td>
+</tr>
+<tr>
+<td><code>HEAD~1</code>, <code>HEAD~3</code></td>
+<td>1 / 3 commits <em>back</em> from here</td>
+</tr>
+<tr>
+<td><code>HEAD^</code></td>
+<td>The first parent (matters only at merge commits)</td>
+</tr>
+<tr>
+<td><code>origin</code></td>
+<td>The default nickname for your Gitea server</td>
+</tr>
+<tr>
+<td><code>origin/main</code></td>
+<td>Your <em>cached</em> copy of the server's <code>main</code>. Only updates on <code>fetch</code>/<code>pull</code></td>
+</tr>
+<tr>
+<td><code>main</code></td>
+<td>The mainline branch. Older repos call it <code>master</code></td>
+</tr>
+<tr>
+<td>detached HEAD</td>
+<td>You checked out a commit, not a branch. Commits made here belong to no branch — <code>git switch -c name</code> to keep them</td>
+</tr>
+<tr>
+<td>fast-forward</td>
+<td>A merge with nothing to merge: git just slides the pointer forward</td>
+</tr>
+<tr>
+<td><code>.git/</code></td>
+<td>The whole repository. Delete it and you have deleted your history</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="6-gitea-specifics">6. Gitea specifics</h2>
+<p>Everything so far is universal git. This section is about our server.</p>
+<h3 id="61-log-in-with-a-token-never-your-password">6.1 Log in with a token, never your password</h3>
+<p>Gitea will prompt for a username and password on your first <code>push</code>. <strong>Do not type your account
+password</strong> — generate a Personal Access Token (PAT) instead. A token can be scoped and revoked
+without changing your login, and it is what Gitea expects.</p>
+<ol>
+<li>Gitea → click your avatar → <strong>Settings</strong> → <strong>Applications</strong></li>
+<li><strong>Generate New Token</strong>. Name it after the machine (<code>work-laptop</code>)</li>
+<li>Select scopes — <code>repo</code> is enough for normal work (read/write code, issues, PRs)</li>
+<li><strong>Generate Token</strong>, then <strong>copy it now</strong>. Gitea shows it exactly once.</li>
+</ol>
+<p>Then store it so you are not asked every time:</p>
+<pre><code class="language-bash"># Windows: uses the built-in Windows Credential Manager (encrypted, per-user)
+git config --global credential.helper manager
+
+# Next push prompts once: username = your Gitea username, password = PASTE THE TOKEN.
+# It is saved from then on.
+</code></pre>
+<p>To replace a token later: Windows <strong>Credential Manager</strong> → <em>Windows Credentials</em> → find the
+<code>git:http://192.168.0.22:3000</code> entry → edit or remove it.</p>
+<p><strong>Never</strong> put the token in the remote URL (<code>http://user:token@host/...</code>) — it lands in
+<code>.git/config</code> in clear text and leaks into any log that echoes the remote.</p>
+<blockquote>
+<p><strong>This server is plain HTTP, not HTTPS.</strong> <code>http://192.168.0.22:3000</code> sends your token, and every
+byte you push and pull, unencrypted across the LAN. That is normally acceptable for an internal
+server on a trusted network, and it is what we have today — but be aware of it, and treat the
+token as LAN-visible: scope it to <code>repo</code>, never reuse it elsewhere, and revoke it (Gitea →
+Settings → Applications) the moment a machine is retired. <strong>§6.2 (SSH) avoids this entirely</strong>
+and is the better option if the server has SSH enabled — the traffic is encrypted even though
+the web UI is not. Worth raising with whoever administers the server: a TLS certificate on
+Gitea would close this properly.</p>
+</blockquote>
+<h3 id="62-ssh-instead-optional-nicer-once-set-up">6.2 SSH instead (optional, nicer once set up)</h3>
+<pre><code class="language-bash">ssh-keygen -t ed25519 -C &quot;adhirranjan@softtrust.com&quot;     # Enter x3 accepts the defaults
+cat ~/.ssh/id_ed25519.pub                          # copy this whole line
+# Gitea → Settings → SSH / GPG Keys → Add Key → paste
+ssh -T git@192.168.0.22                               # verify
+
+git remote set-url origin git@192.168.0.22:Adhir/git-practice.git
+</code></pre>
+<p>No tokens, no prompts. Use HTTPS+token if your network blocks SSH.</p>
+<h3 id="63-the-gitea-web-ui-mapped-to-git-concepts">6.3 The Gitea web UI, mapped to git concepts</h3>
+<table>
+<thead>
+<tr>
+<th>In Gitea</th>
+<th>Is</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Code</strong></td>
+<td>your files at the tip of the selected branch</td>
+<td>The branch dropdown top-left</td>
+</tr>
+<tr>
+<td><strong>Issues</strong></td>
+<td>to-do items / bug reports</td>
+<td>Say <code>Fixes #12</code> in a commit or PR to auto-close issue 12 on merge</td>
+</tr>
+<tr>
+<td><strong>Pull Requests</strong></td>
+<td>a request to merge branch A into branch B</td>
+<td>Reviewed and merged here. There is no CLI for this</td>
+</tr>
+<tr>
+<td><strong>Releases</strong></td>
+<td>annotated tags, with files attached</td>
+<td>Built on <code>git tag</code></td>
+</tr>
+<tr>
+<td><strong>Wiki</strong></td>
+<td>a second git repo, for prose</td>
+<td>Cloneable separately</td>
+</tr>
+<tr>
+<td><strong>Activity / Insights</strong></td>
+<td>commit graphs, contributors</td>
+<td>Reads your commit <em>email</em> — see §0</td>
+</tr>
+<tr>
+<td><strong>Settings → Branches</strong></td>
+<td>branch protection</td>
+<td>Where "you cannot push to main" is configured</td>
+</tr>
+<tr>
+<td><strong>Settings → Webhooks</strong></td>
+<td>fire an HTTP call on push/PR</td>
+<td>The CI hook-up point</td>
+</tr>
+</tbody>
+</table>
+<h3 id="64-merge-styles-gitea-offers-on-a-pr">6.4 Merge styles Gitea offers on a PR</h3>
+<table>
+<thead>
+<tr>
+<th>Style</th>
+<th>Result</th>
+<th>When</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Merge</strong></td>
+<td>Keeps every commit, adds a merge commit</td>
+<td>Default. Full, honest history</td>
+</tr>
+<tr>
+<td><strong>Rebase and merge</strong></td>
+<td>Replays your commits onto main, no merge commit</td>
+<td>Linear history, if the team wants that</td>
+</tr>
+<tr>
+<td><strong>Squash and merge</strong></td>
+<td>All your commits collapse into one</td>
+<td>Great when your branch has 14 "wip" commits</td>
+</tr>
+<tr>
+<td><strong>Fast-forward only</strong></td>
+<td>Refuses unless the branch is already up to date</td>
+<td>Strictest</td>
+</tr>
+</tbody>
+</table>
+<p>Ask which one this team uses and be consistent. Squash is the friendliest default for a learner —
+your messy branch history never reaches <code>main</code>.</p>
+<h3 id="65-branch-protection-expect-main-to-reject-you">6.5 Branch protection — expect <code>main</code> to reject you</h3>
+<p>If an admin enabled protection on <code>main</code>, a direct <code>git push</code> to it fails by design:</p>
+<pre><code>! [remote rejected] main -&gt; main (protected branch hook declined)
+</code></pre>
+<p>That is not a bug and not a permissions problem to escalate. Branch, push, PR.</p>
+<hr />
+<h3 id="66-tea-giteas-official-cli-optional">6.6 <code>tea</code> — Gitea's official CLI (optional)</h3>
+<p>Every git tutorial you find online will sooner or later type <code>gh</code>. <strong><code>gh</code> is the GitHub CLI</strong> — a
+separate program from git, which does the things that live on GitHub's <em>website</em> rather than in
+git itself (<code>gh pr create</code>, <code>gh issue list</code>, <code>gh pr checkout 42</code>). It talks to github.com and
+nowhere else. Run it here and you get "command not found" or an authentication failure against a
+server that has nothing to do with us. That is not you doing something wrong.</p>
+<p><strong><code>tea</code> is the Gitea equivalent.</strong> Same idea, our server: pull requests, issues and releases from
+the terminal instead of the browser.</p>
+<blockquote>
+<p><strong>You do not need this.</strong> Nothing in this guide requires <code>tea</code>, and the labs in §9 never use it.
+Learn git first. Come back here when opening the browser for every PR starts to annoy you.</p>
+</blockquote>
+<p><strong>Install</strong> — a single binary, no runtime:</p>
+<ol>
+<li>Download the Windows build from the releases page: <a href="https://gitea.com/gitea/tea/releases">https://gitea.com/gitea/tea/releases</a>
+   (<code>tea-&lt;version&gt;-windows-amd64.exe</code>).</li>
+<li>Rename it to <code>tea.exe</code> and put it in a folder that is on your <code>PATH</code>.</li>
+<li><code>tea --version</code> to confirm.</li>
+</ol>
+<p><strong>Log in</strong> — with the same Personal Access Token from §6.1, never your password:</p>
+<pre><code class="language-bash">tea login add --name trustbank --url http://192.168.0.22:3000 --token &lt;YOUR-PAT&gt;
+tea login list                      # confirm it is there
+</code></pre>
+<p><strong>What it can do</strong> — run from inside a cloned repo, which is how it knows which project you mean:</p>
+<table>
+<thead>
+<tr>
+<th>Command</th>
+<th>Does</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>tea pr create --base main --head feature/x --title "..."</code></td>
+<td>Open a pull request without leaving the terminal</td>
+</tr>
+<tr>
+<td><code>tea pr list</code></td>
+<td>Open PRs on this repo</td>
+</tr>
+<tr>
+<td><code>tea pr &lt;number&gt;</code></td>
+<td>Show one PR — title, state, branches</td>
+</tr>
+<tr>
+<td><code>tea pr checkout &lt;number&gt;</code></td>
+<td>Check out someone else's PR branch locally to test it</td>
+</tr>
+<tr>
+<td><code>tea pr merge &lt;number&gt;</code></td>
+<td>Merge it (if you have the rights)</td>
+</tr>
+<tr>
+<td><code>tea issue list</code> / <code>tea issue create</code></td>
+<td>Issues</td>
+</tr>
+<tr>
+<td><code>tea release create --tag v1.0</code></td>
+<td>A Gitea release from a tag</td>
+</tr>
+<tr>
+<td><code>tea notifications</code></td>
+<td>Your Gitea notification inbox</td>
+</tr>
+<tr>
+<td><code>tea open</code></td>
+<td>Open the current repo's Gitea page in the browser</td>
+</tr>
+<tr>
+<td><code>tea &lt;command&gt; --help</code></td>
+<td>The authoritative flag list — trust this over any doc, including this one</td>
+</tr>
+</tbody>
+</table>
+<p><strong>What it does not do.</strong> <code>tea</code> is not a git replacement. Cloning, branching, staging, committing,
+pushing — all still plain <code>git</code>, exactly as in §4. <code>tea</code> only covers the layer <em>above</em> git, the
+same layer the web UI covers.</p>
+<p><strong>Two cautions:</strong></p>
+<ul>
+<li><strong>Your token lands in a config file</strong> (<code>%USERPROFILE%\.config\tea\config.yml</code>) in readable form.
+  That is a file on your disk holding write access to our source. Treat it like a password file,
+  and revoke the token in Gitea (<strong>Settings → Applications</strong>) if the machine is ever lost or handed on.</li>
+<li><strong>Reviewing code in a terminal is worse than reviewing it in a browser.</strong> <code>tea pr create</code> is a
+  genuine convenience — you are already in the terminal, you just pushed. But reading a diff,
+  commenting on line 47 and having a conversation about it are things the Gitea web UI does far
+  better. Most people end up creating PRs with <code>tea</code> and reviewing them in the browser.</li>
+</ul>
+<hr />
+<h2 id="7-git-in-visual-studio-2026">7. Git in Visual Studio 2026</h2>
+<p>Visual Studio's Git tooling is a <strong>skin over the same git you have been typing</strong> — every button
+runs one of the commands from §4. Nothing in this section is a different system, and nothing you
+do in the UI is invisible from the command line.</p>
+<p>Two honest framings before the tables:</p>
+<ul>
+<li><strong>Learn the commands first.</strong> The UI hides which of the four places (§1) your change is in, which
+  is exactly the thing beginners need to see. Do the labs in §9 at the command line, then switch to
+  the UI once you can predict what each button will do.</li>
+<li><strong>Visual Studio does not know what Gitea is.</strong> Its Pull Request features light up only for GitHub
+  and Azure DevOps. To Visual Studio our server is just a generic HTTPS remote — which works
+  perfectly for clone/fetch/pull/push/branch/merge, and not at all for PRs. <strong>Pull requests are
+  created and reviewed in the Gitea web UI, always</strong> (§3, §6.3).</li>
+</ul>
+<hr />
+<h3 id="71-one-time-setup">7.1 One-time setup</h3>
+<p><strong>Identity</strong> — already set on this machine (§0), and Visual Studio reads the same global config.
+To check or change it: <strong>Git → Settings → Git Global Settings</strong> (name and email at the top).
+It is the same file as <code>git config --global</code>; there is no separate VS identity.</p>
+<p><strong>Built-in terminal</strong> — <strong>View → Terminal</strong> (<code>Ctrl+`</code>). Every lab in §9 can be typed here
+without leaving the IDE. Keep it open: when the UI does something you did not expect, <code>git status</code>
+and <code>git log --oneline --graph --all</code> will tell you what actually happened.</p>
+<p><strong>Credentials</strong> — the first push prompts for a username and password. Enter <code>Adhir</code> and <strong>paste
+your Personal Access Token</strong> as the password (§6.1), not your account password. Windows Credential
+Manager stores it, and Visual Studio never asks again.</p>
+<hr />
+<h3 id="72-the-two-windows-you-will-live-in">7.2 The two windows you will live in</h3>
+<table>
+<thead>
+<tr>
+<th>Window</th>
+<th>Where</th>
+<th>What it is</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Git Changes</strong></td>
+<td><strong>View → Git Changes</strong></td>
+<td>Your working tree and the staging area. This is <code>git status</code> + <code>git add</code> + <code>git commit</code> in one panel.</td>
+</tr>
+<tr>
+<td><strong>Git Repository</strong></td>
+<td><strong>View → Git Repository</strong></td>
+<td>The history graph, all branches, remotes and tags. This is <code>git log --graph</code>, <code>git branch</code> and <code>git merge</code>.</td>
+</tr>
+<tr>
+<td>Branch picker</td>
+<td>bottom-right of the status bar</td>
+<td>Current branch. Click it to switch, create, merge, rebase. Also shows ↑↓ counts — commits you have not pushed / not pulled.</td>
+</tr>
+<tr>
+<td><strong>Git</strong> menu</td>
+<td>main menu bar</td>
+<td>Everything else: Clone, Fetch, Pull, Push, Manage Branches, Manage Remotes, Settings.</td>
+</tr>
+</tbody>
+</table>
+<p>In <strong>Git Changes</strong>, files are listed under <strong>Changes</strong> (unstaged) and <strong>Staged Changes</strong>. The
+<code>+</code> on a file stages it; the <code>−</code> unstages it. That divide <em>is</em> the staging area from §1 — if the
+model ever stops making sense, look at this window while you read §1 again.</p>
+<hr />
+<h3 id="73-command-visual-studio-side-by-side">7.3 Command → Visual Studio, side by side</h3>
+<table>
+<thead>
+<tr>
+<th>Command (§4)</th>
+<th>In Visual Studio 2026</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>git status</code></td>
+<td>The <strong>Git Changes</strong> window, continuously</td>
+</tr>
+<tr>
+<td><code>git diff</code></td>
+<td>Double-click any file under <em>Changes</em> → side-by-side diff</td>
+</tr>
+<tr>
+<td><code>git diff --staged</code></td>
+<td>Double-click a file under <em>Staged Changes</em></td>
+</tr>
+<tr>
+<td><code>git add &lt;file&gt;</code></td>
+<td>The <strong>+</strong> beside the file (tooltip: <em>Stage</em>)</td>
+</tr>
+<tr>
+<td><code>git add .</code></td>
+<td><strong>+</strong> on the <em>Changes</em> header</td>
+</tr>
+<tr>
+<td><code>git add -p</code></td>
+<td>Select lines in the diff → right-click → <strong>Stage Selected Lines</strong></td>
+</tr>
+<tr>
+<td><code>git restore --staged</code></td>
+<td>The <strong>−</strong> beside a staged file (<em>Unstage</em>)</td>
+</tr>
+<tr>
+<td><code>git restore &lt;file&gt;</code></td>
+<td>Right-click the file → <strong>Undo Changes</strong>. <strong>Destructive</strong> — those edits were never in git</td>
+</tr>
+<tr>
+<td><code>git commit -m</code></td>
+<td>Type the message, click <strong>Commit Staged</strong></td>
+</tr>
+<tr>
+<td><code>git commit -am</code></td>
+<td><strong>Commit All</strong> — note this is the <em>default</em> button, and it stages every tracked file. Know which one you are clicking</td>
+</tr>
+<tr>
+<td><code>git commit --amend</code></td>
+<td>Tick <strong>Amend</strong> above the message box before committing. Unpushed commits only</td>
+</tr>
+<tr>
+<td><code>git push</code></td>
+<td>The <strong>↑</strong> arrow, or <strong>Git → Push</strong></td>
+</tr>
+<tr>
+<td><code>git pull</code></td>
+<td>The <strong>↓</strong> arrow, or <strong>Git → Pull</strong></td>
+</tr>
+<tr>
+<td><code>git fetch</code></td>
+<td>The <strong>⟳</strong> arrow, or <strong>Git → Fetch</strong>. Safe — look before you leap</td>
+</tr>
+<tr>
+<td><code>git switch &lt;branch&gt;</code></td>
+<td>Branch picker (status bar) → double-click the branch</td>
+</tr>
+<tr>
+<td><code>git switch -c &lt;name&gt;</code></td>
+<td>Branch picker → <strong>New Branch…</strong>, or <strong>Git → New Branch…</strong></td>
+</tr>
+<tr>
+<td><code>git merge &lt;branch&gt;</code></td>
+<td><strong>Git Repository</strong> → right-click the branch → <strong>Merge \&lt;branch&gt; into current</strong></td>
+</tr>
+<tr>
+<td><code>git branch -d</code></td>
+<td><strong>Git Repository</strong> → right-click the branch → <strong>Delete</strong></td>
+</tr>
+<tr>
+<td><code>git push -u origin &lt;b&gt;</code></td>
+<td>Just <strong>Push</strong> a new branch — VS offers to publish it and sets the upstream for you</td>
+</tr>
+<tr>
+<td><code>git stash</code></td>
+<td><strong>Git Changes</strong> → the <strong>Stash</strong> dropdown → <em>Stash All</em></td>
+</tr>
+<tr>
+<td><code>git stash pop</code></td>
+<td><strong>Git Repository</strong> → <strong>Stashes</strong> node → right-click → <em>Pop</em></td>
+</tr>
+<tr>
+<td><code>git log</code></td>
+<td><strong>Git Repository</strong> window — the graph on the left, commit details on the right</td>
+</tr>
+<tr>
+<td><code>git blame</code></td>
+<td>Right-click in the editor → <strong>Git → Blame (Annotate)</strong>. CodeLens above each method shows the same thing inline</td>
+</tr>
+<tr>
+<td><code>git revert &lt;sha&gt;</code></td>
+<td><strong>Git Repository</strong> → right-click the commit → <strong>Revert</strong>. The safe undo for pushed work</td>
+</tr>
+<tr>
+<td><code>git reset --soft/--mixed</code></td>
+<td>Right-click the commit → <strong>Reset → Keep Changes</strong></td>
+</tr>
+<tr>
+<td><code>git reset --hard</code></td>
+<td>Right-click the commit → <strong>Reset → Delete Changes</strong>. Read §7.5 before you touch this</td>
+</tr>
+<tr>
+<td><code>git cherry-pick</code></td>
+<td>Right-click a commit on another branch → <strong>Cherry-Pick</strong></td>
+</tr>
+<tr>
+<td><code>git tag</code></td>
+<td>Right-click a commit → <strong>New Tag…</strong>; push it from the <strong>Tags</strong> node</td>
+</tr>
+<tr>
+<td><code>git remote -v</code> / <code>set-url</code></td>
+<td><strong>Git → Manage Remotes</strong></td>
+</tr>
+<tr>
+<td><code>git clone</code></td>
+<td><strong>Git → Clone Repository…</strong></td>
+</tr>
+<tr>
+<td><code>git init</code></td>
+<td><strong>Git → Create Git Repository…</strong> — read §7.5 first, it writes its own <code>.gitignore</code></td>
+</tr>
+<tr>
+<td><code>git reflog</code></td>
+<td><strong>No UI.</strong> Use the terminal. This is why §7.1 says keep it open</td>
+</tr>
+<tr>
+<td><code>git bisect</code></td>
+<td><strong>No UI.</strong> Terminal</td>
+</tr>
+<tr>
+<td>Open a PR</td>
+<td><strong>No UI for Gitea.</strong> Push, then the browser (§3)</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h3 id="74-resolving-a-conflict-this-part-vs-genuinely-does-better">7.4 Resolving a conflict — this part VS genuinely does better</h3>
+<p>When a merge or pull conflicts, Visual Studio opens the <strong>Merge Editor</strong>, and it beats reading
+<code>&lt;&lt;&lt;&lt;&lt;&lt;&lt;</code> markers by hand.</p>
+<ol>
+<li><strong>Git Changes</strong> lists the conflicted files under <strong>Unmerged Changes</strong>. Double-click one.</li>
+<li>Three panes: <strong>Incoming</strong> (left), <strong>Current</strong> (right), <strong>Result</strong> (bottom).</li>
+<li>Tick the checkbox on the side you want, per conflict — or edit the <strong>Result</strong> pane directly
+   when the answer is a mix of both.</li>
+<li><strong>Accept Merge</strong> when the file has no conflicts left. Repeat for each file.</li>
+<li>Commit the merge (VS pre-fills the message).</li>
+</ol>
+<p><strong>Then build and run it.</strong> A conflict resolved so it compiles is not the same as a conflict
+resolved correctly — the Merge Editor happily produces code that builds and is wrong. This is
+exactly Lab 5's <code>dotnet run</code> step.</p>
+<p>To bail out entirely: <strong>Git → Abort Merge</strong> (= <code>git merge --abort</code>, and equally safe).</p>
+<hr />
+<h3 id="75-visual-studio-gotchas">7.5 Visual Studio gotchas</h3>
+<ul>
+<li><strong>"Commit All" is the default button.</strong> It stages every tracked file first, so an unrelated
+  half-finished edit rides along into your commit. If you want a focused commit, stage
+  deliberately and use <strong>Commit Staged</strong>. Glance at <em>Staged Changes</em> before every commit.</li>
+<li><strong>"Reset → Delete Changes" is <code>git reset --hard</code>.</strong> A destructive command, two clicks deep in a
+  context menu, with no scary confirmation. Commit before you experiment (§8) and it cannot hurt
+  you.</li>
+<li><strong>"Undo Changes" on a file is unrecoverable</strong> — the edits were never committed, so <code>reflog</code>
+  cannot help. The only genuinely irreversible operations in git are the ones on work git never saw.</li>
+<li><strong>Do not let "Create Git Repository" write the <code>.gitignore</code> for this solution.</strong> It generates its
+  own generic one, and <a href="../../.gitignore">this repo's <code>.gitignore</code></a> is deliberately written to catch
+  <code>appsettings.Development.json</code>, <code>*.pfx</code>, <code>App_Data/</code> and <code>docker-data/</code>. Keep ours. (<code>.vs/</code> and
+  <code>*.user</code> are already covered by it — VS's own scratch files will not be committed.)</li>
+<li><strong>The branch picker is the fastest thing in the UI.</strong> Bottom-right, always visible, and the ↑↓
+  counts tell you at a glance that you have unpushed commits — the thing people most often forget.</li>
+<li><strong>VS finds <code>.git</code> by walking upward</strong>, so it works whether you open the <code>.slnx</code>, a <code>.csproj</code>, or
+  the folder. One repo, many solutions is fine.</li>
+<li><strong>Copilot commit messages</strong> (the ✨ icon on the message box) read your staged diff and work
+  against any server, Gitea included. Treat the result as a first draft — it describes <em>what</em>
+  changed; §2 asks you to say <em>why</em>.</li>
+<li><strong>Multi-repo:</strong> VS can have several repositories active at once (<strong>Git → Local Repositories</strong>).
+  Useful later if <code>libs/</code> becomes separate repos; irrelevant today.</li>
+</ul>
+<hr />
+<h3 id="76-the-one-workflow-you-cannot-do-in-the-ide">7.6 The one workflow you cannot do in the IDE</h3>
+<pre><code>In Visual Studio          →   branch, commit, push
+In the Gitea web UI       →   create the PR, review it, merge it
+In Visual Studio          →   switch to main, pull, delete the branch
+</code></pre>
+<p>That middle step never moves into the IDE for Gitea, no matter which extension you find. Budget
+for the browser tab; it is where code review happens anyway.</p>
+<hr />
+<h2 id="8-oh-no-the-recovery-section">8. "Oh no" — the recovery section</h2>
+<p>Read this once now, so you remember it exists at 3am.</p>
+<p><strong>The rule: if it was ever committed, it is still there for ~90 days, even if you cannot see it.</strong>
+<code>git reflog</code> records every position <code>HEAD</code> has held — including ones you "destroyed".</p>
+<pre><code class="language-bash">git reflog                    # a numbered list: HEAD@{0}, HEAD@{1}, ...
+git reset --hard HEAD@{3}     # go back to how things were 3 moves ago
+</code></pre>
+<table>
+<thead>
+<tr>
+<th>Situation</th>
+<th>Fix</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Wrong message on the last commit</td>
+<td><code>git commit --amend -m "Right message"</code> (unpushed only)</td>
+</tr>
+<tr>
+<td>Forgot a file in the last commit</td>
+<td><code>git add f.cs &amp;&amp; git commit --amend --no-edit</code> (unpushed only)</td>
+</tr>
+<tr>
+<td>Committed too early</td>
+<td><code>git reset --soft HEAD~1</code> — the changes come back, staged</td>
+</tr>
+<tr>
+<td>Staged the wrong file</td>
+<td><code>git restore --staged f.cs</code></td>
+</tr>
+<tr>
+<td>Wrecked a file, not yet staged</td>
+<td><code>git restore f.cs</code> (this one is genuinely unrecoverable)</td>
+</tr>
+<tr>
+<td>Committed to <code>main</code> by mistake</td>
+<td><code>git branch feature/x</code> then <code>git reset --hard origin/main</code>, then work on <code>feature/x</code></td>
+</tr>
+<tr>
+<td>Need to undo a <strong>pushed</strong> commit</td>
+<td><code>git revert &lt;sha&gt;</code> then push. Never <code>reset</code> shared history</td>
+</tr>
+<tr>
+<td><code>git reset --hard</code> and regretted it</td>
+<td><code>git reflog</code>, find the commit, <code>git reset --hard &lt;sha&gt;</code></td>
+</tr>
+<tr>
+<td>Deleted a branch by mistake</td>
+<td><code>git reflog</code>, find its last commit, <code>git switch -c &lt;name&gt; &lt;sha&gt;</code></td>
+</tr>
+<tr>
+<td>Merge went wrong, mid-conflict</td>
+<td><code>git merge --abort</code></td>
+</tr>
+<tr>
+<td>Rebase went wrong, mid-rebase</td>
+<td><code>git rebase --abort</code></td>
+</tr>
+<tr>
+<td>Pull rejected: "non-fast-forward"</td>
+<td><code>git pull</code> (merge theirs in), resolve, then push</td>
+</tr>
+<tr>
+<td>"detached HEAD"</td>
+<td><code>git switch -c keep-this</code> to save the commits, or <code>git switch main</code> to abandon them</td>
+</tr>
+<tr>
+<td>Committed a secret</td>
+<td>Rotate the secret <strong>first</strong> — assume it is compromised. Then purge with <code>git filter-repo</code>, force-push, and tell everyone to re-clone</td>
+</tr>
+<tr>
+<td>Truly, totally lost</td>
+<td><code>git fsck --lost-found</code> lists dangling commits</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Two rules that prevent almost every disaster:</strong></p>
+<ol>
+<li><strong>Commit before you experiment.</strong> A commit is free and makes everything undoable.</li>
+<li><strong>Never rewrite history that others have pulled</strong> (<code>reset --hard</code>, <code>rebase</code>, <code>--force</code> on a
+   shared branch). On your own unpushed branch, rewrite all you like.</li>
+</ol>
+<hr />
+<h2 id="9-hands-on-labs">9. Hands-on labs</h2>
+<p>These run against the <strong>real Gitea server</strong> using a throwaway C# console app, so you can make
+every mistake in a place where mistakes cost nothing.</p>
+<p><strong>Sandbox:</strong> <code>E:\Adhir\AdWork\GitSandbox\</code> — already created for you. It is deliberately
+<em>outside</em> <code>TflCbsNet10Sol\</code> so it can never be swept into the real solution or its build.</p>
+<pre><code>GitSandbox/
+  GitPractice.csproj
+  Program.cs        # entry point
+  Account.cs        # one class
+  Ledger.cs         # holds a Version constant — Lab 5 makes two branches fight over it
+  README.md
+  .gitignore        # bin/ obj/
+</code></pre>
+<p>If you ever want a clean start: delete the whole <code>GitSandbox</code> folder, re-run
+<code>dotnet new console</code>, and start again from Lab 1. Nothing of value is in there.</p>
+<blockquote>
+<p><strong>How to use these.</strong> Type the commands — do not paste. The muscle memory is the point.
+After every single command, run <code>git status</code> and read it. Each lab ends with a <strong>Verify</strong>
+step; if its output does not match, stop and re-read the lab before continuing.</p>
+</blockquote>
+<hr />
+<h3 id="lab-0-identity-and-an-empty-repo-on-gitea">Lab 0 — Identity and an empty repo on Gitea</h3>
+<pre><code class="language-bash">git config --global user.name  &quot;Adhir Ranjan&quot;
+git config --global user.email &quot;adhirranjan@softtrust.com&quot;
+git config --global core.autocrlf true
+git config --global pull.rebase false
+git config --global init.defaultBranch main
+git config --global --list
+</code></pre>
+<p>Now in the Gitea web UI: <strong>+</strong> (top right) → <strong>New Repository</strong>.</p>
+<ul>
+<li>Name: <code>git-practice</code></li>
+<li>Visibility: Private</li>
+<li><strong>Leave "Initialize repository" UNCHECKED.</strong> You want a genuinely empty repo — Lab 2 pushes
+  your own history into it, and an initialised repo would collide.</li>
+</ul>
+<p><strong>Verify:</strong> Gitea shows an empty-repo page with setup instructions and a clone URL.</p>
+<hr />
+<h3 id="lab-1-your-first-repository-and-commit">Lab 1 — Your first repository and commit</h3>
+<pre><code class="language-bash">cd E:/Adhir/AdWork/GitSandbox
+
+git init                    # look: &quot;Initialized empty Git repository&quot;
+git status                  # everything is red / &quot;untracked&quot;
+
+git add .gitignore          # stage ONE file
+git status                  # .gitignore is now green, the rest still red
+
+git add .                   # stage the rest
+git status                  # all green — note bin/ and obj/ are absent: .gitignore works
+
+git commit -m &quot;Initial commit: GitPractice console app&quot;
+git log --oneline
+</code></pre>
+<p><strong>Verify:</strong> <code>git status</code> says <em>"nothing to commit, working tree clean"</em> and <code>git log --oneline</code>
+shows exactly one commit.</p>
+<p><strong>Understand:</strong> you committed <em>nothing</em> until <code>git commit</code>. <code>git add</code> only built a shortlist.</p>
+<hr />
+<h3 id="lab-2-connect-to-gitea-and-push">Lab 2 — Connect to Gitea and push</h3>
+<pre><code class="language-bash">git config --global credential.helper manager
+
+git remote add origin http://192.168.0.22:3000/Adhir/git-practice.git
+git remote -v                       # two lines, fetch + push
+
+git push -u origin main
+# prompted: username = Adhir, password = PASTE YOUR TOKEN (§6.1), not your password
+</code></pre>
+<p><strong>Verify:</strong> refresh the repo page in Gitea — your five files are there, with your commit message
+and your name against it. If the name is wrong, fix <code>git config --global user.email</code> now; it only
+applies to <em>future</em> commits.</p>
+<hr />
+<h3 id="lab-3-the-staging-area-properly">Lab 3 — The staging area, properly</h3>
+<p>Prove that <code>add</code> and <code>commit</code> are separate. Make <strong>two unrelated</strong> edits, commit them separately.</p>
+<pre><code class="language-bash"># Edit 1: in README.md, add a line &quot;Practising git.&quot;
+# Edit 2: in Ledger.cs, change the Version constant from &quot;1.0&quot; to &quot;1.1&quot;
+
+git status                  # two modified files
+git diff                    # see BOTH changes
+
+git add README.md
+git diff                    # only the Ledger.cs change now — README is staged, so it moved
+git diff --staged           # ...to here
+
+git commit -m &quot;docs: note that this repo is for practice&quot;
+git status                  # Ledger.cs is still modified. It was never staged.
+
+git commit -am &quot;feat: bump ledger version to 1.1&quot;    # -a stages tracked files, then commits
+git log --oneline
+</code></pre>
+<p><strong>Verify:</strong> three commits, and each one contains exactly one file.</p>
+<hr />
+<h3 id="lab-4-a-branch-and-a-real-pull-request">Lab 4 — A branch and a real pull request</h3>
+<pre><code class="language-bash">git switch -c feature/interest-rate
+
+# In Ledger.cs, add this method inside the class:
+#     public decimal Interest(decimal amount) =&gt; amount * 0.04m;
+
+git add Ledger.cs
+git commit -m &quot;feat: add simple interest calculation&quot;
+git push -u origin feature/interest-rate
+</code></pre>
+<p>In Gitea: the repo page shows a <strong>Compare &amp; Pull Request</strong> banner → click it. Confirm <strong>base:
+<code>main</code></strong> ← <strong>compare: <code>feature/interest-rate</code></strong>. Write a title and a description. <strong>Create Pull
+Request.</strong></p>
+<p>Look at the <strong>Files changed</strong> tab — this is exactly what a reviewer sees. Leave a comment on a
+line, to feel it. Then respond to your own review:</p>
+<pre><code class="language-bash"># Change 0.04m to 0.045m in Ledger.cs
+git commit -am &quot;fix: correct rate to 4.5%&quot;
+git push                                  # no -u needed now — the branch is already linked
+</code></pre>
+<p>Refresh the PR: the new commit is in it automatically. Now <strong>Merge Pull Request</strong> (try <strong>Squash
+and merge</strong> to see two commits become one), then clean up:</p>
+<pre><code class="language-bash">git switch main
+git pull                                    # your merged work arrives
+git branch -d feature/interest-rate
+git fetch --prune
+git log --oneline --graph --all
+</code></pre>
+<p><strong>Verify:</strong> <code>main</code> contains the interest method, and <code>git branch -a</code> no longer lists the feature
+branch anywhere.</p>
+<hr />
+<h3 id="lab-5-make-a-conflict-on-purpose-then-fix-it">Lab 5 — Make a conflict on purpose, then fix it</h3>
+<p>The single most feared part of git. Do it deliberately, once, and it stops being scary.</p>
+<pre><code class="language-bash">git switch -c feature/v2
+# Ledger.cs: set Version = &quot;2.0&quot;
+git commit -am &quot;feat: version 2.0&quot;
+
+git switch main
+git switch -c hotfix/v11
+# Ledger.cs: set the SAME line to &quot;1.1.1&quot;
+git commit -am &quot;fix: version 1.1.1&quot;
+
+git switch main
+git merge hotfix/v11        # clean — fast-forward, nothing to decide
+git merge feature/v2        # CONFLICT
+</code></pre>
+<p>Open <code>Ledger.cs</code>. You will see the <code>&lt;&lt;&lt;&lt;&lt;&lt;&lt;</code> / <code>=======</code> / <code>&gt;&gt;&gt;&gt;&gt;&gt;&gt;</code> markers from §4.7.</p>
+<pre><code class="language-bash">git status                                    # names the conflicted file
+git diff --name-only --diff-filter=U          # just the conflicted files
+</code></pre>
+<p>Edit the file: <strong>delete all three marker lines</strong>, keep <code>"2.0"</code>. Then:</p>
+<pre><code class="language-bash">git add Ledger.cs
+git status                  # &quot;All conflicts fixed but you are still merging&quot;
+git commit                  # accept git's pre-filled message
+dotnet run                  # prove it still compiles — a resolved conflict can still be wrong
+git log --oneline --graph --all
+git push
+</code></pre>
+<p><strong>Verify:</strong> <code>dotnet run</code> prints <code>ledger v2.0</code>, and the graph shows the two branches joining.</p>
+<p><strong>Now do it again and bail out</strong>, so you know the escape hatch works: create another conflicting
+branch, <code>git merge</code> it, then <code>git merge --abort</code> and confirm <code>git status</code> is clean.</p>
+<hr />
+<h3 id="lab-6-undo-four-different-ways">Lab 6 — Undo, four different ways</h3>
+<p>Each undo suits a different situation. Do all four.</p>
+<pre><code class="language-bash"># (a) Wrong message
+git commit --allow-empty -m &quot;Fxi typo in ledgre&quot;
+git commit --amend -m &quot;fix: correct typo in ledger output&quot;
+git log --oneline -1                          # message replaced, no extra commit
+
+# (b) Forgot a file
+# Add a line to README.md
+git commit -am &quot;docs: describe the labs&quot;
+# ...now edit Account.cs too — it belonged in that commit
+git add Account.cs
+git commit --amend --no-edit                  # folded in, still one commit
+
+# (c) Committed too early
+# Edit any file
+git commit -am &quot;wip&quot;
+git reset --soft HEAD~1                       # commit gone, changes still STAGED
+git status
+git commit -m &quot;feat: a properly described change&quot;
+
+# (d) Undo something already pushed — the safe way
+git push
+git revert HEAD                               # makes a NEW commit that reverses it
+git log --oneline -3                          # both commits visible: history is honest
+git push
+</code></pre>
+<p><strong>Verify:</strong> you can state, in your own words, why (d) must be used instead of (a)–(c) once a
+commit has been pushed. (Because (a)–(c) <em>rewrite</em> commits, and everyone else's history still
+contains the originals.)</p>
+<hr />
+<h3 id="lab-7-destroy-work-then-get-it-back">Lab 7 — Destroy work, then get it back</h3>
+<p>This is the lab that makes you unafraid of git.</p>
+<pre><code class="language-bash">git log --oneline -3
+echo &quot;// something valuable&quot; &gt;&gt; Ledger.cs
+git commit -am &quot;feat: valuable work I am about to destroy&quot;
+git log --oneline -1                          # note this SHA
+
+git reset --hard HEAD~2                       # two commits vanish
+git log --oneline -3                          # gone. Really gone?
+
+git reflog                                    # every position HEAD has held
+git reset --hard HEAD@{1}                     # back to just before the reset
+git log --oneline -3                          # everything is back
+</code></pre>
+<p>Now the same for a deleted branch:</p>
+<pre><code class="language-bash">git switch -c spike/throwaway
+git commit --allow-empty -m &quot;spike: work I will lose&quot;
+git switch main
+git branch -D spike/throwaway                 # force-deleted, unmerged
+
+git reflog                                    # find &quot;spike: work I will lose&quot;
+git switch -c spike/recovered &lt;that-sha&gt;
+git log --oneline -1                          # recovered
+</code></pre>
+<p><strong>Verify:</strong> you have recovered both. <strong>Remember for life:</strong> anything <em>committed</em> is recoverable
+for ~90 days via <code>git reflog</code>. Anything never committed is not.</p>
+<hr />
+<h3 id="lab-8-stash-i-need-to-switch-branches-right-now">Lab 8 — Stash: "I need to switch branches right now"</h3>
+<pre><code class="language-bash">git switch main
+# Start editing Program.cs — leave it half-finished, do not commit
+
+git switch -c fix/urgent      # git may refuse, or carry the mess along — neither is what you want
+git switch main
+
+git stash                     # work parked, tree clean
+git status
+git stash list
+
+git switch -c fix/urgent
+git commit --allow-empty -m &quot;fix: the urgent thing&quot;
+git switch main
+
+git stash pop                 # half-finished work returns
+git status
+</code></pre>
+<p><strong>Verify:</strong> your half-finished edit is back and <code>git stash list</code> is empty.</p>
+<hr />
+<h3 id="lab-9-be-your-own-colleague">Lab 9 — Be your own colleague</h3>
+<p>Simulate the thing that actually causes trouble: two people editing at once.</p>
+<pre><code class="language-bash">cd E:/Adhir/AdWork/GitSandbox
+git push                                          # make sure Gitea is current
+
+cd E:/Adhir/AdWork
+git clone http://192.168.0.22:3000/Adhir/git-practice.git practice-colleague
+cd practice-colleague
+
+# &quot;Colleague&quot; edits Program.cs and pushes
+git commit -am &quot;feat: colleague changes the greeting&quot;      # after editing Program.cs
+git push
+
+# Back in YOUR copy — which knows nothing about that
+cd ../GitSandbox
+# Edit README.md
+git commit -am &quot;docs: my own change&quot;
+git push                                          # REJECTED — non-fast-forward
+</code></pre>
+<p>Read the rejection message; it is telling you exactly what happened.</p>
+<pre><code class="language-bash">git fetch                        # look before leaping
+git log --oneline HEAD..origin/main     # what they did that you do not have
+git pull                         # merge it in (different files → no conflict)
+git log --oneline --graph -5
+git push                         # accepted
+</code></pre>
+<p><strong>Verify:</strong> both changes are on Gitea. Now repeat the whole lab but have <strong>both</strong> sides edit the
+<em>same line</em> of <code>README.md</code>, so <code>git pull</code> produces a conflict — resolve it as in Lab 5. This is
+what your real day will look like.</p>
+<p>Delete <code>practice-colleague</code> when done.</p>
+<hr />
+<h3 id="lab-10-gitignore-and-the-mistake-it-does-not-fix">Lab 10 — .gitignore, and the mistake it does not fix</h3>
+<pre><code class="language-bash">cd E:/Adhir/AdWork/GitSandbox
+dotnet build                 # creates bin/ and obj/
+git status                   # they do not appear — .gitignore is working
+
+# Now break it deliberately:
+git add -f bin/              # -f overrides .gitignore
+git commit -m &quot;oops: committed build output&quot;
+git status                   # clean... but bin/ is now TRACKED
+# Rebuild and watch the noise:
+dotnet build &amp;&amp; git status   # tracked build artefacts show as modified
+
+git rm -r --cached bin/      # untrack, keep the files on disk
+git commit -m &quot;Stop tracking build output&quot;
+dotnet build &amp;&amp; git status   # quiet again
+</code></pre>
+<p><strong>Verify:</strong> <code>bin/</code> still exists on disk but <code>git status</code> ignores it.</p>
+<p><strong>Understand:</strong> <code>.gitignore</code> only governs files git is <strong>not already tracking</strong>. This is exactly
+how <code>appsettings.Development.json</code> (your DB password) ends up in a repo forever.</p>
+<hr />
+<h3 id="lab-11-tags-and-a-gitea-release">Lab 11 — Tags and a Gitea release</h3>
+<pre><code class="language-bash">git switch main
+git pull
+git tag -a v1.0 -m &quot;First practice release&quot;
+git tag                          # list
+git show v1.0
+git push origin v1.0             # tags are NOT pushed by git push
+</code></pre>
+<p>In Gitea: <strong>Releases</strong> → <strong>New Release</strong> → pick tag <code>v1.0</code>. That is all a release is — a tag
+plus a description.</p>
+<p><strong>Verify:</strong> <code>git ls-remote --tags origin</code> lists <code>v1.0</code>.</p>
+<hr />
+<h3 id="lab-12-two-more-worth-knowing">Lab 12 — Two more worth knowing</h3>
+<pre><code class="language-bash"># Cherry-pick: take ONE commit from another branch
+git switch -c experiment
+git commit --allow-empty -m &quot;feat: something worth keeping&quot;
+git commit --allow-empty -m &quot;junk: something not worth keeping&quot;
+git switch main
+git cherry-pick &lt;sha-of-the-first&gt;     # only that one comes across
+
+# Bisect: find which commit broke something, across a long history
+git bisect start
+git bisect bad                          # current state is broken
+git bisect good v1.0                    # v1.0 was fine
+#   git checks out a midpoint; test it; then `git bisect good` or `git bisect bad`
+#   repeat — it halves the search each time
+git bisect reset                        # always finish with this
+</code></pre>
+<p><strong>Verify:</strong> after the cherry-pick, <code>git log --oneline</code> on <code>main</code> shows the kept commit and not
+the junk one.</p>
+<hr />
+<h3 id="lab-13-do-it-all-again-in-visual-studio-2026">Lab 13 — Do it all again, in Visual Studio 2026</h3>
+<p>Only now, after twelve labs at the command line. The point is to watch the UI perform commands you
+can already name.</p>
+<ol>
+<li><strong>Git → Clone Repository…</strong> → <code>http://192.168.0.22:3000/Adhir/git-practice.git</code> → clone it to a
+   <em>new</em> folder, e.g. <code>E:\Adhir\AdWork\GitSandbox-vs</code>. Credentials: <code>Adhir</code> + your PAT.</li>
+<li>Open <strong>View → Git Changes</strong> and <strong>View → Git Repository</strong>, and dock them where you can see both.</li>
+<li>Branch picker (bottom-right) → <strong>New Branch…</strong> → <code>feature/vs-tour</code>.</li>
+<li>Edit <code>Ledger.cs</code>. Watch the file appear under <em>Changes</em>. Double-click it to see the diff.</li>
+<li>Stage it with <strong>+</strong>, then unstage it with <strong>−</strong>, then stage it again. That is <code>git add</code> and
+   <code>git restore --staged</code>, and now you can see the shortlist being built.</li>
+<li>Type a message, click <strong>Commit Staged</strong> — deliberately <strong>not</strong> <em>Commit All</em>.</li>
+<li><strong>↑ Push</strong>. Visual Studio offers to publish the new branch; accept (that is <code>push -u</code>).</li>
+<li><strong>Now leave the IDE.</strong> Open Gitea in a browser and create the PR. There is no button for this in
+   Visual Studio, and there will not be one.</li>
+<li>Back in VS: branch picker → <code>main</code> → <strong>↓ Pull</strong> → right-click <code>feature/vs-tour</code> in <strong>Git
+   Repository</strong> → <strong>Delete</strong>.</li>
+</ol>
+<p>Then open <strong>View → Terminal</strong> in the same window and run:</p>
+<pre><code class="language-bash">git log --oneline --graph --all -10
+git reflog -10
+</code></pre>
+<p><strong>Verify:</strong> the reflog lists every step you just performed through the UI — checkout, commit,
+push, merge — as ordinary git operations. Nothing the IDE did was special, and nothing it did was
+hidden from you.</p>
+<hr />
+<h2 id="10-make-git-comfortable">10. Make git comfortable</h2>
+<h3 id="aliases-worth-30-seconds-saves-them-back-daily">Aliases — worth 30 seconds, saves them back daily</h3>
+<pre><code class="language-bash">git config --global alias.st  status
+git config --global alias.co  checkout
+git config --global alias.br  branch
+git config --global alias.cm  &quot;commit -m&quot;
+git config --global alias.lg  &quot;log --oneline --graph --all --decorate -20&quot;
+git config --global alias.last &quot;log -1 HEAD --stat&quot;
+git config --global alias.unstage &quot;restore --staged&quot;
+
+git lg          # the one you will use most
+</code></pre>
+<h3 id="other-settings-worth-having">Other settings worth having</h3>
+<pre><code class="language-bash">git config --global core.editor &quot;code --wait&quot;     # VS Code for commit messages
+git config --global diff.tool vscode
+git config --global fetch.prune true              # auto-prune dead remote branches
+git config --global rerere.enabled true           # remember conflict resolutions
+git config --global push.default simple           # push only the current branch
+</code></pre>
+<h3 id="where-settings-live">Where settings live</h3>
+<table>
+<thead>
+<tr>
+<th>Scope</th>
+<th>File</th>
+<th>Wins?</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>--system</code></td>
+<td>git install dir</td>
+<td>lowest priority</td>
+</tr>
+<tr>
+<td><code>--global</code></td>
+<td><code>C:\Users\&lt;you&gt;\.gitconfig</code></td>
+<td>middle — your personal defaults</td>
+</tr>
+<tr>
+<td><code>--local</code></td>
+<td><code>&lt;repo&gt;\.git\config</code></td>
+<td><strong>highest</strong> — per-repo overrides</td>
+</tr>
+</tbody>
+</table>
+<p>Use <code>--local</code> to set a different <code>user.email</code> for one repo (e.g. work vs personal).</p>
+<hr />
+<h2 id="11-graduating-the-real-repository">11. Graduating: the real repository</h2>
+<p><code>TflCbsNet10Sol\</code> is <strong>not yet a git repo</strong> — but a carefully written <a href="../../.gitignore">.gitignore</a>
+is already sitting in it, which is the hard part. Do this only after the labs, and read every
+step before running it.</p>
+<pre><code class="language-bash">cd E:/Adhir/AdWork/TrustBank.Code/TflCbsNet10Sol
+
+git init
+git status                # will list THOUSANDS of files — this is why the next step matters
+
+# 1. Confirm the ignores are doing their job BEFORE you add anything.
+git status -s | grep -Ei &quot;bin/|obj/|appsettings.Development.json|\.pfx|App_Data|docker-data&quot; 
+#    ^ this must print NOTHING. If it prints anything, fix .gitignore first.
+
+# 2. Sanity-check the size of what you are about to commit.
+git status -s | wc -l
+git add -A
+git status -s | wc -l     # same number? good.
+
+# 3. Look for secrets one more time. This is the last cheap moment to catch them.
+git diff --staged --name-only | grep -Ei &quot;secret|password|\.env|credential|\.pfx|\.p12&quot;
+
+git commit -m &quot;Initial commit: TrustBank CBS .NET 10 migration&quot;
+</code></pre>
+<p>Then create the repo in Gitea (empty, <strong>not</strong> initialised) and:</p>
+<pre><code class="language-bash">git remote add origin http://192.168.0.22:3000/Adhir/TflCbsNet10Sol.git
+git push -u origin main
+</code></pre>
+<p><strong>Before that first push, three things are worth settling with your lead:</strong></p>
+<ol>
+<li><strong>Is the dev connection string in a committed file anywhere?</strong> <code>**/appsettings.Development.json</code>
+   is ignored, but check <code>compose*.yaml</code>, <code>web.config</code>, and the deploy scripts by hand. A secret
+   in commit #1 is a secret in the history forever.</li>
+<li><strong>Should <code>TflCbs.Entities.dll</code> (bare-DLL HintPath) be committed?</strong> Binaries in git are a known
+   smell, but the build genuinely needs it. Decide deliberately, not by accident.</li>
+<li><strong>Protect <code>main</code> in Gitea</strong> (Settings → Branches) from day one, so nobody — including you —
+   can push to it directly. It is far easier to enable now than after bad habits form.</li>
+</ol>
+<hr />
+<h2 id="12-rules-of-thumb">12. Rules of thumb</h2>
+<ul>
+<li><strong>Run <code>git status</code> constantly.</strong> It is free, and it answers most questions before you ask them.</li>
+<li><strong>Commit small and often.</strong> A commit is a save point; you cannot have too many.</li>
+<li><strong>Pull before you start work</strong>, and before you push.</li>
+<li><strong>Never commit to <code>main</code>.</strong> Branch, PR, review, merge.</li>
+<li><strong>Never <code>--force</code> a shared branch.</strong> <code>--force-with-lease</code> on your own branch, at most.</li>
+<li><strong>Never commit secrets, build output, or <code>.user</code> files.</strong> Check <code>git status</code> before <code>git add .</code>.</li>
+<li><strong>Write the commit message for the person who reads it in a year.</strong> That person is you.</li>
+<li><strong>If you are about to try something risky, commit first.</strong> Then anything is undoable.</li>
+<li><strong>Read the error message.</strong> Git's errors are unusually good and usually contain the fix.</li>
+</ul>
+<hr />
+<h2 id="13-glossary">13. Glossary</h2>
+<table>
+<thead>
+<tr>
+<th>Term</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>repository (repo)</td>
+<td>A project plus its entire history — the <code>.git</code> folder</td>
+</tr>
+<tr>
+<td>working tree</td>
+<td>The files as they currently sit on your disk</td>
+</tr>
+<tr>
+<td>index / staging area</td>
+<td>The shortlist of changes that will go into the next commit</td>
+</tr>
+<tr>
+<td>commit</td>
+<td>A snapshot + message + author + parent. Identified by a SHA like <code>a1b2c3d</code></td>
+</tr>
+<tr>
+<td>SHA / hash</td>
+<td>A commit's unique id. The first 7 characters are usually enough</td>
+</tr>
+<tr>
+<td>branch</td>
+<td>A movable pointer to a commit. That is all</td>
+</tr>
+<tr>
+<td>HEAD</td>
+<td>Where you are now</td>
+</tr>
+<tr>
+<td>remote</td>
+<td>A named server URL, usually <code>origin</code></td>
+</tr>
+<tr>
+<td>origin/main</td>
+<td>Your cached copy of the server's <code>main</code>, as of the last fetch</td>
+</tr>
+<tr>
+<td>tracking branch</td>
+<td>A local branch linked to a remote one (what <code>-u</code> sets up)</td>
+</tr>
+<tr>
+<td>fetch</td>
+<td>Download from the server, change nothing local</td>
+</tr>
+<tr>
+<td>pull</td>
+<td>Fetch, then integrate</td>
+</tr>
+<tr>
+<td>push</td>
+<td>Upload your commits</td>
+</tr>
+<tr>
+<td>merge</td>
+<td>Join two histories, possibly creating a merge commit</td>
+</tr>
+<tr>
+<td>rebase</td>
+<td>Replay commits onto a new base — rewrites them</td>
+</tr>
+<tr>
+<td>fast-forward</td>
+<td>A merge that only needs the pointer moved</td>
+</tr>
+<tr>
+<td>conflict</td>
+<td>Two branches changed the same lines; git needs you to decide</td>
+</tr>
+<tr>
+<td>stash</td>
+<td>A shelf for uncommitted work</td>
+</tr>
+<tr>
+<td>tag</td>
+<td>A permanent name for a commit, usually a release</td>
+</tr>
+<tr>
+<td>detached HEAD</td>
+<td>You are on a commit, not a branch</td>
+</tr>
+<tr>
+<td>reflog</td>
+<td>The log of where HEAD has been — your undo history</td>
+</tr>
+<tr>
+<td>PR</td>
+<td>Pull Request: "please merge my branch", reviewed in the Gitea UI. A server feature, not a git one — §3.2</td>
+</tr>
+<tr>
+<td>upstream</td>
+<td>The branch yours tracks</td>
+</tr>
+<tr>
+<td>clean tree</td>
+<td>No uncommitted changes</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="where-to-go-next">Where to go next</h2>
+<ul>
+<li><code>git help &lt;command&gt;</code> — the authoritative manual, offline, for any command here.</li>
+<li><a href="https://git-scm.com/book">Pro Git</a> — free, complete, and genuinely well written. Chapters 2, 3 and 6.</li>
+<li><a href="day-one.html">docs/guides/day-one.md</a> — getting the CBS app itself running.</li>
+</ul>
+</div></div>
+<script>
+(function(){
+ function put(t){
+  if(navigator.clipboard&&navigator.clipboard.writeText)return navigator.clipboard.writeText(t);
+  return new Promise(function(res,rej){
+   var a=document.createElement('textarea');a.value=t;a.setAttribute('readonly','');
+   a.style.cssText='position:fixed;top:0;left:0;opacity:0';document.body.appendChild(a);
+   a.select();var ok=false;try{ok=document.execCommand('copy')}catch(e){}
+   document.body.removeChild(a);ok?res():rej()});
+ }
+ function flash(el,txt,ms){
+  var was=el.textContent;el.classList.add('done');if(txt)el.textContent=txt;
+  setTimeout(function(){el.classList.remove('done');if(txt)el.textContent=was},ms||1200);
+ }
+ function copy(text,el,okTxt){
+  put(text).then(function(){flash(el,okTxt)},function(){
+   if(okTxt){var w=el.textContent;el.textContent='Ctrl+C';setTimeout(function(){el.textContent=w},2000)}});
+ }
+ document.querySelectorAll('pre').forEach(function(pre){
+  if(pre.classList.contains('txtdoc'))return;
+  var b=document.createElement('button');
+  b.type='button';b.className='copy';b.textContent='Copy';
+  b.setAttribute('aria-label','Copy this code block to the clipboard');
+  b.addEventListener('click',function(){copy((pre.querySelector('code')||pre).innerText,b,'Copied')});
+  pre.appendChild(b);
+ });
+ document.querySelectorAll('td code').forEach(function(c){
+  if(!c.textContent.trim())return;
+  c.classList.add('cp');c.tabIndex=0;c.setAttribute('role','button');
+  c.title='Click to copy';
+  c.addEventListener('click',function(){copy(c.textContent,c)});
+  c.addEventListener('keydown',function(e){
+   if(e.key==='Enter'||e.key===' '){e.preventDefault();copy(c.textContent,c)}});
+ });
+})();
+</script>
+</body></html>

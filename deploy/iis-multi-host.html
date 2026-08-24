@@ -1,0 +1,414 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Deploy to IIS — Multi Host (gateway + default host + thin hosts)</title>
+<style>
+:root{color-scheme:light dark}
+*{box-sizing:border-box}
+body{margin:0;background:#f6f8fa;color:#1f2328;font:16px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif}
+.wrap{max-width:900px;margin:0 auto;padding:32px 24px 96px}
+.card{background:#fff;border:1px solid #d0d7de;border-radius:10px;padding:40px 48px}
+h1,h2,h3{line-height:1.25;font-weight:600}
+h1{font-size:1.9rem;margin:0 0 .3em;padding-bottom:.3em;border-bottom:1px solid #d8dee4}
+h2{font-size:1.4rem;margin:1.8em 0 .6em;padding-bottom:.25em;border-bottom:1px solid #eaeef2}
+h3{font-size:1.12rem;margin:1.4em 0 .5em}
+p,li{margin:.5em 0}
+a{color:#0969da;text-decoration:none}
+a:hover{text-decoration:underline}
+code{font-family:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;font-size:.86em;background:#eff1f3;padding:.15em .4em;border-radius:6px}
+pre{background:#f6f8fa;border:1px solid #d8dee4;border-radius:8px;padding:14px 16px;overflow:auto}
+pre code{background:none;padding:0;font-size:.85em;line-height:1.45}
+blockquote{margin:1em 0;padding:.4em 1em;color:#3d444d;border-left:4px solid #d0d7de;background:#f6f8fa;border-radius:0 6px 6px 0}
+blockquote>:first-child{margin-top:0}blockquote>:last-child{margin-bottom:0}
+table{border-collapse:collapse;width:100%;margin:1em 0;display:block;overflow:auto}
+th,td{border:1px solid #d0d7de;padding:8px 12px;text-align:left;vertical-align:top}
+th{background:#f6f8fa;font-weight:600}
+tr:nth-child(2n) td{background:#f6f8fa}
+hr{border:0;border-top:1px solid #d8dee4;margin:2em 0}
+pre{position:relative}
+pre>button.copy{position:absolute;top:8px;right:8px;padding:5px 9px;cursor:pointer;
+  font:600 .68rem/1 ui-monospace,SFMono-Regular,Consolas,monospace;letter-spacing:.03em;
+  color:#636c76;background:#fff;border:1px solid #d0d7de;border-radius:6px;
+  opacity:0;transition:opacity .12s}
+pre:hover>button.copy,pre>button.copy:focus{opacity:1}
+pre>button.copy.done{color:#0a3622;background:#dafbe1;border-color:#4ac26b}
+@media(hover:none){pre>button.copy{opacity:1}}
+td code.cp{cursor:pointer}
+td code.cp:hover,td code.cp:focus{outline:1px solid #8c959f;outline-offset:1px}
+td code.cp.done{color:#0a3622;background:#dafbe1}
+.docnav{margin:0 0 20px;font-size:.85rem;color:#636c76}
+.docnav a{color:#636c76}
+ul{padding-left:1.4em}ol{padding-left:1.4em}
+@media(max-width:640px){.card{padding:24px 18px}.wrap{padding:16px 10px 64px}}
+@media(prefers-color-scheme:dark){
+ body{background:#0d1117;color:#e6edf3}
+ .card{background:#161b22;border-color:#30363d}
+ h1{border-color:#30363d}h2{border-color:#21262d}
+ code{background:#262c34}
+ pre{background:#0d1117;border-color:#30363d}
+ blockquote{background:#161b22;border-color:#30363d;color:#9198a1}
+ th,td{border-color:#30363d}th{background:#161b22}tr:nth-child(2n) td{background:#12171e}
+ a{color:#4493f8}.docnav,.docnav a{color:#9198a1}
+ hr{border-color:#30363d}
+ pre>button.copy{color:#9198a1;background:#161b22;border-color:#30363d}
+ pre>button.copy.done{color:#aff5b4;background:#1b4721;border-color:#2ea043}
+ td code.cp.done{color:#aff5b4;background:#1b4721}
+}
+</style></head>
+<body><div class="wrap"><div class="card">
+<div class="docnav"><a href="../index.html">&#8592; All docs</a></div>
+<h1 id="deploy-to-iis-multi-host-gateway-default-host-thin-hosts">Deploy to IIS — Multi Host (gateway + default host + thin hosts)</h1>
+<p>The scale-out shape: the YARP <strong>gateway is the one public origin</strong>; behind it the default host and up to four thin per-module hosts each run as their own IIS site. All hosts share one identity via cross-host SSO.</p>
+<blockquote>
+<p>Read <a href="iis-single-host.html">iis-single-host.md</a> first — this doc only adds the multi-host specifics. See also <a href="../single-sign-on.txt">single-sign-on.txt</a> and <a href="../port-map.html">port-map.md</a>.</p>
+</blockquote>
+<h2 id="deployment-checklist-run-in-order">Deployment checklist (run in order)</h2>
+<ol>
+<li>☐ <strong>Prerequisites</strong> — the single-host prereqs (§ that doc) on the box (IIS + Hosting Bundle + cert); <strong>create the two shared SSO tables once</strong> — <code>CBS_DATAPROTECTIONKEYS</code>, <code>CBS_SESSIONREVOCATIONS</code> (§2).</li>
+<li>☐ <strong>Publish</strong> each host you'll run (gateway + default + thin hosts) to its own folder (§3).</li>
+<li>☐ <strong>Per-host config</strong> (§3) — <strong>default</strong> = login authority (relative <code>LoginUrl</code>) + <code>KeyRing=TflOmniDb</code> + <code>SessionRevocation=TflOmniDb</code> + trimmed <code>Modules:Enabled</code>; <strong>thin hosts</strong> = absolute <code>LoginUrl</code>→gateway + <code>Misc</code>/<code>Accounts</code> in <code>Modules:Enabled</code>; <strong>all</strong> = <code>Cookie:SecurePolicy=Always</code>, <code>ForwardedHeaders:Enabled</code>.</li>
+<li>☐ <strong>Gateway config</strong> (§4) — cluster Destinations → the backends' <strong>HTTPS</strong> ports (not http — <a href="gateway-backend-scheme.html">gateway-backend-scheme.md</a>); gateway trusts the cert via <code>LocalMachine\Root</code>.</li>
+<li>☐ <strong>Create one IIS site per host</strong> (§5) — app pool (No Managed Code, <strong>1 worker</strong>) + <strong>HTTPS-only</strong> binding + the shared cert; <code>ASPNETCORE_ENVIRONMENT=Production</code> in <strong>each</strong> site's <code>web.config</code>.</li>
+<li>☐ <strong>Verify</strong> (§6) — each backend <code>/health/ready</code> 200 → gateway <code>/gateway/health</code> 200 → unauth area → <strong>302</strong> to login on the <strong>gateway</strong> origin → login once → cross areas with no re-login → global logout revokes everywhere.</li>
+</ol>
+<p>Each step links to its detailed section below.</p>
+<h2 id="1-the-topology">1. The topology</h2>
+<pre><code>Public HTTPS  -&gt;  GATEWAY (TflCbs.Gateway)  -&gt;  backends (private):
+   path /Hr/*             -&gt; Host.Hr
+   path /Lockers/*        -&gt; Host.Lockers
+   path /RetailBanking/*  -&gt; Host.RetailBanking
+   path /Administration/* -&gt; Host.Administration
+   (each also routes /_content/TflCbs.Modules.&lt;Area&gt;.Web/*)
+   everything else        -&gt; default host (TflCbs.Host.Main)
+</code></pre>
+<p>Deploy exactly the hosts you need. The <strong>minimum viable multi-host is the gateway + the default host</strong>; add thin hosts to peel modules off. You do not have to run all six.</p>
+<p><strong>Login authority:</strong> one host mints the <code>CbsAuth</code> cookie (the default host). Thin hosts <strong>defer</strong> login to the gateway (<code>Auth:LoginUrl</code>) and only <strong>validate</strong> the cookie. Do not stand up two login authorities.</p>
+<h2 id="2-the-three-preconditions-for-cross-host-sso">2. The three preconditions for cross-host SSO</h2>
+<p>Every participating host <strong>must</strong> agree on all three, or a cookie minted by one host won't be honoured by another:</p>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Precondition</th>
+<th>Config</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>A</td>
+<td><strong>Shared Data Protection key ring</strong> — lets any host <em>decrypt</em> any other host's cookie. FileSystem keys do <strong>not</strong> work across hosts unless the folder is literally shared — use TflOmniDb.</td>
+<td><code>DataProtection: { ApplicationName: "TrustBankCBS", KeyRing: "TflOmniDb" }</code> (same on every host; keys in <code>CBS_DATAPROTECTIONKEYS</code>)</td>
+</tr>
+<tr>
+<td>B</td>
+<td><strong>Shared revocation store</strong> — a logout on any host kills the session everywhere within the ~30s cache window.</td>
+<td><code>Auth: { SessionRevocation: "TflOmniDb" }</code> (keys in <code>CBS_SESSIONREVOCATIONS</code>)</td>
+</tr>
+<tr>
+<td>C</td>
+<td><strong>One origin</strong> — the gateway is the only origin the browser sees, so the cookie has a single domain. Backends are reached only via the gateway.</td>
+<td>(topology)</td>
+</tr>
+</tbody>
+</table>
+<p>Create the two shared tables <strong>once</strong> (DDL in <code>Framework\Infrastructure\DataProtectionKeyEntity.cs</code> and <code>Framework\Auth\SessionRevocation.cs</code>; SQL Server + Oracle both provided).</p>
+<h2 id="3-per-host-production-config">3. Per-host production config</h2>
+<p>Publish each project separately:</p>
+<pre><code class="language-bash">dotnet publish TflCbs.Gateway             -c Release -o D:\publish\multi\gateway
+dotnet publish TflCbs.Host.Main            -c Release -o D:\publish\multi\default
+dotnet publish TflCbs.Host.Hr             -c Release -o D:\publish\multi\hr
+dotnet publish TflCbs.Host.Lockers        -c Release -o D:\publish\multi\lockers
+dotnet publish TflCbs.Host.RetailBanking  -c Release -o D:\publish\multi\retail
+dotnet publish TflCbs.Host.Administration -c Release -o D:\publish\multi\admin
+</code></pre>
+<blockquote>
+<p><strong>Layout on this server.</strong> These paths/ports are chosen to <strong>coexist with the already-deployed single host</strong> (<code>cbs-single</code>, <code>D:\publish\single</code>, 8080/8081) — see §5. Build <code>TflCbs.Entities</code> first if entities changed (bare-DLL HintPath).</p>
+</blockquote>
+<p><strong>What each publish folder contains</strong> (they are deliberately different):</p>
+<table>
+<thead>
+<tr>
+<th>Host</th>
+<th>Domain web RCL(s) it carries</th>
+<th>Also carries</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Default (<code>TflCbs.Host.Main</code>)</td>
+<td><strong>all five on disk</strong> — <code>TflCbs.Modules.{Bank,Hr,Lockers,RetailBanking,Administration}.Web.dll</code> — but <em>which actually run</em> is set by <strong><code>Modules:Enabled</code></strong> (trim to core + un-peeled; see note ↓)</td>
+<td>full stack: <code>TflCbs.Framework</code>, <code>TflCbs.Web.Shared</code>, <code>TflCbsServices</code>, <code>TflCbs.Core.Authentication</code>, <code>TflCbs.Core.{Authentication,Shell}.Web</code>, <code>TflOmniLog</code>, <code>TflCbs.Entities</code> + bare <code>TflOmniDb</code>/<code>TflSecurityCrypto</code> + ADO.NET drivers</td>
+</tr>
+<tr>
+<td><code>Host.Hr</code></td>
+<td><strong>only</strong> <code>TflCbs.Modules.Hr.Web.dll</code></td>
+<td>same full stack as above (Framework, Web.Shared, Services, Core.Authentication, both core <code>.Web</code> RCLs, TflOmniLog, TflCbs.Entities, bare DLLs, drivers)</td>
+</tr>
+<tr>
+<td><code>Host.Lockers</code></td>
+<td><strong>only</strong> <code>TflCbs.Modules.Lockers.Web.dll</code></td>
+<td>"</td>
+</tr>
+<tr>
+<td><code>Host.RetailBanking</code></td>
+<td><strong>only</strong> <code>TflCbs.Modules.RetailBanking.Web.dll</code></td>
+<td>"</td>
+</tr>
+<tr>
+<td><code>Host.Administration</code></td>
+<td><strong>only</strong> <code>TflCbs.Modules.Administration.Web.dll</code></td>
+<td>"</td>
+</tr>
+<tr>
+<td><code>TflCbs.Gateway</code></td>
+<td><strong>none</strong></td>
+<td>minimal: <code>TflCbs.Gateway.dll</code> + <code>Yarp.ReverseProxy.dll</code> only — <strong>no</strong> CbsFramework, services, domain RCLs, bare DLLs, or DB drivers (it's a pure proxy)</td>
+</tr>
+</tbody>
+</table>
+<p>(For the full breakdown of the "full stack" assemblies, see <a href="iis-single-host.html">iis-single-host.md §2</a>.)</p>
+<blockquote>
+<p><strong>"Carries the DLL" ≠ "serves that module".</strong> The table above is what lands <strong>on disk</strong> — and the default host is the <em>same <code>TflCbs.Host.Main</code> project as the single host</em>, so it ships all five domain RCLs. But three independent layers decide whether a module actually runs there:</p>
+<table>
+<thead>
+<tr>
+<th>Layer</th>
+<th>Controlled by</th>
+<th>Default host, for a peeled module (e.g. Hr)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>On disk</td>
+<td><code>.csproj</code> ProjectReference</td>
+<td>present (<code>TflCbs.Modules.Hr.Web.dll</code>)</td>
+</tr>
+<tr>
+<td>Active at runtime</td>
+<td><code>Modules:Enabled</code> + the <code>if (ModuleOn(...)) AddApplicationPart(...)</code> gate in <code>Program.cs</code></td>
+<td><strong>only if enabled</strong></td>
+</tr>
+<tr>
+<td>Receives traffic</td>
+<td>the <strong>gateway</strong> routing table</td>
+<td><strong>never</strong> — <code>/Hr/*</code> routes to <code>Host.Hr</code></td>
+</tr>
+</tbody>
+</table>
+<p>In multi-host the default host is the <strong>catch-all + core host</strong>: the gateway peels off only <code>/Hr</code>, <code>/Lockers</code>, <code>/RetailBanking</code>, <code>/Administration</code>, and <strong>everything else falls through to it</strong> — <code>/Account/Login</code> (it's the login authority), <code>/</code>, <code>/Home</code>, <code>/Modules</code>, <code>/Error</code>, and any area <strong>not</strong> peeled into a thin host (e.g. <code>/Bank/ReferenceCache</code>). So it's genuinely needed — for <em>those</em> responsibilities, not for the peeled modules.</p>
+<p><strong>Recommendation — trim <code>Modules:Enabled</code> on the default host</strong> to core + the un-peeled domains only (below), so it doesn't waste startup/memory activating Hr/Lockers/etc. controllers that the gateway never routes to it. The DLLs still sit unused on disk (harmless); to drop them too you'd remove those ProjectReferences from <code>TflCbs.Host.Main.csproj</code> — but that would stop it being the single-host full app, so it's left in.</p>
+</blockquote>
+<p><strong>Default host (<code>TflCbs.Host.Main</code>) — the login authority + catch-all:</strong></p>
+<pre><code class="language-jsonc">&quot;DataProtection&quot;: { &quot;ApplicationName&quot;: &quot;TrustBankCBS&quot;, &quot;KeyRing&quot;: &quot;TflOmniDb&quot; },
+&quot;Auth&quot;: {
+  &quot;LoginUrl&quot;: &quot;/Account/Login&quot;,              // relative — serves its own login
+  &quot;SessionRevocation&quot;: &quot;TflOmniDb&quot;,
+  // AUTHORITY (host AND port), e.g. &quot;cbs.bank.local:8101&quot; — matched against Uri.Authority.
+  // Omit the port only when it is the scheme default (443 for https), because Uri.Authority
+  // omits it too. Host alone will NOT match a ported origin.
+  &quot;AllowedReturnHosts&quot;: [ &quot;&lt;public-gateway-host&gt;:&lt;gateway-port&gt;&quot; ],
+  &quot;Cookie&quot;: { &quot;SecurePolicy&quot;: &quot;Always&quot; }
+},
+&quot;ForwardedHeaders&quot;: { &quot;Enabled&quot;: true, &quot;KnownProxies&quot;: [ &quot;&lt;gateway-ip&gt;&quot; ] },
+// core + only the domains NOT peeled into a thin host (Bank has no thin host).
+// Use &quot;*&quot; only if you deliberately want the default host to also serve the peeled areas.
+&quot;Modules&quot;: { &quot;Enabled&quot;: [ &quot;General&quot;, &quot;Bank&quot;, &quot;Authentication&quot;, &quot;Misc&quot;, &quot;Accounts&quot; ] },
+&quot;Database&quot;: { &quot;ConnectionStrings&quot;: { &quot;SqlServer&quot;: &quot;&lt;prod&gt;&quot; } }
+</code></pre>
+<p><strong>Each thin host (<code>Host.Hr</code> / <code>Lockers</code> / <code>RetailBanking</code> / <code>Administration</code>):</strong></p>
+<pre><code class="language-jsonc">&quot;DataProtection&quot;: { &quot;ApplicationName&quot;: &quot;TrustBankCBS&quot;, &quot;KeyRing&quot;: &quot;TflOmniDb&quot; },
+&quot;Auth&quot;: {
+  &quot;LoginUrl&quot;: &quot;https://&lt;public-gateway-host&gt;/Account/Login&quot;,  // ABSOLUTE — defers to authority
+  &quot;SessionRevocation&quot;: &quot;TflOmniDb&quot;,
+  // Dead config on a thin host — it defers to the authority before ever evaluating the
+  // guard. Only the authority (above) needs it. Harmless, kept for symmetry.
+  &quot;AllowedReturnHosts&quot;: [ &quot;&lt;public-gateway-host&gt;:&lt;gateway-port&gt;&quot; ],
+  &quot;Cookie&quot;: { &quot;SecurePolicy&quot;: &quot;Always&quot; }
+},
+&quot;ForwardedHeaders&quot;: { &quot;Enabled&quot;: true, &quot;KnownProxies&quot;: [ &quot;&lt;gateway-ip&gt;&quot; ] },
+&quot;Modules&quot;: { &quot;Enabled&quot;: [ &quot;&lt;Domain&gt;&quot;, &quot;General&quot;, &quot;Authentication&quot;, &quot;Misc&quot;, &quot;Accounts&quot; ] },
+&quot;Database&quot;: { &quot;ConnectionStrings&quot;: { &quot;SqlServer&quot;: &quot;&lt;prod&gt;&quot; } }
+</code></pre>
+<blockquote>
+<p><code>Misc</code> + <code>Accounts</code> are <strong>required</strong> — the core shell/login controllers inject their services; without them the host 500s rendering <code>/Modules</code> or login.</p>
+<p><strong><code>Auth:LoginUrl</code> and <code>Auth:AllowedReturnHosts</code> are now set by the deploy script</strong> (2026-08-01). They used to be manual, and the committed thin-host default points at the <strong>dev</strong> gateway (<code>http://localhost:5100</code>), so a deployed farm passed every health check and still could not log anyone in — the 302 went to a port nothing listens on. <code>deploy-cbs-iis.ps1 -Mode multi</code> now derives both from the same topology + scheme it uses for the YARP destinations, and <strong>merges</strong> them into each site's <code>appsettings.Production.json</code> (your connection string in that file is preserved). Pass <strong><code>-PublicHost &lt;hostname&gt;</code></strong> — it defaults to <code>localhost</code>, which is correct only for a local bring-up, because this value ends up in a 302 sent to a <strong>user's browser</strong>: a remote client redirected to <code>localhost</code> lands on its own machine. The script warns when it is left at the default.</p>
+</blockquote>
+<p><code>ForwardedHeaders:KnownProxies</code> <strong>must</strong> list the gateway's IP in production — it is how each backend learns the real gateway origin (so returnUrls and cookie <code>Secure</code> flags are correct) without letting arbitrary clients spoof the <code>X-Forwarded-*</code> headers. (Dev leaves it loopback-default.) On an IIS farm the gateway's address is stable, so pin it here; <code>ForwardedHeaders:KnownNetworks</code> (CIDR array, e.g. <code>"10.20.0.0/24"</code>) exists for the case where it isn't — prefer the exact IP, since a range trusts every peer in it.</p>
+<p>It is <strong>not only</strong> about URLs: an untrusted proxy's <code>X-Forwarded-For</code> is discarded, so <code>Connection.RemoteIpAddress</code> stays the gateway's on every backend. That collapses each per-client control onto one identity — the <strong>login rate limiter</strong> (<code>Security:LoginRateLimit</code>) throttles all users as a single bucket, the DB's per-IP lockout (<code>b_LoginPolicy.RemoteHostLoginAttempt</code>) counts everyone's failures against one row, and request logs name the gateway as the caller. A malformed entry in either list now <strong>fails the host at startup</strong> rather than being silently skipped, and a <em>missing</em> one is caught at runtime: a backend that receives an <code>X-Forwarded-For</code> from an untrusted peer discards it and logs one <code>Security</code>-category warning per host start (<code>X-Forwarded-For arrived …</code>). Since an IIS site's trust list is hand-maintained — and anything placed in <code>web.config</code> <code>&lt;environmentVariables&gt;</code> is wiped when a publish regenerates that file (the <code>appsettings.Production.json</code> route in §3 survives) — that warning is the cheapest way to notice a farm running without it.</p>
+<h2 id="4-gateway-config-tflcbsgatewayappsettingsjson">4. Gateway config (<code>TflCbs.Gateway/appsettings.json</code>)</h2>
+<p>The gateway is a plain YARP reverse proxy (no CbsFramework, no DB). Its <code>ReverseProxy</code> section maps each <code>/&lt;Area&gt;/*</code> route to a cluster; each cluster's Destination is a <strong>backend address</strong>. The dev config points at <code>http://localhost:5x00/</code> (the <code>dotnet run</code> ports) — for the IIS layout point each cluster at its site's <strong>HTTPS port</strong> (§5):</p>
+<pre><code class="language-jsonc">&quot;Clusters&quot;: {
+  &quot;cbs-default&quot;:         { &quot;Destinations&quot;: { &quot;default-host&quot;:        { &quot;Address&quot;: &quot;https://localhost:8111/&quot; } } },
+  &quot;hr-host&quot;:             { &quot;Destinations&quot;: { &quot;hr-thin&quot;:             { &quot;Address&quot;: &quot;https://localhost:8121/&quot; } } },
+  &quot;lockers-host&quot;:        { &quot;Destinations&quot;: { &quot;lockers-thin&quot;:        { &quot;Address&quot;: &quot;https://localhost:8131/&quot; } } },
+  &quot;retailbanking-host&quot;:  { &quot;Destinations&quot;: { &quot;retailbanking-thin&quot;:  { &quot;Address&quot;: &quot;https://localhost:8141/&quot; } } },
+  &quot;administration-host&quot;: { &quot;Destinations&quot;: { &quot;administration-thin&quot;: { &quot;Address&quot;: &quot;https://localhost:8151/&quot; } } }
+}
+</code></pre>
+<ul>
+<li><strong>Use the backends' HTTPS ports</strong> — <strong>not</strong> plain HTTP. Backends run <code>UseHttpsRedirection</code>, and YARP's <em>active health check</em> is a direct call with no <code>X-Forwarded-Proto</code>, so an HTTP probe gets 307'd → the backend is marked Unhealthy → 503 (proxied browser requests still work, so it's a sneaky failure). HTTPS backends avoid it entirely. <strong>Full explanation: <a href="gateway-backend-scheme.html">gateway-backend-scheme.md</a>.</strong></li>
+<li>The gateway <strong>validates the backend cert</strong> against <code>LocalMachine\Root</code>, where our self-signed cert already lives (see <a href="self-signed-cert.html">self-signed-cert.md</a>) — so <strong>no <code>DangerousAcceptAnyServerCertificate</code></strong> (that dev-only flag disables validation). <code>localhost</code> is in the cert SAN, so the name matches.</li>
+<li><strong>Keep the base config's destination <em>keys</em></strong> (<code>default-host</code>, <code>hr-thin</code>, <code>lockers-thin</code>, <code>retailbanking-thin</code>, <code>administration-thin</code>) in the override so you <em>replace the Address</em> — a new key would <em>add</em> a second (dead, dev-port) destination.</li>
+<li>Backends can also be separate machines — the destination Address just has to be reachable from the gateway.</li>
+<li>Each cluster active health-checks <code>/health/ready</code> (already configured, 10s interval).</li>
+<li><code>RateLimit</code> (<code>PermitPerWindow</code>/<code>WindowSeconds</code>, default 600/60) is per-client-IP at the gateway.</li>
+<li>Only deploy the clusters/routes for the hosts you actually run; drop the rest so the gateway doesn't health-check dead backends.</li>
+</ul>
+<h2 id="5-iis-sites">5. IIS sites</h2>
+<p>Create <strong>one IIS site per published host</strong>, each with its own app pool ("No Managed Code", <strong>Maximum Worker Processes = 1</strong> — the single-process rule from the single-host doc applies to <em>every</em> host: in-memory session/nonce stores).</p>
+<p>Layout — non-default ports, chosen to <strong>coexist with the single host</strong> (<code>cbs-single</code> on 8080/8081 stays untouched):</p>
+<p>Bind each site <strong>HTTPS-only</strong>; the HTTP column is reserved (unused).</p>
+<table>
+<thead>
+<tr>
+<th>Site / app pool</th>
+<th>HTTPS (bound)</th>
+<th>HTTP (reserved)</th>
+<th>Path</th>
+<th>Exposure</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>cbs-gateway</code></td>
+<td><strong>8101</strong></td>
+<td>8100</td>
+<td><code>D:\publish\multi\gateway</code></td>
+<td><strong>PUBLIC</strong> (entry: <code>https://&lt;host&gt;:8101</code>)</td>
+</tr>
+<tr>
+<td><code>cbs-default</code></td>
+<td><strong>8111</strong></td>
+<td>8110</td>
+<td><code>D:\publish\multi\default</code></td>
+<td>private (login authority)</td>
+</tr>
+<tr>
+<td><code>cbs-hr</code></td>
+<td><strong>8121</strong></td>
+<td>8120</td>
+<td><code>D:\publish\multi\hr</code></td>
+<td>private</td>
+</tr>
+<tr>
+<td><code>cbs-lockers</code></td>
+<td><strong>8131</strong></td>
+<td>8130</td>
+<td><code>D:\publish\multi\lockers</code></td>
+<td>private</td>
+</tr>
+<tr>
+<td><code>cbs-retail</code></td>
+<td><strong>8141</strong></td>
+<td>8140</td>
+<td><code>D:\publish\multi\retail</code></td>
+<td>private</td>
+</tr>
+<tr>
+<td><code>cbs-admin</code></td>
+<td><strong>8151</strong></td>
+<td>8150</td>
+<td><code>D:\publish\multi\admin</code></td>
+<td>private</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li><strong>Only the gateway is public</strong> — expose <code>https://&lt;host&gt;:8101</code>; firewall the backend ports (811x–815x) off from outside.</li>
+<li><strong>The gateway's cluster Destinations use the backends' HTTPS ports</strong> (the <strong>bold</strong> column: 8111/8121/8131/8141/8151) — matching §4. Bind each backend site <strong>HTTPS-only</strong> (the HTTP column is reserved but unused); this also sidesteps the HTTP health-check 307 issue (<a href="gateway-backend-scheme.html">gateway-backend-scheme.md</a>).</li>
+<li><strong>Reuse the single self-signed cert</strong> (SAN: <code>localhost</code> + the machine name + <code>127.0.0.1</code>) on every HTTPS binding — <a href="self-signed-cert.html">self-signed-cert.md</a>. The <code>cbs-single</code> cert already covers these hostnames.</li>
+<li>The gateway needs no ASP.NET Core hosting extras beyond the hosting bundle; it is itself an ASP.NET Core app hosted by ANCM like the others.</li>
+<li>Per-host <code>Logs\</code> write permission for each app-pool identity.</li>
+<li><strong>Environment per site</strong> — set <code>ASPNETCORE_ENVIRONMENT=Production</code> in <strong>each site's own <code>web.config</code></strong> (as in <a href="iis-single-host.html">iis-single-host.md §4</a>), never as a machine-wide/system variable. With all six sites co-located on one box, a system-level variable would flip every one of them at once — the per-app <code>web.config</code> keeps each isolated. (Data Protection keys are the opposite: they are <em>deliberately shared</em> across the hosts via <code>KeyRing=TflOmniDb</code> — §2 — so don't try to isolate those.)</li>
+</ul>
+<h2 id="6-verification-through-the-gateway-only">6. Verification (through the gateway only)</h2>
+<ol>
+<li>Each backend directly (HTTPS): <code>curl -k https://localhost:8121/health/ready</code> (hr), <code>…:8111</code> (default), <code>…:8131/8141/8151</code> → 200.</li>
+<li>Gateway health: <code>curl -k https://&lt;host&gt;:8101/gateway/health</code> → 200.</li>
+<li>Through the gateway, unauthenticated GET a thin-host screen: <code>https://&lt;host&gt;:8101/Administration/Module</code> → <strong>302</strong> to the central login (returnUrl points at the <strong>gateway</strong> origin <code>…:8101</code> — if it points at a backend port like <code>:8150</code>, <code>ForwardedHeaders</code>/<code>KnownProxies</code> is wrong).</li>
+<li>Log in once → land on the requested screen, <strong>no re-login</strong>.</li>
+<li>Navigate across areas (<code>/Hr/State</code>, <code>/Lockers/...</code>, <code>/RetailBanking/...</code>) — all served without re-login (shared key ring working).</li>
+<li>Global logout → re-hit any area → 302 back to login (revocation working).</li>
+</ol>
+<h2 id="7-troubleshooting-multi-host-specific">7. Troubleshooting (multi-host specific)</h2>
+<table>
+<thead>
+<tr>
+<th>Symptom</th>
+<th>Fix</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Re-login every time you cross hosts</td>
+<td>Not a shared key ring. Every host needs the <strong>same</strong> <code>DataProtection:ApplicationName</code> <strong>and</strong> <code>KeyRing=TflOmniDb</code> pointing at the <strong>same</strong> DB. Confirm <code>CBS_DATAPROTECTIONKEYS</code> has rows.</td>
+</tr>
+<tr>
+<td>returnUrl / redirects show a backend port instead of the gateway</td>
+<td><code>ForwardedHeaders:Enabled</code> must be true <strong>and</strong> <code>KnownProxies</code> must include the gateway IP on that backend.</td>
+</tr>
+<tr>
+<td>Thin host 500s on <code>/Modules</code> or <code>/Account/Login</code></td>
+<td>Missing <code>Misc</code>/<code>Accounts</code> in that host's <code>Modules:Enabled</code>.</td>
+</tr>
+<tr>
+<td>Logout doesn't propagate</td>
+<td><code>Auth:SessionRevocation</code> must be <code>TflOmniDb</code> on every host (not <code>InMemory</code>).</td>
+</tr>
+<tr>
+<td>502 at the gateway for one area</td>
+<td>That backend is down or its cluster Destination Address is wrong; check <code>/health/ready</code> on the backend directly. If you switched the destination to <strong>http</strong>, the active health check gets 307'd and the backend is marked unhealthy — use HTTPS (<a href="gateway-backend-scheme.html">gateway-backend-scheme.md</a>).</td>
+</tr>
+<tr>
+<td>Redirect loop at login</td>
+<td>Two login authorities, or a thin host's <code>Auth:LoginUrl</code> points at itself. Only the default host has a relative <code>LoginUrl</code>; thin hosts point at the gateway.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="8-related-docs">8. Related docs</h2>
+<ul>
+<li><a href="iis-single-host.html">iis-single-host.md</a> — start here (publish, app pool, web.config)</li>
+<li><a href="gateway-backend-scheme.html">gateway-backend-scheme.md</a> — why the gateway calls backends over HTTPS</li>
+<li><a href="self-signed-cert.html">self-signed-cert.md</a> — the cert reused on every binding</li>
+<li><a href="docker-multi-host.html">docker-multi-host.md</a> — same topology in containers</li>
+<li><a href="../single-sign-on.txt">single-sign-on.txt</a> — the SSO mechanism in depth</li>
+<li><a href="../port-map.html">port-map.md</a> — ports &amp; routing table (dev + deploy)</li>
+</ul>
+</div></div>
+<script>
+(function(){
+ function put(t){
+  if(navigator.clipboard&&navigator.clipboard.writeText)return navigator.clipboard.writeText(t);
+  return new Promise(function(res,rej){
+   var a=document.createElement('textarea');a.value=t;a.setAttribute('readonly','');
+   a.style.cssText='position:fixed;top:0;left:0;opacity:0';document.body.appendChild(a);
+   a.select();var ok=false;try{ok=document.execCommand('copy')}catch(e){}
+   document.body.removeChild(a);ok?res():rej()});
+ }
+ function flash(el,txt,ms){
+  var was=el.textContent;el.classList.add('done');if(txt)el.textContent=txt;
+  setTimeout(function(){el.classList.remove('done');if(txt)el.textContent=was},ms||1200);
+ }
+ function copy(text,el,okTxt){
+  put(text).then(function(){flash(el,okTxt)},function(){
+   if(okTxt){var w=el.textContent;el.textContent='Ctrl+C';setTimeout(function(){el.textContent=w},2000)}});
+ }
+ document.querySelectorAll('pre').forEach(function(pre){
+  if(pre.classList.contains('txtdoc'))return;
+  var b=document.createElement('button');
+  b.type='button';b.className='copy';b.textContent='Copy';
+  b.setAttribute('aria-label','Copy this code block to the clipboard');
+  b.addEventListener('click',function(){copy((pre.querySelector('code')||pre).innerText,b,'Copied')});
+  pre.appendChild(b);
+ });
+ document.querySelectorAll('td code').forEach(function(c){
+  if(!c.textContent.trim())return;
+  c.classList.add('cp');c.tabIndex=0;c.setAttribute('role','button');
+  c.title='Click to copy';
+  c.addEventListener('click',function(){copy(c.textContent,c)});
+  c.addEventListener('keydown',function(e){
+   if(e.key==='Enter'||e.key===' '){e.preventDefault();copy(c.textContent,c)}});
+ });
+})();
+</script>
+</body></html>

@@ -1,0 +1,170 @@
+================================================================================
+  SEARCH MODAL + ROWTOKEN  —  ASCII VISUAL REFERENCE
+================================================================================
+  Plain-text twin of search-and-rowtoken-flow.{md,html}. Renders anywhere
+  (terminal, diff, code review) with no tooling.
+
+  Sources of truth:
+    Client   : TflCbs.Web.Shared/wwwroot/js/cbs-search.js
+    Endpoint : TflCbs.Framework/Services/SearchEndpoint.cs
+    Token    : TflCbs.Framework/Infrastructure/RowToken.cs
+               single-use set in TflCbs.Framework/Services/CbsSessionStore.cs
+    Example  : TflCbs.Modules.Hr.Web/Areas/Hr/Controllers/StateController.cs
+
+
+================================================================================
+  1 · SEARCH FLOW — END TO END
+================================================================================
+
++------------------------------------------- BROWSER ----------------------------------------------+
+|                                                                                                  |
+|  User clicks [data-cbs-search] trigger (button / picker box)                                      |
+|        |                                                                                          |
+|        v                                                                                          |
+|  cbs-search.js  open(descriptor)  - renderFilters() / renderHead() - show #cbs-search modal       |
+|        |                                                                                          |
+|  User types filter + presses Search  -->  load()                                                  |
+|        |   builds URLSearchParams:  command=searchData                                            |
+|        |      search.Q | search.Filters[StateName]/[Code]/[CersaiCode]                            |
+|        |      search.Sort  search.Desc  search.Page  search.PageSize                              |
+|        v                                                                                          |
+|  fetchJson(d.dataUrl, body, d.method)   d.method = GET  ->  GET /Hr/State/search?search.*=...     |
+|                                          header: X-Requested-With: fetch                          |
++-------------------------------------------|------------------------------------------------------+
+                                            |  HTTP GET
+                                            v
++--------------------------------------- SERVER (ASP.NET MVC) --------------------------------------+
+|  Routing -> CbsAccessMiddleware (fail-closed: screen "Hr/State" in user's menu?)                  |
+|        |                                          no -> 403                                       |
+|        v                                                                                          |
+|  StateController.SearchData([FromQuery] SearchRequest search)        StateController.cs:54         |
+|        |                                                                                          |
+|        v                                                                                          |
+|  searchEndpoint.RunAsync(fetch, idKey:"Id", screen:"Hr/State", search, ct)                        |
+|        |                                                                                          |
+|        +- Normalize(page, pageSize)                                                               |
+|        |                                                                                          |
+|        +- fetch(req)  -->  svc.SearchStatesAsync(q, stateName, code, cersai, sort, desc, ...)      |
+|        |                        |  (TflCbs.Modules.Reference - Repository<G_STATE> / QueryAsync)  |
+|        |                        v                                                                  |
+|        |                   Result<(rows, total)>   ->  rows as dictionaries + total count          |
+|        |                                                                                          |
+|        +- Build(): for each row -> replace d["Id"] with tokens.Protect(id,"Hr/State")  <-- (S2)   |
+|                    shape SearchResponse { Rows, Total, Page, TotalPages }                         |
+|        |                                                                                          |
+|        v                                                                                          |
+|  return Json(resp)   ->  JsonResult.ExecuteResultAsync                                            |
+|                          System.Text.Json -> response body, Content-Type: application/json        |
++-------------------------------------------|------------------------------------------------------+
+                                            |  200  { rows:[{Id:<token>, StateName, ...}],
+                                            v          total, page, totalPages }
++------------------------------------------- BROWSER ----------------------------------------------+
+|  fetch().then(r => r.json())          (on !ok -> parse {error} -> throw -> status() message)       |
+|        |                                                                                          |
+|        v                                                                                          |
+|  load().then(res):  state.rows = res.rows;  state.totalPages = res.totalPages                     |
+|        |                                                                                          |
+|        +- renderRows(res)   -> builds <tr>/<td> into #cbs-search-body (col.key from each row)      |
+|        +- renderPager(res)  -> Prev / "Page x of y . n records" / Next  into #cbs-search-pager     |
+|        |                                                                                          |
+|  User picks a row  -->  pick(i)                                                                    |
+|        |   navigateTemplate:  window.location = "/Hr/State?row=" + encode(row.Id<token>)          |
+|        |   callback (input picker): applyPick -> fill hidden id + text fields, lock box            |
+|        v                                                                                          |
+|  GET /Hr/State?row=<token>  -->  Index() resolves token -> edit form     (round-trips to S2)      |
++--------------------------------------------------------------------------------------------------+
+
+  Read it as: the browser owns rendering (no Razor view for /search); the server
+  only filters/pages, swaps each raw PK for a token, and returns JSON.
+
+
+================================================================================
+  2 · ROWTOKEN PAYLOAD — WHAT'S INSIDE THE OPAQUE STRING
+================================================================================
+
+   screen | sid | jti | id           (id placed LAST - it may itself contain '|')
+     |       |     |     +- the real PK (string: int / GUID / code)
+     |       |     +------ jti = Guid.NewGuid()  -> the single-use nonce
+     |       +------------ sid = current session GUID  -> dies on logout / rotation
+     +-------------------- screen = "Hr/State"        -> no cross-screen reuse
+
+        _protector.Protect(...)  ->  AES encrypt + sign  ->  opaque token (to client)
+        (confidentiality + integrity + managed key rotation;  PK hidden, unforgeable)
+
+   GUARANTEE BY FIELD
+   ------------------
+     screen  ->  a token minted on Hr/State can't be replayed on another screen
+     sid     ->  bound to the live session; dies on logout / session rotation
+     jti     ->  makes WRITE tokens single-use (replay + double-submit blocked)
+     id      ->  the raw primary key never leaves the server
+
+
+================================================================================
+  3 · ROWTOKEN LIFECYCLE — MINT -> RESOLVE -> CONSUME
+================================================================================
+
+ MINT  (during search Build, see S1)                       RowToken.cs:24
+ -----------------------------------
+   tokens.Protect(idStr, "Hr/State")
+        |  sid = store.CurrentSessionId ;  jti = Guid.NewGuid("N")
+        v
+   AES-encrypt "Hr/State|sid|jti|123"  -->  token  -->  row["Id"]  -->  JSON to client
+                                                                          (raw PK 123 hidden)
+
+   --- client holds the token only; sends it back as ?row=<token> or Form.Row=<token> ---
+
+
+ RESOLVE  (READ paths - validate only, nonce NOT spent)    RowToken.cs:33
+ ------------------------------------------------------
+   Index(?row=token)  /  EditFailed / Delete-reopen
+        |  tokens.TryResolve(token, "Hr/State", out id)
+        v
+   TryRead():  Unprotect (decrypt)         -- fail -> tampered / wrong-key  --+
+        |      split into 4 parts          -- fail -> malformed              --+
+        |      parts[0] == screen?         -- no   -> cross-screen reuse     --+--> FALSE
+        |      parts[1] == CurrentSessionId? -- no -> expired / other session--+     -> NotifyError
+        v                                                                            "link invalid/expired"
+   id = parts[3]  ->  int.TryParse  ->  load record  ->  render edit form
+        (edit form re-mints a fresh token: vm.Form.Row = tokens.Protect(id, screen))
+
+
+ CONSUME  (WRITE paths - single-use)                       RowToken.cs:36
+ -----------------------------------
+   Update / Delete  (POST)
+        |  tokens.TryConsume(form.Row, "Hr/State", out id)
+        v
+   TryRead(... out jti)  -- invalid -------------------------------> FALSE -> NotifyError
+        | valid                                                             "reopen the record"
+        v
+   store.TryConsumeRowToken(jti)                              CbsSessionStore.cs:45
+        |  lock(ConsumedRowTokens)  return set.Add(jti)
+        |      +- jti new   -> Add == true   -> proceed with Update / Delete
+        |      +- jti seen  -> Add == false  -> "already submitted" (replay / double-click blocked)
+        v
+   perform write (svc.UpdateStateAsync / DeleteStateAsync)
+   (ConsumedRowTokens set is session-scoped, cleared on logout)
+
+
+ READ vs WRITE
+ -------------
+   +------------------------------+--------------+----------------+-------------------------------+
+   | Path                         | Method       | Touches nonce? | Why                           |
+   +------------------------------+--------------+----------------+-------------------------------+
+   | Read (Index, reopen)         | TryResolve   | No             | reopen any number of times    |
+   | Write (Update, Delete)       | TryConsume   | Yes (adds jti) | single-use: replay/double-sub |
+   +------------------------------+--------------+----------------+-------------------------------+
+
+   Update validates the token FIRST via TryBeginWrite (so a ModelState failure re-renders
+   the form WITHOUT burning it) and only TryConsume's once the write proceeds.
+   -> StateController.cs:89 (validate)  and  :94 (consume)
+   TryBeginWrite / TryOpenRecord are the CbsScreenController wrappers over
+   RowToken.TryResolve.
+
+
+  NOT ACCESS CONTROL
+  ------------------
+  Tokens secure the HANDOFF (PK confidentiality + integrity + single-use).
+  Authorization is still enforced separately by CbsAccessMiddleware (menu/route
+  guard) and the scoped service calls. A valid token is never a substitute for
+  being allowed on the screen.
+================================================================================

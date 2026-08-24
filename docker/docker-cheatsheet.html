@@ -1,0 +1,444 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Docker Cheat-Sheet — terminology &amp;amp; commands</title>
+<style>
+:root{color-scheme:light dark}
+*{box-sizing:border-box}
+body{margin:0;background:#f6f8fa;color:#1f2328;font:16px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif}
+.wrap{max-width:900px;margin:0 auto;padding:32px 24px 96px}
+.card{background:#fff;border:1px solid #d0d7de;border-radius:10px;padding:40px 48px}
+h1,h2,h3{line-height:1.25;font-weight:600}
+h1{font-size:1.9rem;margin:0 0 .3em;padding-bottom:.3em;border-bottom:1px solid #d8dee4}
+h2{font-size:1.4rem;margin:1.8em 0 .6em;padding-bottom:.25em;border-bottom:1px solid #eaeef2}
+h3{font-size:1.12rem;margin:1.4em 0 .5em}
+p,li{margin:.5em 0}
+a{color:#0969da;text-decoration:none}
+a:hover{text-decoration:underline}
+code{font-family:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;font-size:.86em;background:#eff1f3;padding:.15em .4em;border-radius:6px}
+pre{background:#f6f8fa;border:1px solid #d8dee4;border-radius:8px;padding:14px 16px;overflow:auto}
+pre code{background:none;padding:0;font-size:.85em;line-height:1.45}
+blockquote{margin:1em 0;padding:.4em 1em;color:#3d444d;border-left:4px solid #d0d7de;background:#f6f8fa;border-radius:0 6px 6px 0}
+blockquote>:first-child{margin-top:0}blockquote>:last-child{margin-bottom:0}
+table{border-collapse:collapse;width:100%;margin:1em 0;display:block;overflow:auto}
+th,td{border:1px solid #d0d7de;padding:8px 12px;text-align:left;vertical-align:top}
+th{background:#f6f8fa;font-weight:600}
+tr:nth-child(2n) td{background:#f6f8fa}
+hr{border:0;border-top:1px solid #d8dee4;margin:2em 0}
+pre{position:relative}
+pre>button.copy{position:absolute;top:8px;right:8px;padding:5px 9px;cursor:pointer;
+  font:600 .68rem/1 ui-monospace,SFMono-Regular,Consolas,monospace;letter-spacing:.03em;
+  color:#636c76;background:#fff;border:1px solid #d0d7de;border-radius:6px;
+  opacity:0;transition:opacity .12s}
+pre:hover>button.copy,pre>button.copy:focus{opacity:1}
+pre>button.copy.done{color:#0a3622;background:#dafbe1;border-color:#4ac26b}
+@media(hover:none){pre>button.copy{opacity:1}}
+td code.cp{cursor:pointer}
+td code.cp:hover,td code.cp:focus{outline:1px solid #8c959f;outline-offset:1px}
+td code.cp.done{color:#0a3622;background:#dafbe1}
+.docnav{margin:0 0 20px;font-size:.85rem;color:#636c76}
+.docnav a{color:#636c76}
+ul{padding-left:1.4em}ol{padding-left:1.4em}
+@media(max-width:640px){.card{padding:24px 18px}.wrap{padding:16px 10px 64px}}
+@media(prefers-color-scheme:dark){
+ body{background:#0d1117;color:#e6edf3}
+ .card{background:#161b22;border-color:#30363d}
+ h1{border-color:#30363d}h2{border-color:#21262d}
+ code{background:#262c34}
+ pre{background:#0d1117;border-color:#30363d}
+ blockquote{background:#161b22;border-color:#30363d;color:#9198a1}
+ th,td{border-color:#30363d}th{background:#161b22}tr:nth-child(2n) td{background:#12171e}
+ a{color:#4493f8}.docnav,.docnav a{color:#9198a1}
+ hr{border-color:#30363d}
+ pre>button.copy{color:#9198a1;background:#161b22;border-color:#30363d}
+ pre>button.copy.done{color:#aff5b4;background:#1b4721;border-color:#2ea043}
+ td code.cp.done{color:#aff5b4;background:#1b4721}
+}
+</style></head>
+<body><div class="wrap"><div class="card">
+<div class="docnav"><a href="../index.html">&#8592; All docs</a></div>
+<h1 id="docker-cheat-sheet-terminology-commands">Docker Cheat-Sheet — terminology &amp; commands</h1>
+<p>A general Docker reference with TrustBank-CBS examples where useful. For <em>what this repo has</em>, see <a href="my-docker-setup.html">my-docker-setup.md</a>.</p>
+<hr />
+<h2 id="1-core-terminology">1. Core terminology</h2>
+<table>
+<thead>
+<tr>
+<th>Term</th>
+<th>What it is</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Image</strong></td>
+<td>A read-only, layered template (your compiled app + runtime + OS libs). Built once, run many times. Identified by <code>repository:tag</code> (e.g. <code>cbs-gateway:latest</code>) or an image ID/SHA.</td>
+</tr>
+<tr>
+<td><strong>Container</strong></td>
+<td>A <strong>running (or stopped) instance</strong> of an image — image + a writable layer + its own process, network, and mounts. Many containers can run from one image.</td>
+</tr>
+<tr>
+<td><strong>Layer</strong></td>
+<td>Each Dockerfile instruction (<code>RUN</code>, <code>COPY</code>, …) adds a cached layer. Unchanged layers are reused → fast rebuilds. Order instructions least- to most-frequently-changing.</td>
+</tr>
+<tr>
+<td><strong>Dockerfile</strong></td>
+<td>The recipe to build an image (base image, copy files, build, entrypoint).</td>
+</tr>
+<tr>
+<td><strong>Build context</strong></td>
+<td>The directory sent to the builder (everything the <code>COPY</code> commands can see). Kept small via <code>.dockerignore</code>. Here it's the solution root.</td>
+</tr>
+<tr>
+<td><strong>ARG</strong> vs <strong>ENV</strong></td>
+<td><code>ARG</code> = <strong>build-time</strong> variable (e.g. <code>PROJECT</code>), only during <code>docker build</code>. <code>ENV</code> = <strong>runtime</strong> variable, present in the running container.</td>
+</tr>
+<tr>
+<td><strong>Registry / repository / tag</strong></td>
+<td>Registry = image store (Docker Hub, ACR…). Repository = a named image (<code>cbs-gateway</code>). Tag = a version label (<code>latest</code>, <code>1.0</code>).</td>
+</tr>
+<tr>
+<td><strong>Volume</strong></td>
+<td>Docker-managed persistent storage that outlives a container.</td>
+</tr>
+<tr>
+<td><strong>Bind mount</strong></td>
+<td>Maps a <strong>host path</strong> into the container (e.g. <code>./docker/x.json:/app/x.json</code>). Edits on the host are visible in the container.</td>
+</tr>
+<tr>
+<td><strong>Network</strong></td>
+<td>A virtual network containers attach to. On a user-defined/compose network, containers reach each other by <strong>service name</strong> (built-in DNS).</td>
+</tr>
+<tr>
+<td><strong>Port publishing</strong></td>
+<td><code>-p host:container</code> (or compose <code>ports:</code>) exposes a container port on the host. Without it, a port is only reachable <em>inside</em> the container's network.</td>
+</tr>
+<tr>
+<td><strong>Healthcheck</strong></td>
+<td>A command Docker runs periodically to mark a container <code>healthy</code>/<code>unhealthy</code> (here: <code>curl /health/ready</code>).</td>
+</tr>
+<tr>
+<td><strong>ENTRYPOINT / CMD</strong></td>
+<td>The process a container runs at start.</td>
+</tr>
+<tr>
+<td><strong>Compose</strong></td>
+<td>A tool + YAML file to define and run <strong>multi-container</strong> apps (<code>services</code>, <code>networks</code>, <code>volumes</code>) as one unit.</td>
+</tr>
+<tr>
+<td><strong>Service</strong> (compose)</td>
+<td>One container spec in a compose file (image/build, env, ports, …). Can scale to multiple replicas.</td>
+</tr>
+<tr>
+<td><strong>Project</strong> (compose)</td>
+<td>A group of services managed together; namespaces container/network names (here <code>tflcbsnet10sol</code>).</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="2-image-commands">2. Image commands</h2>
+<table>
+<thead>
+<tr>
+<th>Command</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>docker build -t name:tag .</code></td>
+<td>Build an image from the <code>Dockerfile</code> in <code>.</code> (the context).</td>
+</tr>
+<tr>
+<td><code>docker build --build-arg PROJECT=TflCbs.Host.Hr -t cbs-hr:latest .</code></td>
+<td>Build passing a build-time <code>ARG</code>.</td>
+</tr>
+<tr>
+<td><code>docker images</code></td>
+<td>List local images (repo, tag, size, ID).</td>
+</tr>
+<tr>
+<td><code>docker image inspect name:tag</code></td>
+<td>Full metadata (layers, env, entrypoint).</td>
+</tr>
+<tr>
+<td><code>docker history name:tag</code></td>
+<td>Show the layers and their sizes.</td>
+</tr>
+<tr>
+<td><code>docker tag src:tag new:tag</code></td>
+<td>Add another name/tag to an image.</td>
+</tr>
+<tr>
+<td><code>docker pull image:tag</code> / <code>docker push …</code></td>
+<td>Download from / upload to a registry.</td>
+</tr>
+<tr>
+<td><code>docker image rm name:tag</code> (<code>docker rmi</code>)</td>
+<td>Delete an image.</td>
+</tr>
+<tr>
+<td><code>docker image prune</code></td>
+<td>Remove dangling (untagged) images.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="3-container-commands">3. Container commands</h2>
+<table>
+<thead>
+<tr>
+<th>Command</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>docker run -d -p 8090:8080 --name x img</code></td>
+<td>Create + start a container (detached, port published).</td>
+</tr>
+<tr>
+<td><code>docker ps</code> / <code>docker ps -a</code></td>
+<td>List running / all containers.</td>
+</tr>
+<tr>
+<td><code>docker stop &lt;c&gt;</code> / <code>docker start &lt;c&gt;</code></td>
+<td>Stop / start a container.</td>
+</tr>
+<tr>
+<td><code>docker restart &lt;c&gt;</code></td>
+<td>Restart.</td>
+</tr>
+<tr>
+<td><code>docker rm &lt;c&gt;</code></td>
+<td>Remove a stopped container (<code>-f</code> to force).</td>
+</tr>
+<tr>
+<td><code>docker logs &lt;c&gt;</code> / <code>docker logs -f &lt;c&gt;</code></td>
+<td>Print / follow a container's stdout.</td>
+</tr>
+<tr>
+<td><code>docker exec -it &lt;c&gt; sh</code></td>
+<td>Open a shell <strong>inside</strong> a running container.</td>
+</tr>
+<tr>
+<td><code>docker exec &lt;c&gt; curl -fsS http://localhost:8080/health/ready</code></td>
+<td>Run a one-off command inside.</td>
+</tr>
+<tr>
+<td><code>docker inspect &lt;c&gt;</code></td>
+<td>Full JSON state (env, mounts, IP, health).</td>
+</tr>
+<tr>
+<td><code>docker inspect -f '{{.State.Health.Status}}' &lt;c&gt;</code></td>
+<td>Just the health status (Go-template format).</td>
+</tr>
+<tr>
+<td><code>docker stats</code></td>
+<td>Live CPU/memory/IO per container.</td>
+</tr>
+<tr>
+<td><code>docker cp &lt;c&gt;:/path ./local</code></td>
+<td>Copy files out of (or into) a container.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="4-compose-commands">4. Compose commands</h2>
+<p>Run from the folder with the compose file. <code>docker compose</code> (v2, a plugin) — older docs say <code>docker-compose</code>.</p>
+<table>
+<thead>
+<tr>
+<th>Command</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>docker compose up -d</code></td>
+<td>Create + start all services (detached).</td>
+</tr>
+<tr>
+<td><code>docker compose up -d --build</code></td>
+<td>Rebuild images first, then start.</td>
+</tr>
+<tr>
+<td><code>docker compose -f a.yaml -f b.yaml up -d</code></td>
+<td>Merge multiple files (base + overlay). Later files win.</td>
+</tr>
+<tr>
+<td><code>docker compose down</code></td>
+<td>Stop + remove containers and the default network (add <code>-v</code> to also drop volumes).</td>
+</tr>
+<tr>
+<td><code>docker compose ps</code></td>
+<td>Status of the project's services.</td>
+</tr>
+<tr>
+<td><code>docker compose logs -f &lt;svc&gt;</code></td>
+<td>Follow one service's logs.</td>
+</tr>
+<tr>
+<td><code>docker compose exec &lt;svc&gt; &lt;cmd&gt;</code></td>
+<td>Exec into a service's container.</td>
+</tr>
+<tr>
+<td><code>docker compose build [&lt;svc&gt;]</code></td>
+<td>Build images without starting.</td>
+</tr>
+<tr>
+<td><code>docker compose config</code></td>
+<td>Print the <strong>fully-merged, resolved</strong> config (great for debugging overlays/env).</td>
+</tr>
+<tr>
+<td><code>docker compose restart &lt;svc&gt;</code></td>
+<td>Restart one service.</td>
+</tr>
+<tr>
+<td><code>docker compose up -d &lt;svc&gt;</code></td>
+<td>Recreate just one service after a config change.</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p><strong>Override files:</strong> only <code>compose.override.yaml</code> is auto-merged onto <code>compose.yaml</code> (when no <code>-f</code>). Any other overlay (e.g. <code>compose.multi.local.yaml</code>) must be passed explicitly with a second <code>-f</code>.</p>
+</blockquote>
+<h2 id="5-volumes-networks-system">5. Volumes, networks, system</h2>
+<table>
+<thead>
+<tr>
+<th>Command</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>docker volume ls</code> / <code>docker volume rm &lt;v&gt;</code></td>
+<td>List / remove named volumes.</td>
+</tr>
+<tr>
+<td><code>docker network ls</code></td>
+<td>List networks.</td>
+</tr>
+<tr>
+<td><code>docker network inspect &lt;net&gt;</code></td>
+<td>Show subnet, gateway IP, connected containers.</td>
+</tr>
+<tr>
+<td><code>docker network inspect &lt;net&gt; -f '{{range .IPAM.Config}}{{.Gateway}}{{end}}'</code></td>
+<td>Just the bridge <strong>gateway IP</strong> (useful for <code>KnownProxies</code>).</td>
+</tr>
+<tr>
+<td><code>docker system df</code></td>
+<td>Disk used by images/containers/volumes/build cache.</td>
+</tr>
+<tr>
+<td><code>docker system prune</code></td>
+<td>Remove stopped containers, unused networks, dangling images.</td>
+</tr>
+<tr>
+<td><code>docker builder prune</code></td>
+<td>Reclaim build cache.</td>
+</tr>
+<tr>
+<td><code>docker system prune -a --volumes</code></td>
+<td>Aggressive cleanup (also unused images + volumes) — <strong>careful</strong>.</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="6-reading-go-template-output-f-format">6. Reading Go-template output (<code>-f</code> / <code>--format</code>)</h2>
+<p>Many commands accept <code>--format</code> with Go templates:</p>
+<pre><code class="language-bash">docker ps --format 'table {{.Names}}\t{{.Status}}\t{{.Ports}}'
+docker inspect &lt;c&gt; --format '{{.Config.Image}}'
+docker inspect &lt;c&gt; --format '{{range .Mounts}}{{.Source}} -&gt; {{.Destination}}{{println}}{{end}}'
+</code></pre>
+<hr />
+<h2 id="7-troubleshooting-patterns">7. Troubleshooting patterns</h2>
+<table>
+<thead>
+<tr>
+<th>Symptom</th>
+<th>Look at</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Container won't stay up</td>
+<td><code>docker logs &lt;c&gt;</code> — app crashed at startup (config/DB/cert).</td>
+</tr>
+<tr>
+<td><code>unhealthy</code></td>
+<td>The healthcheck command fails — <code>docker inspect &lt;c&gt;</code> → <code>.State.Health.Log</code>; run the health URL by hand.</td>
+</tr>
+<tr>
+<td>Can't reach a container from the host</td>
+<td>Is the port <strong>published</strong> (<code>docker ps</code> shows <code>0.0.0.0:host-&gt;cont</code>)? Only published ports are host-reachable.</td>
+</tr>
+<tr>
+<td>Container A can't reach container B</td>
+<td>Same network? Use the <strong>service name</strong>, not <code>localhost</code> (each container's <code>localhost</code> is itself).</td>
+</tr>
+<tr>
+<td>Env var "set" but app ignores it</td>
+<td>Check the <strong>process</strong> env, not just <code>docker inspect</code>: <code>docker exec &lt;c&gt; cat /proc/1/environ | tr '\0' '\n'</code>. Names with hyphens/dots may be dropped.</td>
+</tr>
+<tr>
+<td>Source IP looks wrong behind a proxy</td>
+<td>Docker NATs host→container traffic to the <strong>bridge gateway IP</strong> — that's the peer the app sees (matters for <code>KnownProxies</code>).</td>
+</tr>
+<tr>
+<td>Build fails on <code>apt-get</code></td>
+<td>Usually a transient mirror/network blip — just retry the build.</td>
+</tr>
+<tr>
+<td>Out of disk</td>
+<td><code>docker system df</code> → <code>docker system prune</code> / <code>docker builder prune</code>.</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="8-mental-model-the-one-paragraph-version">8. Mental model (the one-paragraph version)</h2>
+<p>You <strong>build</strong> a Dockerfile into an <strong>image</strong> (immutable, layered). You <strong>run</strong> an image to get a <strong>container</strong> (a live process, isolated but sharing the host kernel). Containers are disposable — persist data in <strong>volumes/bind mounts</strong>, not in the container. Containers talk over <strong>networks</strong> (by service name); expose them to the host by <strong>publishing ports</strong>. <strong>Compose</strong> wires many containers, their networks, mounts, and env into one declarative file you bring <code>up</code> and <code>down</code>.</p>
+<hr />
+<h2 id="9-related-docs">9. Related docs</h2>
+<ul>
+<li><a href="my-docker-setup.html">my-docker-setup.md</a> — this repo's images, containers, and how to run them</li>
+<li><a href="../deploy/docker-single-host.html">../deploy/docker-single-host.md</a> / <a href="../deploy/docker-multi-host.html">../deploy/docker-multi-host.md</a> — deployment walkthroughs</li>
+</ul>
+</div></div>
+<script>
+(function(){
+ function put(t){
+  if(navigator.clipboard&&navigator.clipboard.writeText)return navigator.clipboard.writeText(t);
+  return new Promise(function(res,rej){
+   var a=document.createElement('textarea');a.value=t;a.setAttribute('readonly','');
+   a.style.cssText='position:fixed;top:0;left:0;opacity:0';document.body.appendChild(a);
+   a.select();var ok=false;try{ok=document.execCommand('copy')}catch(e){}
+   document.body.removeChild(a);ok?res():rej()});
+ }
+ function flash(el,txt,ms){
+  var was=el.textContent;el.classList.add('done');if(txt)el.textContent=txt;
+  setTimeout(function(){el.classList.remove('done');if(txt)el.textContent=was},ms||1200);
+ }
+ function copy(text,el,okTxt){
+  put(text).then(function(){flash(el,okTxt)},function(){
+   if(okTxt){var w=el.textContent;el.textContent='Ctrl+C';setTimeout(function(){el.textContent=w},2000)}});
+ }
+ document.querySelectorAll('pre').forEach(function(pre){
+  if(pre.classList.contains('txtdoc'))return;
+  var b=document.createElement('button');
+  b.type='button';b.className='copy';b.textContent='Copy';
+  b.setAttribute('aria-label','Copy this code block to the clipboard');
+  b.addEventListener('click',function(){copy((pre.querySelector('code')||pre).innerText,b,'Copied')});
+  pre.appendChild(b);
+ });
+ document.querySelectorAll('td code').forEach(function(c){
+  if(!c.textContent.trim())return;
+  c.classList.add('cp');c.tabIndex=0;c.setAttribute('role','button');
+  c.title='Click to copy';
+  c.addEventListener('click',function(){copy(c.textContent,c)});
+  c.addEventListener('keydown',function(e){
+   if(e.key==='Enter'||e.key===' '){e.preventDefault();copy(c.textContent,c)}});
+ });
+})();
+</script>
+</body></html>

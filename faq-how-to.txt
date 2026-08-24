@@ -1,0 +1,321 @@
+==============================================================================
+ DEVELOPER FAQ / HOW-TO - TrustBank CBS (.NET 10)
+==============================================================================
+ Practical answers so you can work smoothly. If something here disagrees with
+ CLAUDE.md, CLAUDE.md wins - tell us and we'll fix this doc.
+
+ New here? Read in this order:
+   1. docs/architecture-overview.md   - what the projects are and how they fit
+   2. docs/guides/building-a-crud-screen.txt - build one screen end to end
+   3. This file                        - day-to-day how-tos and gotchas
+   4. docs/guides/starting-a-new-module.txt - when adding a whole new domain
+   5. docs/single-sign-on.txt          - only when touching auth/multi-host
+   6. docs/deploy/*.txt                 - when deploying (IIS / Docker, single /
+      multi host)
+
+
+==============================================================================
+ SECTION A - GETTING STARTED
+==============================================================================
+Q. What is this project?
+A. An incremental strangler-fig migration of TrustBank CBS (core banking) from
+   ASP.NET WebForms / VB.NET / .NET 4.8 to .NET 10 / C# MVC. Legacy screens are
+   rebuilt as MVC while old URLs keep working until cutover.
+
+Q. What do I need installed?
+A. .NET 10 SDK, access to the dev SQL Server (and Oracle if you test cross-
+   provider), Node.js (only to `node --check` JavaScript), and Visual Studio or
+   VS Code. The legacy source (analysis only, DO NOT edit) is at
+   E:\adtemp\_del_now\20260606_cbs_source_code\Trust.Bank.Publish\.
+
+Q. Where is everything?
+A. Solution dir:  E:\Adhir\AdWork\TrustBank.Code\TflCbsNet10Sol\
+   Solution file: TflCbsNet10Sol.slnx
+   Active app:    TflCbs.Host.Main  (thin MVC host / composition root)
+   Screens live in per-domain web RCLs: TflCbs.Modules.<Area>.Web
+   Business logic: TflCbsServices  (+ TflCbs.Core.Authentication)
+   Web plumbing:  TflCbs.Framework
+   Entities:      TflCbs.Entities
+   See docs/architecture-overview.md for the full project map.
+
+Q. Dev DB credentials?
+A. sa / sql@2019 (dev only - never hardcode creds/connection strings in code;
+   use config).
+
+
+==============================================================================
+ SECTION B - BUILD & RUN (the commands you'll use most)
+==============================================================================
+Q. How do I build the app?
+A. dotnet build TflCbs.Host.Main
+
+Q. How do I run the app?
+A. dotnet run --project TflCbs.Host.Main
+   Dev URL: https://localhost:7225  (or http://localhost:5019). Prefer HTTPS.
+   Launch config: trustbank-ui.
+   !! ALWAYS STOP THE APP BEFORE THE NEXT BUILD to free DLL locks - including an
+      instance launched by Visual Studio's debugger (kill the dotnet /
+      TflCbs.Host.Main / app .NET Host process). Stopping the debugged app is
+      authorized; just don't close the Visual Studio IDE (devenv) itself.
+
+Q. I changed an entity in TflCbs.Entities. What's special?
+A. BUILD TflCbs.Entities FIRST, then the dependents:
+       dotnet build TflCbs.Entities
+       dotnet build TflCbs.Host.Main
+   Why: peers reference TflCbs.Entities as a bare compiled DLL (HintPath), so
+   there's no build-order edge to do it for you.
+
+Q. How do I run the tests?
+A. All service tests:     dotnet test TflCbs.Tests
+   One test:              dotnet test TflCbs.Tests --filter "FullyQualifiedName~TestName"
+   Arch boundary tests:   dotnet test TflCbs.ArchTests
+
+Q. How do I check a JavaScript file?
+A. node --check <file.js>
+
+Q. Build fails with "file is locked" / "being used by another process".
+A. The app is still running. Stop it (including the VS-debugged instance) and
+   rebuild. See the stop-before-build rule above.
+
+
+==============================================================================
+ SECTION C - "HOW DO I..." COMMON TASKS
+==============================================================================
+Q. How do I add a new CRUD screen (e.g. a master)?
+A. Follow docs/guides/building-a-crud-screen.txt (worked example: the State
+   master at /Hr/State). Short version, in order:
+     1. Entity exists? If new table, generate it, then build TflCbs.Entities first.
+     2. Add YourThingService in TflCbsServices/<Domain>/ - primary ctor
+        (DataAccess data), Repository<T> accessor, Search/Load/Save/Update/
+        Delete returning Result/Result<T>. Then RUN cbs-sync-test-demo (below).
+     3. Register it with ONE AddScoped line in that domain's
+        <Domain>Module.AddServices (TflCbsServices/<Domain>/<Domain>Module.cs)
+        - NOT in Program.cs; AddCbsModules discovers the module automatically.
+     4. Add the Form model (DataAnnotations + string? Row, implements IRowForm)
+        in the web RCL's Models/<Area>/; reuse EditViewModel<TForm>.
+     5. Add the Controller in the right Area's web RCL
+        (TflCbs.Modules.<Area>.Web) with [Area], [Route], [CbsAccessScreen];
+        inherit CbsScreenController and use its helpers (TryOpenRecord /
+        TryBeginWrite / TryConsume / ProtectId / SavedOk...). Token ids are
+        STRINGS - parse to your PK type at the call site (mind decimal PKs).
+     6. Add the View (copy State's Index.cshtml; adjust fields/columns/
+        NavigateTemplate).
+     7. Point the screen's a_Menus.NavigateURL at /Area/YourThing with a
+        DbMigrator migration (one script per provider), then run
+        `dotnet run --project TflCbs.Tools.DbMigrator -- upgrade`.
+     8. Build + verify.
+
+Q. How do I start a whole NEW module (new domain)?
+A. Follow docs/guides/starting-a-new-module.txt (worked example: the
+   Administration module). Key facts: the service side is a FOLDER in
+   TflCbsServices with an ICbsModule (auto-discovered); the web side is a new
+   RCL project (TflCbs.Modules.<Name>.Web) the host composes via a gated
+   AddApplicationPart; the name must be registered in ~12 places - use the
+   checklist in that doc (arch tests included).
+
+Q. Which project does my screen go in?
+A. The web RCL for its RUNTIME menu area, not necessarily its data domain.
+   Screens follow legacy menu placement. Example: State/District/Taluka live in
+   TflCbs.Modules.Hr.Web (HR menu) even though they're backed by the "General"
+   service module. Don't realign code modules to match menu modules.
+
+Q. How do I add or change a service method?
+A. Edit the *Service in TflCbsServices (return Result/Result<T>, no throwing
+   across the boundary, no raw SQL/procs - use Repository<T>). Then, after ANY
+   public method add/change/remove, RUN the cbs-sync-test-demo agent - it syncs
+   TflCbs.Tests + TflCbs.Demo, builds, and runs the tests.
+
+Q. How do I generate a new entity?
+A. Use the TflOmniDb.Scaffold generator against the DB, write the .cs into
+   TflCbs.Entities, then `dotnet build TflCbs.Entities` FIRST. Entities are auto-
+   generated - don't hand-edit generated files; put hand-written helpers in a
+   sibling partial-class file.
+
+Q. How do I add a NuGet package?
+A. Central Package Management is on. Add the VERSION in
+   Directory.Packages.props, then a version-LESS <PackageReference> in the
+   csproj. Don't put versions in csproj files.
+
+Q. How do I switch the database provider at runtime (dev)?
+A. Use the dev-only DB Switcher (_DbSwitcher) in the UI. Providers supported:
+   SQL Server, Oracle, PostgreSQL (via TflOmniDb DataAccess/DatabaseSelector).
+
+Q. How do I extend a reusable component (picker/date picker/search)?
+A. Keep additions ADDITIVE with SAFE DEFAULTS - never break existing pickers.
+   After changing a SHARED component, run the component-docs-sync and
+   component-demo agents.
+
+
+==============================================================================
+ SECTION D - THE HELPER AGENTS (use them proactively)
+==============================================================================
+  cbs-sync-test-demo   After ANY public method add/change/remove on a *Service
+                       in TflCbsServices. Syncs Tests + Demo, builds, runs.
+  component-demo       After adding/extending a reusable UI component. Updates
+                       the dev showcase at /Dev/Components with dummy data.
+  component-docs-sync  After adding/changing a SHARED UI component. Updates the
+                       legacy-vs-new component comparison guide.
+
+
+==============================================================================
+ SECTION E - CONVENTIONS QUICK-REFERENCE
+==============================================================================
+  NAMING
+    - C# types/methods            PascalCase
+    - locals/params               camelCase
+    - private fields              _camelCase
+    - TflCbs.Entities properties     UPPERCASE (DB-generated)
+    - client assets               kebab-case (cbs-search.js)
+    - Areas + controllers per domain: Areas/<Area>/Controllers/...
+    - views: Areas/<Area>/Views/<Controller>/...
+    - shared partials: _PascalCase.cshtml in Views/Shared
+
+  DATA
+    - NO stored procedures / NO raw SQL for new master CRUD - use Repository<T>.
+      Preserve legacy raw-SQL/procs ONLY where already migrated as such.
+    - Services return Result / Result<T> - handle errors explicitly, never
+      throw across the service boundary, no silent failures.
+
+  WEB
+    - Attribute routing pins the new URLs; a_Menus.NavigateURL holds the route
+      the menu links to (one row -> its own screen's route only - AllowedUrls
+      is derived from that column).
+    - Command-dispatch POST uses <button name="command" value="...">, or per-
+      action routing with formaction.
+    - Access is FAIL-CLOSED (CbsAccessMiddleware); menu authorization is server-
+      side. Never widen access or bypass the menu/route guard.
+    - RowToken: opaque ids. Via CbsScreenController: TryOpenRecord/TryBeginWrite
+      for reads, TryConsume for writes; ProtectId a fresh token on every
+      redisplay. Token ids are STRINGS - parse to the service's PK type at the
+      call site (A_ROLE.ROLEID is decimal; never narrow through int).
+
+  NOTIFICATIONS
+    - Server CRUD outcomes -> blocking ack modal (this.NotifySuccess/NotifyError
+      -> _Notification).
+    - Client guards -> transient toast.
+
+  SECURITY
+    - Never hardcode credentials/connection strings - use config. Never log
+      secrets.
+
+
+==============================================================================
+ SECTION F - MULTI-HOST / SSO (only if you touch it)
+==============================================================================
+Q. What are the thin hosts and the gateway?
+A. Besides the default host (TflCbs.Host.Main), each domain can run standalone:
+     TflCbs.Host.Hr              :5300 / :7300
+     TflCbs.Host.Lockers         :5200 / :7200
+     TflCbs.Host.RetailBanking   :5400 / :7400
+     TflCbs.Host.Administration  :5500 / :7500
+     TflCbs.Gateway (YARP)       :5100 / :7100  - one origin fronting all hosts
+   The gateway gives one cookie domain, which is what makes cross-host SSO work.
+
+Q. How do I run the shared-SSO multi-host setup?
+A. The topology is now baked into launch/appsettings.Development.json:
+     - Run TflCbs.Gateway, the thin host(s), and the default host.
+     - For the DEFAULT host to join the shared cluster, launch it with the
+       `https (shared-sso)` profile (bakes DataProtection__KeyRing=TflOmniDb +
+       Auth__SessionRevocation=TflOmniDb + AllowedReturnHosts). Its plain
+       `https`/`http` profiles stay single-host (FileSystem keys / InMemory
+       revocation) so everyday dev isn't coupled to the SSO tables.
+     - A plain `dotnet run` per project brings the HTTPS topology up (no args).
+   Needs the two shared tables: CBS_DATAPROTECTIONKEYS, CBS_SESSIONREVOCATIONS.
+   Full detail: docs/single-sign-on.txt.
+
+Q. My thin host denies every screen even for authorized users!
+A. AllowedUrls comes from a_Menus.NavigateURL, so a screen is reachable only
+   once that column holds its new route - check the DbMigrator migration for
+   the screen actually ran (`-- preview` lists what is pending).
+   Related gotcha for any file config a thin host LINKS (logmasking.json): it
+   only lands in bin/, so it must be loaded from AppContext.BaseDirectory, not
+   the content root (a relative AddJsonFile under `dotnet run` silently misses
+   it). Already fixed in the shipped hosts - copy that pattern in a new one.
+
+
+==============================================================================
+ SECTION G - VERIFICATION CHECKLIST (before you call it done)
+==============================================================================
+  After C#/Razor changes .......... dotnet build TflCbs.Host.Main  (build only)
+  After TflCbs.Entities changes ...... dotnet build TflCbs.Entities FIRST, then deps
+  After a service API change ...... run cbs-sync-test-demo; dotnet test TflCbs.Tests passes
+  After JS changes ................ node --check <file>
+  Architecture boundaries ......... dotnet test TflCbs.ArchTests
+  UI/runtime behaviour ............ run the app, verify at https://localhost:7225,
+                                    then STOP it before the next build
+
+
+==============================================================================
+ SECTION H - TROUBLESHOOTING (common errors -> fix)
+==============================================================================
+  "DLL is locked" on build
+      -> The app is still running (maybe under the VS debugger). Stop the app
+         process, then rebuild.
+
+  Type/entity changes not picked up
+      -> You didn't build TflCbs.Entities first. `dotnet build TflCbs.Entities`, then
+         rebuild dependents.
+
+  New screen returns 404 / AccessDenied
+      -> Check: [Area]/[Route] correct? a_Menus.NavigateURL updated to that
+         route (DbMigrator migration applied)? The screen's menu entry present
+         for your user? Module enabled in Modules:Enabled? Access is
+         fail-closed - all four must line up.
+
+  Arch test failure (framework -> screens, or a module referencing another
+  module's Areas/Models)
+      -> You crossed a boundary. Framework must not depend on screens; a web
+         module must not reference another module's Areas.X/Models.X. Move the
+         shared bit to Framework or Web.Shared.
+
+  Service throws instead of returning a friendly message
+      -> Wrap in try/catch and return Result.Fail(...). Never let an exception
+         cross the service boundary.
+
+  Package version error
+      -> Version belongs in Directory.Packages.props, not the csproj.
+
+  Tests/Demo out of sync after a service change
+      -> Run the cbs-sync-test-demo agent.
+
+  Lab / Lab.Demo won't build in the solution
+      -> They're intentionally EXCLUDED from the solution (experimental, API
+         drift). Build them standalone only.
+
+
+==============================================================================
+ SECTION I - GOLDEN RULES (memorize these)
+==============================================================================
+  1. Running the app is allowed for verification - STOP it before rebuilding.
+  2. No raw SQL / stored procedures for new master CRUD - use Repository<T>.
+  3. Services return Result/Result<T> - no silent failures, no throwing across
+     the boundary.
+  4. Access is fail-closed - never widen access or bypass the menu/route guard.
+  5. Reusable components stay additive with safe defaults.
+  6. Build TflCbs.Entities FIRST when entities change.
+  7. Never hardcode credentials/connection strings; never log secrets.
+  8. WHEN UNCERTAIN, ASK rather than assume.
+
+
+==============================================================================
+ SECTION J - WORKING MEMORY / CHANGELOG
+==============================================================================
+  - Read CHANGELOG.md at the start of a session to understand current state.
+  - After any significant change, add ONE line to CHANGELOG.md:
+        [YYYY-MM-DD] type: brief description
+    types: feat | fix | docs | refactor | test
+  - Cross-session notes live in .claude/memory/ (index: MEMORY.md).
+
+
+==============================================================================
+ SECTION K - RELATED DOCS
+==============================================================================
+  docs/architecture-overview.md            whole-solution project map + flow
+  docs/guides/building-a-crud-screen.txt     build one screen end to end
+  docs/guides/starting-a-new-module.txt      add a whole new domain module
+  docs/single-sign-on.txt                    cross-host SSO
+  docs/FEATURES-SHOWCASE.txt                 one-line feature inventory
+  docs/architecture/reusable-boundary.md     framework/screen split rationale
+  docs/architecture/modular-monolith.md      business-layer split rationale
+  CLAUDE.md                                  the authoritative project instructions
+==============================================================================
