@@ -56,7 +56,6 @@ ul{padding-left:1.4em}ol{padding-left:1.4em}
 }
 </style></head>
 <body><div class="wrap"><div class="card">
-<div class="docnav"><a href="../index.html">&#8592; All docs</a></div>
 <h1 id="git-with-gitea-from-zero-to-your-first-pull-request">Git with Gitea — from zero to your first pull request</h1>
 <blockquote>
 <p>A complete working reference for git as used on this project, written for someone who has
@@ -105,6 +104,7 @@ the Gitea UI (§6.1), which Windows then stores encrypted on your behalf.</p>
 <li><a href="#0-before-you-start">0. Before you start</a></li>
 <li><a href="#1-the-model-in-five-minutes">1. The model, in five minutes</a></li>
 <li><a href="#2-the-daily-loop">2. The daily loop</a></li>
+<li><a href="#21-commit-message-prefixes">2.1 Commit message prefixes</a></li>
 <li><a href="#3-branching-and-pull-requests">3. Branching and pull requests</a></li>
 <li><a href="#31-make-the-branch-and-push-it">3.1 Make the branch and push it</a></li>
 <li><a href="#32-what-a-pull-request-actually-is">3.2 What a pull request actually is</a></li>
@@ -193,8 +193,13 @@ git config --global --list      # verify
 # show as &quot;changed&quot; when nobody touched them.
 git config --global core.autocrlf true
 
-# `git pull` has two behaviours and picks neither by default; it just errors.
-# &quot;merge&quot; is the beginner-safe one — it never rewrites history.
+# When your commits and the server's have DIVERGED, `git pull` can reconcile them two
+# ways — merge or rebase — and since git 2.34 it refuses to guess: &quot;fatal: Need to
+# specify how to reconcile divergent branches.&quot; (A plain fast-forward pull, where you
+# have no local commits, works fine unconfigured — which is why you can meet this for
+# the first time weeks in.) &quot;merge&quot; is the beginner-safe answer: it adds a merge commit
+# and never rewrites your commits, whereas rebase replays them with new SHAs — painful
+# if you had already pushed them. See §4.5.
 git config --global pull.rebase false
 
 # Name the first branch `main` instead of the older `master`. Gitea defaults to main.
@@ -237,13 +242,95 @@ git push -u origin feature/add-taluka  # 8. send the branch to Gitea
 <p>Then repeat 4–8 as many times as you like. Small commits are better than big ones — they are
 easier to review, and easier to undo when one of them turns out to be wrong.</p>
 <p><strong>Commit messages.</strong> First line ≤ 72 characters, imperative mood ("Add taluka lookup", not
-"Added" or "Adding"), explaining <strong>why</strong> if it isn't obvious. This repo's <code>CHANGELOG.md</code>
-convention (<code>feat/fix/docs/refactor/test</code>) makes a good commit prefix too:</p>
+"Added" or "Adding"), explaining <strong>why</strong> if it isn't obvious. Start it with one of this repo's
+<code>CHANGELOG.md</code> type words (§2.1):</p>
 <pre><code>fix: reference cache ignored Cache:Provider
 
 AddControllersWithViews registers a default MemoryDistributedCache before
 AddCbsFramework runs, so the provider switch short-circuited on every startup.
 </code></pre>
+<hr />
+<h3 id="21-commit-message-prefixes">2.1 Commit message prefixes</h3>
+<p><code>feat</code> / <code>fix</code> / <code>docs</code> / <code>refactor</code> / <code>test</code> are <strong>Conventional Commits</strong> — a convention, not a
+git feature. Git will happily accept any message; this is a habit the team keeps because
+<a href="../../CHANGELOG.html"><code>CHANGELOG.md</code></a> already uses these words across 231 entries. Match them and
+your commit message and your changelog line become the same sentence, written once.</p>
+<table>
+<thead>
+<tr>
+<th>Prefix</th>
+<th>Means</th>
+<th>The question it answers</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>feat</code></td>
+<td>A new capability that did not exist</td>
+<td>Can someone now do something they could not before?</td>
+</tr>
+<tr>
+<td><code>fix</code></td>
+<td>Something was broken; now it is not</td>
+<td>Was there a defect? Would you write "the bug where…"?</td>
+</tr>
+<tr>
+<td><code>docs</code></td>
+<td>Documentation only</td>
+<td>Did any shipping code change? If no → <code>docs</code></td>
+</tr>
+<tr>
+<td><code>refactor</code></td>
+<td>Code changed, behaviour did not</td>
+<td>Would a user notice? If no → <code>refactor</code></td>
+</tr>
+<tr>
+<td><code>test</code></td>
+<td>Tests added or changed</td>
+<td>Only test projects touched</td>
+</tr>
+<tr>
+<td><code>chore</code></td>
+<td>Housekeeping that is none of the above</td>
+<td>Deleting a stale file, bumping a package. The honest bucket — not a way to avoid choosing</td>
+</tr>
+</tbody>
+</table>
+<p>Real examples from this repo's changelog:</p>
+<pre><code>feat:     `_DatePicker` gains a calendar
+fix:      `_DatePicker` with HideDay now renders the hidden ISO value with day = 1
+docs:     corrected an over-broad claim in git-with-gitea.md §0
+refactor: routecutover.json retired — a_Menus.NavigateURL is now the single source of truth
+test:     Playwright E2E suite TflCbs.E2E
+chore:    deleted the stale TflCbs.Host.Main/TflCbs.Host.Main.slnx
+</code></pre>
+<p><strong>The two that get confused:</strong></p>
+<ul>
+<li><strong><code>fix</code> vs <code>refactor</code></strong> — did behaviour change? <code>refactor</code> means the code looks different and does
+  <em>exactly</em> the same thing. The moment output changes it is <code>fix</code> or <code>feat</code>.</li>
+<li><strong><code>feat</code> vs <code>fix</code></strong> — was it ever supposed to work? A screen that never had a calendar getting one
+  is <code>feat</code>. A calendar that renders the wrong date is <code>fix</code>.</li>
+</ul>
+<p><strong>The optional part in brackets is a scope</strong> — which area of the system:</p>
+<pre><code>feat(security):         ...
+fix(docker-multi):      ...
+refactor(core-modules): ...
+</code></pre>
+<p>About a fifth of this repo's entries carry one, always where the area is not obvious from the
+sentence. Add a scope when it helps someone scanning; skip it when the summary already says where.
+Do not force one onto every commit.</p>
+<p><strong>Why bother</strong>, in the order it will actually matter to you:</p>
+<ol>
+<li><strong>It is greppable.</strong> <code>git log --oneline --grep "^fix"</code> gives you every bug fix; release notes
+   write themselves.</li>
+<li><strong>It forces a decision.</strong> If you cannot tell whether your commit is <code>feat</code> or <code>refactor</code>, it is
+   usually <em>both</em> — which means it should have been two commits. The prefix catches unfocused work
+   before a reviewer has to.</li>
+<li><strong>Commits and changelog stop drifting</strong>, because you write the sentence once.</li>
+</ol>
+<p>Standard types this repo does not use — <code>perf</code>, <code>style</code>, <code>build</code>, <code>ci</code> — and the breaking-change
+markers <code>feat!:</code> / a <code>BREAKING CHANGE:</code> footer are all noise until you need them. Six words is
+plenty.</p>
 <hr />
 <h2 id="3-branching-and-pull-requests">3. Branching and pull requests</h2>
 <p><strong>Never commit directly to <code>main</code>.</strong> Branch, push, open a PR, get it reviewed, merge. That is the
@@ -753,9 +840,9 @@ bites people.</p>
 </tr>
 <tr>
 <td><code>git pull</code></td>
-<td>Fetch <strong>and</strong> merge into your branch</td>
+<td>Fetch <strong>and</strong> integrate into your branch</td>
 <td><code>git pull</code></td>
-<td>Equals <code>fetch</code> + <code>merge</code>. Can produce conflicts; that is normal.</td>
+<td>Equals <code>fetch</code> + <code>merge</code> — or <code>fetch</code> + <code>rebase</code> if <code>pull.rebase</code> says so (§0). Merge adds a merge commit and leaves your commits alone; rebase replays them with new SHAs, so never rebase commits you have already pushed. Conflicts here are normal.</td>
 </tr>
 <tr>
 <td><code>git push</code></td>

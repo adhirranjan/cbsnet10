@@ -34,6 +34,7 @@ the Gitea UI (§6.1), which Windows then stores encrypted on your behalf.
 - [0. Before you start](#0-before-you-start)
 - [1. The model, in five minutes](#1-the-model-in-five-minutes)
 - [2. The daily loop](#2-the-daily-loop)
+  - [2.1 Commit message prefixes](#21-commit-message-prefixes)
 - [3. Branching and pull requests](#3-branching-and-pull-requests)
   - [3.1 Make the branch and push it](#31-make-the-branch-and-push-it)
   - [3.2 What a pull request actually is](#32-what-a-pull-request-actually-is)
@@ -132,8 +133,13 @@ Three settings that will save you real pain, set them now:
 # show as "changed" when nobody touched them.
 git config --global core.autocrlf true
 
-# `git pull` has two behaviours and picks neither by default; it just errors.
-# "merge" is the beginner-safe one — it never rewrites history.
+# When your commits and the server's have DIVERGED, `git pull` can reconcile them two
+# ways — merge or rebase — and since git 2.34 it refuses to guess: "fatal: Need to
+# specify how to reconcile divergent branches." (A plain fast-forward pull, where you
+# have no local commits, works fine unconfigured — which is why you can meet this for
+# the first time weeks in.) "merge" is the beginner-safe answer: it adds a merge commit
+# and never rewrites your commits, whereas rebase replays them with new SHAs — painful
+# if you had already pushed them. See §4.5.
 git config --global pull.rebase false
 
 # Name the first branch `main` instead of the older `master`. Gitea defaults to main.
@@ -189,8 +195,8 @@ Then repeat 4–8 as many times as you like. Small commits are better than big o
 easier to review, and easier to undo when one of them turns out to be wrong.
 
 **Commit messages.** First line ≤ 72 characters, imperative mood ("Add taluka lookup", not
-"Added" or "Adding"), explaining **why** if it isn't obvious. This repo's `CHANGELOG.md`
-convention (`feat/fix/docs/refactor/test`) makes a good commit prefix too:
+"Added" or "Adding"), explaining **why** if it isn't obvious. Start it with one of this repo's
+`CHANGELOG.md` type words (§2.1):
 
 ```
 fix: reference cache ignored Cache:Provider
@@ -198,6 +204,68 @@ fix: reference cache ignored Cache:Provider
 AddControllersWithViews registers a default MemoryDistributedCache before
 AddCbsFramework runs, so the provider switch short-circuited on every startup.
 ```
+
+---
+
+### 2.1 Commit message prefixes
+
+`feat` / `fix` / `docs` / `refactor` / `test` are **Conventional Commits** — a convention, not a
+git feature. Git will happily accept any message; this is a habit the team keeps because
+[`CHANGELOG.md`](../../CHANGELOG.md) already uses these words across 231 entries. Match them and
+your commit message and your changelog line become the same sentence, written once.
+
+| Prefix | Means | The question it answers |
+|---|---|---|
+| `feat` | A new capability that did not exist | Can someone now do something they could not before? |
+| `fix` | Something was broken; now it is not | Was there a defect? Would you write "the bug where…"? |
+| `docs` | Documentation only | Did any shipping code change? If no → `docs` |
+| `refactor` | Code changed, behaviour did not | Would a user notice? If no → `refactor` |
+| `test` | Tests added or changed | Only test projects touched |
+| `chore` | Housekeeping that is none of the above | Deleting a stale file, bumping a package. The honest bucket — not a way to avoid choosing |
+
+Real examples from this repo's changelog:
+
+```
+feat:     `_DatePicker` gains a calendar
+fix:      `_DatePicker` with HideDay now renders the hidden ISO value with day = 1
+docs:     corrected an over-broad claim in git-with-gitea.md §0
+refactor: routecutover.json retired — a_Menus.NavigateURL is now the single source of truth
+test:     Playwright E2E suite TflCbs.E2E
+chore:    deleted the stale TflCbs.Host.Main/TflCbs.Host.Main.slnx
+```
+
+**The two that get confused:**
+
+- **`fix` vs `refactor`** — did behaviour change? `refactor` means the code looks different and does
+  *exactly* the same thing. The moment output changes it is `fix` or `feat`.
+- **`feat` vs `fix`** — was it ever supposed to work? A screen that never had a calendar getting one
+  is `feat`. A calendar that renders the wrong date is `fix`.
+
+**The optional part in brackets is a scope** — which area of the system:
+
+```
+feat(security):         ...
+fix(docker-multi):      ...
+refactor(core-modules): ...
+```
+
+About a fifth of this repo's entries carry one, always where the area is not obvious from the
+sentence. Add a scope when it helps someone scanning; skip it when the summary already says where.
+Do not force one onto every commit.
+
+**Why bother**, in the order it will actually matter to you:
+
+1. **It is greppable.** `git log --oneline --grep "^fix"` gives you every bug fix; release notes
+   write themselves.
+2. **It forces a decision.** If you cannot tell whether your commit is `feat` or `refactor`, it is
+   usually *both* — which means it should have been two commits. The prefix catches unfocused work
+   before a reviewer has to.
+3. **Commits and changelog stop drifting**, because you write the sentence once.
+
+Standard types this repo does not use — `perf`, `style`, `build`, `ci` — and the breaking-change
+markers `feat!:` / a `BREAKING CHANGE:` footer are all noise until you need them. Six words is
+plenty.
+
 
 ---
 
@@ -455,7 +523,7 @@ bites people.
 |---|---|---|---|
 | `git fetch` | Download new commits, change nothing locally | `git fetch` | The safe way to look before you leap. |
 | `git fetch --prune` | Fetch, and drop refs for branches deleted on the server | `git fetch --prune` | Run occasionally or `git branch -a` fills with ghosts. |
-| `git pull` | Fetch **and** merge into your branch | `git pull` | Equals `fetch` + `merge`. Can produce conflicts; that is normal. |
+| `git pull` | Fetch **and** integrate into your branch | `git pull` | Equals `fetch` + `merge` — or `fetch` + `rebase` if `pull.rebase` says so (§0). Merge adds a merge commit and leaves your commits alone; rebase replays them with new SHAs, so never rebase commits you have already pushed. Conflicts here are normal. |
 | `git push` | Send your commits to Gitea | `git push` | Rejected? Someone else pushed — pull first, then push again. |
 | `git push -u origin <branch>` | First push of a new branch | `git push -u origin feature/x` | `-u` links them, so later `git push`/`git pull` need no arguments. |
 | `git push origin --delete <branch>` | Delete a branch on the server | `git push origin --delete feature/x` | Gitea can do this for you when a PR merges. |

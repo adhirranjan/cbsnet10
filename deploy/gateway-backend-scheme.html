@@ -56,7 +56,6 @@ ul{padding-left:1.4em}ol{padding-left:1.4em}
 }
 </style></head>
 <body><div class="wrap"><div class="card">
-<div class="docnav"><a href="../index.html">&#8592; All docs</a></div>
 <h1 id="gateway-backend-scheme-why-the-gateway-calls-its-backends-over-https">Gateway → Backend Scheme: why the gateway calls its backends over <strong>HTTPS</strong></h1>
 <p>When you run the multi-host topology (gateway + default host + thin hosts), one config choice trips people up: <strong>over what scheme does the YARP gateway reach its backend hosts — HTTP or HTTPS?</strong> The intuitive answer ("they're on the same box, just use HTTP loopback — simpler, no certs") is <strong>wrong for this app</strong>, and the failure is sneaky: the site works in a browser but the gateway reports the backends as down.</p>
 <p>This doc explains exactly why, and documents every way to make HTTP work if you ever need it. <strong>Short answer: use HTTPS backends.</strong></p>
