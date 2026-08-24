@@ -26,7 +26,10 @@ git diff --cached --quiet && (
   git commit -m "%MSG%" || goto :fail
 )
 
-git push -u origin HEAD || goto :fail
+REM --force-with-lease: this docs folder is the source of truth; it overwrites the
+REM old "Add files via upload" history on GitHub, but still aborts if someone else
+REM pushed a commit we have not fetched.
+git push -u --force-with-lease origin HEAD || goto :fail
 echo Done.
 exit /b 0
 
