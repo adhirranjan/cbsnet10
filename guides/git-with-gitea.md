@@ -95,6 +95,10 @@ the Gitea UI (§6.1), which Windows then stores encrypted on your behalf.
   - [Lab 11 — Tags and a Gitea release](#lab-11-tags-and-a-gitea-release)
   - [Lab 12 — Two more worth knowing](#lab-12-two-more-worth-knowing)
   - [Lab 13 — Do it all again, in Visual Studio 2026](#lab-13-do-it-all-again-in-visual-studio-2026)
+  - [Lab 14 — Resolve a conflict in the Merge Editor](#lab-14-resolve-a-conflict-in-the-merge-editor)
+  - [Lab 15 — The two commit buttons, and staging individual lines](#lab-15-the-two-commit-buttons-and-staging-individual-lines)
+  - [Lab 16 — Undo from the history graph, and the one thing the UI cannot do](#lab-16-undo-from-the-history-graph-and-the-one-thing-the-ui-cannot-do)
+  - [Lab 17 — Gitea housekeeping from Visual Studio](#lab-17-gitea-housekeeping-from-visual-studio)
 - [10. Make git comfortable](#10-make-git-comfortable)
   - [Aliases — worth 30 seconds, saves them back daily](#aliases-worth-30-seconds-saves-them-back-daily)
   - [Other settings worth having](#other-settings-worth-having)
@@ -1102,18 +1106,22 @@ If you ever want a clean start: delete the whole `GitSandbox` folder, re-run
 > **How to use these.** Type the commands — do not paste. The muscle memory is the point.
 > After every single command, run `git status` and read it. Each lab ends with a **Verify**
 > step; if its output does not match, stop and re-read the lab before continuing.
+>
+> **Labs 0–12 are command line**, in `GitSandbox\`. **Labs 13–17 are Visual Studio 2026**, in a
+> second clone (`GitSandbox-vs\`) that Lab 13 makes for you. Do them in order: the UI labs
+> assume you can already name what each button is about to run.
 
 ---
 
 ### Lab 0 — Identity and an empty repo on Gitea
 
 ```bash
-git config --global user.name  "Adhir Ranjan"              # stamped on every commit you make
-git config --global user.email "adhirranjan@softtrust.com"  # must match your Gitea account, or Gitea cannot link commits to you
-git config --global core.autocrlf true                      # check out CRLF on Windows, store LF in the repo
-git config --global pull.rebase false                       # on a diverged pull, merge (safe) rather than rebase (rewrites)
-git config --global init.defaultBranch main                 # new repos start on `main`, not the older `master`
-git config --global --list                                  # print everything you just set, to confirm it took
+git config --global user.name  "Adhir Ranjan"              # set your name for every repo on this machine — stamped on every commit you make
+git config --global user.email "adhirranjan@softtrust.com"  # set your commit email — must match your Gitea account, or Gitea cannot link commits to you
+git config --global core.autocrlf true                      # set a line-ending rule: check out CRLF on Windows, store LF in the repo
+git config --global pull.rebase false                       # set what a diverged pull does: merge (safe) rather than rebase (rewrites your commits)
+git config --global init.defaultBranch main                 # set the branch name new repos start on: `main`, not the older `master`
+git config --global --list                                  # print every global setting — confirm the five above took
 ```
 
 Now in the Gitea web UI: **+** (top right) → **New Repository**.
@@ -1130,19 +1138,19 @@ Now in the Gitea web UI: **+** (top right) → **New Repository**.
 ### Lab 1 — Your first repository and commit
 
 ```bash
-cd E:/Adhir/AdWork/GitSandbox   # move into the sandbox — every command below runs here
+cd E:/Adhir/AdWork/GitSandbox   # change directory into the sandbox — every command below runs here
 
-git init                    # create the .git folder: this folder is now a repository
-git status                  # the files are listed as "untracked" — git can see them but is not watching them
+git init                    # create the .git folder — this folder is now a repository
+git status                  # show the state of every file — all "untracked": git can see them but is not watching them
 
-git add .gitignore          # stage ONE file: put it on the shortlist for the next commit
-git status                  # .gitignore moved to "Changes to be committed"; the rest did not move
+git add .gitignore          # stage ONE file — put it on the shortlist for the next commit
+git status                  # show the state again — .gitignore moved to "Changes to be committed"; the rest did not
 
 git add .                   # stage everything else in this folder
-git status                  # all staged — and note bin/ and obj/ are absent: .gitignore works
+git status                  # show the state — all staged, and note bin/ and obj/ are absent: .gitignore works
 
-git commit -m "Initial commit: GitPractice console app"   # snapshot the staged files, with a message
-git log --oneline           # one line per commit — you should see exactly one
+git commit -m "Initial commit: GitPractice console app"   # record the staged files as a commit, with a message
+git log --oneline           # list the commits, one line each — you should see exactly one
 ```
 
 **Verify:** `git status` says *"nothing to commit, working tree clean"* and `git log --oneline`
@@ -1155,12 +1163,12 @@ shows exactly one commit.
 ### Lab 2 — Connect to Gitea and push
 
 ```bash
-git config --global credential.helper manager   # let Windows Credential Manager store the token for you
+git config --global credential.helper manager   # set where git stores passwords: Windows Credential Manager, encrypted per-user
 
-git remote add origin http://192.168.0.22:3000/Adhir/git-practice.git   # nickname that URL "origin"
-git remote -v               # two lines (fetch + push) — the same URL twice is normal, not a duplicate
+git remote add origin http://192.168.0.22:3000/Adhir/git-practice.git   # register that URL as a remote named "origin"
+git remote -v               # list the configured remotes and their URLs — two lines (fetch + push) is normal, not a duplicate
 
-git push -u origin main     # upload branch `main` to origin, and link them (-u) so later pushes need no arguments
+git push -u origin main     # upload branch `main` to origin and set it as upstream (-u), so later pushes need no arguments
                             # you will be prompted: username = Adhir, password = PASTE YOUR TOKEN (§6.1)
 ```
 
@@ -1178,18 +1186,18 @@ Prove that `add` and `commit` are separate. Make **two unrelated** edits, commit
 # Edit 1: in README.md, add a line "Practising git."
 # Edit 2: in Ledger.cs, change the Version constant from "1.0" to "1.1"
 
-git status                  # two files listed as modified, neither of them staged
-git diff                    # the actual changed lines, in BOTH files
+git status                  # show the state — two files modified, neither of them staged
+git diff                    # show UNSTAGED changes line by line — both files here
 
 git add README.md           # stage only the README edit
-git diff                    # now shows ONLY Ledger.cs — the README left the unstaged view...
-git diff --staged           # ...and turns up here instead. Two questions, two commands.
+git diff                    # show unstaged changes — only Ledger.cs now; the README left this view...
+git diff --staged           # show STAGED changes, i.e. what the next commit will contain — ...and turns up here instead
 
-git commit -m "docs: note that this repo is for practice"   # commits the STAGED file only
-git status                  # Ledger.cs is still modified — never staged, so it stayed behind
+git commit -m "docs: note that this repo is for practice"   # record the staged snapshot — the STAGED file only
+git status                  # show the state — Ledger.cs still modified: never staged, so it stayed behind
 
-git commit -am "feat: bump ledger version to 1.1"   # -a stages every TRACKED file, then commits
-git log --oneline           # three commits now, one file in each
+git commit -am "feat: bump ledger version to 1.1"   # stage every TRACKED file and commit, in one step (-a)
+git log --oneline           # list the commits — three now, one file in each
 ```
 
 **Verify:** three commits, and each one contains exactly one file.
@@ -1199,14 +1207,14 @@ git log --oneline           # three commits now, one file in each
 ### Lab 4 — A branch and a real pull request
 
 ```bash
-git switch -c feature/interest-rate   # create a branch AND move onto it (-c = create)
+git switch -c feature/interest-rate   # create a branch and move onto it (-c = create)
 
 # In Ledger.cs, add this method inside the class:
 #     public decimal Interest(decimal amount) => amount * 0.04m;
 
 git add Ledger.cs                     # stage the edit
-git commit -m "feat: add simple interest calculation"   # snapshot it on THIS branch — main is untouched
-git push -u origin feature/interest-rate   # publish the branch to Gitea and link it (-u). main still unchanged
+git commit -m "feat: add simple interest calculation"   # record it as a commit on THIS branch — main is untouched
+git push -u origin feature/interest-rate   # upload the branch to Gitea and set upstream (-u). main is still unchanged
 ```
 
 In Gitea: the repo page shows a **Compare & Pull Request** banner → click it. Confirm **base:
@@ -1218,19 +1226,19 @@ line, to feel it. Then respond to your own review:
 
 ```bash
 # Change 0.04m to 0.045m in Ledger.cs
-git commit -am "fix: correct rate to 4.5%"   # stage the tracked edit and commit it, in one step
-git push                    # no -u this time — the branch is already linked to origin
+git commit -am "fix: correct rate to 4.5%"   # stage every tracked edit and commit, in one step
+git push                    # upload the new commit — no -u this time, the branch is already linked
 ```
 
 Refresh the PR: the new commit is in it automatically. Now **Merge Pull Request** (try **Squash
 and merge** to see two commits become one), then clean up:
 
 ```bash
-git switch main                       # leave the feature branch
-git pull                              # download the merge Gitea just made; main now contains your work
+git switch main                       # move onto main, leaving the feature branch
+git pull                              # fetch from origin and merge into main — the merge Gitea just made arrives here
 git branch -d feature/interest-rate   # delete the local branch (-d refuses if it were still unmerged)
-git fetch --prune                     # forget the remote branch too — Gitea deleted it when it merged
-git log --oneline --graph --all       # see the shape of what just happened
+git fetch --prune                     # fetch, and drop remote-tracking refs for branches deleted on the server
+git log --oneline --graph --all       # draw the commit graph across all branches — the shape of what just happened
 ```
 
 **Verify:** `main` contains the interest method, and `git branch -a` no longer lists the feature
@@ -1243,36 +1251,36 @@ branch anywhere.
 The single most feared part of git. Do it deliberately, once, and it stops being scary.
 
 ```bash
-git switch -c feature/v2    # branch #1, created off main
+git switch -c feature/v2    # create branch #1 off main and move onto it
 # Ledger.cs: set Version = "2.0"
-git commit -am "feat: version 2.0"    # that change now exists only on feature/v2
+git commit -am "feat: version 2.0"    # stage tracked edits and commit — this change now exists only on feature/v2
 
-git switch main             # back to main, where Ledger.cs still reads "1.0"
-git switch -c hotfix/v11    # branch #2, also created off main — it has never seen "2.0"
+git switch main             # move back onto main, where Ledger.cs still reads "1.0"
+git switch -c hotfix/v11    # create branch #2, also off main — it has never seen "2.0"
 # Ledger.cs: set the SAME line to "1.1.1"
-git commit -am "fix: version 1.1.1"   # a second, different change to the same line
+git commit -am "fix: version 1.1.1"   # stage and commit — a second, different change to the same line
 
-git switch main             # main still has neither change
-git merge hotfix/v11        # clean: main had no commits of its own, so git just slides the pointer (fast-forward)
-git merge feature/v2        # CONFLICT: both branches changed the same line, and git will not guess
+git switch main             # move onto main, which still has neither change
+git merge hotfix/v11        # merge that branch into main — clean: main had no commits of its own, so the pointer just slides (fast-forward)
+git merge feature/v2        # merge the other branch in — CONFLICT: both changed the same line, and git will not guess
 ```
 
 Open `Ledger.cs`. You will see the `<<<<<<<` / `=======` / `>>>>>>>` markers from §4.7.
 
 ```bash
-git status                            # names the conflicted file and spells out what to do next
-git diff --name-only --diff-filter=U  # list ONLY the unmerged (= conflicted) files, nothing else
+git status                            # show the state — names the conflicted file and spells out what to do next
+git diff --name-only --diff-filter=U  # list changed file NAMES, filtered to unmerged (= conflicted) ones only
 ```
 
 Edit the file: **delete all three marker lines**, keep `"2.0"`. Then:
 
 ```bash
-git add Ledger.cs           # staging a conflicted file is how you say "I have resolved this one"
-git status                  # "All conflicts fixed but you are still merging"
-git commit                  # completes the merge — git pre-fills the message, so just save and close
-dotnet run                  # a conflict resolved so it COMPILES can still be wrong. Read the output
-git log --oneline --graph --all   # the graph now shows the two branches joining at a merge commit
-git push                    # send the merge to Gitea
+git add Ledger.cs           # stage the file — staging a conflicted file is how you say "I have resolved this one"
+git status                  # show the state — "All conflicts fixed but you are still merging"
+git commit                  # record the merge commit, opening an editor — git pre-fills the message, so save and close
+dotnet run                  # build and run the app — a conflict resolved so it COMPILES can still be wrong
+git log --oneline --graph --all   # draw the graph — the two branches now join at a merge commit
+git push                    # upload the merge to Gitea
 ```
 
 **Verify:** `dotnet run` prints `ledger v2.0`, and the graph shows the two branches joining.
@@ -1288,29 +1296,29 @@ Each undo suits a different situation. Do all four.
 
 ```bash
 # (a) Wrong message
-git commit --allow-empty -m "Fxi typo in ledgre"   # --allow-empty = a commit with no file changes, for practice
-git commit --amend -m "fix: correct typo in ledger output"   # REPLACES that commit with a corrected one
-git log --oneline -1        # the message is fixed, and there is still only one commit
+git commit --allow-empty -m "Fxi typo in ledgre"   # make a commit with no file changes (--allow-empty), purely for practice
+git commit --amend -m "fix: correct typo in ledger output"   # replace the last commit with a new one carrying this message
+git log --oneline -1        # list the last commit — message fixed, and there is still only one commit
 
 # (b) Forgot a file
 # Add a line to README.md
-git commit -am "docs: describe the labs"   # committed — but the change was incomplete
+git commit -am "docs: describe the labs"   # stage tracked files and commit — but this change was incomplete
 # ...now edit Account.cs too — it belonged in that commit
 git add Account.cs          # stage the file you forgot
-git commit --amend --no-edit   # fold it into the previous commit, keeping its message (--no-edit)
+git commit --amend --no-edit   # replace the last commit, folding this in and reusing its message (--no-edit)
 
 # (c) Committed too early
 # Edit any file
-git commit -am "wip"        # a commit you regret the moment you press Enter
+git commit -am "wip"        # stage and commit — a commit you regret the moment you press Enter
 git reset --soft HEAD~1     # move the branch back one commit; --soft leaves the changes STAGED
-git status                  # your work is still there, staged and ready
-git commit -m "feat: a properly described change"   # commit again, this time deliberately
+git status                  # show the state — your work is still there, staged and ready
+git commit -m "feat: a properly described change"   # record it again, this time deliberately
 
 # (d) Undo something already pushed — the safe way
-git push                    # it is on Gitea now, so (a)-(c) are off the table: they rewrite commits
-git revert HEAD             # do not delete it — add a NEW commit that undoes it
-git log --oneline -3        # BOTH commits are visible: the mistake and its reversal. History stays honest
-git push                    # everyone gets the fix without their history changing under them
+git push                    # upload it — now it is on Gitea, (a)-(c) are off the table: they rewrite commits
+git revert HEAD             # create a NEW commit that undoes the last one — nothing is deleted
+git log --oneline -3        # list the last three commits — mistake and reversal both visible. History stays honest
+git push                    # upload the revert — everyone gets the fix without their history changing under them
 ```
 
 **Verify:** you can state, in your own words, why (d) must be used instead of (a)–(c) once a
@@ -1324,30 +1332,30 @@ contains the originals.)
 This is the lab that makes you unafraid of git.
 
 ```bash
-git log --oneline -3        # note what the last three commits are, so you can tell they came back
-echo "// something valuable" >> Ledger.cs   # append a line to the file (>> appends, > would overwrite)
-git commit -am "feat: valuable work I am about to destroy"   # commit it, so git has definitely seen it
-git log --oneline -1        # note this SHA — this is the commit you are about to "lose"
+git log --oneline -3        # list the last three commits — note them, so you can tell they came back
+echo "// something valuable" >> Ledger.cs   # append a line to the file (>> appends; a single > would overwrite it)
+git commit -am "feat: valuable work I am about to destroy"   # stage and commit, so git has definitely seen this work
+git log --oneline -1        # list the last commit — note this SHA: it is what you are about to "lose"
 
-git reset --hard HEAD~2     # move the branch back 2 commits AND wipe the files to match. Destructive
-git log --oneline -3        # your two commits are gone from the branch. Really gone?
+git reset --hard HEAD~2     # move the branch back 2 commits AND wipe the working files to match. Destructive
+git log --oneline -3        # list the last three commits — your two are gone from the branch. Really gone?
 
-git reflog                  # no: every position HEAD has ever held is recorded here for ~90 days
-git reset --hard HEAD@{1}   # HEAD@{1} = "where HEAD was one move ago", i.e. just before the reset
-git log --oneline -3        # everything is back, same SHAs
+git reflog                  # list every position HEAD has held — no: it is all still recorded, for ~90 days
+git reset --hard HEAD@{1}   # move the branch to where HEAD was one step ago, i.e. immediately before the reset
+git log --oneline -3        # list the commits — everything is back, with the same SHAs
 ```
 
 Now the same for a deleted branch:
 
 ```bash
-git switch -c spike/throwaway   # a branch you are about to abandon
-git commit --allow-empty -m "spike: work I will lose"   # one commit on it
-git switch main                 # step off the branch (you cannot delete the branch you are on)
-git branch -D spike/throwaway   # -D force-deletes even though it was never merged. The commit is now orphaned
+git switch -c spike/throwaway   # create a branch you are about to abandon, and move onto it
+git commit --allow-empty -m "spike: work I will lose"   # make one empty commit on it
+git switch main                 # move onto main — you cannot delete the branch you are standing on
+git branch -D spike/throwaway   # force-delete the branch (-D) even though it was never merged. That commit is now orphaned
 
-git reflog                      # find the line for "spike: work I will lose" and copy its SHA
-git switch -c spike/recovered <that-sha>   # start a NEW branch at that commit — the work is back
-git log --oneline -1            # recovered: a branch is only a pointer, so re-pointing one restores it
+git reflog                      # list every position HEAD has held — find "spike: work I will lose" and copy its SHA
+git switch -c spike/recovered <that-sha>   # create a new branch AT that commit and move onto it — the work is back
+git log --oneline -1            # list the last commit — recovered: a branch is only a pointer, so re-pointing one restores it
 ```
 
 **Verify:** you have recovered both. **Remember for life:** anything *committed* is recoverable
@@ -1358,22 +1366,22 @@ for ~90 days via `git reflog`. Anything never committed is not.
 ### Lab 8 — Stash: "I need to switch branches right now"
 
 ```bash
-git switch main             # start on main
+git switch main             # move onto main
 # Start editing Program.cs — leave it half-finished, do not commit
 
-git switch -c fix/urgent    # git either refuses, or drags your half-finished mess onto the new branch
-git switch main             # ...neither is what you want, so come back and do it properly
+git switch -c fix/urgent    # try to create a branch — git either refuses, or drags your half-finished mess onto it
+git switch main             # move back onto main — neither outcome is what you want, so do it properly
 
 git stash                   # park every uncommitted change on a shelf; the working tree goes clean
-git status                  # "nothing to commit" — your edit is not lost, it is elsewhere
-git stash list              # stash@{0} — there it is
+git status                  # show the state — "nothing to commit": your edit is not lost, it is elsewhere
+git stash list              # list what is on the shelf — stash@{0}, there it is
 
-git switch -c fix/urgent    # NOW branch, from a clean tree
-git commit --allow-empty -m "fix: the urgent thing"   # do the urgent job
-git switch main             # back to where you were
+git switch -c fix/urgent    # create the branch and move onto it — NOW, from a clean tree
+git commit --allow-empty -m "fix: the urgent thing"   # make an empty commit — the urgent job
+git switch main             # move back onto main, where you were
 
-git stash pop               # take the work off the shelf (pop = apply AND remove it from the stash)
-git status                  # your half-finished edit is back, exactly as you left it
+git stash pop               # re-apply the newest stash and drop it from the shelf (pop = apply AND remove)
+git status                  # show the state — your half-finished edit is back, exactly as you left it
 ```
 
 **Verify:** your half-finished edit is back and `git stash list` is empty.
@@ -1385,32 +1393,32 @@ git status                  # your half-finished edit is back, exactly as you le
 Simulate the thing that actually causes trouble: two people editing at once.
 
 ```bash
-cd E:/Adhir/AdWork/GitSandbox   # your normal copy
-git push                        # make sure Gitea has everything, so both copies start level
+cd E:/Adhir/AdWork/GitSandbox   # change directory to your normal copy
+git push                        # upload everything, so both copies start level with Gitea
 
-cd E:/Adhir/AdWork              # step outside the repo before cloning
-git clone http://192.168.0.22:3000/Adhir/git-practice.git practice-colleague   # a SECOND, independent copy
-cd practice-colleague           # from here on, pretend you are somebody else
+cd E:/Adhir/AdWork              # change directory out of the repo before cloning
+git clone http://192.168.0.22:3000/Adhir/git-practice.git practice-colleague   # copy the whole repo from Gitea into a new folder — a SECOND, independent copy
+cd practice-colleague           # change into it — from here on, pretend you are somebody else
 
 # "Colleague" edits Program.cs and pushes
-git commit -am "feat: colleague changes the greeting"   # commit, in the colleague's copy
-git push                        # Gitea's main has now moved forward
+git commit -am "feat: colleague changes the greeting"   # stage tracked files and commit, in the colleague's copy
+git push                        # upload it — Gitea's main has now moved forward
 
 # Back in YOUR copy — which knows nothing about that
-cd ../GitSandbox                # your copy still believes main is where it was
+cd ../GitSandbox                # change back to your copy, which still believes main is where it was
 # Edit README.md
-git commit -am "docs: my own change"   # commit locally — always fine, no server involved
-git push                        # REJECTED: the server holds a commit you do not have
+git commit -am "docs: my own change"   # stage and commit locally — always fine, no server involved
+git push                        # try to upload — REJECTED: the server holds a commit you do not have
 ```
 
 Read the rejection message; it is telling you exactly what happened.
 
 ```bash
-git fetch                            # download their commit WITHOUT touching your branch — always safe
-git log --oneline HEAD..origin/main  # list what the server has that you do not (the `a..b` range syntax)
-git pull                             # fetch + merge; you edited different files, so no conflict
-git log --oneline --graph -5         # a merge commit now joins the two lines of work
-git push                             # accepted: your branch now contains theirs, so it is a fast-forward
+git fetch                            # download from origin WITHOUT touching your branch — always safe
+git log --oneline HEAD..origin/main  # list commits on origin/main that are not on HEAD (the `a..b` range syntax)
+git pull                             # fetch and merge into your branch — you edited different files, so no conflict
+git log --oneline --graph -5         # draw the graph — a merge commit now joins the two lines of work
+git push                             # upload again — accepted: your branch now contains theirs, so it is a fast-forward
 ```
 
 **Verify:** both changes are on Gitea. Now repeat the whole lab but have **both** sides edit the
@@ -1424,20 +1432,20 @@ Delete `practice-colleague` when done.
 ### Lab 10 — .gitignore, and the mistake it does not fix
 
 ```bash
-cd E:/Adhir/AdWork/GitSandbox   # back in your own copy
-dotnet build                 # produces bin/ and obj/ — hundreds of files
-git status                   # they do not appear at all: .gitignore is doing its job
+cd E:/Adhir/AdWork/GitSandbox   # change directory back to your own copy
+dotnet build                 # compile the project — produces bin/ and obj/, hundreds of files
+git status                   # show the state — they do not appear at all: .gitignore is doing its job
 
 # Now break it deliberately:
-git add -f bin/              # -f = force, overriding .gitignore. Never do this for real
-git commit -m "oops: committed build output"   # bin/ is now part of the history, permanently
-git status                   # clean — but bin/ is TRACKED now, and .gitignore no longer applies to it
+git add -f bin/              # stage bin/ even though .gitignore excludes it (-f = force). Never do this for real
+git commit -m "oops: committed build output"   # record it — bin/ is now part of the history, permanently
+git status                   # show the state — clean, but bin/ is TRACKED now, so .gitignore no longer applies to it
 # Rebuild and watch the noise:
-dotnet build && git status   # every rebuilt artefact shows up as a modification
+dotnet build && git status   # rebuild, then show the state — every rebuilt artefact counts as a modification
 
-git rm -r --cached bin/      # untrack it (--cached = remove from git only, leave the files on disk)
-git commit -m "Stop tracking build output"   # from this commit on, .gitignore governs bin/ again
-dotnet build && git status   # quiet again
+git rm -r --cached bin/      # stop tracking bin/ (--cached = remove from git only, leave the files on disk)
+git commit -m "Stop tracking build output"   # record the untracking — from this commit on, .gitignore governs bin/ again
+dotnet build && git status   # rebuild and show the state — quiet again
 ```
 
 **Verify:** `bin/` still exists on disk but `git status` ignores it.
@@ -1450,12 +1458,12 @@ how `appsettings.Development.json` (your DB password) ends up in a repo forever.
 ### Lab 11 — Tags and a Gitea release
 
 ```bash
-git switch main                  # a tag marks one commit, so stand on the right one first
-git pull                         # make sure main is current before tagging it
-git tag -a v1.0 -m "First practice release"   # -a = annotated: the tag carries an author, date and message
+git switch main                  # move onto main — a tag marks one commit, so stand on the right one first
+git pull                         # fetch and merge, so main is current before you tag it
+git tag -a v1.0 -m "First practice release"   # create an annotated tag on this commit (-a = carries an author, date and message)
 git tag                          # list every tag in this repo
-git show v1.0                    # the tag's message, plus the commit it points at
-git push origin v1.0             # a plain `git push` does NOT send tags — push them by name
+git show v1.0                    # show that object in full — the tag's message, plus the commit it points at
+git push origin v1.0             # upload the tag by name — a plain `git push` does NOT send tags
 ```
 
 In Gitea: **Releases** → **New Release** → pick tag `v1.0`. That is all a release is — a tag
@@ -1469,19 +1477,19 @@ plus a description.
 
 ```bash
 # Cherry-pick: take ONE commit from another branch
-git switch -c experiment                # a branch that will hold two commits, only one of them wanted
-git commit --allow-empty -m "feat: something worth keeping"     # the one you want
-git commit --allow-empty -m "junk: something not worth keeping" # the one you do not
-git switch main                         # back to main, which has neither
-git cherry-pick <sha-of-the-first>      # copy just that ONE commit onto main, as a new commit
+git switch -c experiment                # create a branch that will hold two commits, only one of them wanted
+git commit --allow-empty -m "feat: something worth keeping"     # make an empty commit — the one you want
+git commit --allow-empty -m "junk: something not worth keeping" # make a second empty commit — the one you do not
+git switch main                         # move onto main, which has neither
+git cherry-pick <sha-of-the-first>      # copy that ONE commit onto the current branch, as a new commit
 
 # Bisect: find which commit broke something, across a long history
-git bisect start                        # begin a binary search through the history
-git bisect bad                          # the commit you are on now is broken
-git bisect good v1.0                    # v1.0 was fine — so the culprit is somewhere between the two
+git bisect start                        # begin a binary search through the history for the commit that broke something
+git bisect bad                          # mark the commit you are on as broken
+git bisect good v1.0                    # mark v1.0 as working — so the culprit is somewhere between the two
 #   git checks out a midpoint; test it; then `git bisect good` or `git bisect bad`
 #   repeat — each answer halves the range, so ~1000 commits take about 10 tests
-git bisect reset                        # ALWAYS finish with this: it returns you to where you started
+git bisect reset                        # end the search and return to where you started. ALWAYS finish with this
 ```
 
 **Verify:** after the cherry-pick, `git log --oneline` on `main` shows the kept commit and not
@@ -1491,8 +1499,9 @@ the junk one.
 
 ### Lab 13 — Do it all again, in Visual Studio 2026
 
-Only now, after twelve labs at the command line. The point is to watch the UI perform commands you
-can already name.
+**Labs 13–17 are the Visual Studio set.** Do them only now, after twelve labs at the command line —
+the point is to watch the UI perform commands you can already name, and to find the places where it
+stops. Each one ends in **View → Terminal**, checking with git what the clicks actually did.
 
 1. **Git → Clone Repository…** → `http://192.168.0.22:3000/Adhir/git-practice.git` → clone it to a
    *new* folder, e.g. `E:\Adhir\AdWork\GitSandbox-vs`. Credentials: `Adhir` + your PAT.
@@ -1511,13 +1520,175 @@ can already name.
 Then open **View → Terminal** in the same window and run:
 
 ```bash
-git log --oneline --graph --all -10   # the branch, commit and merge you just made through the UI
-git reflog -10                        # every click, recorded as the ordinary git command it really was
+git log --oneline --graph --all -10   # draw the graph — the branch, commit and merge you just made through the UI
+git reflog -10                        # list the last 10 positions HEAD held — every click, as the git command it really was
 ```
 
 **Verify:** the reflog lists every step you just performed through the UI — checkout, commit,
 push, merge — as ordinary git operations. Nothing the IDE did was special, and nothing it did was
 hidden from you.
+
+---
+
+### Lab 14 — Resolve a conflict in the Merge Editor
+
+Lab 5 again, but through the UI — because this is the one job the IDE genuinely does better than
+the command line. Work in `GitSandbox-vs` throughout.
+
+1. Branch picker → `main` → **↓ Pull**, so you start level with Gitea.
+2. Branch picker → **New Branch…** → `feature/ui-v3`, from `main`.
+3. In `Ledger.cs` set `Version = "3.0"`. **Git Changes** → stage it → **Commit Staged**.
+4. Branch picker → `main` → **New Branch…** → `hotfix/ui-v21`, again from `main`.
+   *(Branching from `main` — not from `feature/ui-v3` — is what makes the histories diverge.)*
+5. Set the **same line** to `"2.1"`. Stage → **Commit Staged**.
+6. Branch picker → `main`. **Git Repository** → right-click `hotfix/ui-v21` → **Merge
+   `hotfix/ui-v21` into `main`**. Clean — `main` had no commits of its own, so it fast-forwards.
+7. Right-click `feature/ui-v3` → **Merge into `main`**. **Conflict.** `Ledger.cs` appears under
+   **Unmerged Changes** in Git Changes.
+8. Double-click it. The **Merge Editor** opens: **Incoming** (left), **Current** (right),
+   **Result** (bottom).
+9. Take one side with its checkbox, then the other, and watch the *Result* pane change. Then click
+   into *Result* and type `"3.0"` by hand — proving the answer does not have to be either side.
+10. **Accept Merge**, then **Commit Merge** in Git Changes.
+11. **Ctrl+Shift+B** to build, then **Ctrl+F5** to run it.
+
+Then **View → Terminal**:
+
+```bash
+git log --oneline --graph --all -8   # draw the graph — the two branches diverging and rejoining at your merge commit
+git show --stat HEAD                 # show the last commit, files-changed summary only — two parents, and the file you resolved
+```
+
+**Verify:** the app prints `ledger v3.0`, and the graph shows a genuine fork and join — not a
+straight line.
+
+**Now prove the escape hatch.** Make one more conflicting branch, merge it, and when the Merge
+Editor opens choose **Git → Abort Merge** instead of resolving. Check Git Changes is clean and the
+branch pointer has not moved. That is `git merge --abort`, and it is always safe.
+
+**Understand:** the Merge Editor is a better *conflict* tool, not a better *judgement* tool. It
+will happily let you accept a resolution that compiles and is wrong — which is why step 11 builds
+and runs before you trust it.
+
+---
+
+### Lab 15 — The two commit buttons, and staging individual lines
+
+The Commit All / Commit Staged distinction is where Visual Studio quietly does something you did
+not ask for. Meet it deliberately, once.
+
+1. Branch picker → **New Branch…** → `feature/vs-staging`.
+2. Make **two unrelated edits in the same file**, `Ledger.cs`:
+   - change `Version` to `"3.1"`
+   - add a method: `public decimal Fee(decimal amount) => amount * 0.01m;`
+3. Also add a stray line to `README.md` — work you are *not* ready to commit.
+4. **Git Changes** → double-click `Ledger.cs` to open the diff.
+5. Select just the `Version` line in the diff → right-click → **Stage Selected Lines**.
+6. **Look at the file list.** `Ledger.cs` now appears under **both** *Changes* **and** *Staged
+   Changes* — the same file, in two states at once. This is exactly §1's staging area, and it is
+   the single most confusing thing in the window until you have seen it once.
+7. Commit message → **Commit Staged**. Only the `Version` line goes in.
+8. Now click the **Commit All** dropdown arrow and read the label carefully before clicking it —
+   it will sweep up the `Fee` method **and** your unfinished `README.md` edit. Do it anyway, so you
+   see it happen.
+
+**View → Terminal:**
+
+```bash
+git log --oneline -2         # list the last two commits
+git show --stat HEAD~1       # show the previous commit's file summary — Ledger.cs only, and only one line of it
+git show --stat HEAD         # show the last commit's file summary — Ledger.cs AND README.md: Commit All took both
+```
+
+**Verify:** you can point at the exact commit where *Commit All* included a file you had not
+finished. That is the whole lesson.
+
+**Undo the damage**, and practise the fix while you are here:
+
+```bash
+git reset --soft HEAD~1      # move the branch back one commit, leaving its changes STAGED — takes that commit apart
+```
+
+Then in **Git Changes**, unstage `README.md` with **−**, and **Commit Staged** the `Fee` method
+alone. Two focused commits, which is what you wanted from the start.
+
+**Understand:** *Stage Selected Lines* is genuinely better than `git add -p` — you click lines
+instead of answering `y`/`n`/`s` per hunk. It is the one place the UI beats the terminal outright
+for everyday work.
+
+---
+
+### Lab 16 — Undo from the history graph, and the one thing the UI cannot do
+
+Lab 6 and Lab 7 through the UI — and finding the wall.
+
+**Amend, unstage, discard:**
+
+1. Edit `Ledger.cs`, stage it, commit it with a deliberately bad message (`asdf`).
+2. Tick **Amend** above the message box, write a proper message, **Commit Staged**. One commit, new
+   message — that is `git commit --amend`.
+3. Edit two files. Stage both. Unstage one with **−** (`git restore --staged`).
+4. Right-click the still-unstaged file → **Undo Changes** → confirm. **Those edits are gone for
+   good** — they were never committed, so nothing in §8 can bring them back. This is the only
+   truly irreversible operation in this lab.
+
+**Revert something pushed:**
+
+5. Commit anything, then **↑ Push**.
+6. **Git Repository** → right-click that commit in the graph → **Revert**.
+7. Look at the graph: **two** commits now — yours and its reversal. Nothing was deleted, which is
+   why this is the safe undo for shared history (§8). Push again.
+
+**Reset, both flavours:**
+
+8. Commit something else. Right-click the commit *below* it → **Reset → Keep Changes**. The commit
+   disappears, your changes return to Git Changes. That is `git reset --mixed`, and it is
+   recoverable in every sense.
+9. Commit it again. Now right-click the commit below → **Reset → Delete Changes**. Gone: commit
+   *and* content. That is `git reset --hard`, sitting in a context menu with no red warning.
+
+**Now hit the wall:**
+
+10. Try to undo step 9 from the UI. Search the menus. **There is no reflog in Visual Studio** —
+    the safety net from §8 has no button anywhere in the IDE.
+11. **View → Terminal:**
+
+```bash
+git reflog -10               # list the last 10 positions HEAD held, including the one you just left
+git reset --hard HEAD@{1}    # move the branch to where HEAD was one step ago — the commit is back
+git log --oneline -3         # list the last three commits — recovered
+```
+
+**Verify:** the commit destroyed in step 9 is back, and you recovered it with a command that has
+no equivalent button. Say out loud which of steps 1–9 the UI can undo and which it cannot; that
+distinction is the reason §7.1 tells you to keep the terminal open.
+
+**Understand:** the IDE covers the common path well and stops exactly where things get
+interesting. `reflog`, `bisect`, `cherry-pick` from an arbitrary SHA, and anything involving a
+range are terminal work — in Visual Studio, in Rider, in every IDE.
+
+---
+
+### Lab 17 — Gitea housekeeping from Visual Studio
+
+Short, and it settles the questions people hit in week one.
+
+1. **Git → Manage Remotes.** `origin` is listed with the Gitea URL. This is `git remote -v`. If the
+   server ever moves, **Edit** here rather than removing and re-adding it.
+2. **Git → Settings → Git Repository Settings.** Per-repo overrides — a different `user.email` for
+   one project, for example. These beat your global settings (§10).
+3. Push to a branch, then in **Gitea** delete that branch through the web UI. Back in VS, the
+   branch is still listed under `remotes/origin/` — a stale cache. **Git → Fetch** with
+   `fetch.prune` set (§10) clears it. Prove it by looking at **Git Repository** before and after.
+4. **Replace your token.** Windows **Credential Manager** → *Windows Credentials* → find the
+   `git:http://192.168.0.22:3000` entry → **Remove**. Push again in VS: it prompts, and you paste a
+   fresh PAT. This is how you rotate a token, and how you fix "VS keeps using the wrong account".
+5. **Confirm the boundary for yourself.** Open every Git menu in Visual Studio and look for
+   anything that creates a pull request. There is nothing — VS's PR tooling binds to GitHub and
+   Azure DevOps only (§7). The browser is not a workaround here; it is the tool.
+
+**Verify:** you can rotate your PAT without help, and you know that a branch deleted on the server
+lingers in VS until a pruning fetch.
 
 ---
 

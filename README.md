@@ -74,7 +74,7 @@ followed by `scripts/render-all-docs-html.py`.
 
 | Document | Formats | What it is |
 |---|---|---|
-| [guides/git-with-gitea.md](guides/git-with-gitea.md) | md · html | **Never used git? Start here.** The mental model, the daily loop, branching and Gitea pull requests, a practical command reference plus an exhaustive one, an “oh no” recovery section, 14 hands-on labs (the last one repeated in Visual Studio 2026) run against the real Gitea server using a throwaway console app in `GitSandbox\`. |
+| [guides/git-with-gitea.md](guides/git-with-gitea.md) | md · html | **Never used git? Start here.** The mental model, the daily loop, branching and Gitea pull requests, a practical command reference plus an exhaustive one, an “oh no” recovery section, 18 hands-on labs — 13 at the command line, then a five-lab Visual Studio 2026 set run against the real Gitea server using a throwaway console app in `GitSandbox\`. |
 | [guides/day-one.md](guides/day-one.md) | md · html | **Start here on your first day.** Clone → running app in ~30 min, the `/Dev/Components` parts catalogue, your first screen, the rules the build enforces, and the first-week gotchas. |
 | [guides/building-a-crud-screen.md](guides/building-a-crud-screen.md) | md · html · txt | Step-by-step copy-paste tutorial for a full CRUD screen, worked on the **State** master (`/Hr/State`). The single best on-ramp for a new developer. |
 | [guides/screen-definition-of-done.md](guides/screen-definition-of-done.md) | md · html | The gate at the other end of the tutorial: what "done" means for one migrated screen, the author's pre-review checks, the parity rules, the automatic-reject list and a 60-second reviewer smoke test. |
