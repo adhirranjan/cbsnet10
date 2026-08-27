@@ -533,6 +533,30 @@ bites people.
 | `git push origin --delete <branch>` | Delete a branch on the server | `git push origin --delete feature/x` | Gitea can do this for you when a PR merges. |
 | `git push --force-with-lease` | Overwrite the remote branch, safely | `git push --force-with-lease` | **Never on `main`.** Only your own branch, after a rebase or amend. It refuses if someone else pushed meanwhile — which is exactly why it is not plain `--force`. |
 
+**Look before you pull.** `git pull` is `fetch` + `merge` in one go, so it changes your branch
+before you have seen what arrived. Split it in two whenever you care what is coming:
+
+```bash
+git fetch                    # download the server's commits. Your branch, tree and index are NOT touched
+
+git status -sb               # the one-line answer: "## main...origin/main [behind 1]"
+git log --oneline HEAD..origin/main   # commits THEY have that you do not  <- exactly what pull will bring in
+git log --oneline origin/main..HEAD   # commits YOU have that they do not  <- exactly what push would send
+git diff --stat HEAD origin/main      # which files differ, and by how much
+git diff HEAD origin/main             # the actual line-by-line difference
+git log --oneline --graph --all -10   # the shape of both sides at once
+
+git pull                     # now merge it in, knowing what you are getting
+```
+
+**`A..B` means "commits reachable from B but not from A".** Read `HEAD..origin/main` as *"what is
+on the server that is not on me"*, and flip the order to ask the opposite. It is the same syntax a
+pull request uses to build its diff (§3). Three dots — `git log --oneline --left-right
+HEAD...origin/main` — lists **both** directions at once, marking each commit `<` yours or `>` theirs.
+
+None of this can cost you anything: `fetch`, `status`, `log` and `diff` only ever read, and `fetch`
+writes only to `refs/remotes/origin/*` — the cache, never your work.
+
 ### 4.6 Undoing things
 
 The most important table in this document. **Nothing committed is ever really lost** — see §8.
@@ -739,6 +763,8 @@ deliberately excluded: they are for writing tools, not for using git.
 | `HEAD^` | The first parent (matters only at merge commits) |
 | `origin` | The default nickname for your Gitea server |
 | `origin/main` | Your *cached* copy of the server's `main`. Only updates on `fetch`/`pull` |
+| `A..B` | Commits reachable from `B` but not from `A`. `HEAD..origin/main` = what the server has that you do not |
+| `A...B` | Commits on *either* side but not both — with `--left-right`, `<` marks yours and `>` theirs |
 | `main` | The mainline branch. Older repos call it `master` |
 | detached HEAD | You checked out a commit, not a branch. Commits made here belong to no branch — `git switch -c name` to keep them |
 | fast-forward | A merge with nothing to merge: git just slides the pointer forward |
@@ -962,6 +988,7 @@ model ever stops making sense, look at this window while you read §1 again.
 | `git push` | The **↑** arrow, or **Git → Push** |
 | `git pull` | The **↓** arrow, or **Git → Pull** |
 | `git fetch` | The **⟳** arrow, or **Git → Fetch**. Safe — look before you leap |
+| `git log HEAD..origin/main` | After a Fetch, **Git Repository** → the **Incoming** / **Outgoing** lists. The ↑↓ counts on the branch picker are the same thing in miniature |
 | `git switch <branch>` | Branch picker (status bar) → double-click the branch |
 | `git switch -c <name>` | Branch picker → **New Branch…**, or **Git → New Branch…** |
 | `git merge <branch>` | **Git Repository** → right-click the branch → **Merge \<branch\> into current** |
@@ -1253,7 +1280,10 @@ Refresh the PR: the new commit is in it automatically. Now **Merge Pull Request*
 
 ```bash
 git switch main                       # move onto main, leaving the feature branch
-git pull                              # fetch from origin and merge into main — the merge Gitea just made arrives here
+git fetch                             # download the merge Gitea made, WITHOUT changing your branch yet
+git log --oneline HEAD..origin/main   # list what is about to arrive: the merge commit and your two feature commits
+git diff --stat HEAD origin/main      # show which files it will change — Ledger.cs, the Interest method
+git pull                              # now merge it in, knowing exactly what you are getting (§4.5)
 git branch -d feature/interest-rate   # delete the local branch (-d refuses if it were still unmerged)
 git fetch --prune                     # fetch, and drop remote-tracking refs for branches deleted on the server
 git log --oneline --graph --all       # draw the commit graph across all branches — the shape of what just happened

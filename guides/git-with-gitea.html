@@ -874,6 +874,25 @@ bites people.</p>
 </tr>
 </tbody>
 </table>
+<p><strong>Look before you pull.</strong> <code>git pull</code> is <code>fetch</code> + <code>merge</code> in one go, so it changes your branch
+before you have seen what arrived. Split it in two whenever you care what is coming:</p>
+<pre><code class="language-bash">git fetch                    # download the server's commits. Your branch, tree and index are NOT touched
+
+git status -sb               # the one-line answer: &quot;## main...origin/main [behind 1]&quot;
+git log --oneline HEAD..origin/main   # commits THEY have that you do not  &lt;- exactly what pull will bring in
+git log --oneline origin/main..HEAD   # commits YOU have that they do not  &lt;- exactly what push would send
+git diff --stat HEAD origin/main      # which files differ, and by how much
+git diff HEAD origin/main             # the actual line-by-line difference
+git log --oneline --graph --all -10   # the shape of both sides at once
+
+git pull                     # now merge it in, knowing what you are getting
+</code></pre>
+<p><strong><code>A..B</code> means "commits reachable from B but not from A".</strong> Read <code>HEAD..origin/main</code> as <em>"what is
+on the server that is not on me"</em>, and flip the order to ask the opposite. It is the same syntax a
+pull request uses to build its diff (§3). Three dots — <code>git log --oneline --left-right
+HEAD...origin/main</code> — lists <strong>both</strong> directions at once, marking each commit <code>&lt;</code> yours or <code>&gt;</code> theirs.</p>
+<p>None of this can cost you anything: <code>fetch</code>, <code>status</code>, <code>log</code> and <code>diff</code> only ever read, and <code>fetch</code>
+writes only to <code>refs/remotes/origin/*</code> — the cache, never your work.</p>
 <h3 id="46-undoing-things">4.6 Undoing things</h3>
 <p>The most important table in this document. <strong>Nothing committed is ever really lost</strong> — see §8.</p>
 <table>
@@ -1423,6 +1442,14 @@ deliberately excluded: they are for writing tools, not for using git.</p>
 <td>Your <em>cached</em> copy of the server's <code>main</code>. Only updates on <code>fetch</code>/<code>pull</code></td>
 </tr>
 <tr>
+<td><code>A..B</code></td>
+<td>Commits reachable from <code>B</code> but not from <code>A</code>. <code>HEAD..origin/main</code> = what the server has that you do not</td>
+</tr>
+<tr>
+<td><code>A...B</code></td>
+<td>Commits on <em>either</em> side but not both — with <code>--left-right</code>, <code>&lt;</code> marks yours and <code>&gt;</code> theirs</td>
+</tr>
+<tr>
 <td><code>main</code></td>
 <td>The mainline branch. Older repos call it <code>master</code></td>
 </tr>
@@ -1791,6 +1818,10 @@ model ever stops making sense, look at this window while you read §1 again.</p>
 <td>The <strong>⟳</strong> arrow, or <strong>Git → Fetch</strong>. Safe — look before you leap</td>
 </tr>
 <tr>
+<td><code>git log HEAD..origin/main</code></td>
+<td>After a Fetch, <strong>Git Repository</strong> → the <strong>Incoming</strong> / <strong>Outgoing</strong> lists. The ↑↓ counts on the branch picker are the same thing in miniature</td>
+</tr>
+<tr>
 <td><code>git switch &lt;branch&gt;</code></td>
 <td>Branch picker (status bar) → double-click the branch</td>
 </tr>
@@ -2139,7 +2170,10 @@ git push                    # upload the new commit — no -u this time, the bra
 <p>Refresh the PR: the new commit is in it automatically. Now <strong>Merge Pull Request</strong> — choose plain
 <strong>Merge</strong> for this lab; the note after the cleanup explains why. Then clean up:</p>
 <pre><code class="language-bash">git switch main                       # move onto main, leaving the feature branch
-git pull                              # fetch from origin and merge into main — the merge Gitea just made arrives here
+git fetch                             # download the merge Gitea made, WITHOUT changing your branch yet
+git log --oneline HEAD..origin/main   # list what is about to arrive: the merge commit and your two feature commits
+git diff --stat HEAD origin/main      # show which files it will change — Ledger.cs, the Interest method
+git pull                              # now merge it in, knowing exactly what you are getting (§4.5)
 git branch -d feature/interest-rate   # delete the local branch (-d refuses if it were still unmerged)
 git fetch --prune                     # fetch, and drop remote-tracking refs for branches deleted on the server
 git log --oneline --graph --all       # draw the commit graph across all branches — the shape of what just happened
