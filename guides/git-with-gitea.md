@@ -1198,9 +1198,27 @@ git status                  # show the state — Ledger.cs still modified: never
 
 git commit -am "feat: bump ledger version to 1.1"   # stage every TRACKED file and commit, in one step (-a)
 git log --oneline           # list the commits — three now, one file in each
+
+git push                    # upload both new commits to Gitea — do NOT skip this, see the note below
+git status                  # show the state — "Your branch is up to date with 'origin/main'"
 ```
 
-**Verify:** three commits, and each one contains exactly one file.
+**Verify:** three commits, each containing exactly one file, and Gitea's repo page shows all three.
+
+> **Why the `git push` matters before Lab 4.** Without it your local `main` sits two commits ahead
+> of the server. Lab 4 then branches off that local `main`, so when you push the feature branch it
+> carries those two commits with it — and the pull request would show **three** commits and three
+> changed files instead of the one you just wrote. It would still work, but Lab 4's whole point is
+> reading a small, focused diff the way a reviewer does. **A branch always carries everything your
+> local `main` has that the server does not.** Push `main` before branching off it, always.
+
+> **And yes, these labs commit straight to `main`** — which §12 tells you never to do. Labs 1–3,
+> and most of 5–12, work directly on `main` on purpose: you are alone in a throwaway repo with no
+> reviewer and no branch protection, and there is nothing to branch *from* until the first commit
+> exists. **Lab 4 is the one that shows the real workflow** — branch, push, pull request, merge,
+> delete — and that is the one to copy on `TflCbsNet10Sol`. If you had enabled branch protection
+> (§6.5) on the practice repo, every direct push to `main` below would be rejected; leave it off
+> here.
 
 ---
 
@@ -1230,8 +1248,8 @@ git commit -am "fix: correct rate to 4.5%"   # stage every tracked edit and comm
 git push                    # upload the new commit — no -u this time, the branch is already linked
 ```
 
-Refresh the PR: the new commit is in it automatically. Now **Merge Pull Request** (try **Squash
-and merge** to see two commits become one), then clean up:
+Refresh the PR: the new commit is in it automatically. Now **Merge Pull Request** — choose plain
+**Merge** for this lab; the note after the cleanup explains why. Then clean up:
 
 ```bash
 git switch main                       # move onto main, leaving the feature branch
@@ -1244,6 +1262,14 @@ git log --oneline --graph --all       # draw the commit graph across all branche
 **Verify:** `main` contains the interest method, and `git branch -a` no longer lists the feature
 branch anywhere.
 
+> **Why plain Merge, and what the other styles do to that cleanup.** `git branch -d` deletes a
+> branch only when its commits are already reachable from where you stand. **Squash and merge** and
+> **Rebase and merge** (§6.4) both rewrite your commits into *new* ones with new SHAs, so git cannot
+> see your branch as merged and refuses:
+> `error: The branch 'feature/interest-rate' is not fully merged.` That is the safety net doing its
+> job with incomplete information, not a bug. On a team that squash-merges you confirm the work
+> landed on `main`, then delete with `-D`. Worth trying deliberately on a later branch.
+
 ---
 
 ### Lab 5 — Make a conflict on purpose, then fix it
@@ -1255,7 +1281,7 @@ git switch -c feature/v2    # create branch #1 off main and move onto it
 # Ledger.cs: set Version = "2.0"
 git commit -am "feat: version 2.0"    # stage tracked edits and commit — this change now exists only on feature/v2
 
-git switch main             # move back onto main, where Ledger.cs still reads "1.0"
+git switch main             # move back onto main, where Ledger.cs still reads "1.1" (Lab 3 set it)
 git switch -c hotfix/v11    # create branch #2, also off main — it has never seen "2.0"
 # Ledger.cs: set the SAME line to "1.1.1"
 git commit -am "fix: version 1.1.1"   # stage and commit — a second, different change to the same line
@@ -1371,6 +1397,7 @@ git switch main             # move onto main
 
 git switch -c fix/urgent    # try to create a branch — git either refuses, or drags your half-finished mess onto it
 git switch main             # move back onto main — neither outcome is what you want, so do it properly
+git branch -d fix/urgent    # delete that branch — it points at main, so -d is happy. You recreate it properly below
 
 git stash                   # park every uncommitted change on a shelf; the working tree goes clean
 git status                  # show the state — "nothing to commit": your edit is not lost, it is elsewhere
@@ -1382,9 +1409,18 @@ git switch main             # move back onto main, where you were
 
 git stash pop               # re-apply the newest stash and drop it from the shelf (pop = apply AND remove)
 git status                  # show the state — your half-finished edit is back, exactly as you left it
+
+git restore Program.cs      # NOW throw that practice edit away — §4.6's unrecoverable one, fine here: it was scrap
+git status                  # show the state — clean. Lab 9 needs Program.cs untouched, see below
 ```
 
-**Verify:** your half-finished edit is back and `git stash list` is empty.
+**Verify:** your half-finished edit came back, `git stash list` is empty, and the final `git restore`
+leaves the tree clean.
+
+> **Do not skip that last `git restore`.** Lab 9 has a "colleague" edit `Program.cs`, and it commits
+> your side with `git commit -am`, which stages **every** tracked modified file. Leave this practice
+> edit lying around and it rides along into that commit, collides with the colleague's change, and
+> Lab 9's "different files, so no conflict" stops being true.
 
 ---
 
@@ -1460,6 +1496,7 @@ how `appsettings.Development.json` (your DB password) ends up in a repo forever.
 ```bash
 git switch main                  # move onto main — a tag marks one commit, so stand on the right one first
 git pull                         # fetch and merge, so main is current before you tag it
+git push                         # upload Lab 10's two commits first — a tag should point at something the server has
 git tag -a v1.0 -m "First practice release"   # create an annotated tag on this commit (-a = carries an author, date and message)
 git tag                          # list every tag in this repo
 git show v1.0                    # show that object in full — the tag's message, plus the commit it points at
@@ -1490,10 +1527,12 @@ git bisect good v1.0                    # mark v1.0 as working — so the culpri
 #   git checks out a midpoint; test it; then `git bisect good` or `git bisect bad`
 #   repeat — each answer halves the range, so ~1000 commits take about 10 tests
 git bisect reset                        # end the search and return to where you started. ALWAYS finish with this
+
+git push                                # upload main — Lab 13 clones this repo fresh and should get the cherry-pick
 ```
 
 **Verify:** after the cherry-pick, `git log --oneline` on `main` shows the kept commit and not
-the junk one.
+the junk one, and Gitea's repo page agrees.
 
 ---
 
@@ -1624,6 +1663,8 @@ Lab 6 and Lab 7 through the UI — and finding the wall.
 
 **Amend, unstage, discard:**
 
+0. Branch picker → `main`, then **New Branch…** → `feature/vs-undo`. Lab 15 left you on
+   `feature/vs-staging`; start this one from a known place.
 1. Edit `Ledger.cs`, stage it, commit it with a deliberately bad message (`asdf`).
 2. Tick **Amend** above the message box, write a proper message, **Commit Staged**. One commit, new
    message — that is `git commit --amend`.
