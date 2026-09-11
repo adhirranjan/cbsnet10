@@ -1,7 +1,7 @@
-# TrustBank CBS — Port & Project Map
+﻿# TrustBank CBS — Port & Project Map
 
 > **Last updated:** 2026-08-01
-> One page: which project runs where, what the gateway routes to it, and the everyday commands. See [architecture-overview.txt](architecture-overview.txt) for the full picture.
+> One page: which project runs where, what the gateway routes to it, and the everyday commands. See [architecture-overview.md](architecture-overview.md) for the full picture.
 >
 > **NOTE:** §1–2 are the DEV `dotnet run` ports (5xxx/7xxx). For the DEPLOYED IIS + Docker ports (different, so they all coexist), see §5.
 
@@ -15,8 +15,14 @@
 | `TflCbs.Host.Hr` | Thin host — Hr only (State/District/Taluka, DiscipAction) | 5300 | 7300 |
 | `TflCbs.Host.RetailBanking` | Thin host — RetailBanking only | 5400 | 7400 |
 | `TflCbs.Host.Administration` | Thin host — Administration only (Module/Role masters) | 5500 | 7500 |
+| `TflCbs.Host.Inventory` | Thin host — Inventory only (Unit of Measurement, Asset/Consumable Category) | 5600 | 7600 |
 
-**Port pattern:** HTTP = `5x00`, HTTPS = `7x00`, paired per host (gateway x=1, Lockers 2, Hr 3, RetailBanking 4, Administration 5; the default host predates the pattern at 5019/7225).
+**Port pattern:** HTTP = `5x00`, HTTPS = `7x00`, paired per host (gateway x=1, Lockers 2, Hr 3, RetailBanking 4, Administration 5, Inventory 6; the default host predates the pattern at 5019/7225).
+
+> **The pattern runs out at x=9.** Six of the nine slots are taken. The four xnet modules added alongside Inventory
+> (Trade Finance, Internet Banking, Reconciliation, Loan Origination) deliberately have **no thin host** — they run in
+> the default host. Inventory got one as the proof that the new slices are isolated; adding the rest would need a
+> wider scheme, and there is no trigger for it yet.
 
 ## 2. Gateway routing (`TflCbs.Gateway/appsettings.json`)
 
@@ -26,7 +32,8 @@
 | `/Hr/*` + `/_content/TflCbs.Modules.Hr.Web/*` | Hr host (5300/7300) |
 | `/RetailBanking/*` + `/_content/TflCbs.Modules.RetailBanking.Web/*` | RetailBanking host (5400/7400) |
 | `/Administration/*` + `/_content/TflCbs.Modules.Administration.Web/*` | Administration host (5500/7500) |
-| everything else (`/Account`, `/Modules`, `/Home`, `/Bank/*`, shared `/_content`, …) | default host (5019/7225) |
+| `/Inventory/*` + `/_content/TflCbs.Modules.Inventory.Web/*` | Inventory host (5600/7600) |
+| everything else (`/Account`, `/Modules`, `/Home`, `/Bank/*`, `/TradeFinance/*`, `/InternetBanking/*`, `/Reconciliation/*`, `/LoanOrigination/*`, shared `/_content`, …) | default host (5019/7225) |
 
 Base config targets the HTTP backends; `appsettings.Development.json` overrides every cluster to the HTTPS ports (+ dev-cert trust), so a plain `dotnet run` fronts the whole topology over HTTPS.
 
@@ -34,11 +41,11 @@ Base config targets the HTTP backends; `appsettings.Development.json` overrides 
 
 | Layer | Projects |
 |-------|----------|
-| Domain web RCLs (screens) | `TflCbs.Modules.{Bank,Hr,Lockers,RetailBanking,Administration}.Web` |
+| Domain web RCLs (screens) | `TflCbs.Modules.{Bank,Hr,Lockers,RetailBanking,Administration,Inventory,TradeFinance,InternetBanking,Reconciliation,LoanOrigination}.Web` |
 | Core web RCLs | `TflCbs.Core.Authentication.Web` (login/logout), `TflCbs.Core.Shell.Web` (Home/Modules/Error) |
 | Shared web assets | `TflCbs.Web.Shared` (layout, partials, `wwwroot` → `/_content/TflCbs.Web.Shared/`) |
 | Framework | `TflCbs.Framework` (session, tokens, access guard, search, DataAccess wiring) |
-| Services (business modules) | Core, always registered: `TflCbs.Modules.General`, `TflCbs.Modules.Reference`, `TflCbs.Core.Authentication` · Domains, gated by `Modules:Enabled`: `TflCbs.Modules.{Accounts,Administration,Clearing,HR,Lockers,RetailBanking}` · Shared: `TflCbs.Abstractions`, `TflCbs.Modules.General.Contracts` |
+| Services (business modules) | Core, always registered: `TflCbs.Modules.General`, `TflCbs.Modules.Reference`, `TflCbs.Core.Authentication` · Domains, gated by `Modules:Enabled`: `TflCbs.Modules.{Accounts,Administration,Clearing,HR,Lockers,RetailBanking,Inventory,TradeFinance,InternetBanking,Reconciliation,LoanOrigination}` · Shared: `TflCbs.Abstractions`, `TflCbs.Modules.General.Contracts` |
 | Data / logging | `TflCbs.Entities`, `TflOmniDb` (bare DLL), `TflOmniLog` |
 | Tests / demos | `TflCbs.Tests`, `TflCbs.Demo`, `TflCbs.ArchTests`, `TflOmniLog.*` |
 
@@ -51,7 +58,7 @@ Base config targets the HTTP backends; `appsettings.Development.json` overrides 
 | **Full cluster** | `scripts\start-cbs-hosts.bat` — stops leftovers, builds once, launches all 6 hosts (default host on the "https (shared-sso)" profile, thin hosts + gateway on "https"), waits for every health endpoint. Manual equivalent: run each project with those profiles in any order (the gateway health-checks and recovers). |
 | **Health endpoints** | every host: `/health` (live), `/health/ready` (DB); gateway: `/gateway/health`. |
 | **STOP BEFORE BUILDING** | `scripts\stop-cbs-hosts.bat` — stops every CBS host on the ports above (only processes matching our names), then confirms all ports are free. |
-| **Login authority rule** | A host whose `Auth:LoginUrl` is an absolute URL on another origin defers login there (thin hosts → gateway); relative `LoginUrl` = serves login itself (the default host). See [single-sign-on.txt](single-sign-on.txt). |
+| **Login authority rule** | A host whose `Auth:LoginUrl` is an absolute URL on another origin defers login there (thin hosts → gateway); relative `LoginUrl` = serves login itself (the default host). See [single-sign-on.md](single-sign-on.md). |
 
 ## 5. Deployment ports (IIS & Docker) — distinct from the dev ports above
 
@@ -68,6 +75,7 @@ The dev `dotnet run` ports (§1–2, 5xxx/7xxx) are for local dev only. The depl
 | | `cbs-lockers` | http 8130 / https 8131 | `D:\publish\multi\lockers` |
 | | `cbs-retail` | http 8140 / https 8141 | `D:\publish\multi\retail` |
 | | `cbs-admin` | http 8150 / https 8151 | `D:\publish\multi\admin` |
+| | `cbs-inventory` | http 8160 / https 8161 | `D:\publish\multi\inventory` |
 
 > **Both** ports are bound on every site: `deploy-cbs-iis.ps1` always creates the site on its http port and *adds* the https binding when `-CertThumbprint` is passed (without it you get http only). The gateway proxies to the backends over **https** — the scheme it writes into the gateway's `appsettings.Production.json` follows whether the cert was supplied. The http backend ports stay reachable directly, so treat them as a bring-up/diagnostic path, not a route anyone should use: only `cbs-gateway` is meant to be public.
 

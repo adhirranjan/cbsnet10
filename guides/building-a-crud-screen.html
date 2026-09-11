@@ -62,7 +62,7 @@ ul{padding-left:1.4em}ol{padding-left:1.4em}
 Worked example: the <strong>State</strong> master (<code>/Hr/State</code>) — the cleanest full-CRUD screen in the repo
 (one text field, no foreign keys). Every step shows <strong>what</strong> we did and explains <strong>why</strong>.</p>
 <p>This guide covers adding a screen <strong>inside an existing module</strong>. To create a brand-new module
-first, see <a href="starting-a-new-module.txt"><code>starting-a-new-module.txt</code></a>.</p>
+first, see <a href="starting-a-new-module.html"><code>starting-a-new-module.md</code></a>.</p>
 </blockquote>
 <hr />
 <h2 id="1-overview-architecture">1. Overview &amp; architecture</h2>
@@ -801,7 +801,7 @@ data domain. State sits in <code>TflCbs.Modules.Hr.Web</code> (HR menu) but is b
 <hr />
 <h2 id="11-checklist-build-a-new-master-by-renaming-state">11. Checklist — build a new master by renaming State</h2>
 <p>Do these in order. Replace <code>State</code> / <code>G_STATE</code> / <code>Hr</code> with your entity / table / area.
-(If the <strong>module itself</strong> is new, first follow <code>starting-a-new-module.txt</code>.)</p>
+(If the <strong>module itself</strong> is new, first follow <code>starting-a-new-module.md</code>.)</p>
 <ol>
 <li><strong>Entity</strong> — if the table is new, generate it with <code>TflOmniDb.Scaffold</code>, then <strong><code>dotnet build TflCbs.Entities</code></strong> first.</li>
 <li><strong>Service</strong> — add <code>YourThingService.cs</code> to <code>TflCbs.Modules.&lt;Domain&gt;/</code> (namespace <code>TflCbs.Modules.&lt;Domain&gt;</code>):
@@ -810,7 +810,7 @@ data domain. State sits in <code>TflCbs.Modules.Hr.Web</code> (HR menu) but is b
    <code>…DbErrors;</code> (never a private copy). Then <strong>run the <code>cbs-sync-test-demo</code> agent</strong>.</li>
 <li><strong>Register</strong> — one <code>services.AddScoped&lt;YourThingService&gt;();</code> line in that assembly's
    <code>&lt;Domain&gt;Module.AddServices</code>. (New <em>assembly</em>? Also add it to every host's <code>AddCbsModules(...)</code> — see
-   <code>starting-a-new-module.txt</code>.)</li>
+   <code>starting-a-new-module.md</code>.)</li>
 <li><strong>Form model</strong> — <code>YourThingForm : IRowForm</code> (DataAnnotations + <code>string? Row</code>, plus <code>int Version</code> if the
    table has a row-version column) in the web RCL's <code>Models/&lt;Area&gt;/</code>; reuse <code>EditViewModel&lt;TForm&gt;</code>.</li>
 <li><strong>Controller</strong> — <code>TflCbs.Modules.&lt;Area&gt;.Web/Areas/&lt;Area&gt;/Controllers/YourThingController.cs</code>:

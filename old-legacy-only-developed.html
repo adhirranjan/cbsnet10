@@ -1,0 +1,299 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Built from the old legacy, absent in xnet</title>
+<style>
+:root{color-scheme:light dark}
+*{box-sizing:border-box}
+body{margin:0;background:#f6f8fa;color:#1f2328;font:16px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif}
+.wrap{max-width:900px;margin:0 auto;padding:32px 24px 96px}
+.card{background:#fff;border:1px solid #d0d7de;border-radius:10px;padding:40px 48px}
+h1,h2,h3{line-height:1.25;font-weight:600}
+h1{font-size:1.9rem;margin:0 0 .3em;padding-bottom:.3em;border-bottom:1px solid #d8dee4}
+h2{font-size:1.4rem;margin:1.8em 0 .6em;padding-bottom:.25em;border-bottom:1px solid #eaeef2}
+h3{font-size:1.12rem;margin:1.4em 0 .5em}
+p,li{margin:.5em 0}
+a{color:#0969da;text-decoration:none}
+a:hover{text-decoration:underline}
+code{font-family:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;font-size:.86em;background:#eff1f3;padding:.15em .4em;border-radius:6px}
+pre{background:#f6f8fa;border:1px solid #d8dee4;border-radius:8px;padding:14px 16px;overflow:auto}
+pre code{background:none;padding:0;font-size:.85em;line-height:1.45}
+blockquote{margin:1em 0;padding:.4em 1em;color:#3d444d;border-left:4px solid #d0d7de;background:#f6f8fa;border-radius:0 6px 6px 0}
+blockquote>:first-child{margin-top:0}blockquote>:last-child{margin-bottom:0}
+table{border-collapse:collapse;width:100%;margin:1em 0;display:block;overflow:auto}
+th,td{border:1px solid #d0d7de;padding:8px 12px;text-align:left;vertical-align:top}
+th{background:#f6f8fa;font-weight:600}
+tr:nth-child(2n) td{background:#f6f8fa}
+hr{border:0;border-top:1px solid #d8dee4;margin:2em 0}
+pre{position:relative}
+pre>button.copy{position:absolute;top:8px;right:8px;padding:5px 9px;cursor:pointer;
+  font:600 .68rem/1 ui-monospace,SFMono-Regular,Consolas,monospace;letter-spacing:.03em;
+  color:#636c76;background:#fff;border:1px solid #d0d7de;border-radius:6px;
+  opacity:0;transition:opacity .12s}
+pre:hover>button.copy,pre>button.copy:focus{opacity:1}
+pre>button.copy.done{color:#0a3622;background:#dafbe1;border-color:#4ac26b}
+@media(hover:none){pre>button.copy{opacity:1}}
+td code.cp{cursor:pointer}
+td code.cp:hover,td code.cp:focus{outline:1px solid #8c959f;outline-offset:1px}
+td code.cp.done{color:#0a3622;background:#dafbe1}
+.docnav{margin:0 0 20px;font-size:.85rem;color:#636c76}
+.docnav a{color:#636c76}
+ul{padding-left:1.4em}ol{padding-left:1.4em}
+@media(max-width:640px){.card{padding:24px 18px}.wrap{padding:16px 10px 64px}}
+@media(prefers-color-scheme:dark){
+ body{background:#0d1117;color:#e6edf3}
+ .card{background:#161b22;border-color:#30363d}
+ h1{border-color:#30363d}h2{border-color:#21262d}
+ code{background:#262c34}
+ pre{background:#0d1117;border-color:#30363d}
+ blockquote{background:#161b22;border-color:#30363d;color:#9198a1}
+ th,td{border-color:#30363d}th{background:#161b22}tr:nth-child(2n) td{background:#12171e}
+ a{color:#4493f8}.docnav,.docnav a{color:#9198a1}
+ hr{border-color:#30363d}
+ pre>button.copy{color:#9198a1;background:#161b22;border-color:#30363d}
+ pre>button.copy.done{color:#aff5b4;background:#1b4721;border-color:#2ea043}
+ td code.cp.done{color:#aff5b4;background:#1b4721}
+}
+</style></head>
+<body><div class="wrap"><div class="card">
+<h1 id="built-from-the-old-legacy-absent-in-xnet">Built from the old legacy, absent in xnet</h1>
+<p><strong>Date:</strong> 2026-09-07
+<strong>Question:</strong> what have we already built in .NET 10 whose legacy counterpart exists in the <strong>20260606</strong> tree but <strong>not</strong> in the <strong>xnet</strong> tree?</p>
+<p>This is the "if we re-base on xnet, what becomes orphaned" list, restricted to work that actually exists in the solution today. It is the concrete inventory behind <a href="xnet-variant-impact-analysis.html">§7 of the xnet impact analysis</a> (2026-09-04), re-verified and extended with the batch-7 work that landed after that date.</p>
+<blockquote>
+<p><strong>Not the same as "wasted".</strong> Almost every item here is <em>shipped and working</em> against the current target. It becomes dead weight only if xnet replaces the 20260606 tree rather than joining it. Nothing here should be deleted on the strength of this list.</p>
+</blockquote>
+<h2 id="method">Method</h2>
+<ul>
+<li><strong>Source:</strong> case-insensitive <code>find</code> / <code>grep -ril</code> over <code>E:\adtemp\_del_now\20260606_cbs_source_code\Trust.Bank.Publish\</code> and <code>…\20260904_cbs_source_code_xnet\Trust.Bank.Publish\</code>.</li>
+<li><strong>Database:</strong> the table/menu findings are carried from <a href="xnet-variant-impact-analysis.html">xnet-variant-impact-analysis.md §5.4–5.6</a>, which queried the live xnet catalogue.</li>
+<li><strong>Our side:</strong> the legacy <code>.aspx</code> paths named in controller/service XML docs and in the <code>DbMigrator</code> route-cutover scripts, resolved back against both trees.</li>
+</ul>
+<p>A screen counts as <strong>old-only</strong> when the page is absent from the xnet tree <em>and</em> has no <code>a_Menus</code> row there.</p>
+<hr />
+<h2 id="1-the-list">1. The list</h2>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>What we built</th>
+<th>Legacy source (20260606)</th>
+<th style="text-align: center;">xnet</th>
+<th>Weight</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td><strong>The whole MFA stack</strong> — 9 <code>libs/tssipl_mfa_*_net</code> projects (OTP · Active Directory · QR, clients + 2 servers + 2 wire-contract test projects), <code>MfaOtpService</code>, <code>MfaQrService</code>, the QR login view + <code>cbs-qr-login.js</code>, migrations <code>0006_mfa_otp</code> / <code>0007_mfa_qr</code></td>
+<td><code>login_otp_verify.aspx</code> (+<code>_handler</code>), <code>qrlogin_register.aspx</code>, <code>Authentication/qrlogin/</code>, <code>Bin/tssipl_mfa_otp.dll</code></td>
+<td style="text-align: center;">❌ no MFA assemblies, <strong>0</strong> source references, no <code>a_UserLoginType</code> / <code>mfa_otp</code> tables</td>
+<td><strong>2,629 LOC</strong> + the <code>net10.0-windows</code> AD deployable</td>
+</tr>
+<tr>
+<td>2</td>
+<td><strong>OTP forgot-password</strong> — <code>ForgotPasswordService</code> + its <code>AccountController</code> actions</td>
+<td><code>HO/Admin/ForgotPassword.aspx</code></td>
+<td style="text-align: center;">❌ page absent, <code>cbs_otp</code> absent (<code>sms_buffer</code> / <code>sms_template</code> do exist, so an SMS path stays possible)</td>
+<td>1 service</td>
+</tr>
+<tr>
+<td>3</td>
+<td><strong>Broadcast / marquee</strong> — the <code>IBroadcastSource</code> framework port, <code>BroadcastService</code>, <code>SystemNotificationController</code>, the marquee footer</td>
+<td><code>config/b_MarqueeAlert.aspx</code></td>
+<td style="text-align: center;">❌ page absent (<strong>0</strong> refs), <code>b_MarqueeAlert</code> table absent, no menu row</td>
+<td>1 of the four framework ports</td>
+</tr>
+<tr>
+<td>4</td>
+<td><strong>Blocked users</strong> — <code>BlockedUsersController</code></td>
+<td><code>config/updateBlockedUser.aspx</code></td>
+<td style="text-align: center;">❌ page absent, no menu row</td>
+<td>1 screen</td>
+</tr>
+<tr>
+<td>5</td>
+<td><strong>Taluka</strong> — <code>TalukaController</code> on <code>TflCbs.Modules.Reference</code></td>
+<td><code>HO/Bank/g_Taluka.aspx</code></td>
+<td style="text-align: center;">❌ page absent, no menu row — <strong>but the <code>g_Taluka</code> table exists</strong>, so the entity and service survive; only the screen is orphaned</td>
+<td>1 screen</td>
+</tr>
+<tr>
+<td>6</td>
+<td><strong>The Lockers vertical</strong> — <code>TflCbs.Modules.Lockers</code> + <code>.Web</code> + <code>TflCbs.Host.Lockers</code>, <code>LockerTypeController</code></td>
+<td>25 locker pages incl. <code>Lockers/k_LockerType.aspx</code></td>
+<td style="text-align: center;">❌ xnet ships <strong>4</strong> locker pages (Issue · Notation · Return · Visiting), no LockerType; <code>a_Module</code> row 11 "Lockers" is <strong>inactive with 0 menus</strong></td>
+<td><strong>987 LOC</strong> + a thin host</td>
+</tr>
+<tr>
+<td>7</td>
+<td><strong>User-based menu authorization</strong> — <code>MenuListService</code>'s non-admin path reads <code>a_UserMenu</code></td>
+<td><code>a_UserMenu</code> image table + the proc that builds it</td>
+<td style="text-align: center;">❌ no <code>a_UserMenu</code>, no equivalent proc; xnet is <strong>role-based</strong> (<code>a_Role</code> → <code>a_RoleOnMenu</code>, 6,040 grants)</td>
+<td><strong>blocking</strong> — the access-control spine</td>
+</tr>
+<tr>
+<td>8</td>
+<td><strong>User-switch session tracking</strong> — <code>ShellSessionService</code> writes <code>b_UserSwitchLogTime</code></td>
+<td>same table</td>
+<td style="text-align: center;">❌ absent</td>
+<td>feature drops</td>
+</tr>
+<tr>
+<td>9</td>
+<td><strong>Branch login-window check</strong> — <code>GeneralService</code> reads <code>a_BrLoginAccessTime</code></td>
+<td>same table</td>
+<td style="text-align: center;">❌ absent</td>
+<td>feature drops</td>
+</tr>
+<tr>
+<td>10</td>
+<td><strong>External-module handoff</strong> — <code>ModulesController</code>'s hand-off to an external module</td>
+<td><code>Authentication/external_module_handler.aspx</code> + <code>external_modules</code></td>
+<td style="text-align: center;">❌ <strong>0</strong> refs</td>
+<td>1 endpoint (ours is deliberately <em>not</em> a port of the legacy protocol)</td>
+</tr>
+<tr>
+<td>11</td>
+<td><strong>The file-download endpoint</strong> — <code>DownloadController</code> + <code>FileDownloads</code></td>
+<td><code>download.aspx</code> + <code>FileExtRstrct.config</code></td>
+<td style="text-align: center;">❌ neither present</td>
+<td>1 endpoint (again deliberately not a port — legacy took the path from the query string)</td>
+</tr>
+</tbody>
+</table>
+<h2 id="2-partial-the-component-survives-the-legacy-handler-does-not">2. Partial — the component survives, the legacy handler does not</h2>
+<table>
+<thead>
+<tr>
+<th>What we built</th>
+<th style="text-align: center;">Old</th>
+<th style="text-align: center;">xnet</th>
+<th>Note</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>_AccountPicker</code> / <code>AccountPickerModel</code> / <code>cbs-account-picker.js</code></td>
+<td style="text-align: center;">✅</td>
+<td style="text-align: center;">⚠️</td>
+<td><code>js/lib-trustbank/recordselector/accountSelectorWin.html</code> is in <strong>both</strong>, so the picker's lineage and contract survive; only the server page <code>RetailBanking/Transaction/userControls/AccountSelector.aspx</code> is old-only</td>
+</tr>
+<tr>
+<td><code>AlertService</code> / <code>AlertsController</code></td>
+<td style="text-align: center;">✅</td>
+<td style="text-align: center;">✅</td>
+<td><code>Alertviewer.aspx</code> and all three <code>al_*</code> tables exist in xnet (<code>al_AlertsRights_</code> is <strong>renamed</strong>, not absent). Only two alert <em>targets</em> — <code>EMIAlert.aspx</code>, <code>RetailBanking/Alerts/InvstMatAccAlert.aspx</code> — are old-only</td>
+</tr>
+</tbody>
+</table>
+<h2 id="3-entity-columns-our-code-names-that-xnet-lacks">3. Entity columns our code names that xnet lacks</h2>
+<p>These break at compile time on entity regeneration, so they are listed to be found before the build finds them.</p>
+<table>
+<thead>
+<tr>
+<th>Table</th>
+<th>Columns</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>a_User</code></td>
+<td><code>USERLEVEL</code> <em>(used by the User Creation privilege filter)</em>, <code>PASSEDBY</code>, <code>PASSEDON</code></td>
+</tr>
+<tr>
+<td><code>g_OrgElement</code></td>
+<td><code>IFSCCODE</code>, <code>PAN</code>, <code>TAN</code>, <code>GSTN</code>, <code>GSTNSTATECODE</code>, <code>LBRCODE</code>, <code>BRANCHTYPE</code>, <code>ISCOMPUTERIZED</code></td>
+</tr>
+<tr>
+<td><code>g_BankVariables</code></td>
+<td><code>TAG</code>, <code>SUBTAG</code>, <code>INPUTTYPE</code>, <code>LENGTH</code>, <code>LENGTHTYPE</code>, <code>CRITERIA</code>, <code>DEFAULTVALUES</code>, <code>DEPENDENCY</code>, <code>EXAMPLE</code>, <code>NOTES</code></td>
+</tr>
+<tr>
+<td><code>a_UserRights</code></td>
+<td><code>ISREPORT</code>, <code>USERRIGHTSCONSID</code></td>
+</tr>
+<tr>
+<td><code>a_Menus</code></td>
+<td><code>ISDLS</code></td>
+</tr>
+</tbody>
+</table>
+<h2 id="4-what-is-deliberately-not-on-this-list">4. What is deliberately <strong>not</strong> on this list</h2>
+<p>Checked and ruled out, because the reason each looks old-only turns out to be something else:</p>
+<ul>
+<li><strong>Bank/branch variables.</strong> <code>g_BankVariables</code> / <code>g_BranchVariables</code> exist in xnet with column drift (§3). <code>BankVariableService</code>, <code>IBankVariableSource</code> and <code>IReferenceCache</code> stand.</li>
+<li><strong>The screens from batch 7 onward.</strong> Signature, Direct Credit, Dormant Reactivation, Holding Amount, Denomination + Denomination Unit, Employer Master, Commission Rate, BG Currency GL Mapping are all <strong>xnet-sourced</strong> — several have no counterpart in the 20260606 tree at all. They are the opposite of this list.</li>
+<li><strong>Everything in §8 of the impact analysis</strong> — architecture, composition, session/access, <code>Result&lt;T&gt;</code>, pickers, route cutover, observability. Schema-independent or present in both.</li>
+<li><strong>The three legacy user-control families</strong> the reusable components were ported from (<code>RecordSelector</code> / <code>TssiplSearchBox</code> / <code>TssiplDatePicker</code>) — all present in xnet with the same contract.</li>
+</ul>
+<h2 id="5-totals">5. Totals</h2>
+<table>
+<thead>
+<tr>
+<th></th>
+<th style="text-align: right;">Count</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Screens orphaned</td>
+<td style="text-align: right;"><strong>4</strong> (Marquee alert · Blocked users · Taluka · Locker Type)</td>
+</tr>
+<tr>
+<td>Services / endpoints orphaned</td>
+<td style="text-align: right;"><strong>6</strong> (ForgotPassword · Broadcast · user-switch · login-window · external-module handoff · download)</td>
+</tr>
+<tr>
+<td>Projects orphaned</td>
+<td style="text-align: right;"><strong>12</strong> (9 MFA + Lockers module + Lockers RCL + Lockers host)</td>
+</tr>
+<tr>
+<td>C# LOC orphaned</td>
+<td style="text-align: right;"><strong>~3,600</strong></td>
+</tr>
+<tr>
+<td>Framework ports needing a new source</td>
+<td style="text-align: right;"><strong>1 of 4</strong> (<code>IBroadcastSource</code>); a 2nd (<code>IMenuSource</code>) needs reworking, not replacing</td>
+</tr>
+</tbody>
+</table>
+<p>Set against ~56 projects, that is the shape the impact analysis predicted: the cost is concentrated in one optional security stack and one vertical slice, and the architecture is untouched.</p>
+</div></div>
+<script>
+(function(){
+ function put(t){
+  if(navigator.clipboard&&navigator.clipboard.writeText)return navigator.clipboard.writeText(t);
+  return new Promise(function(res,rej){
+   var a=document.createElement('textarea');a.value=t;a.setAttribute('readonly','');
+   a.style.cssText='position:fixed;top:0;left:0;opacity:0';document.body.appendChild(a);
+   a.select();var ok=false;try{ok=document.execCommand('copy')}catch(e){}
+   document.body.removeChild(a);ok?res():rej()});
+ }
+ function flash(el,txt,ms){
+  var was=el.textContent;el.classList.add('done');if(txt)el.textContent=txt;
+  setTimeout(function(){el.classList.remove('done');if(txt)el.textContent=was},ms||1200);
+ }
+ function copy(text,el,okTxt){
+  put(text).then(function(){flash(el,okTxt)},function(){
+   if(okTxt){var w=el.textContent;el.textContent='Ctrl+C';setTimeout(function(){el.textContent=w},2000)}});
+ }
+ document.querySelectorAll('pre').forEach(function(pre){
+  if(pre.classList.contains('txtdoc'))return;
+  var b=document.createElement('button');
+  b.type='button';b.className='copy';b.textContent='Copy';
+  b.setAttribute('aria-label','Copy this code block to the clipboard');
+  b.addEventListener('click',function(){copy((pre.querySelector('code')||pre).innerText,b,'Copied')});
+  pre.appendChild(b);
+ });
+ document.querySelectorAll('td code').forEach(function(c){
+  if(!c.textContent.trim())return;
+  c.classList.add('cp');c.tabIndex=0;c.setAttribute('role','button');
+  c.title='Click to copy';
+  c.addEventListener('click',function(){copy(c.textContent,c)});
+  c.addEventListener('keydown',function(e){
+   if(e.key==='Enter'||e.key===' '){e.preventDefault();copy(c.textContent,c)}});
+ });
+})();
+</script>
+</body></html>

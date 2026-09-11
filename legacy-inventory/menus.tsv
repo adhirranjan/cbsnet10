@@ -1,0 +1,1104 @@
+MenuId	ModuleId	ModuleName	ModuleCode	MenuCaption	ParentMenuId	NavigateUrl	LegacyUrl	IsActive	IsReport
+823	1	Central Administration	hrms	Application Settings				1	
+824	1	Central Administration	hrms	Module	823	/Administration/Module	~/ho/admin/a_Module.aspx?	1	
+825	1	Central Administration	hrms	Roles	823	/Administration/Role	~/ho/admin/A_RoleMaster.aspx?	1	
+826	1	Central Administration	hrms	Menus	823	/Administration/Menu	~/ho/admin/A_Menus.aspx?	0	
+827	1	Central Administration	hrms	User Settings				1	
+828	1	Central Administration	hrms	User Creation	827	~/ho/admin/A_User.aspx?	~/ho/admin/A_User.aspx?	1	
+829	1	Central Administration	hrms	Login Policy	827	~/ho/admin/PasswordPolicyConfig.aspx?	~/ho/admin/PasswordPolicyConfig.aspx?	1	
+830	1	Central Administration	hrms	Application Management				1	
+831	1	Central Administration	hrms	Role On Menu	830	~/ho/admin/A_RoleOnMenu.aspx?	~/ho/admin/A_RoleOnMenu.aspx?	1	
+832	1	Central Administration	hrms	User In Module	830	~/ho/admin/A_UserInModule.aspx?	~/ho/admin/A_UserInModule.aspx?	1	
+833	1	Central Administration	hrms	User Rights	830	~/ho/admin/a_UserRights.aspx?	~/ho/admin/a_UserRights.aspx?	1	
+834	1	Central Administration	hrms	Organization Settings				1	
+835	1	Central Administration	hrms	Bank Details	834	~/Hr/g_Bank.aspx?	~/Hr/g_Bank.aspx?	1	
+836	1	Central Administration	hrms	Organization Chart	834	~/ho/bank/g_OrgElement.aspx?	~/ho/bank/g_OrgElement.aspx?	1	
+837	1	Central Administration	hrms	Departments	834	~/ho/bank/g_OrgelementDepartment.aspx?	~/ho/bank/g_OrgelementDepartment.aspx?	1	
+838	1	Central Administration	hrms	Branch Category	834	~/ho/bank/g_BranchCategory.aspx?	~/ho/bank/g_BranchCategory.aspx?	1	
+839	1	Central Administration	hrms	Designation	834	~/ho/bank/g_Designation.aspx?	~/ho/bank/g_Designation.aspx?	1	
+840	1	Central Administration	hrms	Title	834	~/Ho/Bank/g_Title.aspx?	~/Ho/Bank/g_Title.aspx?	1	
+841	1	Central Administration	hrms	Grade	834	~/ho/bank/g_Step.aspx?	~/ho/bank/g_Step.aspx?	1	
+842	1	Central Administration	hrms	Bank Directors/Relatives	834	~/Ho/Hr/g_BankDirectors.aspx?	~/Ho/Hr/g_BankDirectors.aspx?	1	
+843	1	Central Administration	hrms	State	834	/Hr/State	~/Ho/Bank/g_State.aspx?	1	
+844	1	Central Administration	hrms	District	834	/Hr/District	~/Ho/bank/g_District.aspx?	0	
+845	1	Central Administration	hrms	City	834	~/Ho/bank/g_City.aspx?	~/Ho/bank/g_City.aspx?	1	
+846	1	Central Administration	hrms	Ethinic Groups	834	~/ho/bank/g_EthinicGroup.aspx?	~/ho/bank/g_EthinicGroup.aspx?	0	
+847	1	Central Administration	hrms	Employees	834	~/ho/hr/h_Employee.aspx?	~/ho/hr/h_Employee.aspx?	1	
+848	1	Central Administration	hrms	Service Status	834	~/ho/bank/g_ServiceStatus.aspx?	~/ho/bank/g_ServiceStatus.aspx?	1	
+849	1	Central Administration	hrms	Relation	834	~/ho/bank/g_Relation.aspx?	~/ho/bank/g_Relation.aspx?	1	
+850	1	Central Administration	hrms	Languages	834	~/HO/HR/g_Language.aspx?	~/HO/HR/g_Language.aspx?	1	
+851	1	Central Administration	hrms	Employee Management Settings				1	
+852	1	Central Administration	hrms	Disciplinary Action Details	851	~/hr/h_DiscipAction.aspx?	~/hr/h_DiscipAction.aspx?	1	
+853	1	Central Administration	hrms	Honors And Award	851	~/hr/h_HonAward.aspx?	~/hr/h_HonAward.aspx?	1	
+854	1	Central Administration	hrms	Leave Type	851	~/ho/hr/h_LeaveType.aspx?	~/ho/hr/h_LeaveType.aspx?	1	
+855	1	Central Administration	hrms	Qualifications	851	~/hr/h_Qualification.aspx?	~/hr/h_Qualification.aspx?	1	
+856	1	Central Administration	hrms	Employee Management				1	
+857	1	Central Administration	hrms	Disciplinary Action	856	/Hr/DiscipActionHistory	~/hr/h_DiscipActionHistory.aspx?	1	
+858	1	Central Administration	hrms	Experience History	856	~/hr/h_ExprHistory.aspx?	~/hr/h_ExprHistory.aspx?	1	
+859	1	Central Administration	hrms	Honors And Award History	856	~/hr/h_HonAwardHistory.aspx?	~/hr/h_HonAwardHistory.aspx?	1	
+860	1	Central Administration	hrms	Promotion History	856	~/hr/h_PromHistory.aspx?	~/hr/h_PromHistory.aspx?	1	
+861	1	Central Administration	hrms	Transfer History	856	~/hr/h_TransferHistory.aspx?	~/hr/h_TransferHistory.aspx?	1	
+862	1	Central Administration	hrms	Training History	856	~/hr/h_CourseHistory.aspx?	~/hr/h_CourseHistory.aspx?	1	
+863	1	Central Administration	hrms	Employee Transfer	856	~/hr/h_Transfer.aspx?selectedtask=transfer	~/hr/h_Transfer.aspx?selectedtask=transfer	1	
+864	1	Central Administration	hrms	Employee Release	856	~/Hr/h_transfer.aspx?selectedtask=relieving	~/Hr/h_transfer.aspx?selectedtask=relieving	1	
+865	1	Central Administration	hrms	Employee Resumption	856	~/Hr/h_transfer.aspx?selectedtask=joining	~/Hr/h_transfer.aspx?selectedtask=joining	1	
+866	1	Central Administration	hrms	Qualification Details	856	~/Hr/h_QualificationHistory.aspx?	~/Hr/h_QualificationHistory.aspx?	1	
+867	1	Central Administration	hrms	Promotion / Demotion	856	~/hr/h_Promotion.aspx?	~/hr/h_Promotion.aspx?	1	
+868	1	Central Administration	hrms	Leave Approval	856	~/hr/h_LeaveApproval.aspx?	~/hr/h_LeaveApproval.aspx?	1	
+869	1	Central Administration	hrms	Leave Cancellation	856	~/Hr/h_LeaveCancellation.aspx?	~/Hr/h_LeaveCancellation.aspx?	1	
+870	1	Central Administration	hrms	Retail Banking Administration				1	
+871	1	Central Administration	hrms	Credit Administration	870			1	
+872	1	Central Administration	hrms	Loan Product	871	~/Ho/ProjectFormulation/p_SchemeDetails.aspx?	~/Ho/ProjectFormulation/p_SchemeDetails.aspx?	1	
+873	1	Central Administration	hrms	Loan Product Settings	871	~/HO/ProjectFormulation/c_Loanscheme.aspx?	~/HO/ProjectFormulation/c_Loanscheme.aspx?	1	
+874	1	Central Administration	hrms	Loan Interest Update	871	~/RetailBanking/LoanInterestUpdation.aspx?	~/RetailBanking/LoanInterestUpdation.aspx?	1	
+875	1	Central Administration	hrms	Deposits Administration	870			1	
+876	1	Central Administration	hrms	Deposit Product	875	~/Ho/RetailBanking/d_DepositScheme.aspx?	~/Ho/RetailBanking/d_DepositScheme.aspx?	1	
+877	1	Central Administration	hrms	Passbook Print Settings	875	~/RetailBanking/PassBookParameterSetting.aspx?	~/RetailBanking/PassBookParameterSetting.aspx?	0	
+878	1	Central Administration	hrms	Account Statement Print Settings	875	~/	~/	0	
+879	1	Central Administration	hrms	FD Print Settings	875	~/RetailBanking/DDPOParameterSetting.aspx?	~/RetailBanking/DDPOParameterSetting.aspx?	1	
+880	1	Central Administration	hrms	Accounts	870			1	
+881	1	Central Administration	hrms	Vault Opening Details	880	~/RetailBanking/Cash/x_ChestOpening.aspx?	~/RetailBanking/Cash/x_ChestOpening.aspx?	1	
+882	1	Central Administration	hrms	Chart of Accounts	880	~/ho/Bank/g_AccountHead.aspx?	~/ho/Bank/g_AccountHead.aspx?	1	
+883	1	Central Administration	hrms	Chart Of Account Opening Balance	880	~/RetailBanking/OpeningBalance.aspx?	~/RetailBanking/OpeningBalance.aspx?	1	
+884	1	Central Administration	hrms	Notes (Trial Balance and Profit and Loss)	880	~/Ho/Bank/g_Notes.aspx?	~/Ho/Bank/g_Notes.aspx?	1	
+885	1	Central Administration	hrms	General Settings	870			1	
+886	1	Central Administration	hrms	Bank Variables	885	~/	~/	0	
+887	1	Central Administration	hrms	Branch Variables	885	~/	~/	0	
+888	1	Central Administration	hrms	Main Transaction Chart of Accounts Mapping	885	~/ho/bank/g_FormAccountHeadMapping.aspx?	~/ho/bank/g_FormAccountHeadMapping.aspx?	1	
+889	1	Central Administration	hrms	Cashier Limit	885	~/ho/admin/a_CashierLimit.aspx?	~/ho/admin/a_CashierLimit.aspx?	0	
+890	1	Central Administration	hrms	Denominations	885	~/Ho/Multicurrency/g_Denomination.aspx?	~/Ho/Multicurrency/g_Denomination.aspx?	1	
+891	1	Central Administration	hrms	Community	885	~/RetailBanking/c_Community.aspx?	~/RetailBanking/c_Community.aspx?	1	
+892	1	Central Administration	hrms	Special Groups	885	~/RetailBanking/c_WeakerSection.aspx?	~/RetailBanking/c_WeakerSection.aspx?	0	
+893	1	Central Administration	hrms	Denomination Unit	885	~/Ho/MultiCurrency/g_DenominationUnit.aspx?	~/Ho/MultiCurrency/g_DenominationUnit.aspx?	1	
+894	1	Central Administration	hrms	Document Type	885	~/RetailBanking/b_DocumentType.aspx?source=808	~/RetailBanking/b_DocumentType.aspx?source=808	1	
+895	1	Central Administration	hrms	Transaction Description Mapping for Overdue	885	~/Ho/Bank/b_GlInterestMapping.aspx?	~/Ho/Bank/b_GlInterestMapping.aspx?	1	
+896	1	Central Administration	hrms	Casual OverDraft Account	925	~/RetailBanking/g_AllowDebitTransactionAccountHeads_v1.aspx?	~/RetailBanking/g_AllowDebitTransactionAccountHeads_v1.aspx?	1	
+897	1	Central Administration	hrms	Holidays	885	~/ho/retailbanking/b_Holiday.aspx?	~/ho/retailbanking/b_Holiday.aspx?	1	
+898	1	Central Administration	hrms	Debt Collector	885	~/RetailBanking/g_debtcollector.aspx?	~/RetailBanking/g_debtcollector.aspx?	1	
+899	1	Central Administration	hrms	Charges Configuration	885	~/Ho/ChargesConfig.aspx?	~/Ho/ChargesConfig.aspx?	1	
+900	1	Central Administration	hrms	Currency	885	~/Treasury/Masters/g_Currency.aspx?	~/Treasury/Masters/g_Currency.aspx?	1	
+901	1	Central Administration	hrms	Delinquency Settings	870			1	
+902	1	Central Administration	hrms	Method Mapping	901	~/RetailBanking/npa/c_NPAMethodMapping.aspx?	~/RetailBanking/npa/c_NPAMethodMapping.aspx?	1	
+903	1	Central Administration	hrms	Class Master	901	~/RetailBanking/npa/b_NPAClassMaster.aspx?	~/RetailBanking/npa/b_NPAClassMaster.aspx?	1	
+904	1	Central Administration	hrms	Provision Slabs	901	~/RetailBanking/npa/b_NPAMaster.aspx?	~/RetailBanking/npa/b_NPAMaster.aspx?	1	
+908	1	Central Administration	hrms	Alerts Management				1	
+909	1	Central Administration	hrms	Configuration	908	~/ho/Alerts/al_AlertConfig.aspx?	~/ho/Alerts/al_AlertConfig.aspx?	1	
+910	1	Central Administration	hrms	User Wise Rights	908	~/ho/Alerts/al_AlertsRights.aspx?	~/ho/Alerts/al_AlertsRights.aspx?	1	
+911	1	Central Administration	hrms	Audit Trail Settings				1	
+912	1	Central Administration	hrms	Audit selection criteria	911	~/ho/admin/Audit.aspx?	~/ho/admin/Audit.aspx?	1	
+913	1	Central Administration	hrms	Audit Trail				1	
+914	1	Central Administration	hrms	Audit View	913	~/ho/admin/AuditView.aspx?	~/ho/admin/AuditView.aspx?	1	
+915	7	Retail and Corporate Operations	Banking	Portfolio Management				1	
+916	7	Retail and Corporate Operations	Banking	Groups	915			0	
+917	7	Retail and Corporate Operations	Banking	Group Creation	916	~/	~/	0	
+918	7	Retail and Corporate Operations	Banking	Group Authorization	916	~/	~/	0	
+919	7	Retail and Corporate Operations	Banking	Clients	915			1	
+920	7	Retail and Corporate Operations	Banking	Client Creation	919	~/ho/b_Clientv2.aspx?	~/ho/b_Clientv2.aspx?	1	
+921	7	Retail and Corporate Operations	Banking	Client Authorization	919	~/ho/b_Clientv2.aspx?Source=Pass	~/ho/b_Clientv2.aspx?Source=Pass	1	
+922	7	Retail and Corporate Operations	Banking	Black List Client	919	~/HO/b_ClientBlackList.aspx?	~/HO/b_ClientBlackList.aspx?	1	
+923	7	Retail and Corporate Operations	Banking	Account Status Modification	919	~/RetailBanking/StatusModification_v1.aspx?	~/RetailBanking/StatusModification_v1.aspx?	1	
+924	7	Retail and Corporate Operations	Banking	Account Status Authorization	919	~/RetailBanking/StatusModification_v1.aspx?Source=Passing	~/RetailBanking/StatusModification_v1.aspx?Source=Passing	1	
+925	7	Retail and Corporate Operations	Banking	Loans	915			1	
+926	7	Retail and Corporate Operations	Banking	Add Clients to Group	925	~/	~/	0	
+927	7	Retail and Corporate Operations	Banking	Loan Account Opening	925	~/retailbanking/account/c_loan.aspx?	~/retailbanking/account/c_loan.aspx?	1	
+928	7	Retail and Corporate Operations	Banking	Loan Account Authorization	925	~/retailbanking/account/c_loan.aspx?Source=passing	~/retailbanking/account/c_loan.aspx?Source=passing	1	
+929	7	Retail and Corporate Operations	Banking	Insurance Details	925	~/RetailBanking/Insurance/c_LoanInsurance.aspx?Source=Transaction	~/RetailBanking/Insurance/c_LoanInsurance.aspx?Source=Transaction	1	
+930	7	Retail and Corporate Operations	Banking	Insurance Claim	925	~/RetailBanking/Insurance/c_LoanInsuranceClaim.aspx?Source=Transaction	~/RetailBanking/Insurance/c_LoanInsuranceClaim.aspx?Source=Transaction	1	
+931	7	Retail and Corporate Operations	Banking	Insurance Claim Authorization	925	~/RetailBanking/Insurance/c_LoanInsuranceClaim.aspx?Source=PassTransaction	~/RetailBanking/Insurance/c_LoanInsuranceClaim.aspx?Source=PassTransaction	1	
+932	7	Retail and Corporate Operations	Banking	Loan Security	925	~/RetailBanking/Account/c_LoanSecurity.aspx?Source=Transaction&IsIslamic=False	~/RetailBanking/Account/c_LoanSecurity.aspx?Source=Transaction&IsIslamic=False	0	
+933	7	Retail and Corporate Operations	Banking	Loan Security Authorization	925	~/RetailBanking/Account/c_LoanSecurity.aspx?Source=Passing&IsIslamic=False	~/RetailBanking/Account/c_LoanSecurity.aspx?Source=Passing&IsIslamic=False	0	
+934	7	Retail and Corporate Operations	Banking	Deposits	915			1	
+935	7	Retail and Corporate Operations	Banking	Deposit Account Opening	934	~/RetailBanking/Account/DepositAccount.aspx?	~/RetailBanking/Account/DepositAccount.aspx?	1	
+936	7	Retail and Corporate Operations	Banking	Deposit Account Authorization	934	~/RetailBanking/Account/DepositAccount.aspx?Source=Passing	~/RetailBanking/Account/DepositAccount.aspx?Source=Passing	1	
+937	7	Retail and Corporate Operations	Banking	Other Accounts	915			1	
+938	7	Retail and Corporate Operations	Banking	General Account	937	~/retailbanking/account/generalaccount.aspx?	~/retailbanking/account/generalaccount.aspx?	1	
+939	7	Retail and Corporate Operations	Banking	General Account Authorization	937	~/retailbanking/account/generalaccount.aspx?Source=passing	~/retailbanking/account/generalaccount.aspx?Source=passing	1	
+940	7	Retail and Corporate Operations	Banking	Bank Current Account	937	~/RetailBanking/Account/bankCurrentAccount.aspx?	~/RetailBanking/Account/bankCurrentAccount.aspx?	1	
+941	7	Retail and Corporate Operations	Banking	Bank Current Account Authorization	937	~/RetailBanking/Account/bankCurrentAccount.aspx?Source=passing	~/RetailBanking/Account/bankCurrentAccount.aspx?Source=passing	1	
+944	7	Retail and Corporate Operations	Banking	Overdrawn Additional Limit	925	~/RetailBanking/g_AllowDebitTranAddLimit.aspx?Source=entry	~/RetailBanking/g_AllowDebitTranAddLimit.aspx?Source=entry	1	
+945	7	Retail and Corporate Operations	Banking	Overdrawn Additional Limit Authorization	925	~/RetailBanking/g_AllowDebitTranAddLimit.aspx?Source=pass	~/RetailBanking/g_AllowDebitTranAddLimit.aspx?Source=pass	1	
+948	7	Retail and Corporate Operations	Banking	Dormant Activities	915			1	
+949	7	Retail and Corporate Operations	Banking	Dormant Transfer	948	~/RetailBanking/dormant/b_DormantHistory.aspx?source=Activity	~/RetailBanking/dormant/b_DormantHistory.aspx?source=Activity	1	
+950	7	Retail and Corporate Operations	Banking	Dormant Transfer Authorization	948	~/RetailBanking/dormant/b_DormantHistory.aspx?source=Pass	~/RetailBanking/dormant/b_DormantHistory.aspx?source=Pass	1	
+951	7	Retail and Corporate Operations	Banking	Dormant Re Activation	948	~/RetailBanking/dormant/x_DormantReActivationv1.aspx?	~/RetailBanking/dormant/x_DormantReActivationv1.aspx?	1	
+952	7	Retail and Corporate Operations	Banking	Dormant Re Activation Authorization	948	~/RetailBanking/dormant/x_DormantReActivationv1.aspx?Source=Pass	~/RetailBanking/dormant/x_DormantReActivationv1.aspx?Source=Pass	1	
+953	7	Retail and Corporate Operations	Banking	Dormant Closing	948	~/RetailBanking/dormant/DormantClosing.aspx?Source=Close	~/RetailBanking/dormant/DormantClosing.aspx?Source=Close	1	
+954	7	Retail and Corporate Operations	Banking	Dormant Closing Authorization	948	~/RetailBanking/dormant/DormantClosing.aspx?Source=Pass	~/RetailBanking/dormant/DormantClosing.aspx?Source=Pass	1	
+955	7	Retail and Corporate Operations	Banking	SI Transactions	915			1	
+956	7	Retail and Corporate Operations	Banking	SI Entry	955	~/RetailBanking/Si/x_StandingInstruction.aspx?	~/RetailBanking/Si/x_StandingInstruction.aspx?	1	
+957	7	Retail and Corporate Operations	Banking	SI Entry Authorization	955	~/RetailBanking/Si/x_StandingInstruction.aspx?Source=passing	~/RetailBanking/Si/x_StandingInstruction.aspx?Source=passing	1	
+958	7	Retail and Corporate Operations	Banking	SI Cancellation	955	~/RetailBanking/Si/x_StandingInstruction.aspx?Source=cancel	~/RetailBanking/Si/x_StandingInstruction.aspx?Source=cancel	1	
+959	7	Retail and Corporate Operations	Banking	SI Cancellation Authorization	955	~/RetailBanking/Si/x_StandingInstruction.aspx?Source=cancelpassing	~/RetailBanking/Si/x_StandingInstruction.aspx?Source=cancelpassing	1	
+960	7	Retail and Corporate Operations	Banking	SI Process	955	~/RetailBanking/Si/StandingInstructionProcessing.aspx?	~/RetailBanking/Si/StandingInstructionProcessing.aspx?	1	
+961	7	Retail and Corporate Operations	Banking	SI Transaction Process Authorization	955	~/RetailBanking/Si/standingInstructionProcessing.aspx?Source=passing	~/RetailBanking/Si/standingInstructionProcessing.aspx?Source=passing	1	
+962	7	Retail and Corporate Operations	Banking	Transactions				1	
+963	7	Retail and Corporate Operations	Banking	Loan	962			1	
+964	7	Retail and Corporate Operations	Banking	Repayment Transaction	963	~/RetailBanking/x_LoanRepayment.aspx?	~/RetailBanking/x_LoanRepayment.aspx?	1	
+965	7	Retail and Corporate Operations	Banking	Repayment Transaction Authorization	963	~/RetailBanking/x_LoanRepayment.aspx?Source=passing	~/RetailBanking/x_LoanRepayment.aspx?Source=passing	1	
+966	7	Retail and Corporate Operations	Banking	Transaction Journal	962			1	
+967	7	Retail and Corporate Operations	Banking	Cash Reversal Transaction 	966	~/RetailBanking/transaction/x_Transaction.aspx?Source=Transaction&MenuMode=Separate	~/RetailBanking/transaction/x_Transaction.aspx?Source=Transaction&MenuMode=Separate	0	
+968	7	Retail and Corporate Operations	Banking	Cash Reversal Transaction Authorization	966	~/RetailBanking/transaction/x_Transaction.aspx?Source=PassTransaction&MenuMode=Separate	~/RetailBanking/transaction/x_Transaction.aspx?Source=PassTransaction&MenuMode=Separate	0	
+969	7	Retail and Corporate Operations	Banking	Batch Transaction	966	~/RetailBanking/transaction/x_BatchTransaction.aspx?Source=Transaction	~/RetailBanking/transaction/x_BatchTransaction.aspx?Source=Transaction	0	
+970	7	Retail and Corporate Operations	Banking	Batch Transaction Authorization	966	~/RetailBanking/transaction/x_BatchTransaction.aspx?Source=PassTransaction	~/RetailBanking/transaction/x_BatchTransaction.aspx?Source=PassTransaction	0	
+971	7	Retail and Corporate Operations	Banking	Batch Transaction template Creation	966	~/RetailBanking/transaction/x_BatchTransactionTemplate.aspx?Source=Transaction	~/RetailBanking/transaction/x_BatchTransactionTemplate.aspx?Source=Transaction	0	
+972	7	Retail and Corporate Operations	Banking	Many to Many Transaction	966	~/RetailBanking/transaction/x_ManyToManyTransaction_v1.aspx?Source=transaction	~/RetailBanking/transaction/x_ManyToManyTransaction_v1.aspx?Source=transaction	1	
+973	7	Retail and Corporate Operations	Banking	Many to Many Transaction Authorization	966	~/RetailBanking/transaction/x_ManyToManyTransaction_v1.aspx?Source=passtransaction	~/RetailBanking/transaction/x_ManyToManyTransaction_v1.aspx?Source=passtransaction	1	
+974	7	Retail and Corporate Operations	Banking	Many to Many Transaction Deletion	966	~/RetailBanking/Transaction/x_ManyToManyTransaction_v1.aspx?Source=Delete	~/RetailBanking/Transaction/x_ManyToManyTransaction_v1.aspx?Source=Delete	1	
+975	7	Retail and Corporate Operations	Banking	ABBS Transactions	962			0	
+976	7	Retail and Corporate Operations	Banking	Transaction Entry	975	~/RetailBanking/transaction/x_BranchToBranchTransactionCash_v1.aspx?Source=Transaction	~/RetailBanking/transaction/x_BranchToBranchTransactionCash_v1.aspx?Source=Transaction	0	
+977	7	Retail and Corporate Operations	Banking	Transaction Authorization	975	~/RetailBanking/transaction/x_BranchToBranchTransactionCash_v1.aspx?Source=PassTransaction	~/RetailBanking/transaction/x_BranchToBranchTransactionCash_v1.aspx?Source=PassTransaction	0	
+978	7	Retail and Corporate Operations	Banking	Delinqunecy Transaction	962			1	
+979	7	Retail and Corporate Operations	Banking	Calculation	978	~/RetailBanking/npa/x_NpaCalculation.aspx?	~/RetailBanking/npa/x_NpaCalculation.aspx?	1	
+980	7	Retail and Corporate Operations	Banking	Calculation Authorization	978	~/RetailBanking/npa/x_NPACalculation.aspx?Source=pass	~/RetailBanking/npa/x_NPACalculation.aspx?Source=pass	1	
+981	7	Retail and Corporate Operations	Banking	Account Setting	978	~/RetailBanking/npa/c_NPAAccountSetting.aspx?	~/RetailBanking/npa/c_NPAAccountSetting.aspx?	1	
+982	7	Retail and Corporate Operations	Banking	Cheque Deposit Transactions	962			0	
+983	7	Retail and Corporate Operations	Banking	Deposit Collection	982	~/	~/	0	
+984	7	Retail and Corporate Operations	Banking	Deposit Realisation	982	~/	~/	0	
+985	7	Retail and Corporate Operations	Banking	Deposit Return	982	~/	~/	0	
+986	7	Retail and Corporate Operations	Banking	 Deposit Authorization	982	~/	~/	0	
+987	7	Retail and Corporate Operations	Banking	Quick Transactions	962			1	
+988	7	Retail and Corporate Operations	Banking	Teller Transaction	987	~/RetailBanking/transaction/x_transactionv1.aspx?Source=TELLER	~/RetailBanking/transaction/x_transactionv1.aspx?Source=TELLER	0	
+989	7	Retail and Corporate Operations	Banking	Deposit	962			1	
+990	0			Saving Account Closure	989	~/RetailBanking/transaction/x_sbcardaccountclosingv1.aspx?	~/RetailBanking/transaction/x_sbcardaccountclosingv1.aspx?	1	
+991	0			Saving Account Closure Authorization	989	~/RetailBanking/transaction/x_sbcardaccountclosingv1.aspx?source=passing	~/RetailBanking/transaction/x_sbcardaccountclosingv1.aspx?source=passing	1	
+997	7	Retail and Corporate Operations	Banking	Utilities				1	
+998	7	Retail and Corporate Operations	Banking	Signature Image Upload	997	~/RetailBanking/b_Signature_V1.aspx?	~/RetailBanking/b_Signature_V1.aspx?	1	
+999	7	Retail and Corporate Operations	Banking	Change Password	997	~/ho/admin/a_ChangePassword.aspx?	~/ho/admin/a_ChangePassword.aspx?	1	
+1000	7	Retail and Corporate Operations	Banking	User Release	997	/Administration/ConnectedUsers	~/config/connectedusers.aspx?	1	
+1001	7	Retail and Corporate Operations	Banking	Lock Release	997	~/retailbanking/transaction/x_LockRelease.aspx?	~/retailbanking/transaction/x_LockRelease.aspx?	1	
+1002	7	Retail and Corporate Operations	Banking	Update Line Balance	997	~/RetailBanking/LineUpdateBalance.aspx?	~/RetailBanking/LineUpdateBalance.aspx?	1	
+1003	7	Retail and Corporate Operations	Banking	EOD/SOD Activities				1	
+1004	7	Retail and Corporate Operations	Banking	Start of Day	1003	~/RetailBanking/daybegin.aspx?	~/RetailBanking/daybegin.aspx?	0	
+1005	7	Retail and Corporate Operations	Banking	End of Day	1003	~/RetailBanking/DayEnd.aspx?	~/RetailBanking/DayEnd.aspx?	0	
+1006	7	Retail and Corporate Operations	Banking	Reports		~/Reports/ReportSelector.aspx?moduleid=7	~/Reports/ReportSelector.aspx?moduleid=7	1	
+1007	7	Retail and Corporate Operations	Banking	Cash Operations				1	
+1008	7	Retail and Corporate Operations	Banking	Cash Transaction	1007	~/RetailBanking/cash/x_CashierScroll.aspx?	~/RetailBanking/cash/x_CashierScroll.aspx?	1	
+1009	7	Retail and Corporate Operations	Banking	Cashier Treasury Transaction	1007	~/RetailBanking/cash/x_ChestCashierLedger_v1.aspx?	~/RetailBanking/cash/x_ChestCashierLedger_v1.aspx?	1	
+1010	1	Central Administration	hrms	Currency Settings	870			1	
+1011	1	Central Administration	hrms	Currency Cash Chart of Account Mapping	1010	~/Ho/MultiCurrency/tr_CashCurrencyHead.aspx?	~/Ho/MultiCurrency/tr_CashCurrencyHead.aspx?	1	
+1012	7	Retail and Corporate Operations	Banking	Currency Rates	1007			0	
+1013	7	Retail and Corporate Operations	Banking	Currency Exchange Rates	1012	~/HO/retailBanking/tr_TradingRateCard.aspx?	~/HO/retailBanking/tr_TradingRateCard.aspx?	1	
+1014	7	Retail and Corporate Operations	Banking	Currency Exchange Rates Authorization	1012	~/HO/retailBanking/tr_TradingRateCard.aspx?Source=Pass	~/HO/retailBanking/tr_TradingRateCard.aspx?Source=Pass	1	
+1015	7	Retail and Corporate Operations	Banking	Currency Exchange Rate Spread	1012	~/Treasury/Masters/tr_DefaultSpread.aspx?	~/Treasury/Masters/tr_DefaultSpread.aspx?	0	
+1016	7	Retail and Corporate Operations	Banking	Currency Exchange Rate Spread Authorization	1012	~/Treasury/Masters/tr_DefaultSpread.aspx?Source=Pass	~/Treasury/Masters/tr_DefaultSpread.aspx?Source=Pass	0	
+1017	7	Retail and Corporate Operations	Banking	Forex Transactions				1	
+1018	7	Retail and Corporate Operations	Banking	Foreign Exch Tran Entry	1017	~/Treasury/FX/tr_FxTransfer.aspx?Source=Transaction	~/Treasury/FX/tr_FxTransfer.aspx?Source=Transaction	0	
+1019	7	Retail and Corporate Operations	Banking	Foreign Exch Tran Entry Passing	1017	~/Treasury/FX/tr_FxTransfer.aspx?Source=Passing	~/Treasury/FX/tr_FxTransfer.aspx?Source=Passing	0	
+1020	7	Retail and Corporate Operations	Banking	Rate Master	1012	~/Treasury/Masters/tr_Rates.aspx?	~/Treasury/Masters/tr_Rates.aspx?	0	
+1021	7	Retail and Corporate Operations	Banking	Clearing	962			1	
+1022	7	Retail and Corporate Operations	Banking	Inward Return Transaction	1021	~/RetailBanking/clearing/x_InwardReturnTransaction.aspx?Source=Save	~/RetailBanking/clearing/x_InwardReturnTransaction.aspx?Source=Save	0	
+1023	7	Retail and Corporate Operations	Banking	Inward Return Transaction Authorization	1021	~/RetailBanking/clearing/x_InwardReturnTransaction.aspx?Source=Pass	~/RetailBanking/clearing/x_InwardReturnTransaction.aspx?Source=Pass	0	
+1024	7	Retail and Corporate Operations	Banking	Outward Batch Creation	1021	~/RetailBanking/clearing/createLot.aspx?	~/RetailBanking/clearing/createLot.aspx?	0	
+1025	7	Retail and Corporate Operations	Banking	Outward Clearing Transaction	1021	~/RetailBanking/clearing/addoutwardclearingtransactionv1.aspx?Source=Save	~/RetailBanking/clearing/addoutwardclearingtransactionv1.aspx?Source=Save	1	
+1026	7	Retail and Corporate Operations	Banking	Outward Clearing Transaction Authorization	1021	~/RetailBanking/clearing/addoutwardclearingtransactionv1.aspx?Source=Pass	~/RetailBanking/clearing/addoutwardclearingtransactionv1.aspx?Source=Pass	1	
+1027	7	Retail and Corporate Operations	Banking	Outward Return Transaction Execution	1021	~/RetailBanking/clearing/executeOutwardClearingTransactionv1.aspx?Source=Execute&Mode=Return	~/RetailBanking/clearing/executeOutwardClearingTransactionv1.aspx?Source=Execute&Mode=Return	1	
+1028	7	Retail and Corporate Operations	Banking	Outward Return Transaction Execution Authorization	1021	~/RetailBanking/clearing/executeOutwardClearingTransactionv1.aspx?Source=Pass	~/RetailBanking/clearing/executeOutwardClearingTransactionv1.aspx?Source=Pass	1	
+1029	7	Retail and Corporate Operations	Banking	Cheque Issue	915			1	
+1030	7	Retail and Corporate Operations	Banking	Cheque Book Issue	1029	~/retailbanking/x_ChequeBook.aspx?	~/retailbanking/x_ChequeBook.aspx?	1	
+1031	7	Retail and Corporate Operations	Banking	Cheque Book Issue Authorization	1029	~/RetailBanking/x_ChequeBook.aspx?Source=passing	~/RetailBanking/x_ChequeBook.aspx?Source=passing	1	
+1032	1	Central Administration	hrms	Bank List	885	~/Ho/RetailBanking/b_BankList.aspx?	~/Ho/RetailBanking/b_BankList.aspx?	1	
+1033	1	Central Administration	hrms	Branch List	885	~/Ho/RetailBanking/b_BranchList.aspx?	~/Ho/RetailBanking/b_BranchList.aspx?	1	
+1034	1	Central Administration	hrms	Cheque Book Master	885	~/Ho/x_ChequeBookChargeConfig.aspx?	~/Ho/x_ChequeBookChargeConfig.aspx?	1	
+1035	7	Retail and Corporate Operations	Banking	Client Director/Joint Details	919	~/ho/b_Clientv2.aspx?Source=clientdirector	~/ho/b_Clientv2.aspx?Source=clientdirector	0	
+1036	7	Retail and Corporate Operations	Banking	External Cash Transaction	1007	~/RetailBanking/cash/x_ChestCashierLedger.aspx?Source=External	~/RetailBanking/cash/x_ChestCashierLedger.aspx?Source=External	1	
+1037	7	Retail and Corporate Operations	Banking	External Cash Transaction Authorization	1007	~/RetailBanking/cash/x_ChestCashierLedger.aspx?Source=External&Pass=1	~/RetailBanking/cash/x_ChestCashierLedger.aspx?Source=External&Pass=1	1	
+1038	7	Retail and Corporate Operations	Banking	Legal	915			0	
+1039	7	Retail and Corporate Operations	Banking	Consultants	1038	~/RetailBanking/Legal/lg_Consultant.aspx?	~/RetailBanking/Legal/lg_Consultant.aspx?	0	
+1040	7	Retail and Corporate Operations	Banking	Case	1038	~/RetailBanking/Legal/lg_SuitCase.aspx?	~/RetailBanking/Legal/lg_SuitCase.aspx?	0	
+1041	7	Retail and Corporate Operations	Banking	Case History	1038	~/RetailBanking/Legal/lg_SuitCaseHistory.aspx?	~/RetailBanking/Legal/lg_SuitCaseHistory.aspx?	0	
+1042	7	Retail and Corporate Operations	Banking	Case Closing	1038	~/RetailBanking/Legal/lg_SuitCaseClosing.aspx?	~/RetailBanking/Legal/lg_SuitCaseClosing.aspx?	0	
+1043	7	Retail and Corporate Operations	Banking	Counter Cheque Issue	1029	~/RetailBanking/x_LooseChequeDetail.aspx?Source=New	~/RetailBanking/x_LooseChequeDetail.aspx?Source=New	1	
+1044	7	Retail and Corporate Operations	Banking	Counter Cheque Authorization	1029	~/RetailBanking/x_LooseChequeDetail.aspx?Source=Pass	~/RetailBanking/x_LooseChequeDetail.aspx?Source=Pass	0	
+1045	7	Retail and Corporate Operations	Banking	Stop Cheque Payment	1029	~/RetailBanking/x_ChequeStopPaymentDetailsv1.aspx?Menumode=Stop	~/RetailBanking/x_ChequeStopPaymentDetailsv1.aspx?Menumode=Stop	1	
+1046	7	Retail and Corporate Operations	Banking	Stop Cheque Payment Authorization	1029	~/RetailBanking/x_ChequeStopPaymentDetailsv1.aspx?Menumode=Stop&Source=Pass	~/RetailBanking/x_ChequeStopPaymentDetailsv1.aspx?Menumode=Stop&Source=Pass	1	
+1047	7	Retail and Corporate Operations	Banking	Revert Stop Cheque Payment	1029	~/RetailBanking/x_ChequeStopPaymentDetails.aspx?Menumode=Revert	~/RetailBanking/x_ChequeStopPaymentDetails.aspx?Menumode=Revert	0	
+1048	7	Retail and Corporate Operations	Banking	Revert Stop Cheque Payment Authorization	1029	~/RetailBanking/x_ChequeStopPaymentDetails.aspx?Menumode=Revert&Source=Pass	~/RetailBanking/x_ChequeStopPaymentDetails.aspx?Menumode=Revert&Source=Pass	0	
+1049	7	Retail and Corporate Operations	Banking	Cheque Book Return	1029	~/retailbanking/ChequeBookReturn.aspx?	~/retailbanking/ChequeBookReturn.aspx?	1	
+1050	7	Retail and Corporate Operations	Banking	Batch Transaction Entry	975	~/RetailBanking/transaction/x_IbtBatchManyToManyTransaction.aspx?Source=Transaction	~/RetailBanking/transaction/x_IbtBatchManyToManyTransaction.aspx?Source=Transaction	0	
+1051	7	Retail and Corporate Operations	Banking	Batch Transaction Authorization	975	~/RetailBanking/transaction/x_IbtBatchManyToManyTransaction.aspx?Source=PassTransaction	~/RetailBanking/transaction/x_IbtBatchManyToManyTransaction.aspx?Source=PassTransaction	0	
+1052	7	Retail and Corporate Operations	Banking	Manager Cheque	962			0	
+1053	7	Retail and Corporate Operations	Banking	Manager Cheque Payment	1052	~/RetailBanking/dd/dd.aspx?	~/RetailBanking/dd/dd.aspx?	0	
+1054	7	Retail and Corporate Operations	Banking	Manager Cheque Payment Authorization	1052	~/RetailBanking/dd/dd.aspx?Source=passing	~/RetailBanking/dd/dd.aspx?Source=passing	0	
+1055	7	Retail and Corporate Operations	Banking	Configuration	1052	~/RetailBanking/DD/DDPO_Mapping.aspx?	~/RetailBanking/DD/DDPO_Mapping.aspx?	0	
+1056	7	Retail and Corporate Operations	Banking	Instrument Series	1052	~/ho/retailbanking/DemandDraftPayOrderSeries.aspx?	~/ho/retailbanking/DemandDraftPayOrderSeries.aspx?	1	
+1057	7	Retail and Corporate Operations	Banking	DD/PO Realization	1052	~/RetailBanking/DD/DDPO_Realization.aspx?	~/RetailBanking/DD/DDPO_Realization.aspx?	0	
+1058	7	Retail and Corporate Operations	Banking	Manager Cheque Cancelation	1052	~/RetailBanking/dd/x_DDCancel.aspx?	~/RetailBanking/dd/x_DDCancel.aspx?	0	
+1059	7	Retail and Corporate Operations	Banking	Manager Cheque Cancelation Authorization	1052	~/RetailBanking/dd/x_DDCancel.aspx?Source=passing	~/RetailBanking/dd/x_DDCancel.aspx?Source=passing	0	
+1060	7	Retail and Corporate Operations	Banking	Charges Posting	962			0	
+1061	7	Retail and Corporate Operations	Banking	Folio and other charges Calculation	1060	~/RetailBanking/ChargesPosting.aspx?Source=Calculate	~/RetailBanking/ChargesPosting.aspx?Source=Calculate	0	
+1062	7	Retail and Corporate Operations	Banking	Folio and other charges Posting	1060	~/RetailBanking/ChargesPosting.aspx?Source=Post	~/RetailBanking/ChargesPosting.aspx?Source=Post	0	
+1063	7	Retail and Corporate Operations	Banking	Charge For Minimum Balance Calculation	1060	~/RetailBanking/x_ChargeForMinimumBalanceProvision.aspx?Source=Calculate	~/RetailBanking/x_ChargeForMinimumBalanceProvision.aspx?Source=Calculate	0	
+1064	7	Retail and Corporate Operations	Banking	Charge For Minimum Balance Posting	1060	~/RetailBanking/x_ChargeForMinimumBalanceProvision.aspx?Source=Post	~/RetailBanking/x_ChargeForMinimumBalanceProvision.aspx?Source=Post	0	
+1065	7	Retail and Corporate Operations	Banking	Stationary Charges Calculation	1060	~/RetailBanking/StationaryChargesCalculationPosting.aspx?Source=Calculation	~/RetailBanking/StationaryChargesCalculationPosting.aspx?Source=Calculation	0	
+1066	7	Retail and Corporate Operations	Banking	Stationary Charges Posting	1060	~/RetailBanking/StationaryChargesCalculationPosting.aspx?Source=Posting	~/RetailBanking/StationaryChargesCalculationPosting.aspx?Source=Posting	0	
+1067	7	Retail and Corporate Operations	Banking	Cash Batch Transaction	1007	~/RetailBanking/Transaction/x_CashBatchTransaction.aspx?Source=Transaction	~/RetailBanking/Transaction/x_CashBatchTransaction.aspx?Source=Transaction	0	
+1068	7	Retail and Corporate Operations	Banking	Cash Batch Transaction Authorization	1007	~/RetailBanking/Transaction/x_CashBatchTransaction.aspx?Source=PassTransaction	~/RetailBanking/Transaction/x_CashBatchTransaction.aspx?Source=PassTransaction	0	
+1069	7	Retail and Corporate Operations	Banking	Cash Exchange	1007	~/RetailBanking/cash/ExchangeDenomination.aspx?source=Cashier	~/RetailBanking/cash/ExchangeDenomination.aspx?source=Cashier	1	
+1070	7	Retail and Corporate Operations	Banking	External Treasury Transaction	1007	~/RetailBanking/cash/x_ChestCashierLedger.aspx?Source=External	~/RetailBanking/cash/x_ChestCashierLedger.aspx?Source=External	0	
+1071	7	Retail and Corporate Operations	Banking	External Treasury Transaction Authorization	1007	~/RetailBanking/cash/x_ChestCashierLedger.aspx?Source=External&Pass=1	~/RetailBanking/cash/x_ChestCashierLedger.aspx?Source=External&Pass=1	0	
+1072	7	Retail and Corporate Operations	Banking	Period End Activities				1	
+1073	7	Retail and Corporate Operations	Banking	New Financial Year	1072	~/Ho/RetailBanking/b_FinancialYear.aspx?	~/Ho/RetailBanking/b_FinancialYear.aspx?	0	
+1074	7	Retail and Corporate Operations	Banking	Proft and Loss Summation	1072	~/RetailBanking/transaction/x_ProfitLossSummation.aspx?Source=ProfitLossGenerate	~/RetailBanking/transaction/x_ProfitLossSummation.aspx?Source=ProfitLossGenerate	0	
+1075	7	Retail and Corporate Operations	Banking	Proft and Loss Summation Authorization	1072	~/RetailBanking/transaction/x_ProfitLossSummation.aspx?Source=ProfitLossGeneratePost	~/RetailBanking/transaction/x_ProfitLossSummation.aspx?Source=ProfitLossGeneratePost	0	
+1076	7	Retail and Corporate Operations	Banking	Year End	1072	~/RetailBanking/YearEndActivities/YearEnd.aspx?	~/RetailBanking/YearEndActivities/YearEnd.aspx?	0	
+1077	7	Retail and Corporate Operations	Banking	Balance transfer	1072	~/RetailBanking/YearEndActivities/BalanceTransfer.aspx?	~/RetailBanking/YearEndActivities/BalanceTransfer.aspx?	1	
+1078	7	Retail and Corporate Operations	Banking	RD/FD Calculator	997	~/RetailBanking/b_RdFdReadyRecknor.aspx?	~/RetailBanking/b_RdFdReadyRecknor.aspx?	1	
+1080	7	Retail and Corporate Operations	Banking	Client Accounts Information	997	~/RetailBanking/Utilities/ClientAccountsInfo.aspx?	~/RetailBanking/Utilities/ClientAccountsInfo.aspx?	1	
+1081	7	Retail and Corporate Operations	Banking	EMI Calculator	997	~/RetailBanking/Account/EMIReadyRecknor.aspx?	~/RetailBanking/Account/EMIReadyRecknor.aspx?	1	
+1082	7	Retail and Corporate Operations	Banking	Account search	997	~/RetailBanking/Searchutility.aspx?	~/RetailBanking/Searchutility.aspx?	1	
+1083	7	Retail and Corporate Operations	Banking	Generate Repayment Schedule	997	~/RetailBanking/Utilities/c_RepaymentSchedule.aspx?	~/RetailBanking/Utilities/c_RepaymentSchedule.aspx?	0	
+1084	1	Central Administration	hrms	Withdrawal Charges	885	~/HO/ChargesConfig.aspx?source=withdrawalcharges	~/HO/ChargesConfig.aspx?source=withdrawalcharges	0	
+1087	1	Central Administration	hrms	Cashier / Teller Transaction Limits	885	~/ho/admin/a_CashierLimit.aspx?	~/ho/admin/a_CashierLimit.aspx?	1	
+1092	7	Retail and Corporate Operations	Banking	Cheque Book Request	1029	~/retailbanking/x_chequeBookPrintData.aspx?Source=transaction	~/retailbanking/x_chequeBookPrintData.aspx?Source=transaction	1	
+1093	7	Retail and Corporate Operations	Banking	Cheque book Request Authorization	1029	~/RetailBanking/x_chequeBookPrintData.aspx?Source=passing	~/RetailBanking/x_chequeBookPrintData.aspx?Source=passing	1	
+1094	7	Retail and Corporate Operations	Banking	FD Payment Schedule	934	~/RetailBanking/Account/SiTran.aspx?	~/RetailBanking/Account/SiTran.aspx?	0	
+1095	7	Retail and Corporate Operations	Banking	FD Payment Schedule Authorization	934	~/RetailBanking/Account/SiTran.aspx?Source=passing	~/RetailBanking/Account/SiTran.aspx?Source=passing	0	
+1099	7	Retail and Corporate Operations	Banking	FD Payment by Cash	989	~/Retailbanking/transaction/FdTransactions/x_FdInterestPaymentCash.aspx?Source=transaction	~/Retailbanking/transaction/FdTransactions/x_FdInterestPaymentCash.aspx?Source=transaction	0	
+1100	7	Retail and Corporate Operations	Banking	FD Payment by Cash Authorization	989	~/Retailbanking/transaction/FdTransactions/x_FdInterestPaymentCash.aspx?Source=passing	~/Retailbanking/transaction/FdTransactions/x_FdInterestPaymentCash.aspx?Source=passing	0	
+1104	7	Retail and Corporate Operations	Banking	FD Mature / Premature Closing	989	~/RetailBanking/transaction/x_FDRAutoTransferTransactionV1.aspx?Source=Transaction	~/RetailBanking/transaction/x_FDRAutoTransferTransactionV1.aspx?Source=Transaction	1	
+1105	7	Retail and Corporate Operations	Banking	FD Mature / Premature Closing Authorization	989	~/RetailBanking/transaction/x_FDRAutoTransferTransactionV1.aspx?Source=PassTransaction	~/RetailBanking/transaction/x_FDRAutoTransferTransactionV1.aspx?Source=PassTransaction	1	
+1107	7	Retail and Corporate Operations	Banking	Direct Credit(Incoming)	962			0	
+1108	7	Retail and Corporate Operations	Banking	Mandate	1107	~/ho/retailbanking/x_MICREcsMandate.aspx?	~/ho/retailbanking/x_MICREcsMandate.aspx?	0	
+1109	7	Retail and Corporate Operations	Banking	Generate File Data	1107	~/RetailBanking/transaction/x_MICRECSGenerateFileData.aspx?	~/RetailBanking/transaction/x_MICRECSGenerateFileData.aspx?	0	
+1110	7	Retail and Corporate Operations	Banking	File Import	1107	~/RetailBanking/transaction/x_MICRECSProcessFileData_v1.aspx?	~/RetailBanking/transaction/x_MICRECSProcessFileData_v1.aspx?	0	
+1111	7	Retail and Corporate Operations	Banking	Transaction Process	1107	~/RetailBanking/transaction/x_MICREcsTransactionPosting.aspx?	~/RetailBanking/transaction/x_MICREcsTransactionPosting.aspx?	0	
+1112	7	Retail and Corporate Operations	Banking	Direct Debit Payments	962			0	
+1113	7	Retail and Corporate Operations	Banking	Payment Mandate	1112	~/ho/retailBanking/x_MICREcsPaymentMandate.aspx?	~/ho/retailBanking/x_MICREcsPaymentMandate.aspx?	0	
+1114	7	Retail and Corporate Operations	Banking	Payment Process File	1112	~/RetailBanking/transaction/x_MICRECSPaymentProcessFile.aspx?	~/RetailBanking/transaction/x_MICRECSPaymentProcessFile.aspx?	0	
+1115	7	Retail and Corporate Operations	Banking	Payment Generate File	1112	~/RetailBanking/transaction/x_MICRECSPaymentGenerateFile.aspx?	~/RetailBanking/transaction/x_MICRECSPaymentGenerateFile.aspx?	0	
+1116	7	Retail and Corporate Operations	Banking	Payment Transaction Process	1112	~/RetailBanking/transaction/x_MICRECSPaymentTransactionPosting.aspx?	~/RetailBanking/transaction/x_MICRECSPaymentTransactionPosting.aspx?	0	
+1117	1	Central Administration	hrms	Direct Debits Configuration	870			1	
+1118	1	Central Administration	hrms	Company Master	1117	~/RetailBanking/b_EcsCompany.aspx?	~/RetailBanking/b_EcsCompany.aspx?	1	
+1119	1	Central Administration	hrms	Configuration Data	1117	~/ho/retailBanking/g_ECSMasterData.aspx?	~/ho/retailBanking/g_ECSMasterData.aspx?	1	
+1122	7	Retail and Corporate Operations	Banking	Document Attachment (by Client/ Account)	997	~/Retailbanking/b_Document.aspx?	~/Retailbanking/b_Document.aspx?	1	
+1141	63	Reconcillation	REC	Master				1	
+1142	63	Reconcillation	REC	OutPutType	1141	~/Reconciliation/Re_OutPutType.aspx?	~/Reconciliation/Re_OutPutType.aspx?	1	
+1143	63	Reconcillation	REC	Account Mapping	1141	~/Reconciliation/re_AccountMapping.aspx?	~/Reconciliation/re_AccountMapping.aspx?	1	
+1144	63	Reconcillation	REC	Bank Account Information	1141	~/Reconciliation/re_BankAccountInformation.aspx?	~/Reconciliation/re_BankAccountInformation.aspx?	1	
+1145	63	Reconcillation	REC	Transactions		?	?	1	
+1146	63	Reconcillation	REC	Our Ledger	1145	~/Reconciliation/re_LedgerEntry.aspx?source=O	~/Reconciliation/re_LedgerEntry.aspx?source=O	1	
+1147	63	Reconcillation	REC	Their Ledger	1145	~/Reconciliation/re_LedgerEntry.aspx?source=T	~/Reconciliation/re_LedgerEntry.aspx?source=T	1	
+1148	63	Reconcillation	REC	Reconciliation	1145	~/Reconciliation/re_Reconciliation.aspx?	~/Reconciliation/re_Reconciliation.aspx?	1	
+1149	63	Reconcillation	REC	Self Reconciliation	1145	~/Reconciliation/re_SelfReconciliation.aspx?Source=O	~/Reconciliation/re_SelfReconciliation.aspx?Source=O	1	
+1150	63	Reconcillation	REC	Tools		?	?	1	
+1151	63	Reconcillation	REC	Our Ledger Import	1150	~/Reconciliation/re_OurLedgerImport.aspx?	~/Reconciliation/re_OurLedgerImport.aspx?	1	
+1152	63	Reconcillation	REC	Their Ledger Excel Import	1150	~/Reconciliation/re_TheirLedgerExcelDataTransfer.aspx?	~/Reconciliation/re_TheirLedgerExcelDataTransfer.aspx?	1	
+1153	63	Reconcillation	REC	Process Type Match Criteria	1150	~/reconciliation/re_ProcessTypeMatchCriteria.aspx?	~/reconciliation/re_ProcessTypeMatchCriteria.aspx?	1	
+1154	63	Reconcillation	REC	Change Owner Information	1150	 ~/reconciliation/re_Owner.aspx?	 ~/reconciliation/re_Owner.aspx?	0	
+1155	63	Reconcillation	REC	Reconciliation RollBack	1150	~/reconciliation/re_ReconciliationRollBack.aspx?	~/reconciliation/re_ReconciliationRollBack.aspx?	1	
+1156	63	Reconcillation	REC	Reports		~/Reports/ReportSelector.aspx?moduleid=63	~/Reports/ReportSelector.aspx?moduleid=63	1	
+1157	63	Reconcillation	REC	Reports				1	1
+1158	63	Reconcillation	REC	Our Ledger Report	1157	~/Reports/Reconciliation/re_LedgerReport.aspx?source=O	~/Reports/Reconciliation/re_LedgerReport.aspx?source=O	1	1
+1159	63	Reconcillation	REC	Their Ledger Report	1157	~/Reports/Reconciliation/re_LedgerReport.aspx?source=T	~/Reports/Reconciliation/re_LedgerReport.aspx?source=T	1	1
+1160	63	Reconcillation	REC	Process Type Report	1157	~/Reports/Reconciliation/re_ProcessTypeReport.aspx?	~/Reports/Reconciliation/re_ProcessTypeReport.aspx?	1	1
+1161	63	Reconcillation	REC	Out Put Type Report	1157	~/Reports/Reconciliation/OutPutTypeReport.aspx?	~/Reports/Reconciliation/OutPutTypeReport.aspx?	1	1
+1162	63	Reconcillation	REC	Summary Report	1157	~/Reports/Reconciliation/re_OutPutTypeSummaryReport.aspx?	~/Reports/Reconciliation/re_OutPutTypeSummaryReport.aspx?	1	1
+1163	63	Reconcillation	REC	Unreconcilied Inter Branch Adjustment Entries Report	1157	~/Reports/Reconciliation/re_UnRecInterBrAdjEntrReport.aspx?	~/Reports/Reconciliation/re_UnRecInterBrAdjEntrReport.aspx?	1	1
+1164	63	Reconcillation	REC	Many to Many Reconcilation	1145	~/Reconciliation/re_MultiReconciliation.aspx?	~/Reconciliation/re_MultiReconciliation.aspx?	1	
+2019	7	Retail and Corporate Operations	Banking	Daily Report				1	1
+2020	7	Retail and Corporate Operations	Banking	Deleted Transaction Report	2050	~/Reports/RetailBanking/SeedReports/SeedReportOptions.aspx?source=DeletedTransaction	~/Reports/RetailBanking/SeedReports/SeedReportOptions.aspx?source=DeletedTransaction	1	1
+2050	7	Retail and Corporate Operations	Banking	Transaction Reports	2019			1	1
+2057	7	Retail and Corporate Operations	Banking	Accounts  Report				1	1
+2058	7	Retail and Corporate Operations	Banking	FDR Reports	2423			1	1
+2059	7	Retail and Corporate Operations	Banking	Deposit Product Slab report	2058	~/Reports/RetailBanking/SeedReports/SeedReportOptions.aspx?source=DepositScheme	~/Reports/RetailBanking/SeedReports/SeedReportOptions.aspx?source=DepositScheme	1	1
+2060	7	Retail and Corporate Operations	Banking	UnAuthorized Transaction	2421	~/Reports/RetailBanking/SeedReports/SeedReportOptions.aspx?source=UnPassTransaction	~/Reports/RetailBanking/SeedReports/SeedReportOptions.aspx?source=UnPassTransaction	1	1
+2061	7	Retail and Corporate Operations	Banking	Account Pending Authorization	2057	~/Reports/RetailBanking/SeedReports/SeedReportOptions.aspx?source=UnPassAccount	~/Reports/RetailBanking/SeedReports/SeedReportOptions.aspx?source=UnPassAccount	1	1
+2062	7	Retail and Corporate Operations	Banking	Cashier Reports				1	1
+2063	7	Retail and Corporate Operations	Banking	Cashier Receipt Scroll	2062	~/Reports/RetailBanking/SeedReports/SeedReportOptions.aspx?source=CashScrollReceipt	~/Reports/RetailBanking/SeedReports/SeedReportOptions.aspx?source=CashScrollReceipt	1	1
+2064	7	Retail and Corporate Operations	Banking	Cashier Payment Scroll	2062	~/Reports/RetailBanking/SeedReports/SeedReportOptions.aspx?source=CashScrollPayment	~/Reports/RetailBanking/SeedReports/SeedReportOptions.aspx?source=CashScrollPayment	1	1
+2078	7	Retail and Corporate Operations	Banking	Cashier Summary Report	2062	~/Reports/RetailBanking/SeedReports/SeedReportOptions.aspx?source=CashierSummary	~/Reports/RetailBanking/SeedReports/SeedReportOptions.aspx?source=CashierSummary	1	1
+2084	7	Retail and Corporate Operations	Banking	Account Statement	2057	~/Reports/RetailBanking/SeedReports/SeedReportOptions.aspx?source=AccountStatement	~/Reports/RetailBanking/SeedReports/SeedReportOptions.aspx?source=AccountStatement	1	1
+2097	7	Retail and Corporate Operations	Banking	UnAuthorized Batch Summary Report	2421	~/Reports/RetailBanking/SeedReports/SeedReportOptions.aspx?source=UnpassBatch	~/Reports/RetailBanking/SeedReports/SeedReportOptions.aspx?source=UnpassBatch	1	1
+2098	7	Retail and Corporate Operations	Banking	Profit & Loss Daily Report	2419	~/Reports/RetailBanking/SeedReports/SeedReportOptions.aspx?Source=ProfitAndLoss	~/Reports/RetailBanking/SeedReports/SeedReportOptions.aspx?Source=ProfitAndLoss	1	1
+2101	7	Retail and Corporate Operations	Banking	Transaction Amount Searching	2050	~/Reports/RetailBanking/SeedReports/SeedReportOptions.aspx?source=AmountInLedger	~/Reports/RetailBanking/SeedReports/SeedReportOptions.aspx?source=AmountInLedger	1	1
+2102	7	Retail and Corporate Operations	Banking	Transaction Detail Report	2050	~/Reports/RetailBanking/SeedReports/SeedReportOptions.aspx?source=TransactionDetail	~/Reports/RetailBanking/SeedReports/SeedReportOptions.aspx?source=TransactionDetail	1	1
+2103	7	Retail and Corporate Operations	Banking	Call Deposit Schedule	2058	~/Reports/RetailBanking/SeedReports/SeedReportOptions.aspx?source=SchedulOfCall	~/Reports/RetailBanking/SeedReports/SeedReportOptions.aspx?source=SchedulOfCall	0	1
+2104	7	Retail and Corporate Operations	Banking	Batch Transaction Report	2050	~/Reports/RetailBanking/SeedReports/SeedReportOptions.aspx?source=BatchTransaction	~/Reports/RetailBanking/SeedReports/SeedReportOptions.aspx?source=BatchTransaction	1	1
+2110	7	Retail and Corporate Operations	Banking	Account Open Register	2057	~/Reports/RetailBanking/ReportOptions.aspx?Source=AccountRegisterOpen	~/Reports/RetailBanking/ReportOptions.aspx?Source=AccountRegisterOpen	0	1
+2111	7	Retail and Corporate Operations	Banking	Account Close Register	2057	~/Reports/RetailBanking/SeedReports/SeedReportOptions.aspx?source=AccountRegisterClose	~/Reports/RetailBanking/SeedReports/SeedReportOptions.aspx?source=AccountRegisterClose	1	1
+2112	7	Retail and Corporate Operations	Banking	Status wise  Report	2057	~/Reports/RetailBanking/ReportOptions.aspx?Source=AccountStatus	~/Reports/RetailBanking/ReportOptions.aspx?Source=AccountStatus	1	1
+2113	7	Retail and Corporate Operations	Banking	Account Number List	2057	~/Reports/RetailBanking/SeedReports/SeedReportOptions.aspx?source=AccNoList	~/Reports/RetailBanking/SeedReports/SeedReportOptions.aspx?source=AccNoList	1	1
+2114	7	Retail and Corporate Operations	Banking	Chart of Account List	2057	~/Reports/RetailBanking/SeedReports/SeedReportOptions.aspx?source=ChartofAccList	~/Reports/RetailBanking/SeedReports/SeedReportOptions.aspx?source=ChartofAccList	1	1
+2115	7	Retail and Corporate Operations	Banking	Account Modification Register	2057	~/Reports/RetailBanking/SeedReports/SeedReportOptions.aspx?source=AccountModifyReg	~/Reports/RetailBanking/SeedReports/SeedReportOptions.aspx?source=AccountModifyReg	1	1
+2116	7	Retail and Corporate Operations	Banking	Fix Deposit Detail Report	2058	~/Reports/RetailBanking/FDR/FDRReportSettings.aspx?Source=FDDetail	~/Reports/RetailBanking/FDR/FDRReportSettings.aspx?Source=FDDetail	0	1
+2117	7	Retail and Corporate Operations	Banking	Fixed Deposit Interest Report	2058	~/Reports/RetailBanking/SeedReports/SeedReportOptions.aspx?source=FixedDepositInterest	~/Reports/RetailBanking/SeedReports/SeedReportOptions.aspx?source=FixedDepositInterest	1	1
+2120	7	Retail and Corporate Operations	Banking	Cash Book 	2419	~/Reports/RetailBanking/ReportOptions.aspx?Source=CashBookDetails	~/Reports/RetailBanking/ReportOptions.aspx?Source=CashBookDetails	1	1
+2121	7	Retail and Corporate Operations	Banking	Loan Reports				1	1
+2122	7	Retail and Corporate Operations	Banking	Loan Balancing Report	2121	~/Reports/RetailBanking/SeedReports/SeedReportOptions.aspx?Source=LoanBalancingReport	~/Reports/RetailBanking/SeedReports/SeedReportOptions.aspx?Source=LoanBalancingReport	1	1
+2125	7	Retail and Corporate Operations	Banking	Schedule Of Loan Repayment Report	2121	~/Reports/RetailBanking/SeedReports/SeedReportOptions.aspx?Source=ScheduleOfLoanRepayment	~/Reports/RetailBanking/SeedReports/SeedReportOptions.aspx?Source=ScheduleOfLoanRepayment	1	1
+2130	7	Retail and Corporate Operations	Banking	Miscellaneous Reports				1	1
+2132	7	Retail and Corporate Operations	Banking	Authorize Scroll Statement	2050	~/Reports/RetailBanking/ReportOptions.aspx?Source=PassingScroll	~/Reports/RetailBanking/ReportOptions.aspx?Source=PassingScroll	1	1
+2135	7	Retail and Corporate Operations	Banking	General Ledger Report	2419	~/Reports/RetailBanking/ReportOptions.aspx?Source=GenLedger	~/Reports/RetailBanking/ReportOptions.aspx?Source=GenLedger	1	1
+2153	7	Retail and Corporate Operations	Banking	Account Ledger Report	2057	~/Reports/RetailBanking/SeedReports/SeedReportOptions.aspx?source=AccountLedger	~/Reports/RetailBanking/SeedReports/SeedReportOptions.aspx?source=AccountLedger	1	1
+2155	7	Retail and Corporate Operations	Banking	Authorize Scroll Detail	2050	~/Reports/RetailBanking/SeedReports/SeedReportOptions.aspx?source=PassingScrollDetail	~/Reports/RetailBanking/SeedReports/SeedReportOptions.aspx?source=PassingScrollDetail	1	1
+2166	7	Retail and Corporate Operations	Banking	UnAuthorized Cashier Transaction Report	2062	~/Reports/RetailBanking/SeedReports/SeedReportOptions.aspx?Source=UnPassedCashierTransaction	~/Reports/RetailBanking/SeedReports/SeedReportOptions.aspx?Source=UnPassedCashierTransaction	1	1
+2184	7	Retail and Corporate Operations	Banking	Profit And Loss Statement	2419	~/Reports/RetailBanking/Balancing/BalancingReportSetting.aspx?source=ProfitLossStatementNew	~/Reports/RetailBanking/Balancing/BalancingReportSetting.aspx?source=ProfitLossStatementNew	1	1
+2196	7	Retail and Corporate Operations	Banking	Outward Clg Patti 	2406	~/Reports/RetailBanking/New RetailBanking Report/ReportSettings.aspx?Source=OutwardClearingPattiWithBankBranch	~/Reports/RetailBanking/New RetailBanking Report/ReportSettings.aspx?Source=OutwardClearingPattiWithBankBranch	0	1
+2200	7	Retail and Corporate Operations	Banking	FD Classification and Maturity Report	2058	~/Reports/RetailBanking/New RetailBanking Report/ReportSettings.aspx?Source=ResidualMaturity	~/Reports/RetailBanking/New RetailBanking Report/ReportSettings.aspx?Source=ResidualMaturity	1	1
+2203	7	Retail and Corporate Operations	Banking	Outward Cheque Clearing Detail	2406	~/Reports/RetailBanking/New RetailBanking Report/ReportSettings.aspx?Source=OCHSummary	~/Reports/RetailBanking/New RetailBanking Report/ReportSettings.aspx?Source=OCHSummary	0	1
+2205	7	Retail and Corporate Operations	Banking	Lien Information Register	2058	~/Reports/RetailBanking/New RetailBanking Report/Reportsettings.aspx?Source=LienInfoReg	~/Reports/RetailBanking/New RetailBanking Report/Reportsettings.aspx?Source=LienInfoReg	1	1
+2219	7	Retail and Corporate Operations	Banking	Book Balance Certificate	2419	~/Reports/RetailBanking/SeedReports/SeedReportOptions.aspx?source=BookBalanceCertificate	~/Reports/RetailBanking/SeedReports/SeedReportOptions.aspx?source=BookBalanceCertificate	1	1
+2220	7	Retail and Corporate Operations	Banking	Outward/Inward Scroll Wise Clearing Report	2406	~/Reports/RetailBanking/New RetailBanking Report/ReportSettings.aspx?Source=OutwardScrollWiseClearing	~/Reports/RetailBanking/New RetailBanking Report/ReportSettings.aspx?Source=OutwardScrollWiseClearing	0	1
+2225	7	Retail and Corporate Operations	Banking	Stock Statement Due Date Register	2121	~/Reports/RetailBanking/New RetailBanking Report/ReportSettings.aspx?Source=StockStatementDueDateReg	~/Reports/RetailBanking/New RetailBanking Report/ReportSettings.aspx?Source=StockStatementDueDateReg	0	1
+2226	7	Retail and Corporate Operations	Banking	Interest Certificate	2058	~/Reports/RetailBanking/New RetailBanking Report/ReportSettings.aspx?Source=FdInterestCertificate	~/Reports/RetailBanking/New RetailBanking Report/ReportSettings.aspx?Source=FdInterestCertificate	1	1
+2227	7	Retail and Corporate Operations	Banking	Overdrawn Limit Reminder	2121	~/Reports/RetailBanking/SeedReports/SeedReportOptions.aspx?Source=CCAdditionalLimitReminder	~/Reports/RetailBanking/SeedReports/SeedReportOptions.aspx?Source=CCAdditionalLimitReminder	1	1
+2229	7	Retail and Corporate Operations	Banking	Expiry Of Stock Statement	2121	~/Reports/RetailBanking/New RetailBanking Report/ReportSettings.aspx?Source=ExpiryOfStockStatement	~/Reports/RetailBanking/New RetailBanking Report/ReportSettings.aspx?Source=ExpiryOfStockStatement	0	1
+2233	7	Retail and Corporate Operations	Banking	Advance Against Deposit	2121	~/Reports/RetailBanking/New RetailBanking Report/ReportSettings.aspx?Source=AdvanceAgainstDeposit	~/Reports/RetailBanking/New RetailBanking Report/ReportSettings.aspx?Source=AdvanceAgainstDeposit	0	1
+2234	7	Retail and Corporate Operations	Banking	FDR Comparative Report	2058	~/Reports/RetailBanking/SeedReports/SeedReportOptions.aspx?source=FixedDepositComparativeReport	~/Reports/RetailBanking/SeedReports/SeedReportOptions.aspx?source=FixedDepositComparativeReport	1	1
+2243	7	Retail and Corporate Operations	Banking	Priority Sector and Weaker Section Report	2121	~/Reports/RetailBanking/PrioritySectorAndWeakerSectionReport.aspx?	~/Reports/RetailBanking/PrioritySectorAndWeakerSectionReport.aspx?	0	1
+2245	7	Retail and Corporate Operations	Banking	Loan Insurance Register	2121	~/Reports/RetailBanking/New RetailBanking Report/ReportSettings.aspx?Source=InsuranceRegister	~/Reports/RetailBanking/New RetailBanking Report/ReportSettings.aspx?Source=InsuranceRegister	1	1
+2248	7	Retail and Corporate Operations	Banking	Loan Disbursement/Recovery Report	2121	~/Reports/RetailBanking/SeedReports/SeedReportOptions.aspx?source=LoanDisbursementRecovery	~/Reports/RetailBanking/SeedReports/SeedReportOptions.aspx?source=LoanDisbursementRecovery	1	1
+2259	7	Retail and Corporate Operations	Banking	Term Deposit Detail Report	2058	~/Reports/RetailBanking/SeedReports/SeedReportOptions.aspx?Source=TermDepositAndDetail	~/Reports/RetailBanking/SeedReports/SeedReportOptions.aspx?Source=TermDepositAndDetail	1	1
+2263	7	Retail and Corporate Operations	Banking	Interest Day Book Report	2121	~/Reports/RetailBanking/New RetailBanking Report/ReportSettings.aspx?Source=InterestDaybook	~/Reports/RetailBanking/New RetailBanking Report/ReportSettings.aspx?Source=InterestDaybook	0	1
+2265	7	Retail and Corporate Operations	Banking	Interest Receivable Statement	2121	~/Reports/RetailBanking/New RetailBanking Report/ReportSettings.aspx?Source=InterestReceivableStatement	~/Reports/RetailBanking/New RetailBanking Report/ReportSettings.aspx?Source=InterestReceivableStatement	0	1
+2266	7	Retail and Corporate Operations	Banking	Statement Of Fixed	2058	~/Reports/RetailBanking/SeedReports/SeedReportOptions.aspx?Source=FixedDepositDetail	~/Reports/RetailBanking/SeedReports/SeedReportOptions.aspx?Source=FixedDepositDetail	1	1
+2267	7	Retail and Corporate Operations	Banking	Statement Of ST/MT Loan Account	2121	~/Reports/RetailBanking/New RetailBanking Report/ReportSettings.aspx?Source=InterestReceivableDetail	~/Reports/RetailBanking/New RetailBanking Report/ReportSettings.aspx?Source=InterestReceivableDetail	0	1
+2268	7	Retail and Corporate Operations	Banking	Statement No 9 Simple	2121	~/Reports/RetailBanking/New RetailBanking Report/ReportSettings.aspx?Source=StatementNo9Simple	~/Reports/RetailBanking/New RetailBanking Report/ReportSettings.aspx?Source=StatementNo9Simple	0	1
+2276	7	Retail and Corporate Operations	Banking	Certificate For Interest Charged	2121	~/Reports/RetailBanking/New RetailBanking Report/ReportSettings.aspx?Source=InterestProvisionCertificate	~/Reports/RetailBanking/New RetailBanking Report/ReportSettings.aspx?Source=InterestProvisionCertificate	0	1
+2277	7	Retail and Corporate Operations	Banking	UnApplied Interest [Summary] Day Book	2121	~/Reports/RetailBanking/New RetailBanking Report/ReportSettings.aspx?Source=UnAppliedInterestSummaryDayBook	~/Reports/RetailBanking/New RetailBanking Report/ReportSettings.aspx?Source=UnAppliedInterestSummaryDayBook	1	1
+2279	7	Retail and Corporate Operations	Banking	UnApplied Interest [Detail] Charged Interest Day Book	2121	~/Reports/RetailBanking/New RetailBanking Report/ReportSettings.aspx?Source=UnAppliedInterestDetailChargedInterest	~/Reports/RetailBanking/New RetailBanking Report/ReportSettings.aspx?Source=UnAppliedInterestDetailChargedInterest	0	1
+2280	7	Retail and Corporate Operations	Banking	UnApplied Interest [Detail] Recovered Interest DayBook	2121	~/Reports/RetailBanking/New RetailBanking Report/ReportSettings.aspx?Source=UnAppliedInterestDetailRecoveredInterest	~/Reports/RetailBanking/New RetailBanking Report/ReportSettings.aspx?Source=UnAppliedInterestDetailRecoveredInterest	1	1
+2282	7	Retail and Corporate Operations	Banking	Interest Day Book	2121	~/Reports/RetailBanking/New RetailBanking Report/ReportSettings.aspx?Source=InterestAdjustmentDayBook	~/Reports/RetailBanking/New RetailBanking Report/ReportSettings.aspx?Source=InterestAdjustmentDayBook	0	1
+2283	7	Retail and Corporate Operations	Banking	UnApplied Interest Balancing Report	2121	~/Reports/RetailBanking/New RetailBanking Report/ReportSettings.aspx?Source=UnAppliedInterestBalancing	~/Reports/RetailBanking/New RetailBanking Report/ReportSettings.aspx?Source=UnAppliedInterestBalancing	0	1
+2287	7	Retail and Corporate Operations	Banking	Receivable Interest Day Book	2121	~/Reports/RetailBanking/New RetailBanking Report/ReportSettings.aspx?Source=ReceivableInterestDayBook	~/Reports/RetailBanking/New RetailBanking Report/ReportSettings.aspx?Source=ReceivableInterestDayBook	0	1
+2288	7	Retail and Corporate Operations	Banking	Statement No - 9 For Interest	2121	~/Reports/RetailBanking/New RetailBanking Report/ReportSettings.aspx?Source=StatementNo9	~/Reports/RetailBanking/New RetailBanking Report/ReportSettings.aspx?Source=StatementNo9	0	1
+2289	7	Retail and Corporate Operations	Banking	Society Wise Report Of Loans And Overdue	2121	~/Reports/RetailBanking/New RetailBanking Report/ReportSettings.aspx?Source=SocietyWiseReportOfLoansAndOverdue	~/Reports/RetailBanking/New RetailBanking Report/ReportSettings.aspx?Source=SocietyWiseReportOfLoansAndOverdue	0	1
+2290	7	Retail and Corporate Operations	Banking	Loan Product Slab Details Report	2121	~/Reports/RetailBanking/SeedReports/SeedReportOptions.aspx?source=LoanSchemeSlabDetails	~/Reports/RetailBanking/SeedReports/SeedReportOptions.aspx?source=LoanSchemeSlabDetails	1	1
+2291	7	Retail and Corporate Operations	Banking	Drawing Power Statement	2121	~/Reports/RetailBanking/New RetailBanking Report/ReportSettings.aspx?Source=PrimarySecurityDetails	~/Reports/RetailBanking/New RetailBanking Report/ReportSettings.aspx?Source=PrimarySecurityDetails	0	1
+2297	7	Retail and Corporate Operations	Banking	Suit File Case	2121	~/Reports/RetailBanking/ReportOptions.aspx?Source=LoanSuit	~/Reports/RetailBanking/ReportOptions.aspx?Source=LoanSuit	0	1
+2298	7	Retail and Corporate Operations	Banking	Master Report	2050	~/Reports/RetailBanking/ReportOptions.aspx?Source=MasterReport	~/Reports/RetailBanking/ReportOptions.aspx?Source=MasterReport	0	1
+2320	7	Retail and Corporate Operations	Banking	TOD Register	2121	~/Reports/RetailBanking/SeedReports/SeedReportOptions.aspx?Source=TODRegister	~/Reports/RetailBanking/SeedReports/SeedReportOptions.aspx?Source=TODRegister	0	1
+2321	7	Retail and Corporate Operations	Banking	Master Classification Of Loan And Advances	2121	~/Reports/RetailBanking/Loan/LoanReportSettings.aspx?Source=MasterClassificationOfLoanAndAdvances	~/Reports/RetailBanking/Loan/LoanReportSettings.aspx?Source=MasterClassificationOfLoanAndAdvances	0	1
+2328	7	Retail and Corporate Operations	Banking	Interest Pay	2058	~/Reports/RetailBanking/SeedReports/SeedReportOptions.aspx?source=InterestPaidOnFD	~/Reports/RetailBanking/SeedReports/SeedReportOptions.aspx?source=InterestPaidOnFD	1	1
+2331	7	Retail and Corporate Operations	Banking	Classification Of Debtors To Borrower	2121	~/Reports/RetailBanking/Loan/LoanReportSettings.aspx?Source=ClassificationOfDebtors	~/Reports/RetailBanking/Loan/LoanReportSettings.aspx?Source=ClassificationOfDebtors	0	1
+2332	7	Retail and Corporate Operations	Banking	Purposewise Classification of Advances	2121	~/Reports/RetailBanking/SeedReports/SeedReportOptions.aspx?source=PurposewiseClassification	~/Reports/RetailBanking/SeedReports/SeedReportOptions.aspx?source=PurposewiseClassification	1	1
+2333	7	Retail and Corporate Operations	Banking	Statement Of Minority Communities	2121	~/Reports/RetailBanking/Loan/LoanReportSettings.aspx?Source=StatementOfMinorityCommunities	~/Reports/RetailBanking/Loan/LoanReportSettings.aspx?Source=StatementOfMinorityCommunities	0	1
+2334	7	Retail and Corporate Operations	Banking	Stock Statement Register	2121	~/Reports/RetailBanking/Loan/LoanReportSettings.aspx?Source=StockStatementReg	~/Reports/RetailBanking/Loan/LoanReportSettings.aspx?Source=StockStatementReg	0	1
+2335	7	Retail and Corporate Operations	Banking	Surity Register	2121	~/Reports/RetailBanking/SeedReports/SeedReportOptions.aspx?source=SurityRegister	~/Reports/RetailBanking/SeedReports/SeedReportOptions.aspx?source=SurityRegister	0	1
+2336	7	Retail and Corporate Operations	Banking	Un Drawn Limit	2121	~/Reports/RetailBanking/SeedReports/SeedReportOptions.aspx?source=UnDrawnCCLimit	~/Reports/RetailBanking/SeedReports/SeedReportOptions.aspx?source=UnDrawnCCLimit	0	1
+2347	7	Retail and Corporate Operations	Banking	Transaction Source-Wise Report	2050	~/Reports/RetailBanking/Transaction/TransactionReportSettings.aspx?Source=TransactionSourceWiseList	~/Reports/RetailBanking/Transaction/TransactionReportSettings.aspx?Source=TransactionSourceWiseList	1	1
+2348	7	Retail and Corporate Operations	Banking	Balance Sheet	2419	~/Reports/RetailBanking/HeadOffice/HeadofficeReportSetting.aspx?source=BalanceSheetNew	~/Reports/RetailBanking/HeadOffice/HeadofficeReportSetting.aspx?source=BalanceSheetNew	0	1
+2352	7	Retail and Corporate Operations	Banking	Fd Interest Provision	2058	~/Reports/RetailBanking/SeedReports/SeedReportOptions.aspx?source=FDinterestprovision	~/Reports/RetailBanking/SeedReports/SeedReportOptions.aspx?source=FDinterestprovision	1	1
+2353	7	Retail and Corporate Operations	Banking	Profit & Loss summary	2419	~/Reports/RetailBanking/ReportOptions.aspx?Source=ProfitLossSummary	~/Reports/RetailBanking/ReportOptions.aspx?Source=ProfitLossSummary	0	1
+2360	7	Retail and Corporate Operations	Banking	Investment Register	2058	~/Reports/RetailBanking/FDR/FDRReportSettings.aspx?Source=InvestmentRegister	~/Reports/RetailBanking/FDR/FDRReportSettings.aspx?Source=InvestmentRegister	0	1
+2361	7	Retail and Corporate Operations	Banking	All UnAuthorized Report	2421	~/Reports/RetailBanking/SeedReports/SeedReportOptions.aspx?source=UnPassedReports	~/Reports/RetailBanking/SeedReports/SeedReportOptions.aspx?source=UnPassedReports	1	1
+2401	7	Retail and Corporate Operations	Banking	Category Wise Deposit Report	2058	~/Reports/RetailBanking/SeedReports/SeedReportOptions.aspx?source=CategoryWiseDeposit	~/Reports/RetailBanking/SeedReports/SeedReportOptions.aspx?source=CategoryWiseDeposit	1	1
+2405	7	Retail and Corporate Operations	Banking	Demand & Overdue Recovery Report	2121	~/Reports/RetailBanking/Loan/LoanReportSettings.aspx?Source=DemandOverdueRecovery	~/Reports/RetailBanking/Loan/LoanReportSettings.aspx?Source=DemandOverdueRecovery	0	1
+2406	7	Retail and Corporate Operations	Banking	Clearing Reports	2019			1	1
+2407	7	Retail and Corporate Operations	Banking	Outward Clearing Transaction Report	2406	~/Reports/RetailBanking/Clearing/ClearingReportSettings.aspx?Source=OutwardClearing	~/Reports/RetailBanking/Clearing/ClearingReportSettings.aspx?Source=OutwardClearing	1	1
+2408	7	Retail and Corporate Operations	Banking	Inward Return Memo	2406	~/Reports/RetailBanking/Clearing/ClearingReportSettings.aspx?Source=InwardReturnMemo	~/Reports/RetailBanking/Clearing/ClearingReportSettings.aspx?Source=InwardReturnMemo	1	1
+2409	7	Retail and Corporate Operations	Banking	Return Register	2406	~/Reports/RetailBanking/Clearing/ClearingReportSettings.aspx?Source=InwardReturnRegister	~/Reports/RetailBanking/Clearing/ClearingReportSettings.aspx?Source=InwardReturnRegister	0	1
+2414	7	Retail and Corporate Operations	Banking	Loan/CC Interest Report	2121	~/RetailBanking/LoanAndAdvances.aspx?Source=Report	~/RetailBanking/LoanAndAdvances.aspx?Source=Report	0	1
+2418	7	Retail and Corporate Operations	Banking	Classification of Loan & Advances (Volume)	2121	~/Reports/RetailBanking/SeedReports/SeedReportOptions.aspx?Source=AMOUNTWISECLASSIFICATIONOFLOANADV	~/Reports/RetailBanking/SeedReports/SeedReportOptions.aspx?Source=AMOUNTWISECLASSIFICATIONOFLOANADV	1	1
+2419	7	Retail and Corporate Operations	Banking	GL Reports	2019			1	1
+2421	7	Retail and Corporate Operations	Banking	UnAuthorized Reports	2019			1	1
+2443	7	Retail and Corporate Operations	Banking	Priority Sector and Weaker Section Advances	2121	~/Reports/RetailBanking/New RetailBanking Report/ReportSettings.aspx?Source=PsWsSummary	~/Reports/RetailBanking/New RetailBanking Report/ReportSettings.aspx?Source=PsWsSummary	0	1
+2456	7	Retail and Corporate Operations	Banking	Customize Cash-Book/TB	2419	~/Reports/RetailBanking/ReportOptions.aspx?Source=TBBSPLCB	~/Reports/RetailBanking/ReportOptions.aspx?Source=TBBSPLCB	0	1
+2457	7	Retail and Corporate Operations	Banking	Cash Transaction Report (CTR)	2050	~/Reports/RetailBanking/ReportOptions.aspx?Source=CTRDailyTran	~/Reports/RetailBanking/ReportOptions.aspx?Source=CTRDailyTran	1	1
+2458	7	Retail and Corporate Operations	Banking	DCB Report	2121	~/Reports/RetailBanking/Loan/LoanReportSettings.aspx?Source=DemandRecovery	~/Reports/RetailBanking/Loan/LoanReportSettings.aspx?Source=DemandRecovery	0	1
+2524	7	Retail and Corporate Operations	Banking	Priority Sector and Weaker Section Advances (Details)	2121	~/Reports/RetailBanking/New RetailBanking Report/ReportSettings.aspx?Source=PsWsDetails	~/Reports/RetailBanking/New RetailBanking Report/ReportSettings.aspx?Source=PsWsDetails	0	1
+2525	7	Retail and Corporate Operations	Banking	Weaker Section Detail Report	2121	~/Reports/RetailBanking/Loan/LoanReportSettings.aspx?Source=WeakerSection	~/Reports/RetailBanking/Loan/LoanReportSettings.aspx?Source=WeakerSection	0	1
+2529	7	Retail and Corporate Operations	Banking	Loan Clearance Certificate	2121	~/Reports/RetailBanking/ReportOptions.aspx?Source=ClearanceCert	~/Reports/RetailBanking/ReportOptions.aspx?Source=ClearanceCert	0	1
+2530	7	Retail and Corporate Operations	Banking	Loan Interest Certificate	2121	~/Reports/RetailBanking/ReportOptions.aspx?Source=LoanInterest	~/Reports/RetailBanking/ReportOptions.aspx?Source=LoanInterest	0	1
+2531	7	Retail and Corporate Operations	Banking	Folio Charges List	2050	~/customised_reports.aspx?param=TB-A-020	~/customised_reports.aspx?param=TB-A-020	0	1
+2606	7	Retail and Corporate Operations	Banking	Standing Instruction Report	2050	~/Reports/RetailBanking/ReportOptions.aspx?Source=UndoneSIReport	~/Reports/RetailBanking/ReportOptions.aspx?Source=UndoneSIReport	0	1
+2696	7	Retail and Corporate Operations	Banking	Trial Balance With Account	2419	~/Reports/RetailBanking/HeadOffice/HeadOfficeReportSetting.aspx?source=TrialBalanceWithAcc	~/Reports/RetailBanking/HeadOffice/HeadOfficeReportSetting.aspx?source=TrialBalanceWithAcc	0	1
+2703	7	Retail and Corporate Operations	Banking	Vault Position	2062	~/Reports/RetailBanking/SeedReports/SeedReportOptions.aspx?Source=CashPosition	~/Reports/RetailBanking/SeedReports/SeedReportOptions.aspx?Source=CashPosition	1	1
+2729	7	Retail and Corporate Operations	Banking	Master Classification of Advances	2121	~/reports/retailbanking/mstclsadv.aspx?	~/reports/retailbanking/mstclsadv.aspx?	0	1
+2730	7	Retail and Corporate Operations	Banking	Saving Interest Certificate	2058	~/Reports/RetailBanking/New RetailBanking Report/ReportSettings.aspx?source=FdInterestCertificate	~/Reports/RetailBanking/New RetailBanking Report/ReportSettings.aspx?source=FdInterestCertificate	0	1
+2731	7	Retail and Corporate Operations	Banking	Forex Reports				1	1
+2732	7	Retail and Corporate Operations	Banking	Forex Transaction List	2731	~/Reports/RetailBanking/Forex/ForexReportSetting.aspx?source=forexlist	~/Reports/RetailBanking/Forex/ForexReportSetting.aspx?source=forexlist	0	1
+2733	7	Retail and Corporate Operations	Banking	Client List	2130	~/Reports/RetailBanking/ReportOptions.aspx?Source=ClientList	~/Reports/RetailBanking/ReportOptions.aspx?Source=ClientList	1	1
+2734	7	Retail and Corporate Operations	Banking	Forex Selling Report	2731	~/Reports/RetailBanking/Forex/ForexReportSetting.aspx?source=ForexSell	~/Reports/RetailBanking/Forex/ForexReportSetting.aspx?source=ForexSell	1	1
+2735	7	Retail and Corporate Operations	Banking	Forex Buying Report	2731	~/Reports/RetailBanking/Forex/ForexReportSetting.aspx?source=ForexBuy	~/Reports/RetailBanking/Forex/ForexReportSetting.aspx?source=ForexBuy	1	1
+2736	7	Retail and Corporate Operations	Banking	Cashier Treasury Transaction Report	2062	~/Reports/RetailBanking/SeedReports/SeedReportOptions.aspx?source=cashiertreasury	~/Reports/RetailBanking/SeedReports/SeedReportOptions.aspx?source=cashiertreasury	1	1
+2747	7	Retail and Corporate Operations	Banking	Statutory Reports				1	1
+2748	7	Retail and Corporate Operations	Banking	Daily Reports	2747			1	1
+2749	7	Retail and Corporate Operations	Banking	Daily Exchange Rates	2748	~/Reports/boss/boss.aspx?source=bankdailyExgRate	~/Reports/boss/boss.aspx?source=bankdailyExgRate	0	1
+2750	7	Retail and Corporate Operations	Banking	Bank Daily Foreign Exchange Activity Report	2748	~/Reports/boss/boss.aspx?source=ForExhActivityOpenRpt	~/Reports/boss/boss.aspx?source=ForExhActivityOpenRpt	0	1
+2751	0			Dayend Schedule		~/RetailBanking/DayendSchedule.aspx?	~/RetailBanking/DayendSchedule.aspx?	1	0
+2754	0			Loan Reschedule		~/RetailBanking/c_LNEnhancement_V1.aspx?	~/RetailBanking/c_LNEnhancement_V1.aspx?	1	0
+2755	0			Loan Reschedule Authorization		~/RetailBanking/c_LNEnhancement_V1.aspx?Source=passing	~/RetailBanking/c_LNEnhancement_V1.aspx?Source=passing	1	0
+2758	0			Letter Template		~/Retailbanking/x_OverdueLetterTemplate.aspx?	~/Retailbanking/x_OverdueLetterTemplate.aspx?	1	0
+2759	0			Alert Viewer		~/RetailBanking/Alerts/Alertviewer.aspx?	~/RetailBanking/Alerts/Alertviewer.aspx?	1	0
+2760	0			Account Statement Charges		~/RetailBanking/b_AccStatementRequest.aspx?	~/RetailBanking/b_AccStatementRequest.aspx?	0	0
+2761	0			Account Statement Charges Authorization		~/RetailBanking/b_AccStatementRequest.aspx?source=passing	~/RetailBanking/b_AccStatementRequest.aspx?source=passing	0	0
+2762	7	Retail and Corporate Operations	Banking	Account Balancing Report	2057	~/Reports/RetailBanking/SeedReports/SeedReportOptions.aspx?Source=AccountBalancing	~/Reports/RetailBanking/SeedReports/SeedReportOptions.aspx?Source=AccountBalancing	1	1
+2763	0			Manager Cheque Payment Printing		~/RetailBanking/PrintDDPO.aspx?	~/RetailBanking/PrintDDPO.aspx?	0	0
+2764	0			Manager Cheque				1	0
+2765	0			Manager Cheque Entry		~/RetailBanking/x_BankerCheque.aspx?Source=entry	~/RetailBanking/x_BankerCheque.aspx?Source=entry	1	0
+2766	0			Manager Cheque Authorization		~/RetailBanking/x_BankerCheque.aspx?source=passing	~/RetailBanking/x_BankerCheque.aspx?source=passing	1	0
+2767	0			Loan Disbursement		~/RetailBanking/LoanDisbursement.aspx?Source=Transaction&isislamic=false	~/RetailBanking/LoanDisbursement.aspx?Source=Transaction&isislamic=false	1	0
+2768	0			Loan Disbursement Authorization		~/RetailBanking/LoanDisbursement.aspx?Source=pass&isislamic=false	~/RetailBanking/LoanDisbursement.aspx?Source=pass&isislamic=false	1	0
+2769	0			Loan Settlement Rebate		~/RetailBanking/LoanSettlementRebate.aspx?	~/RetailBanking/LoanSettlementRebate.aspx?	1	0
+2770	0			Loan Settlement Rebate Authorization		~/RetailBanking/LoanSettlementRebate.aspx?Source=Passing	~/RetailBanking/LoanSettlementRebate.aspx?Source=Passing	1	0
+2771	0			Loan Settlement		~/RetailBanking/x_LoanSettlementTran_Islamic.aspx?isislamic=false	~/RetailBanking/x_LoanSettlementTran_Islamic.aspx?isislamic=false	1	0
+2772	0			Loan Settlement Authorization		~/RetailBanking/x_LoanSettlementTran_Islamic.aspx?Source=passing&isislamic=false	~/RetailBanking/x_LoanSettlementTran_Islamic.aspx?Source=passing&isislamic=false	1	0
+2773	0			Counter Cheque Cancellation		~/RetailBanking/x_LooseChequeCancellation.aspx?	~/RetailBanking/x_LooseChequeCancellation.aspx?	0	0
+2774	0			Transaction Viewer		~/RetailBanking/x_TransactionViewer.aspx?	~/RetailBanking/x_TransactionViewer.aspx?	1	0
+2775	7	Retail and Corporate Operations	Banking	Top Depositors	2057	~/Reports/RetailBanking/Account/AccountReportSetting.aspx?source=TopDepositors	~/Reports/RetailBanking/Account/AccountReportSetting.aspx?source=TopDepositors	1	1
+2776	0			Cashier To Cashier Transfer		~/RetailBanking/Cash/x_ChestCashierToCashierLedger.aspx?	~/RetailBanking/Cash/x_ChestCashierToCashierLedger.aspx?	1	0
+2777	0			Cashier To Cashier Transfer Authorization		~/RetailBanking/Cash/x_ChestCashierToCashierLedger.aspx?source=pass	~/RetailBanking/Cash/x_ChestCashierToCashierLedger.aspx?source=pass	1	0
+2778	7	Retail and Corporate Operations	Banking	Overdrawn Accounts	2057	~/Reports/RetailBanking/SeedReports/SeedReportOptions.aspx?source=OverdrawnAccount	~/Reports/RetailBanking/SeedReports/SeedReportOptions.aspx?source=OverdrawnAccount	1	1
+2779	0			Account Enquiry		~/RetailBanking/Account/AccountEnquiry.aspx?	~/RetailBanking/Account/AccountEnquiry.aspx?	1	0
+2781	0			Forex Allocation				0	0
+2782	0			Forex Allocation Entry		~/RetailBanking/b_TradingAllocation.aspx?	~/RetailBanking/b_TradingAllocation.aspx?	0	0
+2783	0			Holding Amount				1	0
+2784	0			Holding Amount Entry		/RetailBanking/AccHoldingAmount	~/retailbanking/b_AccHoldingAmount.aspx?Source=ENTRY	1	0
+2785	0			Holding Amount Authorization		/RetailBanking/AccHoldingAmount/Authorize	~/retailbanking/b_AccHoldingAmount.aspx?Source=ENTRYPASS	1	0
+2786	0			Holding Amount Release		~/retailbanking/b_AccHoldingAmount.aspx?Source=RELEASE	~/retailbanking/b_AccHoldingAmount.aspx?Source=RELEASE	1	0
+2787	0			Holding Amount Release Authorization		~/retailbanking/b_AccHoldingAmount.aspx?Source=RELEASEPASS	~/retailbanking/b_AccHoldingAmount.aspx?Source=RELEASEPASS	1	0
+2788	0			Signature Image Upload Authorization		~/RetailBanking/b_Signature_V1.aspx?Source=Passing	~/RetailBanking/b_Signature_V1.aspx?Source=Passing	1	0
+2789	0			Casual OverDraft Account Final Authorization	925	~/RetailBanking/g_AllowDebitTransactionAccountHeads_v1.aspx?Source=pass	~/RetailBanking/g_AllowDebitTransactionAccountHeads_v1.aspx?Source=pass	1	0
+2790	7	Retail and Corporate Operations	Banking	Suspicious Transaction Report	2057	~/Reports/RetailBanking/ReportOptions.aspx?Source=SuspiciousTransactionReport	~/Reports/RetailBanking/ReportOptions.aspx?Source=SuspiciousTransactionReport	0	1
+2791	0			Cashier Withhold Amount Viewer		~/RetailBanking/CashierWithholdLimit.aspx?	~/RetailBanking/CashierWithholdLimit.aspx?	1	0
+2792	7	Retail and Corporate Operations	Banking	Trial Balance	2419	~/Reports/RetailBanking/HeadOffice/HeadofficeReportSetting.aspx?source=TrialBalancev1	~/Reports/RetailBanking/HeadOffice/HeadofficeReportSetting.aspx?source=TrialBalancev1	1	1
+2793	0			Account Charges Configuration		~/RetailBanking/b_AccChargesConfiq.aspx?	~/RetailBanking/b_AccChargesConfiq.aspx?	0	0
+2794	7	Retail and Corporate Operations	Banking	Account charges Report	2057	~/Reports/RetailBanking/Account/AccountReportSetting.aspx?source=AccountChagesConfiq	~/Reports/RetailBanking/Account/AccountReportSetting.aspx?source=AccountChagesConfiq	1	1
+2796	66	Trade Finance	TF	BG Account Authorization		~/Retailbanking/TDBG/TD_BG_Client.aspx?Client=BG&Source=Pass	~/Retailbanking/TDBG/TD_BG_Client.aspx?Client=BG&Source=Pass	1	0
+2797	66	Trade Finance	TF	BG Client Renewal		~/RetailBanking/TDBG/TD_Bg_ClientRenewal.aspx?	~/RetailBanking/TDBG/TD_Bg_ClientRenewal.aspx?	1	0
+2798	66	Trade Finance	TF	BG Client Renewal Authorization		~/RetailBanking/TDBG/TD_Bg_ClientRenewal.aspx?Source=Pass	~/RetailBanking/TDBG/TD_Bg_ClientRenewal.aspx?Source=Pass	1	0
+2799	66	Trade Finance	TF	Issue		~/RetailBanking/TDBG/TD_BG_IssueV1.aspx?	~/RetailBanking/TDBG/TD_BG_IssueV1.aspx?	1	0
+2800	66	Trade Finance	TF	Issue Authorization		~/RetailBanking/TDBG/TD_BG_IssueV1.aspx?Source=Pass	~/RetailBanking/TDBG/TD_BG_IssueV1.aspx?Source=Pass	1	0
+2801	66	Trade Finance	TF	Import Letter Of Credit				1	0
+2802	66	Trade Finance	TF	Letter of Credit Application		~/RetailBanking/LC/LCApplicationV1.aspx?	~/RetailBanking/LC/LCApplicationV1.aspx?	1	0
+2803	66	Trade Finance	TF	Letter of Credit Application Authorization		~/RetailBanking/LC/LCApplicationV1.aspx?Source=PASS	~/RetailBanking/LC/LCApplicationV1.aspx?Source=PASS	1	0
+2804	66	Trade Finance	TF	Letter For Claiming Reimbursement		~/RetailBanking/LC/LCClaimV1.aspx?	~/RetailBanking/LC/LCClaimV1.aspx?	1	0
+2805	66	Trade Finance	TF	LC Reimbursement Authorization		~/RetailBanking/LC/LCClaimV1.aspx?Source=PASS	~/RetailBanking/LC/LCClaimV1.aspx?Source=PASS	1	0
+2806	66	Trade Finance	TF	LC Reports	2933			1	1
+2807	66	Trade Finance	TF	LC Register Report	2806	~/Reports/RetailBanking/ReportOptions.aspx?Source=LCAccount	~/Reports/RetailBanking/ReportOptions.aspx?Source=LCAccount	1	1
+2808	66	Trade Finance	TF	LC Day Book Report	2806	~/Reports/RetailBanking/ReportOptions.aspx?Source=LCAccountDayBook	~/Reports/RetailBanking/ReportOptions.aspx?Source=LCAccountDayBook	1	1
+2809	66	Trade Finance	TF	BG Issue Renewal		~/RetailBanking/TDBG/Td_Bg_IssueRenewalTran.aspx?	~/RetailBanking/TDBG/Td_Bg_IssueRenewalTran.aspx?	1	0
+2810	66	Trade Finance	TF	BG Issue Renewal Authorization		~/RetailBanking/TDBG/Td_Bg_IssueRenewalTran.aspx?Source=Pass	~/RetailBanking/TDBG/Td_Bg_IssueRenewalTran.aspx?Source=Pass	1	0
+2811	66	Trade Finance	TF	BG Invoke		~/RetailBanking/TDBG/Td_Bg_RevokeTran_v1.aspx?	~/RetailBanking/TDBG/Td_Bg_RevokeTran_v1.aspx?	1	0
+2812	66	Trade Finance	TF	BG Invoke Authorization		~/RetailBanking/TDBG/Td_Bg_RevokeTran_v1.aspx?Source=Pass1	~/RetailBanking/TDBG/Td_Bg_RevokeTran_v1.aspx?Source=Pass1	1	0
+2813	66	Trade Finance	TF	BG Close		~/RetailBanking/TDBG/Td_Bg_Close.aspx?	~/RetailBanking/TDBG/Td_Bg_Close.aspx?	1	0
+2814	66	Trade Finance	TF	BG Close Authorization		~/RetailBanking/TDBG/Td_Bg_Close.aspx?Source=Pass	~/RetailBanking/TDBG/Td_Bg_Close.aspx?Source=Pass	1	0
+2815	66	Trade Finance	TF	Bank Guarantee Reports	2933			1	1
+2816	66	Trade Finance	TF	BG Register Report	2815	~/Reports/RetailBanking/TDBG/TDBGReportOptions.aspx?source=BGRegisterReport	~/Reports/RetailBanking/TDBG/TDBGReportOptions.aspx?source=BGRegisterReport	1	1
+2817	66	Trade Finance	TF	BG Day Book Report	2815	~/Reports/RetailBanking/TDBG/TDBGReportOptions.aspx?source=BGDayBookReport	~/Reports/RetailBanking/TDBG/TDBGReportOptions.aspx?source=BGDayBookReport	1	1
+2818	66	Trade Finance	TF	BG Invoke Register	2815	~/Reports/RetailBanking/TDBG/TDBGReportOptions.aspx?source=BGRevokeRegisterReport	~/Reports/RetailBanking/TDBG/TDBGReportOptions.aspx?source=BGRevokeRegisterReport	1	1
+2819	66	Trade Finance	TF	BG Closing Register Report	2815	~/Reports/RetailBanking/TDBG/TDBGReportOptions.aspx?source=BGClosingRegisterReport	~/Reports/RetailBanking/TDBG/TDBGReportOptions.aspx?source=BGClosingRegisterReport	1	1
+2820	66	Trade Finance	TF	BG Renewal Report	2815	~/Reports/RetailBanking/TDBG/TDBGReportOptions.aspx?source=BGRenewalReport	~/Reports/RetailBanking/TDBG/TDBGReportOptions.aspx?source=BGRenewalReport	1	1
+2821	66	Trade Finance	TF	BG Due Renewal Report	2815	~/Reports/RetailBanking/TDBG/TDBGReportOptions.aspx?source=BGDueRenewalReport	~/Reports/RetailBanking/TDBG/TDBGReportOptions.aspx?source=BGDueRenewalReport	1	1
+2822	66	Trade Finance	TF	BG Client Renewal Report	2815	~/Reports/RetailBanking/TDBG/TDBGReportOptions.aspx?source=BGClientRenewalReport	~/Reports/RetailBanking/TDBG/TDBGReportOptions.aspx?source=BGClientRenewalReport	1	1
+2823	66	Trade Finance	TF	BG Client Due Renewal Report	2815	~/Reports/RetailBanking/TDBG/TDBGReportOptions.aspx?source=BGClientDueRenewalReport	~/Reports/RetailBanking/TDBG/TDBGReportOptions.aspx?source=BGClientDueRenewalReport	1	1
+2837	66	Trade Finance	TF	BG Payment To Beneficiary		~/RetailBanking/TDBG/TD_BG_PaymentToBeneficiary.aspx?	~/RetailBanking/TDBG/TD_BG_PaymentToBeneficiary.aspx?	1	0
+2838	66	Trade Finance	TF	BG Payment To Beneficiary Authorization		~/RetailBanking/TDBG/TD_BG_PaymentToBeneficiary.aspx?Source=Pass	~/RetailBanking/TDBG/TD_BG_PaymentToBeneficiary.aspx?Source=Pass	1	0
+2839	0			Sweep Call Transaction		?	?	0	0
+2840	0			Sweep Call Transfer		~/RetailBanking/x_SweepCallTrf.aspx?	~/RetailBanking/x_SweepCallTrf.aspx?	0	0
+2841	0			Sweep Call Transfer Authorization		~/RetailBanking/x_SweepCallTrf.aspx?Source=Pass	~/RetailBanking/x_SweepCallTrf.aspx?Source=Pass	0	0
+2842	0			FD Certificate Series		~/RetailBanking/DD/b_FDCertificateSeries.aspx?	~/RetailBanking/DD/b_FDCertificateSeries.aspx?	1	0
+2847	0			WHT Master		~/HO/retailBanking/x_WHTMaster.aspx?	~/HO/retailBanking/x_WHTMaster.aspx?	1	0
+2848	0			Transfer Reversal Transaction		~/RetailBanking/transaction/x_TransferV2.aspx?Source=Transaction&MenuMode=Separate	~/RetailBanking/transaction/x_TransferV2.aspx?Source=Transaction&MenuMode=Separate	0	0
+2849	0			Transfer Reversal Transaction Authorization	966	~/RetailBanking/transaction/x_TransferV2.aspx?Source=PassTransferTransaction&MenuMode=Separate	~/RetailBanking/transaction/x_TransferV2.aspx?Source=PassTransferTransaction&MenuMode=Separate	0	
+2850	0			Inward Clearing Transaction		~/RetailBanking/transaction/x_TransactionV2.aspx?Source=Transaction&MenuMode=Separate&option=clr	~/RetailBanking/transaction/x_TransactionV2.aspx?Source=Transaction&MenuMode=Separate&option=clr	0	0
+2851	0			Inward Clearing Transaction Authorization		~/RetailBanking/transaction/x_TransactionV2.aspx?Source=PassClrTransaction&MenuMode=Separate&option=clr	~/RetailBanking/transaction/x_TransactionV2.aspx?Source=PassClrTransaction&MenuMode=Separate&option=clr	0	0
+2852	0			Inward Batch Creation		~/RetailBanking/clearing/createLotInward.aspx?	~/RetailBanking/clearing/createLotInward.aspx?	0	0
+2853	0			Inward Clearing Transaction		~/RetailBanking/clearing/addInwardClearingTransaction.aspx?Source=Save	~/RetailBanking/clearing/addInwardClearingTransaction.aspx?Source=Save	0	0
+2854	0			Inward Clearing Transaction Authorization		~/RetailBanking/clearing/addInwardClearingTransaction.aspx?Source=Pass	~/RetailBanking/clearing/addInwardClearingTransaction.aspx?Source=Pass	0	0
+2855	7	Retail and Corporate Operations	Banking	Account Opened Report	2057	~/Reports/RetailBanking/SeedReports/SeedReportOptions.aspx?Source=AccountOpenedReport	~/Reports/RetailBanking/SeedReports/SeedReportOptions.aspx?Source=AccountOpenedReport	1	1
+2856	7	Retail and Corporate Operations	Banking	Account Status Report	2057	~/Reports/RetailBanking/SeedReports/SeedReportOptions.aspx?Source=AccountStatusReport	~/Reports/RetailBanking/SeedReports/SeedReportOptions.aspx?Source=AccountStatusReport	1	1
+2857	7	Retail and Corporate Operations	Banking	Fixed Deposit Report	2057	~/Reports/RetailBanking/SeedReports/SeedReportOptions.aspx?Source=FixedDepositReport	~/Reports/RetailBanking/SeedReports/SeedReportOptions.aspx?Source=FixedDepositReport	1	1
+2858	7	Retail and Corporate Operations	Banking	Account Classification Report	2057	~/Reports/RetailBanking/SeedReports/SeedReportOptions.aspx?Source=AccountClassificationReport	~/Reports/RetailBanking/SeedReports/SeedReportOptions.aspx?Source=AccountClassificationReport	1	1
+2859	7	Retail and Corporate Operations	Banking	Cheque Range Issued Report	2057	~/Reports/RetailBanking/SeedReports/SeedReportOptions.aspx?Source=ChequeRangeIssuedReport	~/Reports/RetailBanking/SeedReports/SeedReportOptions.aspx?Source=ChequeRangeIssuedReport	1	1
+2860	7	Retail and Corporate Operations	Banking	Call Over Report	2057	~/Reports/RetailBanking/SeedReports/SeedReportOptions.aspx?Source=CallOverReport	~/Reports/RetailBanking/SeedReports/SeedReportOptions.aspx?Source=CallOverReport	1	1
+2861	7	Retail and Corporate Operations	Banking	Vault Movement	2057	~/Reports/RetailBanking/SeedReports/SeedReportOptions.aspx?Source=VaultMovementReport	~/Reports/RetailBanking/SeedReports/SeedReportOptions.aspx?Source=VaultMovementReport	1	1
+2862	7	Retail and Corporate Operations	Banking	Overdrawn Position Report On Inward Clearing	2057	~/Reports/RetailBanking/SeedReports/SeedReportOptions.aspx?Source=OverdrawnPositionReport	~/Reports/RetailBanking/SeedReports/SeedReportOptions.aspx?Source=OverdrawnPositionReport	0	1
+2863	7	Retail and Corporate Operations	Banking	Outward Clearing Report	2057	~/Reports/RetailBanking/SeedReports/SeedReportOptions.aspx?Source=OutwardClearing	~/Reports/RetailBanking/SeedReports/SeedReportOptions.aspx?Source=OutwardClearing	0	1
+2864	7	Retail and Corporate Operations	Banking	Inward Clearing Report	2057	~/Reports/RetailBanking/SeedReports/SeedReportOptions.aspx?Source=InwardClearing	~/Reports/RetailBanking/SeedReports/SeedReportOptions.aspx?Source=InwardClearing	0	1
+2865	7	Retail and Corporate Operations	Banking	Standing Instruction Report	2057	~/Reports/RetailBanking/SeedReports/SeedReportOptions.aspx?Source=StandingInstruction	~/Reports/RetailBanking/SeedReports/SeedReportOptions.aspx?Source=StandingInstruction	0	1
+2866	7	Retail and Corporate Operations	Banking	Cabal Report (Customer Account Balance)	2058	~/Reports/RetailBanking/SeedReports/SeedReportOptions.aspx?Source=CustomerAccountBalance	~/Reports/RetailBanking/SeedReports/SeedReportOptions.aspx?Source=CustomerAccountBalance	1	1
+2867	7	Retail and Corporate Operations	Banking	Deposit Report By Range Of Volumes	2058	~/Reports/RetailBanking/SeedReports/SeedReportOptions.aspx?Source=DepositWithRangeOfVolsReport	~/Reports/RetailBanking/SeedReports/SeedReportOptions.aspx?Source=DepositWithRangeOfVolsReport	1	1
+2868	7	Retail and Corporate Operations	Banking	Sectorial Deposit Report	2058	~/Reports/RetailBanking/SeedReports/SeedReportOptions.aspx?Source=SectorialDepositReport	~/Reports/RetailBanking/SeedReports/SeedReportOptions.aspx?Source=SectorialDepositReport	1	1
+2869	7	Retail and Corporate Operations	Banking	Deposit In Current Accounts With Overdraft Limits	2058	~/Reports/RetailBanking/SeedReports/SeedReportOptions.aspx?Source=CurrentAccWithOverdraftLimit	~/Reports/RetailBanking/SeedReports/SeedReportOptions.aspx?Source=CurrentAccWithOverdraftLimit	1	1
+2870	7	Retail and Corporate Operations	Banking	Risk Assets Report	2121	~/Reports/RetailBanking/SeedReports/SeedReportOptions.aspx?Source=RiskAssetReports	~/Reports/RetailBanking/SeedReports/SeedReportOptions.aspx?Source=RiskAssetReports	1	1
+2871	7	Retail and Corporate Operations	Banking	Deals Booked Report	2121	~/Reports/RetailBanking/SeedReports/SeedReportOptions.aspx?Source=DealsBookedReports	~/Reports/RetailBanking/SeedReports/SeedReportOptions.aspx?Source=DealsBookedReports	1	1
+2872	7	Retail and Corporate Operations	Banking	Arreas Report	2121	~/Reports/RetailBanking/SeedReports/SeedReportOptions.aspx?Source=ArrearsReport	~/Reports/RetailBanking/SeedReports/SeedReportOptions.aspx?Source=ArrearsReport	1	1
+2873	7	Retail and Corporate Operations	Banking	Turnover Report	2121	~/Reports/RetailBanking/SeedReports/SeedReportOptions.aspx?Source=TurnoverReport	~/Reports/RetailBanking/SeedReports/SeedReportOptions.aspx?Source=TurnoverReport	1	1
+2874	7	Retail and Corporate Operations	Banking	Maturing Obligation Within a Period	2121	~/Reports/RetailBanking/SeedReports/SeedReportOptions.aspx?Source=MaturedLoanAccount	~/Reports/RetailBanking/SeedReports/SeedReportOptions.aspx?Source=MaturedLoanAccount	1	1
+2875	7	Retail and Corporate Operations	Banking	Unauthorized Overdraft Report	2121	~/Reports/RetailBanking/SeedReports/SeedReportOptions.aspx?Source=UnauthorizedOD	~/Reports/RetailBanking/SeedReports/SeedReportOptions.aspx?Source=UnauthorizedOD	1	1
+2876	7	Retail and Corporate Operations	Banking	Expired Overdraft Limit	2121	~/Reports/RetailBanking/SeedReports/SeedReportOptions.aspx?Source=ExpiredODLimit	~/Reports/RetailBanking/SeedReports/SeedReportOptions.aspx?Source=ExpiredODLimit	1	1
+2877	0			Leave Application		~/HR/h_LeaveApplication.aspx?	~/HR/h_LeaveApplication.aspx?	1	0
+2878	0			Loan Charges Posting		~/RetailBanking/HPL/x_HplCharges.aspx?source=posting	~/RetailBanking/HPL/x_HplCharges.aspx?source=posting	0	0
+2879	0			Loan Charges Reversal		~/RetailBanking/HPL/x_HplCharges.aspx?source=reversal	~/RetailBanking/HPL/x_HplCharges.aspx?source=reversal	0	0
+2880	0			Loan Charges Posting/Reversal Authorization		~/RetailBanking/HPL/x_HplCharges.aspx?source=pass	~/RetailBanking/HPL/x_HplCharges.aspx?source=pass	0	0
+2881	7	Retail and Corporate Operations	Banking	Deliquency Calculation Report	2121	~/Reports/RetailBanking/SeedReports/SeedReportOptions.aspx?Source=DeliquencyCalculation	~/Reports/RetailBanking/SeedReports/SeedReportOptions.aspx?Source=DeliquencyCalculation	1	1
+2882	0			Inward Clearing Transaction Execution		~/RetailBanking/clearing/executeInwardClearingTransaction.aspx?Source=Execute	~/RetailBanking/clearing/executeInwardClearingTransaction.aspx?Source=Execute	0	0
+2883	0			Inward Clearing Transaction Execution Authorization		~/RetailBanking/clearing/executeInwardClearingTransaction.aspx?Source=Pass	~/RetailBanking/clearing/executeInwardClearingTransaction.aspx?Source=Pass	0	0
+2887	7	Retail and Corporate Operations	Banking	Monthly Provision For Bad And Doubtful Debt	2121	~/Reports/RetailBanking/SeedReports/SeedReportOptions.aspx?Source=MonthlyProvision	~/Reports/RetailBanking/SeedReports/SeedReportOptions.aspx?Source=MonthlyProvision	1	1
+2888	7	Retail and Corporate Operations	Banking	Interest In Suspense Report	2121	~/Reports/RetailBanking/SeedReports/SeedReportOptions.aspx?Source=InterestSuspense	~/Reports/RetailBanking/SeedReports/SeedReportOptions.aspx?Source=InterestSuspense	1	1
+2889	0			Service Tax Charge		~/HO/RetailBanking/x_ServiceTaxCharge.aspx?	~/HO/RetailBanking/x_ServiceTaxCharge.aspx?	1	0
+2900	0			BOG Configuration		~/reports/rbi%20report/rp_rbiconfiguration.aspx?	~/reports/rbi%20report/rp_rbiconfiguration.aspx?	1	0
+2901	0			Memo on Accounts		?	?	1	0
+2902	0			Memo on Account Addition		~/RetailBanking/b_SpecialInstruction.aspx?	~/RetailBanking/b_SpecialInstruction.aspx?	1	0
+2903	0			Memo on Account Authorization		~/RetailBanking/b_SpecialInstruction.aspx?Source=passing	~/RetailBanking/b_SpecialInstruction.aspx?Source=passing	1	0
+2916	0			Cashier Account Mapping		~/RetailBanking/cash/b_CashierGLAccountMap.aspx?	~/RetailBanking/cash/b_CashierGLAccountMap.aspx?	1	0
+2917	0			Cashier Treasury Transaction Authorization		~/RetailBanking/cash/x_ChestCashierLedger_v1.aspx?Source=passing	~/RetailBanking/cash/x_ChestCashierLedger_v1.aspx?Source=passing	1	0
+2919	7	Retail and Corporate Operations	Banking	Account Agent Report	2057	~/Reports/RetailBanking/ReportOptions.aspx?Source=AuthorizeRights	~/Reports/RetailBanking/ReportOptions.aspx?Source=AuthorizeRights	1	1
+2920	7	Retail and Corporate Operations	Banking	Returned Cheque Report	2057	~/Reports/RetailBanking/SeedReports/SeedReportOptions.aspx?Source=ReturnCheque	~/Reports/RetailBanking/SeedReports/SeedReportOptions.aspx?Source=ReturnCheque	1	1
+2926	0			Outward Clear Transaction Execution		~/RetailBanking/clearing/OutwardExecution.aspx?	~/RetailBanking/clearing/OutwardExecution.aspx?	1	0
+2927	0			Account Closure Transactions				1	0
+2928	0			Update Minimum Balance		~/RetailBanking/b_MinBalExistAccUpdation.aspx?	~/RetailBanking/b_MinBalExistAccUpdation.aspx?	1	0
+2929	0			Loan Reversal Transaction		~/RetailBanking/x_LoanTransactionReverse.aspx?	~/RetailBanking/x_LoanTransactionReverse.aspx?	0	0
+2930	0			Loan Reversal Transaction Authorization		~/RetailBanking/x_LoanTransactionReverse.aspx?Source=passing	~/RetailBanking/x_LoanTransactionReverse.aspx?Source=passing	0	0
+2931	66	Trade Finance	TF	Masters				1	0
+2932	66	Trade Finance	TF	Transactions				1	0
+2933	66	Trade Finance	TF	Reports		~/Reports/ReportSelector.aspx?moduleid=66	~/Reports/ReportSelector.aspx?moduleid=66	1	
+2934	66	Trade Finance	TF	LC Account Creation		~/Retailbanking/TDBG/TD_BG_Client.aspx?Client=LC	~/Retailbanking/TDBG/TD_BG_Client.aspx?Client=LC	1	0
+2935	66	Trade Finance	TF	LC Account Authorization		~/Retailbanking/TDBG/TD_BG_Client.aspx?Client=LC&Source=Pass	~/Retailbanking/TDBG/TD_BG_Client.aspx?Client=LC&Source=Pass	1	0
+2936	66	Trade Finance	TF	LC Limit		~/Retailbanking/TDBG/Td_Bg_ClientLimit.aspx?Client=LC	~/Retailbanking/TDBG/Td_Bg_ClientLimit.aspx?Client=LC	0	0
+2937	66	Trade Finance	TF	LC Limit Authorization		~/Retailbanking/TDBG/Td_Bg_ClientLimit.aspx?Client=LC&Source=Pass	~/Retailbanking/TDBG/Td_Bg_ClientLimit.aspx?Client=LC&Source=Pass	0	0
+2938	66	Trade Finance	TF	Bank Guarantee		?	?	1	0
+2939	66	Trade Finance	TF	Letter Of Credit		?	?	1	0
+2941	66	Trade Finance	TF	Userdefined LC Template	2806	~/Reports/RetailBanking/LC/ReportSettings.aspx?Source=UserdefinedLCLetter	~/Reports/RetailBanking/LC/ReportSettings.aspx?Source=UserdefinedLCLetter	1	1
+2942	66	Trade Finance	TF	LC Collection		~/RetailBanking/LC/LCCollection.aspx?	~/RetailBanking/LC/LCCollection.aspx?	1	0
+2943	66	Trade Finance	TF	LC Collection Authorization		~/RetailBanking/LC/LCCollection.aspx?Source=passing	~/RetailBanking/LC/LCCollection.aspx?Source=passing	1	0
+2944	66	Trade Finance	TF	LC Realisation		~/RetailBanking/LC/LCCollection.aspx?Source=realisation	~/RetailBanking/LC/LCCollection.aspx?Source=realisation	1	0
+2945	66	Trade Finance	TF	LC Return		~/RetailBanking/LC/LCCollection.aspx?Source=return	~/RetailBanking/LC/LCCollection.aspx?Source=return	1	0
+2946	0			Account Charges Configuration		~/RetailBanking/Account/x_AccChargesConfig.aspx?	~/RetailBanking/Account/x_AccChargesConfig.aspx?	0	0
+2947	0			OverDraft Transaction Reverse		~/RetailBanking/x_ODTransactionReverse.aspx?	~/RetailBanking/x_ODTransactionReverse.aspx?	0	0
+2948	0			OverDraft Transaction Reverse Authorization		~/RetailBanking/x_ODTransactionReverse.aspx?Source=passing	~/RetailBanking/x_ODTransactionReverse.aspx?Source=passing	0	0
+2949	66	Trade Finance	TF	LC Purchase		~/RetailBanking/LC/LCPurchase.aspx?Source=Transaction	~/RetailBanking/LC/LCPurchase.aspx?Source=Transaction	1	0
+2950	66	Trade Finance	TF	LC Purchase Authorization		~/RetailBanking/LC/LCPurchase.aspx?Source=Passing	~/RetailBanking/LC/LCPurchase.aspx?Source=Passing	1	0
+2951	66	Trade Finance	TF	LC Realisation Report	2806	~/Reports/RetailBanking/LC/ReportSettings.aspx?source=LCRealisation	~/Reports/RetailBanking/LC/ReportSettings.aspx?source=LCRealisation	1	1
+2952	66	Trade Finance	TF	LC Realised Report	2806	~/Reports/RetailBanking/LC/ReportSettings.aspx?source=LCRealised	~/Reports/RetailBanking/LC/ReportSettings.aspx?source=LCRealised	1	1
+2953	66	Trade Finance	TF	LC Return Report	2806	~/Reports/RetailBanking/LC/ReportSettings.aspx?source=LCReturn	~/Reports/RetailBanking/LC/ReportSettings.aspx?source=LCReturn	1	1
+2954	66	Trade Finance	TF	Un Realised LC Report	2806	~/Reports/RetailBanking/LC/ReportSettings.aspx?source=LCUnRealised	~/Reports/RetailBanking/LC/ReportSettings.aspx?source=LCUnRealised	1	1
+2955	66	Trade Finance	TF	LC Amendment		~/RetailBanking/LC/LCApplicationV1.aspx?Source=amendment	~/RetailBanking/LC/LCApplicationV1.aspx?Source=amendment	1	0
+2956	66	Trade Finance	TF	LC Amendment Authorization		~/RetailBanking/LC/LCApplicationV1.aspx?Source=amendmentpass	~/RetailBanking/LC/LCApplicationV1.aspx?Source=amendmentpass	1	0
+2958	0			Masters		?	?	1	0
+2959	0			Transactions		?	?	1	0
+2960	0			Utilities		?	?	1	0
+2961	0			Reports		~/Reports/ReportSelector.aspx?moduleid=59	~/Reports/ReportSelector.aspx?moduleid=59	1	0
+2962	0			Masters Creation		?	?	1	0
+2963	0			Masters Authorization		?	?	1	0
+2964	0			Mapping		?	?	1	0
+2965	0			Currency Master		~/ho/Multicurrency/g_Currency.aspx?	~/ho/Multicurrency/g_Currency.aspx?	0	0
+2966	0			Denomination Unit Master		~/ho/Multicurrency/g_DenominationUnit.aspx?	~/ho/Multicurrency/g_DenominationUnit.aspx?	0	0
+2967	0			Denomination Master		~/ho/Multicurrency/g_Denomination.aspx?	~/ho/Multicurrency/g_Denomination.aspx?	0	0
+2968	0			Client Master		~/Treasury/Masters/tr_Customer.aspx?	~/Treasury/Masters/tr_Customer.aspx?	1	0
+2969	0			Rate Master		~/Treasury/Masters/tr_Rates.aspx?	~/Treasury/Masters/tr_Rates.aspx?	0	0
+2970	0			Rate Card		~/Treasury/Masters/tr_TradingRateCard.aspx?	~/Treasury/Masters/tr_TradingRateCard.aspx?	0	0
+2971	0			Default Spreads		~/Treasury/Masters/tr_DefaultSpread.aspx?	~/Treasury/Masters/tr_DefaultSpread.aspx?	0	0
+2972	0			Client Limit		~/Treasury/Masters/tr_ClientLimit.aspx?	~/Treasury/Masters/tr_ClientLimit.aspx?	1	0
+2973	0			Dealers Limit		~/Treasury/Masters/tr_DealersLimit.aspx?	~/Treasury/Masters/tr_DealersLimit.aspx?	1	0
+2974	0			Dealers Additional Limit		~/Treasury/Masters/tr_DealersAddLimit.aspx?	~/Treasury/Masters/tr_DealersAddLimit.aspx?	1	0
+2975	0			Product Master		~/Treasury/Masters/tr_Product.aspx?	~/Treasury/Masters/tr_Product.aspx?	1	0
+2976	0			Rate Reasonability Spread		~/Treasury/Masters/tr_RateReasonabilitySpread.aspx?	~/Treasury/Masters/tr_RateReasonabilitySpread.aspx?	1	0
+2977	0			Holiday Calendar		~/Treasury/Masters/tr_Holiday.aspx?	~/Treasury/Masters/tr_Holiday.aspx?	1	0
+2978	0			Deal Type Master		~/Treasury/Masters/tr_DealType.aspx?	~/Treasury/Masters/tr_DealType.aspx?	1	0
+2979	0			Broker/Agent Master		~/Treasury/Masters/tr_Broker.aspx?	~/Treasury/Masters/tr_Broker.aspx?	1	0
+2980	0			Currency Master Authorization		~/ho/multicurrency/g_Currency.aspx?Source=Pass	~/ho/multicurrency/g_Currency.aspx?Source=Pass	0	0
+2981	0			Denomination Unit Master Authorization		~/ho/Multicurrency/g_DenominationUnit.aspx?Source=pass	~/ho/Multicurrency/g_DenominationUnit.aspx?Source=pass	0	0
+2982	0			Denomination Master Authorization		~/ho/multicurrency/g_Denomination.aspx?Source=Pass	~/ho/multicurrency/g_Denomination.aspx?Source=Pass	0	0
+2983	0			Client Master Authorization		~/Treasury/Masters/tr_Customer.aspx?Source=Passing	~/Treasury/Masters/tr_Customer.aspx?Source=Passing	1	0
+2984	1	Central Administration	hrms	Rate Master Authorization		~/Treasury/Masters/tr_Rates.aspx?Source=Pass	~/Treasury/Masters/tr_Rates.aspx?Source=Pass	0	0
+2985	0			Rate Card Authorization		~/Treasury/Masters/tr_TradingRateCard.aspx?Source=Pass	~/Treasury/Masters/tr_TradingRateCard.aspx?Source=Pass	0	0
+2986	0			Default Spreads Authorization		~/Treasury/Masters/tr_DefaultSpread.aspx?Source=Pass	~/Treasury/Masters/tr_DefaultSpread.aspx?Source=Pass	0	0
+2987	0			Client Limit Authorization		~/Treasury/Masters/tr_ClientLimit.aspx?Source=Passing	~/Treasury/Masters/tr_ClientLimit.aspx?Source=Passing	1	0
+2988	0			Dealers Limit Authorization		~/Treasury/Masters/tr_DealersLimit.aspx?Source=Passing	~/Treasury/Masters/tr_DealersLimit.aspx?Source=Passing	1	0
+2989	0			Dealers Add. Limit Authorization		~/Treasury/Masters/tr_DealersAddLimit.aspx?Source=Passing	~/Treasury/Masters/tr_DealersAddLimit.aspx?Source=Passing	1	0
+2990	0			Product Master Authorization		~/Treasury/Masters/tr_Product.aspx?Source=pass	~/Treasury/Masters/tr_Product.aspx?Source=pass	1	0
+2991	0			Rate Reasonability Authorization		~/Treasury/Masters/tr_RateReasonabilitySpread.aspx?Source=Pass	~/Treasury/Masters/tr_RateReasonabilitySpread.aspx?Source=Pass	1	0
+2992	0			Deal Type Master Authorization		~/Treasury/Masters/tr_DealType.aspx?Source=pass	~/Treasury/Masters/tr_DealType.aspx?Source=pass	1	0
+2993	0			Holiday Calendar Authorization		~/Treasury/Masters/tr_Holiday.aspx?Source=pass	~/Treasury/Masters/tr_Holiday.aspx?Source=pass	1	0
+2994	0			Broker/Agent Master Authorization		~/Treasury/Masters/tr_Broker.aspx?Source=Passing	~/Treasury/Masters/tr_Broker.aspx?Source=Passing	1	0
+2995	0			Bank Account		~/Treasury/Masters/tr_BankAccounts.aspx?	~/Treasury/Masters/tr_BankAccounts.aspx?	1	0
+2996	0			Currency GL Mapping		~/Treasury/Masters/tr_CurrencyGLMapping.aspx?	~/Treasury/Masters/tr_CurrencyGLMapping.aspx?	1	0
+2997	0			Deal Input		~/Treasury/FX/tr_FxDealInput.aspx?Source=Input	~/Treasury/FX/tr_FxDealInput.aspx?Source=Input	1	0
+2998	0			Deal Input Authorization		~/Treasury/FX/tr_FxDealInput.aspx?Source=Passing	~/Treasury/FX/tr_FxDealInput.aspx?Source=Passing	1	0
+2999	0			Deal Settlement		~/Treasury/FX/tr_FxDealInput.aspx?Source=Realise	~/Treasury/FX/tr_FxDealInput.aspx?Source=Realise	1	0
+3000	0			Deal Settlement Autorization		~/Treasury/FX/tr_FxDealInput.aspx?Source=RealisePassing	~/Treasury/FX/tr_FxDealInput.aspx?Source=RealisePassing	1	0
+3001	0			Foreign Exchange		~/Treasury/FX/tr_FxTransfer.aspx?Source=Transaction	~/Treasury/FX/tr_FxTransfer.aspx?Source=Transaction	0	0
+3002	0			Foreign Exchange Authorization		~/Treasury/FX/tr_FxTransfer.aspx?Source=Passing	~/Treasury/FX/tr_FxTransfer.aspx?Source=Passing	0	0
+3003	0			Fixed Income		~/Treasury/FX/tr_MMFIDealInput.aspx?Source=Input	~/Treasury/FX/tr_MMFIDealInput.aspx?Source=Input	1	0
+3004	0			Fixed Income Authorization		~/Treasury/FX/tr_MMFIDealInput.aspx?Source=Passing	~/Treasury/FX/tr_MMFIDealInput.aspx?Source=Passing	1	0
+3005	0			Fixed Income Settlement		~/Treasury/FX/tr_MMFIDealInput.aspx?Source=Realise	~/Treasury/FX/tr_MMFIDealInput.aspx?Source=Realise	1	0
+3006	0			Fixed Income Settlement Authorization		~/Treasury/FX/tr_MMFIDealInput.aspx?Source=RealisePassing	~/Treasury/FX/tr_MMFIDealInput.aspx?Source=RealisePassing	1	0
+3007	0			Fixed Income Interest Settlement		~/Treasury/FX/tr_FIInterestSettlement.aspx?Source=Input	~/Treasury/FX/tr_FIInterestSettlement.aspx?Source=Input	0	0
+3008	0			Fixed Income Interest Settlement Passing		~/Treasury/FX/tr_FIInterestSettlement.aspx?Source=Passing	~/Treasury/FX/tr_FIInterestSettlement.aspx?Source=Passing	0	0
+3009	0			Fixed Income Transfer Transaction		~/Treasury/FX/tr_FDTransferTransaction.aspx?Source=Transaction	~/Treasury/FX/tr_FDTransferTransaction.aspx?Source=Transaction	0	0
+3010	0			Fixed Income Transfer Transaction Passing		~/Treasury/FX/tr_FDTransferTransaction.aspx?Source=Passing	~/Treasury/FX/tr_FDTransferTransaction.aspx?Source=Passing	0	0
+3011	0			Shares Deal Input		~/Treasury/FX/tr_SharesDealInput.aspx?Source=Input	~/Treasury/FX/tr_SharesDealInput.aspx?Source=Input	1	0
+3012	0			Shares Deal Input Authorization		~/Treasury/FX/tr_SharesDealInput.aspx?Source=Passing	~/Treasury/FX/tr_SharesDealInput.aspx?Source=Passing	1	0
+3013	0			Shares Deal Settlement		~/Treasury/FX/tr_SharesDealInput.aspx?Source=Realise	~/Treasury/FX/tr_SharesDealInput.aspx?Source=Realise	1	0
+3014	0			Shares Deal Settlement Authorization		~/Treasury/FX/tr_SharesDealInput.aspx?Source=RealisePassing	~/Treasury/FX/tr_SharesDealInput.aspx?Source=RealisePassing	1	0
+3015	0			Position Monitoring		~/Treasury/FX/tr_FXMonitoring.aspx?	~/Treasury/FX/tr_FXMonitoring.aspx?	1	0
+3016	59	Treasury	TR	Treasury Reports		?	?	1	1
+3017	59	Treasury	TR	Fixed Income Brokarage Details Report	3016	~/Reports/Treasury/TreasuryReportOptions.aspx?Source=Broker	~/Reports/Treasury/TreasuryReportOptions.aspx?Source=Broker	1	1
+3018	59	Treasury	TR	Unconfirmed FX Contracts Report	3016	~/Reports/Treasury/TreasuryReportOptions.aspx?Source=UCFXContracts	~/Reports/Treasury/TreasuryReportOptions.aspx?Source=UCFXContracts	1	1
+3019	59	Treasury	TR	Fx Currency Analysis Report	3016	~/Reports/Treasury/TreasuryReportOptions.aspx?Source=FXCurrencyAnalysis	~/Reports/Treasury/TreasuryReportOptions.aspx?Source=FXCurrencyAnalysis	1	1
+3020	59	Treasury	TR	FX Contract Maturity Due Report	3016	~/Reports/Treasury/TreasuryReportOptions.aspx?Source=FXContract	~/Reports/Treasury/TreasuryReportOptions.aspx?Source=FXContract	1	1
+3021	59	Treasury	TR	FI Contract Maturity Due Report	3016	~/Reports/Treasury/TreasuryReportOptions.aspx?Source=FIContract	~/Reports/Treasury/TreasuryReportOptions.aspx?Source=FIContract	1	1
+3022	59	Treasury	TR	FX Deal Input Report	3016	~/Reports/Treasury/TreasuryReportOptions.aspx?Source=FxDealInput	~/Reports/Treasury/TreasuryReportOptions.aspx?Source=FxDealInput	1	1
+3023	59	Treasury	TR	Deal Settlement Report	3016	~/Reports/Treasury/TreasuryReportOptions.aspx?Source=DealSettlement	~/Reports/Treasury/TreasuryReportOptions.aspx?Source=DealSettlement	1	1
+3024	59	Treasury	TR	Confirmed/Unconfirmed Deal Report	3016	~/Reports/Treasury/TreasuryReportOptions.aspx?Source=ConfirmedDealMMFI	~/Reports/Treasury/TreasuryReportOptions.aspx?Source=ConfirmedDealMMFI	1	1
+3025	59	Treasury	TR	Backdated Deals Report	3016	~/Reports/Treasury/TreasuryReportOptions.aspx?Source=BackDatedDeals	~/Reports/Treasury/TreasuryReportOptions.aspx?Source=BackDatedDeals	1	1
+3026	0			Security Deal Input		~/Treasury/FX/tr_GovtSecDealInput.aspx?Source=Input	~/Treasury/FX/tr_GovtSecDealInput.aspx?Source=Input	1	0
+3027	0			Security Deal Input Authorization		~/Treasury/FX/tr_GovtSecDealInput.aspx?Source=Passing	~/Treasury/FX/tr_GovtSecDealInput.aspx?Source=Passing	1	0
+3028	0			Security Deal Settlement		~/Treasury/FX/tr_GovtSecDealInput.aspx?Source=Realise	~/Treasury/FX/tr_GovtSecDealInput.aspx?Source=Realise	1	0
+3029	0			Security Deal Settlement Authorization		~/Treasury/FX/tr_GovtSecDealInput.aspx?Source=RealisePassing	~/Treasury/FX/tr_GovtSecDealInput.aspx?Source=RealisePassing	1	0
+3030	66	Trade Finance	TF	Export Letter Of Credit		?	?	1	0
+3038	0			Cash In Transit Transaction		~/RetailBanking/Cash/x_CashInTransit.aspx?	~/RetailBanking/Cash/x_CashInTransit.aspx?	1	0
+3039	0			Cash In Transit Transaction Authorization		~/RetailBanking/Cash/x_CashInTransit.aspx?source=passing	~/RetailBanking/Cash/x_CashInTransit.aspx?source=passing	1	0
+3040	0			Cash In Transit Transaction Receipt		~/RetailBanking/Cash/x_CashInTransit.aspx?source=receipt	~/RetailBanking/Cash/x_CashInTransit.aspx?source=receipt	1	0
+3041	0			Cash In Transit Mapping		~/HO/b_CashInTransitMapping.aspx?	~/HO/b_CashInTransitMapping.aspx?	1	0
+3042	0			IBT Adjustment Account Mapping		~/RetailBanking/b_BranchAdjAccount.aspx?	~/RetailBanking/b_BranchAdjAccount.aspx?	1	0
+3045	7	Retail and Corporate Operations	Banking	User Transaction Report	2050	~/Reports/RetailBanking/CashierReport.aspx?	~/Reports/RetailBanking/CashierReport.aspx?	0	1
+3046	7	Retail and Corporate Operations	Banking	Account(s) Without Signature	2057	~/Reports/RetailBanking/ReportOptions.aspx?Source=SignatureUnavailableAccounts	~/Reports/RetailBanking/ReportOptions.aspx?Source=SignatureUnavailableAccounts	1	1
+3047	7	Retail and Corporate Operations	Banking	Cashier To Cashier Transfer Transaction	2062	~/Reports/RetailBanking/CashierReport.aspx?Source=CashierToCashier	~/Reports/RetailBanking/CashierReport.aspx?Source=CashierToCashier	1	1
+3055	7	Retail and Corporate Operations	Banking	Blocked users Reports	2130	~/Reports/RetailBanking/ReportOptions.aspx?source=BlockedUsers	~/Reports/RetailBanking/ReportOptions.aspx?source=BlockedUsers	1	1
+3056	7	Retail and Corporate Operations	Banking	Stopped Cheques Report	2057	~/Reports/RetailBanking/ReportOptions.aspx?Source=StopCheque	~/Reports/RetailBanking/ReportOptions.aspx?Source=StopCheque	1	1
+3057	66	Trade Finance	TF	Bank Guarantee	0	?	?	1	0
+3058	66	Trade Finance	TF	Letter Of Credit	0	?	?	1	0
+3059	66	Trade Finance	TF	LC Collection Amendment	0	~/RetailBanking/LC/LCCollection.aspx?Source=amendment	~/RetailBanking/LC/LCCollection.aspx?Source=amendment	1	0
+3060	66	Trade Finance	TF	LC Collection Amendment Authorization	0	~/RetailBanking/LC/LCCollection.aspx?Source=amendmentpassing	~/RetailBanking/LC/LCCollection.aspx?Source=amendmentpassing	1	0
+3063	7	Retail and Corporate Operations	Banking	Internal Account Statement	2057	~/Reports/RetailBanking/ReportOptions.aspx?Source=COAAccLedgerBalances	~/Reports/RetailBanking/ReportOptions.aspx?Source=COAAccLedgerBalances	1	1
+3064	0			Loan Origination System Settings		?	?	1	0
+3065	0			Credit Officer		~/HO/ProjectFormulation/P_CreditOfficer.aspx?	~/HO/ProjectFormulation/P_CreditOfficer.aspx?	1	0
+3066	0			Black List Client Removal		~/HO/b_ClientBlackListRemover.aspx?	~/HO/b_ClientBlackListRemover.aspx?	1	0
+3067	0			Black List Client Removal Authorization		~/HO/b_ClientBlackListRemover.aspx?Source=passing	~/HO/b_ClientBlackListRemover.aspx?Source=passing	1	0
+3068	0			Application Processing		?	?	1	0
+3069	0			Applicant Details		~/HO/ProjectFormulation/p_Applicant.aspx?	~/HO/ProjectFormulation/p_Applicant.aspx?	1	0
+3070	0			Loan Application		~/HO/ProjectFormulation/p_LoanCase_v1.aspx?	~/HO/ProjectFormulation/p_LoanCase_v1.aspx?	1	0
+3071	0			Loan Type		~/HO/c_LoanType.aspx?	~/HO/c_LoanType.aspx?	1	0
+3072	0			Assign Credit Officer		~/Ho/ProjectFormulation/AssignCreditofficer.aspx?	~/Ho/ProjectFormulation/AssignCreditofficer.aspx?	1	0
+3073	0			Analysis Applicant		~/ho/projectFormulation/p_AnalysisApplicantClient.aspx?Source=Applicant	~/ho/projectFormulation/p_AnalysisApplicantClient.aspx?Source=Applicant	1	0
+3074	0			Analysis Applicant Inventory		~/Ho/ProjectFormulation/p_ApplicantFinancialAnalysis.aspx?Source=Applicant	~/Ho/ProjectFormulation/p_ApplicantFinancialAnalysis.aspx?Source=Applicant	1	0
+3075	0			Client File Generation		~/reports/ProjectFormulation/LoanClientFile.aspx?	~/reports/ProjectFormulation/LoanClientFile.aspx?	1	0
+3076	0			Inventory And BalanceSheet Genration		~/Reports/retailbanking/ReportOptions.aspx?source=INVENTORYANDBALANCESHEET	~/Reports/retailbanking/ReportOptions.aspx?source=INVENTORYANDBALANCESHEET	1	0
+3077	0			Credit Officer Remarks		~/Ho/ProjectFormulation/p_CreditOfficerRemarks.aspx?Code=CO	~/Ho/ProjectFormulation/p_CreditOfficerRemarks.aspx?Code=CO	1	0
+3078	0			Branch Manager Remarks		~/Ho/ProjectFormulation/p_CreditOfficerRemarks.aspx?Code=BM	~/Ho/ProjectFormulation/p_CreditOfficerRemarks.aspx?Code=BM	1	0
+3079	0			Attach Document For Loan Case		~/Ho/ProjectFormulation/p_AnnexPre.aspx?id=7	~/Ho/ProjectFormulation/p_AnnexPre.aspx?id=7	1	0
+3080	0			Loan Request Close		~/Ho/ProjectFormulation/P_LoanRequestClose.aspx?Source=save	~/Ho/ProjectFormulation/P_LoanRequestClose.aspx?Source=save	1	0
+3081	0			Loan Request Close Authorization		~/Ho/ProjectFormulation/P_LoanRequestClose.aspx?Source=Pass	~/Ho/ProjectFormulation/P_LoanRequestClose.aspx?Source=Pass	1	0
+3082	0			Final Review Process		~/Ho/ProjectFormulation/p_FinalReviewProcess.aspx?	~/Ho/ProjectFormulation/p_FinalReviewProcess.aspx?	1	0
+3083	0			Document Verification Remarks		~/Ho/ProjectFormulation/p_LoanCaseCommitteeRemarks.aspx?code=AP	~/Ho/ProjectFormulation/p_LoanCaseCommitteeRemarks.aspx?code=AP	1	0
+3084	0			Loan Case Concluding Remarks		~/Ho/ProjectFormulation/p_LoanCaseCommitteeRemarks.aspx?code=AR	~/Ho/ProjectFormulation/p_LoanCaseCommitteeRemarks.aspx?code=AR	1	0
+3085	0			Loan Case Current Status		~/HO/ProjectFormulation/LoanCaseCurrentStatus.aspx?	~/HO/ProjectFormulation/LoanCaseCurrentStatus.aspx?	1	0
+3086	0			Loan Contract		~/reports/ProjectFormulation/LoanContractLetter.aspx?	~/reports/ProjectFormulation/LoanContractLetter.aspx?	1	0
+3087	7	Retail and Corporate Operations	Banking	Pending Cheque Book Request	2057	~/Reports/RetailBanking/PendingChequeBookRequest.aspx?	~/Reports/RetailBanking/PendingChequeBookRequest.aspx?	1	1
+3088	7	Retail and Corporate Operations	Banking	In-Active Dormant Account List	2057	~/Reports/RetailBanking/InactiveDormantReport.aspx?	~/Reports/RetailBanking/InactiveDormantReport.aspx?	1	1
+3089	0			Security Waive Off		~/RetailBanking/b_SecurityWaiveOff.aspx?source=LoanAccEntry	~/RetailBanking/b_SecurityWaiveOff.aspx?source=LoanAccEntry	1	0
+3090	0			Security Waive Off Authorization		~/RetailBanking/b_SecurityWaiveOff.aspx?source=LoanAccPass	~/RetailBanking/b_SecurityWaiveOff.aspx?source=LoanAccPass	1	0
+3091	0			Security Waive Off Authorization		~/RetailBanking/b_SecurityWaiveOff.aspx?source=LoanCasePass	~/RetailBanking/b_SecurityWaiveOff.aspx?source=LoanCasePass	1	0
+3092	0			Transfer Holiday		~/ho/retailbanking/b_TransferHoliday.aspx?	~/ho/retailbanking/b_TransferHoliday.aspx?	1	0
+3093	65	Internet Banking	IB	Administration		?	?	1	
+3094	65	Internet Banking	IB	Account Mapping	3093	~/HelpDesk/MapHelpDeskAccounts.aspx?	~/HelpDesk/MapHelpDeskAccounts.aspx?	1	
+3095	65	Internet Banking	IB	Login Policy For Customer	3093	~/HelpDesk/HelpDeskPasswordPolicyConfig.aspx?	~/HelpDesk/HelpDeskPasswordPolicyConfig.aspx?	1	
+3096	65	Internet Banking	IB	Email Configuration	3093	~/HelpDesk/hd_EmailConfig.aspx?	~/HelpDesk/hd_EmailConfig.aspx?	1	
+3097	65	Internet Banking	IB	AllRequest	3093	~/HelpDesk/hd_AllRequest.aspx?	~/HelpDesk/hd_AllRequest.aspx?	1	
+3098	65	Internet Banking	IB	AllRequestStatus	3093	~/HelpDesk/hd_AllRequestV1.aspx?	~/HelpDesk/hd_AllRequestV1.aspx?	0	
+3099	65	Internet Banking	IB	Customer Request Status	3093	~/HelpDesk/AllRequestStatus.aspx?	~/HelpDesk/AllRequestStatus.aspx?	1	
+3100	0			Committee Master		~/HO/ProjectFormulation/p_CommitteeMaster.aspx?	~/HO/ProjectFormulation/p_CommitteeMaster.aspx?	1	0
+3101	0			Assign Members To Committee		~/HO/ProjectFormulation/p_CommitteeMasterMemberAR.aspx?code=AR	~/HO/ProjectFormulation/p_CommitteeMasterMemberAR.aspx?code=AR	1	0
+3102	0			Assign Members For Document Verification		~/HO/ProjectFormulation/p_CommitteeMasterMemberAP.aspx?code=AP	~/HO/ProjectFormulation/p_CommitteeMasterMemberAP.aspx?code=AP	1	0
+3103	0			Excess Withdrawal		~/RetailBanking/x_ExcessWithdrawal.aspx?	~/RetailBanking/x_ExcessWithdrawal.aspx?	0	0
+3104	0			Excess Withdrawal Authorization		~/RetailBanking/x_ExcessWithdrawal.aspx?Source=pass	~/RetailBanking/x_ExcessWithdrawal.aspx?Source=pass	0	0
+3105	0			Document Master		~/HO/ProjectFormulation/p_Document.aspx?	~/HO/ProjectFormulation/p_Document.aspx?	1	0
+3106	0			Dormant Re Activation Final Authorization		~/Retailbanking/dormant/x_dormantreactivation.aspx?Source=Pass1	~/Retailbanking/dormant/x_dormantreactivation.aspx?Source=Pass1	0	0
+3107	0			Checking Account Closure		~/RetailBanking/transaction/x_sbcardaccountclosingv1.aspx?ShowCa=1	~/RetailBanking/transaction/x_sbcardaccountclosingv1.aspx?ShowCa=1	1	0
+3108	0			Checking Account Closure Authorization		~/RetailBanking/transaction/x_sbcardaccountclosingv1.aspx?source=passing&ShowCa=1	~/RetailBanking/transaction/x_sbcardaccountclosingv1.aspx?source=passing&ShowCa=1	1	0
+3109	0			Default Interest WaiveOff		~/RetailBanking/HPL/x_HPLDIWaiveOff.aspx?	~/RetailBanking/HPL/x_HPLDIWaiveOff.aspx?	0	0
+3110	0			Default Interest WaiveOff Authorization		~/RetailBanking/HPL/x_HPLDIWaiveOff.aspx?&Source=pass	~/RetailBanking/HPL/x_HPLDIWaiveOff.aspx?&Source=pass	0	0
+3111	0			Legal Settings				1	0
+3112	0			Activity Type		~/RetailBanking/Legal/lg_ActivityMaster.aspx?	~/RetailBanking/Legal/lg_ActivityMaster.aspx?	1	0
+3113	0			Penal Section		~/RetailBanking/Legal/lg_Section.aspx?	~/RetailBanking/Legal/lg_Section.aspx?	1	0
+3114	0			Master		?	?	1	0
+3115	0			Transaction		?	?	1	0
+3116	0			Unit of Measurement		~/inventory/i_UnitOfMeasurement.aspx?	~/inventory/i_UnitOfMeasurement.aspx?	1	0
+3117	0			Supplier		~/inventory/i_Supplier.aspx?	~/inventory/i_Supplier.aspx?	1	0
+3118	0			Asset Category		~/ho/bank/g_InventoryCategory.aspx?Source=0	~/ho/bank/g_InventoryCategory.aspx?Source=0	1	0
+3119	0			Consumable Category		~/ho/bank/g_InventoryCategory.aspx?Source=1	~/ho/bank/g_InventoryCategory.aspx?Source=1	1	0
+3120	0			Budget Category		~/Inventory/i_BudgetCategory.aspx?	~/Inventory/i_BudgetCategory.aspx?	0	0
+3121	0			Fixed Asset		~/inventory/i_item.aspx?Source=0	~/inventory/i_item.aspx?Source=0	1	0
+3122	0			Consumable		~/inventory/i_item.aspx?Source=1	~/inventory/i_item.aspx?Source=1	1	0
+3123	0			Depreciation		~/inventory/i_Depriciation.aspx?	~/inventory/i_Depriciation.aspx?	1	0
+3124	0			Asset Purchase		~/inventory/i_ItemPurchase.aspx?Source=0&varify=&Pass=	~/inventory/i_ItemPurchase.aspx?Source=0&varify=&Pass=	1	0
+3125	0			Asset Purchase Authorization		~/inventory/i_ItemPurchase.aspx?Source=0&varify=&Pass=0	~/inventory/i_ItemPurchase.aspx?Source=0&varify=&Pass=0	1	0
+3126	0			Consumable Purchase		~/inventory/i_ItemPurchase.aspx?Source=1&varify=&Pass=	~/inventory/i_ItemPurchase.aspx?Source=1&varify=&Pass=	1	0
+3127	0			Consumable Purchase Authorization		~/inventory/i_ItemPurchase.aspx?Source=1&varify=&Pass=1	~/inventory/i_ItemPurchase.aspx?Source=1&varify=&Pass=1	1	0
+3128	0			Asset Transaction		~/inventory/i_InventoryRegister.aspx?Source=0	~/inventory/i_InventoryRegister.aspx?Source=0	1	0
+3129	0			Consumable Transaction		~/inventory/i_InventoryRegister.aspx?Source=1	~/inventory/i_InventoryRegister.aspx?Source=1	1	0
+3130	0			Depreciation Calculation		~/inventory/i_DepriciationCalculation.aspx?Source=Calc	~/inventory/i_DepriciationCalculation.aspx?Source=Calc	1	0
+3131	0			Depreciation Posting		~/inventory/i_DepriciationCalculation.aspx?Source=Post&Pass=AP	~/inventory/i_DepriciationCalculation.aspx?Source=Post&Pass=AP	1	0
+3132	0			Budget Estimate Approval		~/inventory/i_BudgetEstimateApproval.aspx?	~/inventory/i_BudgetEstimateApproval.aspx?	0	0
+3133	0			Asset Sale		~/inventory/i_AssetSale.aspx?	~/inventory/i_AssetSale.aspx?	1	0
+3134	0			Asset Sale Authorization		~/inventory/i_AssetSale.aspx?Pass=1	~/inventory/i_AssetSale.aspx?Pass=1	1	0
+3135	0			Consumable Scrap		~/Inventory/i_ConsumableDisposal.aspx?Source=Trans	~/Inventory/i_ConsumableDisposal.aspx?Source=Trans	1	0
+3136	0			Consumable Scrap Authorization		~/Inventory/i_ConsumableDisposal.aspx?Source=Pass	~/Inventory/i_ConsumableDisposal.aspx?Source=Pass	1	0
+3137	0			Asset Scrap		~/inventory/i_AssetScrap.aspx?	~/inventory/i_AssetScrap.aspx?	1	0
+3138	0			Asset Scrap Authorization		~/inventory/i_AssetScrap.aspx?Pass=1	~/inventory/i_AssetScrap.aspx?Pass=1	1	0
+3139	0			Budget Estimate		~/inventory/i_BudgetCategoryTransaction.aspx?	~/inventory/i_BudgetCategoryTransaction.aspx?	0	0
+3140	0			Budget Category Account Head Mapping		~/inventory/i_BudgetCategoryAccountHeadMapping.aspx?	~/inventory/i_BudgetCategoryAccountHeadMapping.aspx?	0	0
+3141	0			Object Master		~/inventory/i_Object.aspx?	~/inventory/i_Object.aspx?	1	0
+3142	0			Object Details		~/inventory/i_ObjectDetail.aspx?	~/inventory/i_ObjectDetail.aspx?	1	0
+3143	0			Reports		~/Reports/ReportSelector.aspx?moduleid=2	~/Reports/ReportSelector.aspx?moduleid=2	1	0
+3144	0			Repayment Reversal		~/RetailBanking/LoanRepayReverse.aspx?	~/RetailBanking/LoanRepayReverse.aspx?	0	0
+3145	0			Repayment Reversal Authorization		~/RetailBanking/LoanRepayReverse.aspx?Source=Pass	~/RetailBanking/LoanRepayReverse.aspx?Source=Pass	0	0
+3146	2	Inventory	Inv	Master Reports		?	?	1	1
+3147	2	Inventory	Inv	Unit of Measurement	3146	~/inventory/i_MasterReport.aspx?Source=UOM	~/inventory/i_MasterReport.aspx?Source=UOM	1	1
+3148	2	Inventory	Inv	Suppliers	3146	~/inventory/i_MasterReport.aspx?Source=Supplier	~/inventory/i_MasterReport.aspx?Source=Supplier	1	1
+3149	2	Inventory	Inv	Asset Category	3146	~/inventory/i_MasterReport.aspx?Source=AssetCat	~/inventory/i_MasterReport.aspx?Source=AssetCat	1	1
+3150	2	Inventory	Inv	Consumable Categories	3146	~/inventory/i_MasterReport.aspx?Source=ConsCat	~/inventory/i_MasterReport.aspx?Source=ConsCat	1	1
+3151	2	Inventory	Inv	Budget Category	3146	~/inventory/i_MasterReport.aspx?Source=BC	~/inventory/i_MasterReport.aspx?Source=BC	1	1
+3152	2	Inventory	Inv	Depreciation	3146	~/inventory/i_MasterReport.aspx?Source=Dep	~/inventory/i_MasterReport.aspx?Source=Dep	1	1
+3153	2	Inventory	Inv	Object Parameter	3146	~/inventory/i_MasterReport.aspx?Source=OP	~/inventory/i_MasterReport.aspx?Source=OP	1	1
+3154	2	Inventory	Inv	Object Details	3146	~/inventory/i_MasterReport.aspx?Source=OD	~/inventory/i_MasterReport.aspx?Source=OD	1	1
+3155	2	Inventory	Inv	Fixed Asset	3146	~/inventory/i_MasterReport.aspx?Source=Asset	~/inventory/i_MasterReport.aspx?Source=Asset	1	1
+3156	2	Inventory	Inv	Consumable	3146	~/inventory/i_MasterReport.aspx?Source=Consumable	~/inventory/i_MasterReport.aspx?Source=Consumable	1	1
+3157	2	Inventory	Inv	Transaction Reports		?	?	1	1
+3158	2	Inventory	Inv	Stock Register	3157	~/inventory/i_TransactionReport.aspx?Source=Stock	~/inventory/i_TransactionReport.aspx?Source=Stock	1	1
+3159	2	Inventory	Inv	Reciept Dispatch 	3157	~/inventory/i_TransactionReport.aspx?Source=RD	~/inventory/i_TransactionReport.aspx?Source=RD	1	1
+3160	2	Inventory	Inv	Opening Stock	3157	~/inventory/i_TransactionReport.aspx?Source=Opening	~/inventory/i_TransactionReport.aspx?Source=Opening	1	1
+3161	2	Inventory	Inv	Purchase Register	3157	~/inventory/i_TransactionReport.aspx?Source=PurchaseRegister	~/inventory/i_TransactionReport.aspx?Source=PurchaseRegister	1	1
+3162	2	Inventory	Inv	Purchase Report	3157	~/inventory/i_TransactionReport.aspx?Source=PurchaseReport	~/inventory/i_TransactionReport.aspx?Source=PurchaseReport	1	1
+3163	2	Inventory	Inv	Budget Estimate	3157	~/inventory/i_EstimateReport.aspx?	~/inventory/i_EstimateReport.aspx?	1	1
+3164	2	Inventory	Inv	Asset Register Report	3157	~/inventory/i_TransactionReport.aspx?Source=AssetRegister	~/inventory/i_TransactionReport.aspx?Source=AssetRegister	1	1
+3165	2	Inventory	Inv	Stock Position Report	3157	~/inventory/i_TransactionReport.aspx?Source=StockPosition	~/inventory/i_TransactionReport.aspx?Source=StockPosition	1	1
+3166	2	Inventory	Inv	Depriciation Report	3157	~/inventory/i_TransactionReport.aspx?Source=InvDepriciation	~/inventory/i_TransactionReport.aspx?Source=InvDepriciation	1	1
+3167	0			Credit Score Tabulation Master		~/HO/ProjectFormulation/p_CreditRiskAnalysisMaster.aspx?	~/HO/ProjectFormulation/p_CreditRiskAnalysisMaster.aspx?	1	
+3169	0			FeedBack Master		~/HO/ProjectFormulation/p_FeedbackMaster.aspx?	~/HO/ProjectFormulation/p_FeedbackMaster.aspx?	1	
+3170	66	Trade Finance	TF	Letter of Credit Application Second Authorization	2801	~/RetailBanking/LC/LCApplicationV1.aspx?Source=PASSBY1	~/RetailBanking/LC/LCApplicationV1.aspx?Source=PASSBY1	1	0
+3171	66	Trade Finance	TF	BG Account Creation		~/Retailbanking/TDBG/TD_BG_Client.aspx?Client=BG	~/Retailbanking/TDBG/TD_BG_Client.aspx?Client=BG	1	0
+3172	0			Reconciliation Authentication	1145	~/Reconciliation/re_AuthenticateRecord.aspx?source=T	~/Reconciliation/re_AuthenticateRecord.aspx?source=T	1	
+3173	0			Rollback Authentication	1145	~/Reconciliation/re_AuthenticateRecord.aspx?source=R	~/Reconciliation/re_AuthenticateRecord.aspx?source=R	1	
+3174	0			Teller COA Mapping	880	~/HO/RetailBanking/b_tellercoamapping.aspx?	~/HO/RetailBanking/b_tellercoamapping.aspx?	1	
+3175	66	Trade Finance	TF	Letter of Credit Transfer Application	2801	~/RetailBanking/LC/LCTransfer.aspx?	~/RetailBanking/LC/LCTransfer.aspx?	1	0
+3176	66	Trade Finance	TF	Letter of Credit Transfer Application  Authorization	2801	~/RetailBanking/LC/LCTransfer.aspx?Source=pass	~/RetailBanking/LC/LCTransfer.aspx?Source=pass	1	0
+3177	66	Trade Finance	TF	Letter of Credit Transfer Application Second Authorization	2801	~/RetailBanking/LC/LCTransfer.aspx?Source=passby1	~/RetailBanking/LC/LCTransfer.aspx?Source=passby1	1	0
+3178	66	Trade Finance	TF	Currency GL Mapping	3057	~/HO/BG/Bg_CurrencyGLMapping.aspx?	~/HO/BG/Bg_CurrencyGLMapping.aspx?	1	0
+3179	66	Trade Finance	TF	Commission Rate Master	3057	~/HO/BG/Bg_CommissionRateMaster.aspx?	~/HO/BG/Bg_CommissionRateMaster.aspx?	1	0
+3180	0			Purchase Request		~/Inventory/i_PurchaseReq.aspx?	~/Inventory/i_PurchaseReq.aspx?	1	
+3181	0			Purchase Request Verification		~/Inventory/i_PurchaseReq.aspx?Source=Verify	~/Inventory/i_PurchaseReq.aspx?Source=Verify	0	
+3182	0			Purchase Request Authorization		~/Inventory/i_PurchaseReq.aspx?Source=Pass	~/Inventory/i_PurchaseReq.aspx?Source=Pass	1	
+3183	7	Retail and Corporate Operations	Banking	PortFolio Reports				1	1
+3184	7	Retail and Corporate Operations	Banking	Guarantor Reports				1	1
+3185	7	Retail and Corporate Operations	Banking	Client Report				1	1
+3186	7	Retail and Corporate Operations	Banking	 General Reports 	3183			1	1
+3187	7	Retail and Corporate Operations	Banking	Guarantors And Collateral Report	3186	~/Reports/RetailBanking/Loan/ReportOptions.aspx?Source=GuarantorsAndCollateralReport	~/Reports/RetailBanking/Loan/ReportOptions.aspx?Source=GuarantorsAndCollateralReport	1	1
+3188	7	Retail and Corporate Operations	Banking	Approved Rejected Pending Loans	3186	~/Reports/RetailBanking/Loan/ReportOptions.aspx?Source=APPROVEDREJECTEDPENDINGLOANS	~/Reports/RetailBanking/Loan/ReportOptions.aspx?Source=APPROVEDREJECTEDPENDINGLOANS	1	1
+3189	7	Retail and Corporate Operations	Banking	Outstanding Balance Report	3186	~/Reports/RetailBanking/Loan/ReportOptions.aspx?Source=OUTSTANDINGBALANCE	~/Reports/RetailBanking/Loan/ReportOptions.aspx?Source=OUTSTANDINGBALANCE	1	1
+3190	7	Retail and Corporate Operations	Banking	Reprint Repayment	3186	~/Reports/RetailBanking/Loan/ReportOptions.aspx?Source=LoanRepaymentSchedule	~/Reports/RetailBanking/Loan/ReportOptions.aspx?Source=LoanRepaymentSchedule	1	1
+3191	7	Retail and Corporate Operations	Banking	Loans Guaranteed by Guarantors Report	3186	~/Reports/RetailBanking/Loan/ReportOptions.aspx?Source=LoansguaranteedbyGuarantors	~/Reports/RetailBanking/Loan/ReportOptions.aspx?Source=LoansguaranteedbyGuarantors	0	1
+3192	7	Retail and Corporate Operations	Banking	Disbursement Report	3186	~/Reports/RetailBanking/Loan/ReportOptions.aspx?Source=DISBURSEMENTREPORT	~/Reports/RetailBanking/Loan/ReportOptions.aspx?Source=DISBURSEMENTREPORT	1	1
+3193	7	Retail and Corporate Operations	Banking	Arrears Report	3183	~/Reports/RetailBanking/Loan/ReportOptions.aspx?Source=ARREARSREPORT	~/Reports/RetailBanking/Loan/ReportOptions.aspx?Source=ARREARSREPORT	1	1
+3194	7	Retail and Corporate Operations	Banking	Portfolio at Risk	3183	~/Reports/RetailBanking/Loan/ReportOptions.aspx?Source=PORTFOLIOATRISKREPORT	~/Reports/RetailBanking/Loan/ReportOptions.aspx?Source=PORTFOLIOATRISKREPORT	1	1
+3195	7	Retail and Corporate Operations	Banking	Analysis Reports	3183			1	1
+3196	7	Retail and Corporate Operations	Banking	Active Portfolio per Credit Officer	3195	~/Reports/RetailBanking/Loan/ReportOptions.aspx?Source=ActivePortfolioperCreditOfficer	~/Reports/RetailBanking/Loan/ReportOptions.aspx?Source=ActivePortfolioperCreditOfficer	1	1
+3197	7	Retail and Corporate Operations	Banking	Category Reports	3195	~/Reports/RetailBanking/Loan/ReportOptions.aspx?Source=CATEGORYREPORTS	~/Reports/RetailBanking/Loan/ReportOptions.aspx?Source=CATEGORYREPORTS	1	1
+3198	7	Retail and Corporate Operations	Banking	Loan Cycles Report	3195	~/Reports/RetailBanking/Loan/ReportOptions.aspx?Source=LOANCYCLESREPORT	~/Reports/RetailBanking/Loan/ReportOptions.aspx?Source=LOANCYCLESREPORT	1	1
+3199	7	Retail and Corporate Operations	Banking	Top Borrowers Report	2057	~/Reports/RetailBanking/Loan/ReportOptions.aspx?Source=TOPBORROWERSREPORT	~/Reports/RetailBanking/Loan/ReportOptions.aspx?Source=TOPBORROWERSREPORT	1	1
+3200	7	Retail and Corporate Operations	Banking	Report on Due	3183			1	1
+3201	7	Retail and Corporate Operations	Banking	Amounts Due	3200	~/Reports/RetailBanking/Loan/ReportOptions.aspx?Source=AMOUNTSDUE	~/Reports/RetailBanking/Loan/ReportOptions.aspx?Source=AMOUNTSDUE	1	1
+3202	7	Retail and Corporate Operations	Banking	Amounts Due Today	3200	~/Reports/RetailBanking/Loan/ReportOptions.aspx?Source=AMOUNTSDUETODAY	~/Reports/RetailBanking/Loan/ReportOptions.aspx?Source=AMOUNTSDUETODAY	1	1
+3203	7	Retail and Corporate Operations	Banking	Upcoming Maturity Loans Report	3200	~/Reports/RetailBanking/Loan/ReportOptions.aspx?Source=UPCOMINGMATURITYLOANSREPORT	~/Reports/RetailBanking/Loan/ReportOptions.aspx?Source=UPCOMINGMATURITYLOANSREPORT	1	1
+3204	7	Retail and Corporate Operations	Banking	Repeat Clients Loans Report	3185	~/Reports/RetailBanking/Loan/ReportOptions.aspx?Source=REPEATCLIENTSLOANSREPORT	~/Reports/RetailBanking/Loan/ReportOptions.aspx?Source=REPEATCLIENTSLOANSREPORT	1	1
+3205	0			Set Committee Approval Limit		~/Ho/ProjectFormulation/p_SetCommitteeApprovalLimit.aspx?	~/Ho/ProjectFormulation/p_SetCommitteeApprovalLimit.aspx?	1	0
+3206	7	Retail and Corporate Operations	Banking	Reports on Repayments	3183			1	1
+3207	7	Retail and Corporate Operations	Banking	Expected Repayments of Past and Present Dues	3206	~/Reports/RetailBanking/Loan/ReportOptions.aspx?Source=EXPECTEDREPAYMENTSOFPASTPRESENTDUES	~/Reports/RetailBanking/Loan/ReportOptions.aspx?Source=EXPECTEDREPAYMENTSOFPASTPRESENTDUES	1	1
+3208	7	Retail and Corporate Operations	Banking	Fully Repaid Loans Report	3206	~/Reports/RetailBanking/Loan/ReportOptions.aspx?Source=FULLYREPAIDLOANSREPORT	~/Reports/RetailBanking/Loan/ReportOptions.aspx?Source=FULLYREPAIDLOANSREPORT	1	1
+3209	7	Retail and Corporate Operations	Banking	Loan History Report	3206	~/Reports/RetailBanking/Loan/ReportOptions.aspx?Source=LOANHISTORYREPORT	~/Reports/RetailBanking/Loan/ReportOptions.aspx?Source=LOANHISTORYREPORT	1	1
+3210	7	Retail and Corporate Operations	Banking	On-Time Repayments per Cycle Report	3206	~/Reports/RetailBanking/Loan/ReportOptions.aspx?Source=ONTIMEREPAYMENTSPERCYCLEREPORT	~/Reports/RetailBanking/Loan/ReportOptions.aspx?Source=ONTIMEREPAYMENTSPERCYCLEREPORT	1	1
+3211	7	Retail and Corporate Operations	Banking	Payments Made During a Period Report	3206	~/Reports/RetailBanking/Loan/ReportOptions.aspx?Source=PAYMENTSMADEDURINGPERIODREPORT	~/Reports/RetailBanking/Loan/ReportOptions.aspx?Source=PAYMENTSMADEDURINGPERIODREPORT	1	1
+3212	7	Retail and Corporate Operations	Banking	Payments Made since Disbursement	3206	~/Reports/RetailBanking/Loan/ReportOptions.aspx?Source=PAYMENTSMADESINCEDISBURSEMENT	~/Reports/RetailBanking/Loan/ReportOptions.aspx?Source=PAYMENTSMADESINCEDISBURSEMENT	1	1
+3213	7	Retail and Corporate Operations	Banking	Penalties Charged Vs Penalties Paid	3206	~/Reports/RetailBanking/Loan/ReportOptions.aspx?Source=PENALTIESCHARGEDPENALTIESPAID	~/Reports/RetailBanking/Loan/ReportOptions.aspx?Source=PENALTIESCHARGEDPENALTIESPAID	1	1
+3214	7	Retail and Corporate Operations	Banking	Pre-Payments Made During a Period Report	3206	~/Reports/RetailBanking/Loan/ReportOptions.aspx?Source=PREPAYMENTSMADEDURINGPERIODREPORT	~/Reports/RetailBanking/Loan/ReportOptions.aspx?Source=PREPAYMENTSMADEDURINGPERIODREPORT	1	1
+3215	7	Retail and Corporate Operations	Banking	Repayment of Dues Report	3206	~/Reports/RetailBanking/Loan/ReportOptions.aspx?Source=REPAYMENTDUESREPORT	~/Reports/RetailBanking/Loan/ReportOptions.aspx?Source=REPAYMENTDUESREPORT	1	1
+3216	7	Retail and Corporate Operations	Banking	Repayments Past Due Report	3206	~/Reports/RetailBanking/Loan/ReportOptions.aspx?Source=REPAYMENTSPASTDUEREPORT	~/Reports/RetailBanking/Loan/ReportOptions.aspx?Source=REPAYMENTSPASTDUEREPORT	1	1
+3217	7	Retail and Corporate Operations	Banking	Report on Fees Received	3206	~/Reports/RetailBanking/Loan/ReportOptions.aspx?Source=REPORTFEESRECEIVED	~/Reports/RetailBanking/Loan/ReportOptions.aspx?Source=REPORTFEESRECEIVED	1	1
+3218	66	Trade Finance	TF	LC Templates		~/retailbanking/LC/LCTemplate.aspx?Tag=LC	~/retailbanking/LC/LCTemplate.aspx?Tag=LC	1	0
+3219	7	Retail and Corporate Operations	Banking	CBL Reports	2747	~/Reports/CBLReports/CBLReports.aspx?	~/Reports/CBLReports/CBLReports.aspx?	1	1
+3220	0			Manager Cheque Payment Entry		~/RetailBanking/x_BankerCheque.aspx?source=PayCash	~/RetailBanking/x_BankerCheque.aspx?source=PayCash	1	0
+3221	0			Manager Cheque Payment Authorization		~/RetailBanking/x_BankerCheque.aspx?source=PayCashAuth	~/RetailBanking/x_BankerCheque.aspx?source=PayCashAuth	1	0
+3222	65	Internet Banking	IB	Login Text	3093	~/HelpDesk/hd_LoginText.aspx?	~/HelpDesk/hd_LoginText.aspx?	1	
+3223	0			Inward File Import	322	~/RetailBanking/clearing/b_inwardClgFileV2.aspx?Source=Trans	~/RetailBanking/clearing/b_inwardClgFileV2.aspx?Source=Trans	1	
+3224	0			Inward File Update	322	~/RetailBanking/clearing/b_inwardClgFileV2.aspx?Source=Update	~/RetailBanking/clearing/b_inwardClgFileV2.aspx?Source=Update	1	
+3225	0			Inward File Authorization	322	~/RetailBanking/clearing/b_inwardClgFileV2.aspx?Source=Pass	~/RetailBanking/clearing/b_inwardClgFileV2.aspx?Source=Pass	1	
+3226	0			Inward/Outward Account Mapping		~/RetailBanking/clearing/b_InwOtwBankAccMapping.aspx?	~/RetailBanking/clearing/b_InwOtwBankAccMapping.aspx?	0	0
+3227	0			Inward Return File	322	~/RetailBanking/clearing/CTSInwardReturn.aspx?source=Trans	~/RetailBanking/clearing/CTSInwardReturn.aspx?source=Trans	1	
+3228	0			Government Revenue				1	
+3229	0			Government Revenue Entry		~/RetailBanking/x_TFPTran.aspx?	~/RetailBanking/x_TFPTran.aspx?	1	
+3230	0			Government Revenue Authorization		~/RetailBanking/x_TFPTran.aspx?source=pass	~/RetailBanking/x_TFPTran.aspx?source=pass	1	
+3231	66	Trade Finance	TF	BG Templates		~/retailbanking/LC/LCTemplate.aspx?Tag=BG	~/retailbanking/LC/LCTemplate.aspx?Tag=BG	1	0
+3232	66	Trade Finance	TF	BG Template Report	2815	~/Reports/RetailBanking/TDBG/TDBGReportOptions.aspx?source=BGTemplateReport	~/Reports/RetailBanking/TDBG/TDBGReportOptions.aspx?source=BGTemplateReport	1	1
+3233	66	Trade Finance	TF	LC Currency GL Mapping		~/ho/lc/lc_CurrencyGlMapping.aspx?	~/ho/lc/lc_CurrencyGlMapping.aspx?	1	0
+3234	66	Trade Finance	TF	BG Lien Notation Release	2938	~/RetailBanking/TDBG/Td_Bg_LienNotationRelease.aspx?	~/RetailBanking/TDBG/Td_Bg_LienNotationRelease.aspx?	1	0
+3235	0			Casual OverDraft Account Authorization		~/RetailBanking/g_AllowDebitTransactionAccountHeads_v1.aspx?Source=pass1	~/RetailBanking/g_AllowDebitTransactionAccountHeads_v1.aspx?Source=pass1	1	0
+3236	66	Trade Finance	TF	BG Invoke Second Authorization		~/RetailBanking/TDBG/Td_Bg_RevokeTran_v1.aspx?Source=Pass2	~/RetailBanking/TDBG/Td_Bg_RevokeTran_v1.aspx?Source=Pass2	1	0
+3237	0			Government Revenue Mapping		~/RetailBanking/b_GovRevenueMapping.aspx?	~/RetailBanking/b_GovRevenueMapping.aspx?	1	0
+3238	7	Retail and Corporate Operations	Banking	Return File	1107	~/RetailBanking/transaction/DirectDCReturnFile.aspx?	~/RetailBanking/transaction/DirectDCReturnFile.aspx?	0	
+3239	7	Retail and Corporate Operations	Banking	Manager Cheque Paid UnPaid Report	2130	~/Reports/RetailBanking/BankerChequeReport.aspx?	~/Reports/RetailBanking/BankerChequeReport.aspx?	1	1
+3241	0			Account Enquiry By Branch		~/RetailBanking/Account/AccountEnquiry.aspx?Source=All	~/RetailBanking/Account/AccountEnquiry.aspx?Source=All	1	0
+3242	65	Internet Banking	IB	Reports		~/Reports/ReportSelector.aspx?moduleid=65	~/Reports/ReportSelector.aspx?moduleid=65	1	
+3243	65	Internet Banking	IB	User List Report	3246	~/Reports/HelpDesk/HelpDeskReportSetting.aspx?source=UserListReport	~/Reports/HelpDesk/HelpDeskReportSetting.aspx?source=UserListReport	1	1
+3244	65	Internet Banking	IB	User Activity Report	3246	~/Reports/HelpDesk/HelpDeskReportSetting.aspx?source=UserActivityReport	~/Reports/HelpDesk/HelpDeskReportSetting.aspx?source=UserActivityReport	1	1
+3245	65	Internet Banking	IB	Pending Request Report	3246	~/Reports/HelpDesk/HelpDeskReportSetting.aspx?source=PendingRequestReport	~/Reports/HelpDesk/HelpDeskReportSetting.aspx?source=PendingRequestReport	1	1
+3246	65	Internet Banking	IB	Internet Banking Reports		?	?	1	1
+3247	0			Stop Installment Execution		~/RetailBanking/account/c_RepayScheduleHold.aspx?	~/RetailBanking/account/c_RepayScheduleHold.aspx?	1	0
+3248	0			Branch Cash Limit		~/HO/RetailBanking/b_BranchCashLimit.aspx?	~/HO/RetailBanking/b_BranchCashLimit.aspx?	1	0
+3249	0			Auto Reports Configuration		~/HO/retailBanking/b_AutoDayEndReportConfig.aspx?	~/HO/retailBanking/b_AutoDayEndReportConfig.aspx?	1	0
+3250	0			Asset Purchase Verification		~/inventory/i_ItemPurchase.aspx?Source=0&varify=0&Pass=	~/inventory/i_ItemPurchase.aspx?Source=0&varify=0&Pass=	1	0
+3251	0			Consumable Purchase Verification		~/inventory/i_ItemPurchase.aspx?Source=1&varify=0&Pass=	~/inventory/i_ItemPurchase.aspx?Source=1&varify=0&Pass=	1	0
+3252	7	Retail and Corporate Operations	Banking	Management Reports	2747	~/Reports/CBLReports/CBLReports.aspx?source=managerreport	~/Reports/CBLReports/CBLReports.aspx?source=managerreport	1	1
+3253	0			Forex Trading Transaction		~/treasury/FX/x_ForexTradingTran.aspx?	~/treasury/FX/x_ForexTradingTran.aspx?	1	0
+3254	0			Forex Trading Transaction Authorization		~/treasury/FX/x_ForexTradingTran.aspx?Source=Pass	~/treasury/FX/x_ForexTradingTran.aspx?Source=Pass	1	0
+3255	0			Delinquency Chart of Account Mapping		~/RetailBanking/HO/RetailBanking/b_NPAClassMasterCOAMap.aspx?	~/RetailBanking/HO/RetailBanking/b_NPAClassMasterCOAMap.aspx?	0	0
+3256	2	Inventory	Inv	Purchase Request Report	3157	~/inventory/i_TransactionReport.aspx?Source=PurchaseReq	~/inventory/i_TransactionReport.aspx?Source=PurchaseReq	1	1
+3257	1	Central Administration	hrms	Reports		~/Reports/ReportSelector.aspx?moduleid=1	~/Reports/ReportSelector.aspx?moduleid=1	1	0
+3258	1	Central Administration	hrms	User Reports	3257	?	?	1	1
+3259	1	Central Administration	hrms	User Rights Report	3258	~/Reports/Admin/AdminReport.aspx?source=UserRights	~/Reports/Admin/AdminReport.aspx?source=UserRights	1	1
+3260	0			Forex Receipt Transaction		~/treasury/FX/tr_FxTransferReceipt_v1.aspx?	~/treasury/FX/tr_FxTransferReceipt_v1.aspx?	1	0
+3261	0			Forex Receipt Transaction Authorization		~/treasury/FX/tr_FxTransferReceipt_v1.aspx?Source=pass	~/treasury/FX/tr_FxTransferReceipt_v1.aspx?Source=pass	1	0
+3262	0			Forex Payment Transaction		~/treasury/FX/tr_FxTransferPayment_v1.aspx?	~/treasury/FX/tr_FxTransferPayment_v1.aspx?	1	0
+3263	0			Forex Payment Transaction Authorization		~/treasury/FX/tr_FxTransferPayment_v1.aspx?Source=pass	~/treasury/FX/tr_FxTransferPayment_v1.aspx?Source=pass	1	0
+3264	65	Internet Banking	IB	All Trade Finance Request		~/HelpDesk/AllTradeFinanceRequest.aspx?	~/HelpDesk/AllTradeFinanceRequest.aspx?	1	
+3265	7	Retail and Corporate Operations	Banking	Account Open Letter Report	2057	~/Reports/RetailBanking/ReportOptions.aspx?Source=NewAccOpen	~/Reports/RetailBanking/ReportOptions.aspx?Source=NewAccOpen	1	1
+3266	65	Internet Banking	IB	Transaction Report	3246	~/Reports/HelpDesk/HelpDeskReportSetting.aspx?source=TransactionReport	~/Reports/HelpDesk/HelpDeskReportSetting.aspx?source=TransactionReport	1	1
+3267	7	Retail and Corporate Operations	Banking	Fund Transfer Request Transaction	966	~/RetailBanking/transaction/TransferTransaction.aspx?Source=FundTransferTransaction	~/RetailBanking/transaction/TransferTransaction.aspx?Source=FundTransferTransaction	0	0
+3268	7	Retail and Corporate Operations	Banking	Fund Transfer Request Transaction Authorization	966	~/RetailBanking/transaction/TransferTransaction.aspx?Source=PassFundTransferTransaction	~/RetailBanking/transaction/TransferTransaction.aspx?Source=PassFundTransferTransaction	0	0
+3269	7	Retail and Corporate Operations	Banking	Fund Transfer Request Transaction Entry		~/RetailBanking/transaction/x_BranchToBranchTransactionTrf.aspx?Source=FundTransferTransaction&menuid=3269	~/RetailBanking/transaction/x_BranchToBranchTransactionTrf.aspx?Source=FundTransferTransaction&menuid=3269	0	0
+3270	7	Retail and Corporate Operations	Banking	Fund Transfer Request Transaction Entry Authorization		~/RetailBanking/transaction/x_BranchToBranchTransactionCash_v1.aspx?Source=PassFundTransferTransaction&menuid=3270	~/RetailBanking/transaction/x_BranchToBranchTransactionCash_v1.aspx?Source=PassFundTransferTransaction&menuid=3270	0	0
+3271	65	Internet Banking	IB	User Release		~/HelpDesk/hd_UserRelease.aspx?	~/HelpDesk/hd_UserRelease.aspx?	1	
+3272	0			SMS Account Registration		~/RetailBanking/SMS/sms_registeredAccount.aspx?	~/RetailBanking/SMS/sms_registeredAccount.aspx?	1	0
+3273	0			Wire Transaction				1	
+3274	0			Wire Transaction		~/RetailBanking/x_WireTransfer.aspx?	~/RetailBanking/x_WireTransfer.aspx?	1	
+3275	0			Wire Transaction Authorization		~/RetailBanking/x_WireTransfer.aspx?source=pass	~/RetailBanking/x_WireTransfer.aspx?source=pass	1	
+3276	7	Retail and Corporate Operations	Banking	Top Account Depositors And Exposures	2057	~/Reports/RetailBanking/SeedReports/SeedReportOptions.aspx?source=AccountDepositorAndExposure	~/Reports/RetailBanking/SeedReports/SeedReportOptions.aspx?source=AccountDepositorAndExposure	0	1
+3277	0			Global Transfer Payable Head Mapping		~/RetailBanking/b_PayCOAMapp.aspx?	~/RetailBanking/b_PayCOAMapp.aspx?	1	0
+3278	0			Wire Transfer Request Transaction 		~/RetailBanking/x_WireTransfer.aspx?source=request	~/RetailBanking/x_WireTransfer.aspx?source=request	1	
+3279	0			Wire Transfer Request Transaction Authorization		~/RetailBanking/x_WireTransfer.aspx?source=requestpass	~/RetailBanking/x_WireTransfer.aspx?source=requestpass	1	
+3280	0			Local Fund Transfer	962			1	
+3281	0			Local Fund Transfer Receipt		~/RetailBanking/x_localfundtrf.aspx?Source=Receipt	~/RetailBanking/x_localfundtrf.aspx?Source=Receipt	1	
+3282	0			Local Fund Transfer Receipt Authorization		~/RetailBanking/x_localfundtrf.aspx?Source=ReceiptAuth	~/RetailBanking/x_localfundtrf.aspx?Source=ReceiptAuth	1	
+3283	0			Local Fund Transfer Payment		~/RetailBanking/x_localfundtrfPay.aspx?source=pay	~/RetailBanking/x_localfundtrfPay.aspx?source=pay	1	
+3284	0			Local Fund Transfer Payment Authorization	3280	~/RetailBanking/x_localfundtrfPay.aspx?source=payAuth	~/RetailBanking/x_localfundtrfPay.aspx?source=payAuth	1	
+3285	0			Clearing Configuration		~/HO/x_OutwardClearingConfiguration.aspx?	~/HO/x_OutwardClearingConfiguration.aspx?	1	0
+3286	0			Direct Credit(Outgoing)				1	
+3287	0			Direct Credit Entry		~/RetailBanking/x_DirectCredit.aspx?	~/RetailBanking/x_DirectCredit.aspx?	1	
+3288	0			Direct Credit Authorization		~/RetailBanking/x_DirectCredit.aspx?Source=Auth	~/RetailBanking/x_DirectCredit.aspx?Source=Auth	1	
+3289	0			Export File		~/RetailBanking/DirectCreditExport.aspx?	~/RetailBanking/DirectCreditExport.aspx?	1	
+3290	0			Demand Generation		~/ho/DemandGeneration.aspx?	~/ho/DemandGeneration.aspx?	1	0
+3291	7	Retail and Corporate Operations	Banking	Outward Return Transaction Report	2406	~/Reports/RetailBanking/Clearing/ClearingReportSettings.aspx?Source=OutwardReturnClearing	~/Reports/RetailBanking/Clearing/ClearingReportSettings.aspx?Source=OutwardReturnClearing	1	1
+3292	7	Retail and Corporate Operations	Banking	Outward Return Memo	2406	~/Reports/RetailBanking/Clearing/ClearingReportSettings.aspx?Source=OutwardReturnMemo	~/Reports/RetailBanking/Clearing/ClearingReportSettings.aspx?Source=OutwardReturnMemo	1	1
+3293	0			Loan Cancellation		~/RetailBanking/x_LoanCancellation.aspx?	~/RetailBanking/x_LoanCancellation.aspx?	1	0
+3294	0			Loan Cancellation Authorization		~/RetailBanking/x_LoanCancellation.aspx?source=passing	~/RetailBanking/x_LoanCancellation.aspx?source=passing	1	0
+3295	0			Loan Written Off		~/retailbanking/x_WrittenOff.aspx?	~/retailbanking/x_WrittenOff.aspx?	1	0
+3296	0			Loan Written Off Authorization		~/retailbanking/x_WrittenOff.aspx?source=pass	~/retailbanking/x_WrittenOff.aspx?source=pass	1	0
+3297	0			Loan Written Off Reverse		~/retailbanking/x_WrittenOffReverse.aspx?	~/retailbanking/x_WrittenOffReverse.aspx?	1	0
+3298	0			Loan Written Off Reverse Authorization		~/retailbanking/x_WrittenOffReverse.aspx?source=pass	~/retailbanking/x_WrittenOffReverse.aspx?source=pass	1	0
+3299	0			OD Reduction		~/RetailBanking/x_ODReduction.aspx?	~/RetailBanking/x_ODReduction.aspx?	1	0
+3300	0			OD Reduction Authorization		~/RetailBanking/x_ODReduction.aspx?Source=pass	~/RetailBanking/x_ODReduction.aspx?Source=pass	1	0
+3301	0			Cheque Print Data Export		~/retailbanking/x_ChequePrintDataExport.aspx?	~/retailbanking/x_ChequePrintDataExport.aspx?	1	0
+3302	0			Manager Cheque Printing		~/RetailBanking/x_BankerChequeReport.aspx?	~/RetailBanking/x_BankerChequeReport.aspx?	1	0
+3303	7	Retail and Corporate Operations	Banking	FD Certificate Letter	2058	~/Reports/RetailBanking/ReportOptions.aspx?source=FDCertificate	~/Reports/RetailBanking/ReportOptions.aspx?source=FDCertificate	1	1
+3304	7	Retail and Corporate Operations	Banking	Unpaid Cheques By Bank	2406	~/Reports/RetailBanking/Clearing/ClearingReportSettings.aspx?Source=UnpaidChequeClearing	~/Reports/RetailBanking/Clearing/ClearingReportSettings.aspx?Source=UnpaidChequeClearing	1	1
+3305	0			Profit & Loss COA Mapping		~/HO/retailBanking/x_ProfitAndLossPostingMapp.aspx?	~/HO/retailBanking/x_ProfitAndLossPostingMapp.aspx?	1	0
+3306	7	Retail and Corporate Operations	Banking	Purchase Request				1	
+3307	7	Retail and Corporate Operations	Banking	Purchase Request		~/Inventory/i_PurchaseReq.aspx?	~/Inventory/i_PurchaseReq.aspx?	1	
+3308	7	Retail and Corporate Operations	Banking	Purchase Request Authorization		~/Inventory/i_PurchaseReq.aspx?Source=Pass	~/Inventory/i_PurchaseReq.aspx?Source=Pass	1	
+3309	0			Receivable Reversal		?	?	1	0
+3310	0			Penal Interest Reversal		~/RetailBanking/x_PenalInterestReversal.aspx?	~/RetailBanking/x_PenalInterestReversal.aspx?	1	0
+3311	0			Penal Interest Reversal Authorization		~/RetailBanking/x_PenalInterestReversal.aspx?Source=pass	~/RetailBanking/x_PenalInterestReversal.aspx?Source=pass	1	0
+3312	0			Charges Receivable Reversal		~/RetailBanking/x_ChargesRecReverse.aspx?	~/RetailBanking/x_ChargesRecReverse.aspx?	1	0
+3313	0			Charges Receivable Reversal Authorization		~/RetailBanking/x_ChargesRecReverse.aspx?Source=pass	~/RetailBanking/x_ChargesRecReverse.aspx?Source=pass	1	0
+3314	0			CBL Report Configurator		~/reports/rbi%20report/rp_rbiconfiguration.aspx?	~/reports/rbi%20report/rp_rbiconfiguration.aspx?	1	0
+3315	0			Local Fund Transfer Reversal		~/RetailBanking/x_LocalFundTrfRev.aspx?	~/RetailBanking/x_LocalFundTrfRev.aspx?	1	0
+3316	0			Local Fund Transfer Reversal Authorization		~/RetailBanking/x_LocalFundTrfRev.aspx?Source=pass	~/RetailBanking/x_LocalFundTrfRev.aspx?Source=pass	1	0
+3317	7	Retail and Corporate Operations	Banking	Loan Reschedule Report	2121	~/Reports/RetailBanking/Loan/ReportOptions.aspx?Source=RESCHEDULEDLOANREPORT	~/Reports/RetailBanking/Loan/ReportOptions.aspx?Source=RESCHEDULEDLOANREPORT	1	1
+3318	7	Retail and Corporate Operations	Banking	Profit Loss Summery Report	2419	~/Reports/RetailBanking/ReportOptions.aspx?Source=ProfitLossSummary	~/Reports/RetailBanking/ReportOptions.aspx?Source=ProfitLossSummary	1	1
+3319	7	Retail and Corporate Operations	Banking	State During Period Report	2130	~/Reports/RetailBanking/Loan/ReportOptions.aspx?Source=STATEDURINGAPERIOD	~/Reports/RetailBanking/Loan/ReportOptions.aspx?Source=STATEDURINGAPERIOD	1	1
+3320	0			Manager Cheque Reversal		~/RetailBanking/x_BankerChequeReversal.aspx?	~/RetailBanking/x_BankerChequeReversal.aspx?	1	0
+3321	0			Manager Cheque Reversal Authorization		~/RetailBanking/x_BankerChequeReversal.aspx?Source=Auth	~/RetailBanking/x_BankerChequeReversal.aspx?Source=Auth	1	0
+3322	7	Retail and Corporate Operations	Banking	Repayment written off Report	2121	~/Reports/RetailBanking/Loan/ReportOptions.aspx?Source=REPAYMENTSWRITTENOFFLOANSREPORT	~/Reports/RetailBanking/Loan/ReportOptions.aspx?Source=REPAYMENTSWRITTENOFFLOANSREPORT	1	1
+3323	7	Retail and Corporate Operations	Banking	Cash Transaction	987	~/RetailBanking/Transaction/CashTransaction.aspx?	~/RetailBanking/Transaction/CashTransaction.aspx?	1	
+3324	7	Retail and Corporate Operations	Banking	Cash/Transfer Transaction Authorization	987	~/RetailBanking/Transaction/CashTransaction.aspx?Source=pass	~/RetailBanking/Transaction/CashTransaction.aspx?Source=pass	1	
+3325	1	Central Administration	hrms	IBT Chart of Accounts Mapping	885	~/RetailBanking/b_IbtHeadMapping.aspx?	~/RetailBanking/b_IbtHeadMapping.aspx?	1	
+3326	7	Retail and Corporate Operations	Banking	Transfer Transaction	987	~/RetailBanking/Transaction/TransferTransaction.aspx?	~/RetailBanking/Transaction/TransferTransaction.aspx?	1	
+3327	7	Retail and Corporate Operations	Banking	Loan written off Report	2121	~/Reports/RetailBanking/Loan/ReportOptions.aspx?Source=LOANWRITTENOFF	~/Reports/RetailBanking/Loan/ReportOptions.aspx?Source=LOANWRITTENOFF	1	1
+3328	7	Retail and Corporate Operations	Banking	Npa Loss Rate	978	~/RetailBanking/npa/b_NPALossRate.aspx?	~/RetailBanking/npa/b_NPALossRate.aspx?	1	
+3329	0			Signature Image Export		~/RetailBanking/SignatureImageExport.aspx?	~/RetailBanking/SignatureImageExport.aspx?	1	0
+3330	7	Retail and Corporate Operations	Banking	Loan Ledger Card Report	2121	~/Reports/RetailBanking/Loan/ReportOptions.aspx?Source=LOANLEDGERCARDREPORT	~/Reports/RetailBanking/Loan/ReportOptions.aspx?Source=LOANLEDGERCARDREPORT	1	1
+3331	0			ATM Card Registration		~/Retailbanking/ATM/b_CardInfo.aspx?	~/Retailbanking/ATM/b_CardInfo.aspx?	1	0
+3332	0			ATM Card Registration Authorization		~/Retailbanking/ATM/b_CardInfo.aspx?Source=pass	~/Retailbanking/ATM/b_CardInfo.aspx?Source=pass	1	0
+3333	7	Retail and Corporate Operations	Banking	ATM Report				1	1
+3334	7	Retail and Corporate Operations	Banking	ATM Branch Wise Transaction Report	3333	~/Reports/RetailBanking/ATM/ATM%20Reports.aspx?Source=AtmBranchWiseReport	~/Reports/RetailBanking/ATM/ATM%20Reports.aspx?Source=AtmBranchWiseReport	1	1
+3335	7	Retail and Corporate Operations	Banking	ATM Account Wise Transaction Report	3333	~/Reports/RetailBanking/ATM/ATM%20Reports.aspx?Source=AtmAccountWiseTran	~/Reports/RetailBanking/ATM/ATM%20Reports.aspx?Source=AtmAccountWiseTran	1	1
+3336	7	Retail and Corporate Operations	Banking	ATM Card Report	3333	~/Reports/RetailBanking/ATM/ATM%20Reports.aspx?Source=AtmCardReport	~/Reports/RetailBanking/ATM/ATM%20Reports.aspx?Source=AtmCardReport	1	1
+3337	7	Retail and Corporate Operations	Banking	Inward Transaction Report	2406	~/Reports/RetailBanking/Clearing/ClearingReportSettings.aspx?Source=InwardClearing	~/Reports/RetailBanking/Clearing/ClearingReportSettings.aspx?Source=InwardClearing	1	1
+3338	0			Local Fund Transfer Payment Viewer		~/RetailBanking/LocalfundtrfViewer.aspx?	~/RetailBanking/LocalfundtrfViewer.aspx?	1	0
+3339	7	Retail and Corporate Operations	Banking	OverDraft Accrued Interest Report	2057	~/Reports/RetailBanking/SeedReports/SeedReportOptions.aspx?source=OverDraftAccruedInterestReport	~/Reports/RetailBanking/SeedReports/SeedReportOptions.aspx?source=OverDraftAccruedInterestReport	1	1
+3340	7	Retail and Corporate Operations	Banking	Month End Report	2130	~/Reports/RetailBanking/SeedReports/SeedReportOptions.aspx?source=MonthEndReport	~/Reports/RetailBanking/SeedReports/SeedReportOptions.aspx?source=MonthEndReport	1	1
+3342	7	Retail and Corporate Operations	Banking	Account Setting Authorization	978	~/RetailBanking/npa/c_NPAAccountSetting.aspx?Source=pass	~/RetailBanking/npa/c_NPAAccountSetting.aspx?Source=pass	1	
+3346	7	Retail and Corporate Operations	Banking	Wire Transaction Report	2050	~/Reports/RetailBanking/ReportOptions.aspx?Source=WireTransaction	~/Reports/RetailBanking/ReportOptions.aspx?Source=WireTransaction	1	1
+3347	7	Retail and Corporate Operations	Banking	CBL Reports				1	1
+3348	7	Retail and Corporate Operations	Banking	CBL Daily Reports	3347	~/reports/cblreportsv1/cblreportsv1.aspx?source=daily	~/reports/cblreportsv1/cblreportsv1.aspx?source=daily	1	1
+3349	7	Retail and Corporate Operations	Banking	CBL Weekly Reports	3347	~/reports/cblreportsv1/cblreportsv1.aspx?source=weekly	~/reports/cblreportsv1/cblreportsv1.aspx?source=weekly	1	1
+3350	7	Retail and Corporate Operations	Banking	CBL Monthly Reports	3347	~/reports/cblreportsv1/cblreportsv1.aspx?source=monthly	~/reports/cblreportsv1/cblreportsv1.aspx?source=monthly	1	1
+3351	7	Retail and Corporate Operations	Banking	CBL Quarterly Reports	3347	~/reports/cblreportsv1/cblreportsv1.aspx?source=quarterly	~/reports/cblreportsv1/cblreportsv1.aspx?source=quarterly	1	1
+3352	7	Retail and Corporate Operations	Banking	CBL Semi - Annual Reports	3347	~/reports/cblreportsv1/cblreportsv1.aspx?source=semiannual	~/reports/cblreportsv1/cblreportsv1.aspx?source=semiannual	1	1
+3353	7	Retail and Corporate Operations	Banking	CBL Annual Reports	3347	~/reports/cblreportsv1/cblreportsv1.aspx?source=annual	~/reports/cblreportsv1/cblreportsv1.aspx?source=annual	1	1
+3354	7	Retail and Corporate Operations	Banking	CBL As and When Reports	3347	~/reports/cblreportsv1/cblreportsv1.aspx?source=asandwhen	~/reports/cblreportsv1/cblreportsv1.aspx?source=asandwhen	1	1
+3355	7	Retail and Corporate Operations	Banking	CBL Reports Settings				1	
+3356	7	Retail and Corporate Operations	Banking	CBL Weekly Reports Templates		~/CBLTemplates/CBLTemplates.aspx?source=weekly	~/CBLTemplates/CBLTemplates.aspx?source=weekly	1	
+3357	7	Retail and Corporate Operations	Banking	CBL Monthly Reports Templates		~/CBLTemplates/CBLTemplates.aspx?source=monthly	~/CBLTemplates/CBLTemplates.aspx?source=monthly	1	
+3358	7	Retail and Corporate Operations	Banking	CBL Quarterly Reports Templates		~/CBLTemplates/CBLTemplates.aspx?source=quarterly	~/CBLTemplates/CBLTemplates.aspx?source=quarterly	1	
+3359	7	Retail and Corporate Operations	Banking	CBL Annual Reports Templates		~/CBLTemplates/CBLTemplates.aspx?source=annual	~/CBLTemplates/CBLTemplates.aspx?source=annual	1	
+3360	7	Retail and Corporate Operations	Banking	CBL As and When Reports Templates		~/CBLTemplates/CBLTemplates.aspx?source=asandwhen	~/CBLTemplates/CBLTemplates.aspx?source=asandwhen	1	
+3361	7	Retail and Corporate Operations	Banking	CBL report configuration		~/reports/rbi%20report/rp_RBIConfiguration.aspx?	~/reports/rbi%20report/rp_RBIConfiguration.aspx?	1	
+3362	7	Retail and Corporate Operations	Banking	Cashier Posting Limit	2062	~/Reports/RetailBanking/ReportOptions.aspx?Source=CashierUserTranLimit	~/Reports/RetailBanking/ReportOptions.aspx?Source=CashierUserTranLimit	1	1
+3363	7	Retail and Corporate Operations	Banking	Wire Transaction Details	2050	~/Reports/RetailBanking/ReportOptions.aspx?Source=WireTransactionDetails	~/Reports/RetailBanking/ReportOptions.aspx?Source=WireTransactionDetails	1	1
+3364	7	Retail and Corporate Operations	Banking	Cash Deposit and Withdrawal Report	2050	~/Reports/RetailBanking/ReportOptions.aspx?Source=CashTranByBranch	~/Reports/RetailBanking/ReportOptions.aspx?Source=CashTranByBranch	1	1
+3365	7	Retail and Corporate Operations	Banking	Account Status and Account Status Detail	2057	~/Reports/RetailBanking/ReportOptions.aspx?Source=AccStatusByBranch	~/Reports/RetailBanking/ReportOptions.aspx?Source=AccStatusByBranch	1	1
+3366	0			Tax Payment Mapping		~/RetailBanking/b_GovTaxMapping.aspx?	~/RetailBanking/b_GovTaxMapping.aspx?	1	0
+3367	0			Tax Payment Entry		~/RetailBanking/x_GovTaxTran.aspx?	~/RetailBanking/x_GovTaxTran.aspx?	1	0
+3368	0			Tax Payment Authorization		~/RetailBanking/x_GovTaxTran.aspx?Source=Pass	~/RetailBanking/x_GovTaxTran.aspx?Source=Pass	1	0
+3369	7	Retail and Corporate Operations	Banking	Dormant Re-activation Report	2057	~/Reports/RetailBanking/ReportOptions.aspx?Source=DorReactive	~/Reports/RetailBanking/ReportOptions.aspx?Source=DorReactive	1	1
+3370	0			Clearing Account Mapping		~/RetailBanking/x_BankAccMappingOtw.aspx?	~/RetailBanking/x_BankAccMappingOtw.aspx?	1	0
+3371	7	Retail and Corporate Operations	Banking	Swift				0	
+3372	7	Retail and Corporate Operations	Banking	Swift - File Upload		~/retailbanking/swift/index.aspx?source=upload_in_msg	~/retailbanking/swift/index.aspx?source=upload_in_msg	0	
+3373	7	Retail and Corporate Operations	Banking	Swift - File Process		~/retailbanking/swift/index.aspx?source=process_in_msg	~/retailbanking/swift/index.aspx?source=process_in_msg	0	
+3374	0			Swift Account Mapping		~/RetailBanking/b_SwiftBankAccMap.aspx?	~/RetailBanking/b_SwiftBankAccMap.aspx?	1	0
+3375	7	Retail and Corporate Operations	Banking	Swift - File Update		~/RetailBanking/swift/index.aspx?source=update_swift_record	~/RetailBanking/swift/index.aspx?source=update_swift_record	0	0
+3376	0			CBL Daily Reports Templates		~/CBLTemplates/CBLTemplates.aspx?source=daily	~/CBLTemplates/CBLTemplates.aspx?source=daily	1	0
+3377	0			CBL SemiAnnual Report Templates		~/CBLTemplates/CBLTemplates.aspx?source=semiannual	~/CBLTemplates/CBLTemplates.aspx?source=semiannual	1	0
+3378	7	Retail and Corporate Operations	Banking	Un-drawn Account Report	2057	~/Reports/RetailBanking/SeedReports/SeedReportOptions.aspx?Source=UndrawnAccount	~/Reports/RetailBanking/SeedReports/SeedReportOptions.aspx?Source=UndrawnAccount	1	1
+3379	0			OD Penal Interest Waive Off		~/Retailbanking/b_waiveoff.aspx?	~/Retailbanking/b_waiveoff.aspx?	1	0
+3380	7	Retail and Corporate Operations	Banking	Event Log Reports	2130	~/Reports/RetailBanking/LogViewReport.aspx?	~/Reports/RetailBanking/LogViewReport.aspx?	1	1
+3382	0			Update FD Certificate Number		~/RetailBanking/b_UpdateCertificateNumber.aspx?	~/RetailBanking/b_UpdateCertificateNumber.aspx?	1	0
+3383	0			Approval Authority		~/HelpDesk/hd_ApprovalAuthority.aspx?	~/HelpDesk/hd_ApprovalAuthority.aspx?	1	
+3384	0			Post Batch File		~/HelpDesk/hd_PostBatch.aspx?	~/HelpDesk/hd_PostBatch.aspx?	1	
+3385	0			View Posted Batch		~/HelpDesk/hd_ViewBatch.aspx?	~/HelpDesk/hd_ViewBatch.aspx?	1	
+3389	7	Retail and Corporate Operations	Banking	Corporate Credit Turn Over Report	2057	~/Reports/RetailBanking/Corporateaccounts.aspx?	~/Reports/RetailBanking/Corporateaccounts.aspx?	1	1
+3390	0			Signature Image Deletion		~/RetailBanking/b_SignatureHistory.aspx?	~/RetailBanking/b_SignatureHistory.aspx?	1	
+3391	0			Signature Image Deletion Authorization		~/RetailBanking/b_SignatureHistory.aspx?source=pass	~/RetailBanking/b_SignatureHistory.aspx?source=pass	1	
+3392	7	Retail and Corporate Operations	Banking	User Status Report	2130	~/Reports/RetailBanking/SeedReports/SeedReportOptions.aspx?Source=UserStatus	~/Reports/RetailBanking/SeedReports/SeedReportOptions.aspx?Source=UserStatus	1	1
+3393	7	Retail and Corporate Operations	Banking	Excel Reports	1157	~/reports/CustomizeAdHoc.aspx?	~/reports/CustomizeAdHoc.aspx?	1	1
+3394	7	Retail and Corporate Operations	Banking	Account Number List Summary	2057	~/Reports/RetailBanking/SeedReports/SeedReportOptions.aspx?Source=AccNoListSummary	~/Reports/RetailBanking/SeedReports/SeedReportOptions.aspx?Source=AccNoListSummary	1	1
+3395	7	Retail and Corporate Operations	Banking	Status wise Report Summary	2057	~/Reports/RetailBanking/SeedReports/SeedReportOptions.aspx?Source=StatusWiseSummary	~/Reports/RetailBanking/SeedReports/SeedReportOptions.aspx?Source=StatusWiseSummary	1	1
+3396	7	Retail and Corporate Operations	Banking	Ledger Movement Report	2419	~/Reports/RetailBanking/SeedReports/SeedReportOptions.aspx?Source=LedgerMovement	~/Reports/RetailBanking/SeedReports/SeedReportOptions.aspx?Source=LedgerMovement	1	1
+3398	1	Central Administration	hrms	ATM/POS Terminal and Account Mapping	885	~/Ho/RetailBanking/ATMPosTerminalAccMapping.aspx?	~/Ho/RetailBanking/ATMPosTerminalAccMapping.aspx?	1	
+3399	7	Retail and Corporate Operations	Banking	Swift Reports		?	?	1	1
+3400	7	Retail and Corporate Operations	Banking	MT103 Confirmation Report	3399	~/RetailBanking/SwiftMT103CsvExport.aspx?	~/RetailBanking/SwiftMT103CsvExport.aspx?	1	1
+3401	7	Retail and Corporate Operations	Banking	Counter Cheque Details Report	2057	~/Reports/RetailBanking/SeedReports/SeedReportOptions.aspx?Source=CounterChequeDetails	~/Reports/RetailBanking/SeedReports/SeedReportOptions.aspx?Source=CounterChequeDetails	1	1
+3404	7	Retail and Corporate Operations	Banking	PAPPS Transaction	962			0	
+3405	7	Retail and Corporate Operations	Banking	PAPSS Outward Transfer	3404	~\RetailBanking\PAPPS\x_PAPSS_Out_Transfer.aspx?Source=entry	~\RetailBanking\PAPPS\x_PAPSS_Out_Transfer.aspx?Source=entry	0	
+3406	7	Retail and Corporate Operations	Banking	PAPSS Outward Transfer Authorization	3404	~\RetailBanking\PAPPS\x_PAPSS_Out_Transfer.aspx?Source=auth	~\RetailBanking\PAPPS\x_PAPSS_Out_Transfer.aspx?Source=auth	0	
+3407	7	Retail and Corporate Operations	Banking	PAPSS Outward Transfer Console	3404	~\RetailBanking\PAPPS\x_PAPSS_Out_Transfer_reprocess.aspx?	~\RetailBanking\PAPPS\x_PAPSS_Out_Transfer_reprocess.aspx?	0	
+3408	7	Retail and Corporate Operations	Banking	PAPSS Participants	3404	~\RetailBanking\PAPPS\PAPSS_Participant.aspx?	~\RetailBanking\PAPPS\PAPSS_Participant.aspx?	0	
+3409	7	Retail and Corporate Operations	Banking	PAPSS - Exchange Rate Enquiry	3404	~\RetailBanking\PAPPS\PAPSS_Exchange_rate.aspx?	~\RetailBanking\PAPPS\PAPSS_Exchange_rate.aspx?	0	
+3410	7	Retail and Corporate Operations	Banking	Papss Inward Transfer Console	3404	~\RetailBanking\PAPPS\PAPSS_Inward_Console.aspx?	~\RetailBanking\PAPPS\PAPSS_Inward_Console.aspx?	0	
+3411	7	Retail and Corporate Operations	Banking	Papss Inward Transfer Recall	3404	~\RetailBanking\PAPPS\PAPSS_Inward_Recall.aspx?	~\RetailBanking\PAPPS\PAPSS_Inward_Recall.aspx?	0	
+3412	7	Retail and Corporate Operations	Banking	Papss Outward Transfer Recall	3404	~\RetailBanking\PAPPS\PAPSS_Outward_Recall.aspx?	~\RetailBanking\PAPPS\PAPSS_Outward_Recall.aspx?	0	
+3413	7	Retail and Corporate Operations	Banking	PAPSS Outward Transfer Reprocess Authorization in CBS	3404	~\RetailBanking\PAPPS\x_PAPSS_Out_Transfer_reprocess.aspx?Source=auth	~\RetailBanking\PAPPS\x_PAPSS_Out_Transfer_reprocess.aspx?Source=auth	0	
+3414	7	Retail and Corporate Operations	Banking	PAPSS Inward Transfer Reprocess Authorization in CBS	3404	~\RetailBanking\PAPPS\PAPSS_Inward_Console.aspx?Source=auth	~\RetailBanking\PAPPS\PAPSS_Inward_Console.aspx?Source=auth	0	
+3415	7	Retail and Corporate Operations	Banking	Papss Outward Transfer Recall Authorization	3404	~\RetailBanking\PAPPS\PAPSS_Outward_Recall.aspx?Source=auth	~\RetailBanking\PAPPS\PAPSS_Outward_Recall.aspx?Source=auth	0	
+3416	7	Retail and Corporate Operations	Banking	MTS Transaction	962			0	
+3417	7	Retail and Corporate Operations	Banking	MTS Transaction Creation	3416	~\retailBanking/mts/mts_transaction.aspx?	~\retailBanking/mts/mts_transaction.aspx?	0	
+3418	7	Retail and Corporate Operations	Banking	MTS Transaction Authorization	3416	~\RetailBanking/mts/Mts_Transaction.aspx?source=pass	~\RetailBanking/mts/Mts_Transaction.aspx?source=pass	0	
+3419	7	Retail and Corporate Operations	Banking	Reprocess MTS API	3416	~/RetailBanking/mts/Mts_Transaction.aspx?source=not_sent_to_mts	~/RetailBanking/mts/Mts_Transaction.aspx?source=not_sent_to_mts	0	
+3420	7	Retail and Corporate Operations	Banking	Technical Account Enquiry	3404	~\RetailBanking\PAPPS\Papss_GetAccounts.aspx?source=positions	~\RetailBanking\PAPPS\Papss_GetAccounts.aspx?source=positions	0	
+3421	7	Retail and Corporate Operations	Banking	Account Enquiry	3404	~\RetailBanking\PAPPS\Papss_GetAccounts.aspx?source=accenq	~\RetailBanking\PAPPS\Papss_GetAccounts.aspx?source=accenq	0	
+3422	7	Retail and Corporate Operations	Banking	Transaction Status	3404	~\RetailBanking\PAPPS\Papss_GetAccounts.aspx?source=transtatus	~\RetailBanking\PAPPS\Papss_GetAccounts.aspx?source=transtatus	0	
+3423	7	Retail and Corporate Operations	Banking	Inward Message Console	3404	~\RetailBanking\PAPPS\PapssMessageConsole.aspx?source=inward	~\RetailBanking\PAPPS\PapssMessageConsole.aspx?source=inward	0	
+3424	7	Retail and Corporate Operations	Banking	Outward Message Console	3404	~\RetailBanking\PAPPS\PapssMessageConsole.aspx?source=outward	~\RetailBanking\PAPPS\PapssMessageConsole.aspx?source=outward	0	
+3426	1	Central Administration	hrms	Tax Configuration	885	~/Ho/TaxConfig.aspx?	~/Ho/TaxConfig.aspx?	1	
+3427	7	Retail and Corporate Operations	Banking	Receivable Charges Report	2057	~/Reports/RetailBanking/SeedReports/AccountsReport.aspx?Source=RecChargeRpt&reportid=3427	~/Reports/RetailBanking/SeedReports/AccountsReport.aspx?Source=RecChargeRpt&reportid=3427	1	1
+3428	7	Retail and Corporate Operations	Banking	Chart of Account Detail List Report	2057	~/Reports/RetailBanking/SeedReports/AccountsReport.aspx?Source=CoADtlRpt&reportid=3428	~/Reports/RetailBanking/SeedReports/AccountsReport.aspx?Source=CoADtlRpt&reportid=3428	1	1
+3429	7	Retail and Corporate Operations	Banking	GST Report	2130	~/Reports/RetailBanking/GSTReport.aspx?	~/Reports/RetailBanking/GSTReport.aspx?	1	1
+3431	7	Retail and Corporate Operations	Banking	Government Tax payment Report	2130	~/Reports/RetailBanking/SeedReports/SeedReportOptions.aspx?source=GovTaxPayment	~/Reports/RetailBanking/SeedReports/SeedReportOptions.aspx?source=GovTaxPayment	1	1
+3434	7	Retail and Corporate Operations	Banking	LRA	962			0	
+3435	7	Retail and Corporate Operations	Banking	LRA Bill Payment	3434	~/RetailBanking/LRA_BillPayment.aspx?	~/RetailBanking/LRA_BillPayment.aspx?	0	
+3436	7	Retail and Corporate Operations	Banking	LRA Bill Payment Authorization	3434	~/RetailBanking/LRA_BillPayment.aspx?source=pass	~/RetailBanking/LRA_BillPayment.aspx?source=pass	0	
+3437	7	Retail and Corporate Operations	Banking	LRA Failed Posted Bills (Resend)	3434	~/RetailBanking/LRABillPayReversal.aspx?	~/RetailBanking/LRABillPayReversal.aspx?	0	
+3438	7	Retail and Corporate Operations	Banking	Bank directors/joint Mapping	919	~/HO/g_ClientDirectors.aspx?	~/HO/g_ClientDirectors.aspx?	1	
+3439	7	Retail and Corporate Operations	Banking	LRA Tax Payment Receipt	2130	~/Reports/RetailBanking/SeedReports/SeedReportOptions.aspx?source=LraTaxPaymentReceipt	~/Reports/RetailBanking/SeedReports/SeedReportOptions.aspx?source=LraTaxPaymentReceipt	1	1
+3440	7	Retail and Corporate Operations	Banking	OMB	962			0	
+3441	7	Retail and Corporate Operations	Banking	OMB Registration	3440	~/RetailBanking/omb_registration.aspx?	~/RetailBanking/omb_registration.aspx?	0	
+3442	7	Retail and Corporate Operations	Banking	OMB Un-Registration	3440	~/RetailBanking/omb_unRegistration.aspx?	~/RetailBanking/omb_unRegistration.aspx?	0	
+3444	7	Retail and Corporate Operations	Banking	OMB Reports				1	1
+3445	7	Retail and Corporate Operations	Banking	Orange Money Transaction Report	3444	~/Reports/RetailBanking/SeedReports/SeedReportOptions.aspx?source=OmbTran	~/Reports/RetailBanking/SeedReports/SeedReportOptions.aspx?source=OmbTran	1	1
+3446	7	Retail and Corporate Operations	Banking	Day End Log Submission	1003	~/RetailBanking/b_DayEndParamLogs.aspx?	~/RetailBanking/b_DayEndParamLogs.aspx?	1	
+3447	7	Retail and Corporate Operations	Banking	Delete Day End Log	1003	~/RetailBanking/Utilities/DayendLog.aspx?	~/RetailBanking/Utilities/DayendLog.aspx?	1	
+3448	7	Retail and Corporate Operations	Banking	Centralized End Of Day	1003	~/RetailBanking/Utilities/DayEndCenJS.aspx?	~/RetailBanking/Utilities/DayEndCenJS.aspx?	1	
+3449	7	Retail and Corporate Operations	Banking	Centralized Start of Day	1003	~/RetailBanking/Utilities/CentralizedDayBegin.aspx?	~/RetailBanking/Utilities/CentralizedDayBegin.aspx?	1	
+3450	7	Retail and Corporate Operations	Banking	Auto Balance Transfer Configuration	997	~/HO/retailBanking/DayendCOABalTrf.aspx?	~/HO/retailBanking/DayendCOABalTrf.aspx?	1	
+3451	7	Retail and Corporate Operations	Banking	OMB Registration Authorization	3440	~/RetailBanking/omb_registration.aspx?source=pass	~/RetailBanking/omb_registration.aspx?source=pass	0	
+3452	7	Retail and Corporate Operations	Banking	Cash In Transit Report	2050	~/Reports/RetailBanking/SeedReports/SeedReportOptions.aspx?source=cashintransit	~/Reports/RetailBanking/SeedReports/SeedReportOptions.aspx?source=cashintransit	1	1
+3453	1	Central Administration	hrms	Chart of Accounts Authorization	880	~/HO/bank/g_AccountHead.aspx?source=Pass	~/HO/bank/g_AccountHead.aspx?source=Pass	1	
+3454	1	Central Administration	hrms	User Access Revoke Report	3258	~/Reports/Admin/AdminReport.aspx?source=accessrevoke	~/Reports/Admin/AdminReport.aspx?source=accessrevoke	1	1
+3455	7	Retail and Corporate Operations	Banking	Account Movement Report	2050	~/Reports/RetailBanking/SeedReports/SeedReportOptions.aspx?source=accmovement	~/Reports/RetailBanking/SeedReports/SeedReportOptions.aspx?source=accmovement	1	1
+3456	7	Retail and Corporate Operations	Banking	Cash Deposit Report	2050	~/Reports/RetailBanking/SeedReports/SeedReportOptions.aspx?source=cashdepreport	~/Reports/RetailBanking/SeedReports/SeedReportOptions.aspx?source=cashdepreport	1	1
+3457	1	Central Administration	hrms	User Rights Authorization	830	~/ho/admin/a_UserRights.aspx?source=Pass	~/ho/admin/a_UserRights.aspx?source=Pass	1	
+3458	7	Retail and Corporate Operations	Banking	Cash Deposit and Withdrawal (At Branch) Report	2050	~/Reports/RetailBanking/ReportOptions.aspx?Source=CashTranAtBranch	~/Reports/RetailBanking/ReportOptions.aspx?Source=CashTranAtBranch	1	1
+3459	7	Retail and Corporate Operations	Banking	Manager Cheque Payment Entry (By Clg)	2764	~/RetailBanking/x_BankerChequePayClg.aspx?source=PayCash	~/RetailBanking/x_BankerChequePayClg.aspx?source=PayCash	1	
+3460	7	Retail and Corporate Operations	Banking	Manager Cheque Payment Authorization (By Clg)	2764	~/RetailBanking/x_BankerChequePayClg.aspx?source=PayCashAuth	~/RetailBanking/x_BankerChequePayClg.aspx?source=PayCashAuth	1	
+3461	7	Retail and Corporate Operations	Banking	Wire Transfer Viewer	3273	~/RetailBanking/x_WireTransferViewer.aspx?	~/RetailBanking/x_WireTransferViewer.aspx?	1	
+3462	1	Central Administration	hrms	User Application Access Configuration	830	~/HO/Admin/a_userAppAccessRights.aspx?	~/HO/Admin/a_userAppAccessRights.aspx?	1	
+3463	1	Central Administration	hrms	User Application Access Configuration Authorization	830	~/HO/Admin/a_userAppAccessRights.aspx?source=pass	~/HO/Admin/a_userAppAccessRights.aspx?source=pass	1	
+3464	1	Central Administration	hrms	User Access Status Report	3258	~/Reports/Admin/AdminReport.aspx?source=UserStatus	~/Reports/Admin/AdminReport.aspx?source=UserStatus	1	1
+3465	7	Retail and Corporate Operations	Banking	Cash Swap	962			0	
+3466	7	Retail and Corporate Operations	Banking	Cash Swap Entry	3465	~/RetailBanking/x_cashswaptransaction.aspx?	~/RetailBanking/x_cashswaptransaction.aspx?	0	
+3467	7	Retail and Corporate Operations	Banking	Cash Swap Authorization	3465	~/RetailBanking/x_cashswaptransaction.aspx?source=pass	~/RetailBanking/x_cashswaptransaction.aspx?source=pass	0	
+3468	7	Retail and Corporate Operations	Banking	Cash Swap Settlement Entry	3465	~/RetailBanking/x_cashswapSettlement.aspx?	~/RetailBanking/x_cashswapSettlement.aspx?	0	
+3469	7	Retail and Corporate Operations	Banking	Cash Swap Settlement Authorization	3465	~/RetailBanking/x_cashswapSettlement.aspx?source=pass	~/RetailBanking/x_cashswapSettlement.aspx?source=pass	0	
+3470	7	Retail and Corporate Operations	Banking	Credit Officers Portfolio Report	2121	~/Reports/RetailBanking/SeedReports/SeedReportOptions.aspx?source=CrPortfolio	~/Reports/RetailBanking/SeedReports/SeedReportOptions.aspx?source=CrPortfolio	1	1
+3471	7	Retail and Corporate Operations	Banking	Credit Portfolio Transfer	997	~/RetailBanking/b_CrOfficerAccTrfLog.aspx?	~/RetailBanking/b_CrOfficerAccTrfLog.aspx?	1	
+3472	7	Retail and Corporate Operations	Banking	Credit Portfolio Transfer Authorization	997	~/RetailBanking/b_CrOfficerAccTrfLog.aspx?source=pass	~/RetailBanking/b_CrOfficerAccTrfLog.aspx?source=pass	1	
+3473	7	Retail and Corporate Operations	Banking	E-Statement Configuration	997	~/RetailBanking/b_EstmtConfig.aspx?	~/RetailBanking/b_EstmtConfig.aspx?	1	
+3474	7	Retail and Corporate Operations	Banking	E-Statement Configuration Authorization	997	~/RetailBanking/b_EstmtConfig.aspx?source=pass	~/RetailBanking/b_EstmtConfig.aspx?source=pass	1	
+3475	1	Central Administration	hrms	LRA Custom Payment Account Mapping	880	~/RetailBanking/LRA_custom_accounts.aspx?	~/RetailBanking/LRA_custom_accounts.aspx?	0	
+3476	7	Retail and Corporate Operations	Banking	LRA Customs E-Payment Entry	3434	~/RetailBanking/LRA_CustomsPayment.aspx?	~/RetailBanking/LRA_CustomsPayment.aspx?	0	
+3477	7	Retail and Corporate Operations	Banking	LRA Customs E-Payment Authorization	3434	~/RetailBanking/LRA_CustomsPayment.aspx?source=pass	~/RetailBanking/LRA_CustomsPayment.aspx?source=pass	0	
+3478	7	Retail and Corporate Operations	Banking	Query LPN Status (LRA Customs)	3434	~/RetailBanking/queryLPN.aspx?	~/RetailBanking/queryLPN.aspx?	0	
+3479	7	Retail and Corporate Operations	Banking	Query Transactions (LRA Customs)	3434	~/RetailBanking/LraQueryTrans.aspx?	~/RetailBanking/LraQueryTrans.aspx?	0	
+3480	7	Retail and Corporate Operations	Banking	Process Bank Statement (LRA Customs)	3434	~/RetailBanking/LraCstmCtrlAccStmt.aspx?	~/RetailBanking/LraCstmCtrlAccStmt.aspx?	0	
+3481	7	Retail and Corporate Operations	Banking	LRA Customs E-Payment Reversal	3434	~/RetailBanking/LRA_CustomsPaymentReversal.aspx?	~/RetailBanking/LRA_CustomsPaymentReversal.aspx?	0	
+3482	7	Retail and Corporate Operations	Banking	LRA Customs E-Payment Reversal Authorization	3434	~/RetailBanking/LRA_CustomsPaymentReversal.aspx?source=pass	~/RetailBanking/LRA_CustomsPaymentReversal.aspx?source=pass	0	
+3483	1	Central Administration	hrms	Inter Bank Lending Configuration	885	~/HO/retailBanking/IntrBkLendingConfig.aspx?	~/HO/retailBanking/IntrBkLendingConfig.aspx?	1	
+3484	7	Retail and Corporate Operations	Banking	Interbank Lending	962			0	
+3485	7	Retail and Corporate Operations	Banking	Interbank Placement Entry	3484	~/RetailBanking/x_InterBankLendingTran.aspx?Source=placement	~/RetailBanking/x_InterBankLendingTran.aspx?Source=placement	0	
+3486	7	Retail and Corporate Operations	Banking	Interbank Placement Authorization	3484	~/RetailBanking/x_InterBankLendingTran.aspx?Source=placementauth	~/RetailBanking/x_InterBankLendingTran.aspx?Source=placementauth	0	
+3487	7	Retail and Corporate Operations	Banking	Interbank Taking Entry	3484	~/RetailBanking/x_InterBankLendingTran.aspx?Source=taking	~/RetailBanking/x_InterBankLendingTran.aspx?Source=taking	0	
+3488	7	Retail and Corporate Operations	Banking	Interbank Taking Authorization	3484	~/RetailBanking/x_InterBankLendingTran.aspx?Source=takingauth	~/RetailBanking/x_InterBankLendingTran.aspx?Source=takingauth	0	
+3489	7	Retail and Corporate Operations	Banking	Foreign Bank Placement Entry	3484	~/RetailBanking/x_InterBankLendingTran.aspx?Source=frnbk	~/RetailBanking/x_InterBankLendingTran.aspx?Source=frnbk	0	
+3490	7	Retail and Corporate Operations	Banking	Foreign Bank Placement Authorization	3484	~/RetailBanking/x_InterBankLendingTran.aspx?Source=frnbkauth	~/RetailBanking/x_InterBankLendingTran.aspx?Source=frnbkauth	0	
+3491	7	Retail and Corporate Operations	Banking	Interbank Placement Settlement	3484	~/RetailBaking/x_InterBankLendingSettlment.aspx?Source=placement	~/RetailBaking/x_InterBankLendingSettlment.aspx?Source=placement	0	
+3492	7	Retail and Corporate Operations	Banking	Interbank Placement Settlement Authorization	3484	~/RetailBaking/x_InterBankLendingSettlment.aspx?Source=placementauth	~/RetailBaking/x_InterBankLendingSettlment.aspx?Source=placementauth	0	
+3493	7	Retail and Corporate Operations	Banking	Interbank Taking Settlement	3484	~/RetailBaking/x_InterBankLendingSettlment.aspx?Source=intrbktaking	~/RetailBaking/x_InterBankLendingSettlment.aspx?Source=intrbktaking	0	
+3494	7	Retail and Corporate Operations	Banking	Interbank Taking Settlement Authorization	3484	~/RetailBaking/x_InterBankLendingSettlment.aspx?Source=intrbktakingauth	~/RetailBaking/x_InterBankLendingSettlment.aspx?Source=intrbktakingauth	0	
+3495	7	Retail and Corporate Operations	Banking	Foreign Bank Placement Settlement	3484	~/RetailBaking/x_InterBankLendingSettlment.aspx?Source=frnbk	~/RetailBaking/x_InterBankLendingSettlment.aspx?Source=frnbk	0	
+3496	7	Retail and Corporate Operations	Banking	Foreign Bank Placement Settlement Authorization	3484	~/RetailBaking/x_InterBankLendingSettlment.aspx?Source=frnbkauth	~/RetailBaking/x_InterBankLendingSettlment.aspx?Source=frnbkauth	0	
+3497	7	Retail and Corporate Operations	Banking	Swift Transactions	962			0	
+3498	7	Retail and Corporate Operations	Banking	Swift Outward Transfer	3497	~/RetailBanking/swift/x_SFTOutward.aspx?	~/RetailBanking/swift/x_SFTOutward.aspx?	0	
+3499	7	Retail and Corporate Operations	Banking	Swift Outward Transfer Authorization	3497	~/RetailBanking/swift/x_SFTOutward.aspx?source=pass	~/RetailBanking/swift/x_SFTOutward.aspx?source=pass	0	
+3500	7	Retail and Corporate Operations	Banking	Swift Outward Resend	3497	~/RetailBanking/swift/SFTOutwardRecall.aspx?	~/RetailBanking/swift/SFTOutwardRecall.aspx?	0	
+3501	7	Retail and Corporate Operations	Banking	Swift Outward Recall	3497	~/RetailBanking/swift/x_SFTOutwardReversal.aspx?	~/RetailBanking/swift/x_SFTOutwardReversal.aspx?	0	
+3502	7	Retail and Corporate Operations	Banking	Swift Outward Recall Authorization	3497	~/RetailBanking/swift/x_SFTOutwardReversal.aspx?Source=pass	~/RetailBanking/swift/x_SFTOutwardReversal.aspx?Source=pass	0	
+3503	7	Retail and Corporate Operations	Banking	Swift Outward Tracking	3497	~/RetailBanking/swift/SFTOutTracking.aspx?	~/RetailBanking/swift/SFTOutTracking.aspx?	0	
+3504	7	Retail and Corporate Operations	Banking	Swift Outward Account Statement	3497	~/RetailBanking/swift/SFTAccStmt.aspx?	~/RetailBanking/swift/SFTAccStmt.aspx?	0	
+3505	7	Retail and Corporate Operations	Banking	Swift Inward Process	3497	~/RetailBanking/swift/x_SFTInward.aspx?source=save	~/RetailBanking/swift/x_SFTInward.aspx?source=save	0	
+3506	7	Retail and Corporate Operations	Banking	Swift Inward Process Authorization	3497	~/RetailBanking/swift/x_SFTInward.aspx?source=auth	~/RetailBanking/swift/x_SFTInward.aspx?source=auth	0	
+3507	7	Retail and Corporate Operations	Banking	LRA Customs Payment Receipt	2130	~/Reports/RetailBanking/SeedReports/SeedReportOptions.aspx?source=LraCstmRec	~/Reports/RetailBanking/SeedReports/SeedReportOptions.aspx?source=LraCstmRec	1	1
+3508	7	Retail and Corporate Operations	Banking	Swift Outward Transfer Export	3497	~/RetailBanking/swift/x_SFTOutwardCSV.aspx?	~/RetailBanking/swift/x_SFTOutwardCSV.aspx?	0	
+3509	7	Retail and Corporate Operations	Banking	CBL Account Mapping	915			0	
+3510	7	Retail and Corporate Operations	Banking	Re-Process Accounts	3509	~/RetailBanking/Account/x_CBLAccMapDetails.aspx?	~/RetailBanking/Account/x_CBLAccMapDetails.aspx?	0	
+3511	7	Retail and Corporate Operations	Banking	Account Enquiry	3509	~/RetailBanking/Account/x_CBLAccMapEnqLog.aspx?	~/RetailBanking/Account/x_CBLAccMapEnqLog.aspx?	0	
+3512	1	Central Administration	hrms	Swift BIC Code Mapping	885	~/RetailBanking/Swift/x_SFTBankCode.aspx?	~/RetailBanking/Swift/x_SFTBankCode.aspx?	1	
+3513	7	Retail and Corporate Operations	Banking	Swift Inward Transaction Report	2050	~/Reports/RetailBanking/SeedReports/SeedReportOptions.aspx?source=sftiw	~/Reports/RetailBanking/SeedReports/SeedReportOptions.aspx?source=sftiw	1	1
+3514	1	Central Administration	hrms	Account Level Mapping	830	~/HO/Admin/b_AccLevelConfig.aspx?	~/HO/Admin/b_AccLevelConfig.aspx?	1	
+3515	1	Central Administration	hrms	Account Level Mapping Authorization	830	~/HO/Admin/b_AccLevelConfig.aspx?Source=pass	~/HO/Admin/b_AccLevelConfig.aspx?Source=pass	1	
+3516	65	Internet Banking	IB	Scheduled Transaction Account Mapping 	3093	~/Helpdesk/hd_LoginProfileSchTranMap.aspx?	~/Helpdesk/hd_LoginProfileSchTranMap.aspx?	1	
+3517	1	Central Administration	hrms	LRA Bill Payment Control Account Mapping	885	~/HO/LRA_gateway_accounts.aspx?	~/HO/LRA_gateway_accounts.aspx?	1	
+3518	7	Retail and Corporate Operations	Banking	Dormant Reactivation Viewer	997	~/RetailBanking/dormant/DormantReactivationViewer.aspx?	~/RetailBanking/dormant/DormantReactivationViewer.aspx?	1	
+3519	7	Retail and Corporate Operations	Banking	Account Status Modification Configuration	919	~/RetailBanking/b_AccStatusModConfig.aspx?	~/RetailBanking/b_AccStatusModConfig.aspx?	1	
+3520	1	Central Administration	hrms	Minor Age Configuration	885	~/ho/b_MinorAgeConfig.aspx?	~/ho/b_MinorAgeConfig.aspx?	1	0
+3521	1	Central Administration	hrms	Charges Master	885	~/ho/b_ChargesMaster.aspx?	~/ho/b_ChargesMaster.aspx?	1	0
+3522	7	Retail and Corporate Operations	Banking	Sweep Transfer Configuration	997	~/ho/retailBanking/x_SweepTrfConfig.aspx?	~/ho/retailBanking/x_SweepTrfConfig.aspx?	1	0
+3523	7	Retail and Corporate Operations	Banking	Sweep Transfer Configuration Authorization	997	~/ho/retailBanking/x_SweepTrfConfig.aspx?Source=Pass	~/ho/retailBanking/x_SweepTrfConfig.aspx?Source=Pass	1	0
+3524	1	Central Administration	hrms	Loan Interest Rate Change	871	~/HO/retailBanking/c_LoanIRChange.aspx?	~/HO/retailBanking/c_LoanIRChange.aspx?	1	0
+3525	1	Central Administration	hrms	Loan Interest Rate Change Authorization	871	~/HO/retailBanking/c_LoanIRChange.aspx?Source=auth	~/HO/retailBanking/c_LoanIRChange.aspx?Source=auth	1	0
+3526	5	Loan Origination System	Loan Appr	Employer Master	3068	~/retailBanking/c_EmployerMaster.aspx?	~/retailBanking/c_EmployerMaster.aspx?	1	0
+3527	7	Retail and Corporate Operations	Banking	Transaction Reversal	966	~/RetailBanking/Transaction/x_TranReversal.aspx?	~/RetailBanking/Transaction/x_TranReversal.aspx?	1	0
+3528	7	Retail and Corporate Operations	Banking	Transaction Reversal Authorization	966	~/RetailBanking/Transaction/x_TranReversal.aspx?source=pass	~/RetailBanking/Transaction/x_TranReversal.aspx?source=pass	1	0

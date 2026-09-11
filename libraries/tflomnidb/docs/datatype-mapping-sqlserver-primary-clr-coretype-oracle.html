@@ -54,92 +54,409 @@ ul{padding-left:1.4em}ol{padding-left:1.4em}
  pre>button.copy.done{color:#aff5b4;background:#1b4721;border-color:#2ea043}
  td code.cp.done{color:#aff5b4;background:#1b4721}
 }
-
-pre.txtdoc{font-size:.8rem;line-height:1.45;white-space:pre;overflow-x:auto;
-           border:0;background:none;padding:0;margin-top:1.2em}
-@media(prefers-color-scheme:dark){pre.txtdoc{background:none}}
 </style></head>
 <body><div class="wrap"><div class="card">
-<div class="docnav"><a href="../../../index.html">&#8592; All docs</a> &middot;
-plain-text document &middot; <a href="datatype-mapping-sqlserver-primary-clr-coretype-oracle.txt">view raw .txt</a></div>
-<h1>Datatype Mapping (SQL Server as source): SQL Server / CLR / CoreDataType / Oracle</h1>
-<pre class="txtdoc">Datatype Mapping (SQL Server as source): SQL Server / CLR / CoreDataType / Oracle
-=================================================================================
-
-SQL-Server-first schema/proc-migration reference. Defaults mirror the TflOmniDb provider type mappers.
-
-SQL Server            CLR / .NET           CoreDataType        Oracle                    Notes                                                       
---------------------  -------------------  ------------------  ------------------------  ------------------------------------------------------------
-
-[ Integer &amp; boolean ]
-BIT                   bool                 Boolean             NUMBER(1,0)               Oracle &lt;23c: NUMBER(1) 0/1; 23c+ has BOOLEAN                
-TINYINT               byte                 (none)              NUMBER(3,0)               TINYINT is unsigned 0-255; no byte CoreDataType -&gt; use Int16
-SMALLINT              short / Int16        Int16               NUMBER(5,0)                                                                           
-INT                   int / Int32          Int32               NUMBER(10,0)                                                                          
-BIGINT                long / Int64         Int64               NUMBER(19,0)                                                                          
-INT IDENTITY          long (identity)      (none)              GENERATED AS IDENTITY     Identity = KeyGeneration strategy, not a type               
-
-[ Exact numeric ]
-DECIMAL(p,s)          decimal              Decimal             NUMBER(p,s)               NUMERIC == DECIMAL                                          
-NUMERIC(p,s)          decimal              Decimal             NUMBER(p,s)               Oracle NUMBER max precision 38                              
-MONEY                 decimal              Money               NUMBER(19,4)              Avoid PG MONEY (locale); canonical NUMERIC(19,4)            
-SMALLMONEY            decimal              (none)              NUMBER(10,4)              Map to Decimal/Money; range ~ +/-214,748.3647               
-
-[ Approximate numeric ]
-REAL                  float / Single       Single              BINARY_FLOAT              REAL = FLOAT(24), 4-byte                                    
-FLOAT                 double / Double      Double              BINARY_DOUBLE             FLOAT(53) = 8-byte double; FLOAT(24)-&gt;REAL                  
-
-[ Character &amp; text ]
-VARCHAR(n)            string               AnsiString          VARCHAR2(n CHAR)          Oracle VARCHAR2 &lt;= 4000 bytes (32767 extended)              
-NVARCHAR(n)           string               UnicodeString       NVARCHAR2(n)              Unicode; PG is UTF-8 native (no N-prefix)                   
-CHAR(n)               string               AnsiStringFixed     CHAR(n CHAR)              Fixed length, space-padded                                  
-NCHAR(n)              string               UnicodeStringFixed  NCHAR(n)                  Unicode fixed length                                        
-VARCHAR(MAX)          string               Clob                CLOB                      Large ANSI text (&gt; 8000 bytes)                              
-NVARCHAR(MAX)         string               NClob               NCLOB                     Large Unicode text                                          
-TEXT (legacy)         string               Clob                CLOB                      Deprecated -&gt; use VARCHAR(MAX)                              
-NTEXT (legacy)        string               NClob               NCLOB                     Deprecated -&gt; use NVARCHAR(MAX)                             
-
-[ Date &amp; time ]
-DATE                  DateTime / DateOnly  Date                DATE                      Oracle DATE INCLUDES time-of-day (to sec)                   
-TIME(p)               TimeSpan / TimeOnly  Time                INTERVAL DAY TO SECOND    Oracle has no TIME-of-day type                              
-DATETIME2(p)          DateTime             DateTime            TIMESTAMP(p)              Preferred date+time; p = frac-sec precision                 
-DATETIME (legacy)     DateTime             DateTime            TIMESTAMP(3)              ~3.33 ms precision; range 1753-9999                         
-SMALLDATETIME         DateTime             DateTime            TIMESTAMP(0)              Minute precision; 1900-2079                                 
-DATETIMEOFFSET        DateTimeOffset       DateTimeOffset      TIMESTAMP WITH TIME ZONE  Timezone-aware                                              
-
-[ Binary ]
-VARBINARY(n)          byte[]               Binary              RAW(n)                    Oracle RAW &lt;= 2000 bytes; beyond -&gt; BLOB                    
-BINARY(n)             byte[]               BinaryFixed         RAW(n)                    Fixed; PG has no fixed-length binary                        
-VARBINARY(MAX)        byte[]               Blob                BLOB                      Large binary object                                         
-IMAGE (legacy)        byte[]               Blob                BLOB                      Deprecated -&gt; use VARBINARY(MAX)                            
-
-[ Identifier &amp; concurrency ]
-UNIQUEIDENTIFIER      Guid                 Guid                RAW(16)                   Oracle SYS_GUID(); PG native UUID                           
-ROWVERSION            byte[] (rowversion)  (none)              (none)                    IsRowVersion flag -&gt; app-managed int version                
-
-[ XML &amp; JSON ]
-XML                   string / SqlXml      Xml                 XMLTYPE                   Native XML on all three                                     
-JSON / NVARCHAR(MAX)  string               Json                JSON (21c+)/CLOB          PG JSONB preferred; Oracle &lt;21c CLOB + IS JSON              
-
-[ No direct equivalent (redesign) ]
-SQL_VARIANT           object               (none)              (none / ANYDATA)          Redesign to a typed column                                  
-HIERARCHYID           (tree)               (none)              (none)                    Remodel as a materialized path                              
-GEOGRAPHY/GEOMETRY    (spatial)            (none)              SDO_GEOMETRY              Oracle Spatial / PostGIS extension                          
-
-General notes
--------------
-1. Read left-to-right: this is a SQL-Server-FIRST reference. Find the SQL Server column/parameter type in the left column, then read across for the .NET/CLR type, the TflOmniDb CoreDataType to use, and the Oracle equivalent when porting the schema.
-2. Stored procedures: the CoreDataType column is what you pass to StoredProcedureCall.Input/Output(..., CoreDataType.X) and to [DbColumn(CoreType = ...)]. The DAL&#x27;s per-provider type mappers translate it to the native types shown here.
-3. Oracle SP-parameter caveat: a CoreDataType.DateTime parameter binds as DbType.DateTime (TIMESTAMP) on Oracle, NOT DateTime2 - Oracle&#x27;s managed provider rejects DbType.DateTime2 (&#x27;Value does not fall within the expected range&#x27;). SQL Server keeps full-precision DateTime2. (CoreTypeDbType.Map.)
-4. &#x27;(none)&#x27; in the CoreDataType column marks a SQL Server type with no canonical enum value - map it to the nearest CoreDataType, or set a per-column native override via [DbColumn] SqlServerType / OracleType.
-5. Money is deliberately NUMBER(19,4) to match SQL Server&#x27;s NUMERIC(19,4) for financial code.
-6. Identifier casing: Oracle folds unquoted identifiers to UPPER; SQL Server is case-insensitive. The DAL always quotes - call an unquoted-uppercase Oracle object by its UPPERCASE name.
-7. Oracle DATE always carries a time component (to seconds). Use TIMESTAMP for fractional seconds; for pure dates, enforce truncation in the app.
-8. Booleans: SQL Server BIT -&gt; Oracle &lt;23c NUMBER(1) 0/1; Oracle 23c+ has a native BOOLEAN.
-9. Auto-increment: SQL Server IDENTITY -&gt; Oracle 12c+ GENERATED ... AS IDENTITY; older Oracle needs a SEQUENCE + trigger.
-10. Row versioning: there is no Oracle equivalent to SQL Server ROWVERSION. Use an app-managed integer version column (TflOmniDb IsRowVersion) checked in the UPDATE WHERE clause; ORA_ROWSCN is not a drop-in replacement.
-11. LOBs: SQL Server (N)VARCHAR(MAX)/VARBINARY(MAX) -&gt; Oracle CLOB/NCLOB/BLOB. Oracle RAW caps at 2000 bytes (use BLOB beyond); VARCHAR2 caps at 4000 bytes (32767 extended).
-</pre>
+<h1 id="datatype-mapping-sql-server-as-source-sql-server-clr-coredatatype-oracle">Datatype Mapping (SQL Server as source): SQL Server / CLR / CoreDataType / Oracle</h1>
+<p>SQL-Server-first schema/proc-migration reference. Defaults mirror the TflOmniDb provider type mappers.</p>
+<h3 id="integer-boolean">Integer &amp; boolean</h3>
+<table>
+<thead>
+<tr>
+<th>SQL Server</th>
+<th>CLR / .NET</th>
+<th>CoreDataType</th>
+<th>Oracle</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>BIT</td>
+<td>bool</td>
+<td>Boolean</td>
+<td>NUMBER(1,0)</td>
+<td>Oracle &lt;23c: NUMBER(1) 0/1; 23c+ has BOOLEAN</td>
+</tr>
+<tr>
+<td>TINYINT</td>
+<td>byte</td>
+<td>(none)</td>
+<td>NUMBER(3,0)</td>
+<td>TINYINT is unsigned 0-255; no byte CoreDataType -&gt; use Int16</td>
+</tr>
+<tr>
+<td>SMALLINT</td>
+<td>short / Int16</td>
+<td>Int16</td>
+<td>NUMBER(5,0)</td>
+<td></td>
+</tr>
+<tr>
+<td>INT</td>
+<td>int / Int32</td>
+<td>Int32</td>
+<td>NUMBER(10,0)</td>
+<td></td>
+</tr>
+<tr>
+<td>BIGINT</td>
+<td>long / Int64</td>
+<td>Int64</td>
+<td>NUMBER(19,0)</td>
+<td></td>
+</tr>
+<tr>
+<td>INT IDENTITY</td>
+<td>long (identity)</td>
+<td>(none)</td>
+<td>GENERATED AS IDENTITY</td>
+<td>Identity = KeyGeneration strategy, not a type</td>
+</tr>
+</tbody>
+</table>
+<h3 id="exact-numeric">Exact numeric</h3>
+<table>
+<thead>
+<tr>
+<th>SQL Server</th>
+<th>CLR / .NET</th>
+<th>CoreDataType</th>
+<th>Oracle</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>DECIMAL(p,s)</td>
+<td>decimal</td>
+<td>Decimal</td>
+<td>NUMBER(p,s)</td>
+<td>NUMERIC == DECIMAL</td>
+</tr>
+<tr>
+<td>NUMERIC(p,s)</td>
+<td>decimal</td>
+<td>Decimal</td>
+<td>NUMBER(p,s)</td>
+<td>Oracle NUMBER max precision 38</td>
+</tr>
+<tr>
+<td>MONEY</td>
+<td>decimal</td>
+<td>Money</td>
+<td>NUMBER(19,4)</td>
+<td>Avoid PG MONEY (locale); canonical NUMERIC(19,4)</td>
+</tr>
+<tr>
+<td>SMALLMONEY</td>
+<td>decimal</td>
+<td>(none)</td>
+<td>NUMBER(10,4)</td>
+<td>Map to Decimal/Money; range ~ +/-214,748.3647</td>
+</tr>
+</tbody>
+</table>
+<h3 id="approximate-numeric">Approximate numeric</h3>
+<table>
+<thead>
+<tr>
+<th>SQL Server</th>
+<th>CLR / .NET</th>
+<th>CoreDataType</th>
+<th>Oracle</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>REAL</td>
+<td>float / Single</td>
+<td>Single</td>
+<td>BINARY_FLOAT</td>
+<td>REAL = FLOAT(24), 4-byte</td>
+</tr>
+<tr>
+<td>FLOAT</td>
+<td>double / Double</td>
+<td>Double</td>
+<td>BINARY_DOUBLE</td>
+<td>FLOAT(53) = 8-byte double; FLOAT(24)-&gt;REAL</td>
+</tr>
+</tbody>
+</table>
+<h3 id="character-text">Character &amp; text</h3>
+<table>
+<thead>
+<tr>
+<th>SQL Server</th>
+<th>CLR / .NET</th>
+<th>CoreDataType</th>
+<th>Oracle</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>VARCHAR(n)</td>
+<td>string</td>
+<td>AnsiString</td>
+<td>VARCHAR2(n CHAR)</td>
+<td>Oracle VARCHAR2 &lt;= 4000 bytes (32767 extended)</td>
+</tr>
+<tr>
+<td>NVARCHAR(n)</td>
+<td>string</td>
+<td>UnicodeString</td>
+<td>NVARCHAR2(n)</td>
+<td>Unicode; PG is UTF-8 native (no N-prefix)</td>
+</tr>
+<tr>
+<td>CHAR(n)</td>
+<td>string</td>
+<td>AnsiStringFixed</td>
+<td>CHAR(n CHAR)</td>
+<td>Fixed length, space-padded</td>
+</tr>
+<tr>
+<td>NCHAR(n)</td>
+<td>string</td>
+<td>UnicodeStringFixed</td>
+<td>NCHAR(n)</td>
+<td>Unicode fixed length</td>
+</tr>
+<tr>
+<td>VARCHAR(MAX)</td>
+<td>string</td>
+<td>Clob</td>
+<td>CLOB</td>
+<td>Large ANSI text (&gt; 8000 bytes)</td>
+</tr>
+<tr>
+<td>NVARCHAR(MAX)</td>
+<td>string</td>
+<td>NClob</td>
+<td>NCLOB</td>
+<td>Large Unicode text</td>
+</tr>
+<tr>
+<td>TEXT (legacy)</td>
+<td>string</td>
+<td>Clob</td>
+<td>CLOB</td>
+<td>Deprecated -&gt; use VARCHAR(MAX)</td>
+</tr>
+<tr>
+<td>NTEXT (legacy)</td>
+<td>string</td>
+<td>NClob</td>
+<td>NCLOB</td>
+<td>Deprecated -&gt; use NVARCHAR(MAX)</td>
+</tr>
+</tbody>
+</table>
+<h3 id="date-time">Date &amp; time</h3>
+<table>
+<thead>
+<tr>
+<th>SQL Server</th>
+<th>CLR / .NET</th>
+<th>CoreDataType</th>
+<th>Oracle</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>DATE</td>
+<td>DateTime / DateOnly</td>
+<td>Date</td>
+<td>DATE</td>
+<td>Oracle DATE INCLUDES time-of-day (to sec)</td>
+</tr>
+<tr>
+<td>TIME(p)</td>
+<td>TimeSpan / TimeOnly</td>
+<td>Time</td>
+<td>INTERVAL DAY TO SECOND</td>
+<td>Oracle has no TIME-of-day type</td>
+</tr>
+<tr>
+<td>DATETIME2(p)</td>
+<td>DateTime</td>
+<td>DateTime</td>
+<td>TIMESTAMP(p)</td>
+<td>Preferred date+time; p = frac-sec precision</td>
+</tr>
+<tr>
+<td>DATETIME (legacy)</td>
+<td>DateTime</td>
+<td>DateTime</td>
+<td>TIMESTAMP(3)</td>
+<td>~3.33 ms precision; range 1753-9999</td>
+</tr>
+<tr>
+<td>SMALLDATETIME</td>
+<td>DateTime</td>
+<td>DateTime</td>
+<td>TIMESTAMP(0)</td>
+<td>Minute precision; 1900-2079</td>
+</tr>
+<tr>
+<td>DATETIMEOFFSET</td>
+<td>DateTimeOffset</td>
+<td>DateTimeOffset</td>
+<td>TIMESTAMP WITH TIME ZONE</td>
+<td>Timezone-aware</td>
+</tr>
+</tbody>
+</table>
+<h3 id="binary">Binary</h3>
+<table>
+<thead>
+<tr>
+<th>SQL Server</th>
+<th>CLR / .NET</th>
+<th>CoreDataType</th>
+<th>Oracle</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>VARBINARY(n)</td>
+<td>byte[]</td>
+<td>Binary</td>
+<td>RAW(n)</td>
+<td>Oracle RAW &lt;= 2000 bytes; beyond -&gt; BLOB</td>
+</tr>
+<tr>
+<td>BINARY(n)</td>
+<td>byte[]</td>
+<td>BinaryFixed</td>
+<td>RAW(n)</td>
+<td>Fixed; PG has no fixed-length binary</td>
+</tr>
+<tr>
+<td>VARBINARY(MAX)</td>
+<td>byte[]</td>
+<td>Blob</td>
+<td>BLOB</td>
+<td>Large binary object</td>
+</tr>
+<tr>
+<td>IMAGE (legacy)</td>
+<td>byte[]</td>
+<td>Blob</td>
+<td>BLOB</td>
+<td>Deprecated -&gt; use VARBINARY(MAX)</td>
+</tr>
+</tbody>
+</table>
+<h3 id="identifier-concurrency">Identifier &amp; concurrency</h3>
+<table>
+<thead>
+<tr>
+<th>SQL Server</th>
+<th>CLR / .NET</th>
+<th>CoreDataType</th>
+<th>Oracle</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>UNIQUEIDENTIFIER</td>
+<td>Guid</td>
+<td>Guid</td>
+<td>RAW(16)</td>
+<td>Oracle SYS_GUID(); PG native UUID</td>
+</tr>
+<tr>
+<td>ROWVERSION</td>
+<td>byte[] (rowversion)</td>
+<td>(none)</td>
+<td>(none)</td>
+<td>IsRowVersion flag -&gt; app-managed int version</td>
+</tr>
+</tbody>
+</table>
+<h3 id="xml-json">XML &amp; JSON</h3>
+<table>
+<thead>
+<tr>
+<th>SQL Server</th>
+<th>CLR / .NET</th>
+<th>CoreDataType</th>
+<th>Oracle</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>XML</td>
+<td>string / SqlXml</td>
+<td>Xml</td>
+<td>XMLTYPE</td>
+<td>Native XML on all three</td>
+</tr>
+<tr>
+<td>JSON / NVARCHAR(MAX)</td>
+<td>string</td>
+<td>Json</td>
+<td>JSON (21c+)/CLOB</td>
+<td>PG JSONB preferred; Oracle &lt;21c CLOB + IS JSON</td>
+</tr>
+</tbody>
+</table>
+<h3 id="no-direct-equivalent-redesign">No direct equivalent (redesign)</h3>
+<table>
+<thead>
+<tr>
+<th>SQL Server</th>
+<th>CLR / .NET</th>
+<th>CoreDataType</th>
+<th>Oracle</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>SQL_VARIANT</td>
+<td>object</td>
+<td>(none)</td>
+<td>(none / ANYDATA)</td>
+<td>Redesign to a typed column</td>
+</tr>
+<tr>
+<td>HIERARCHYID</td>
+<td>(tree)</td>
+<td>(none)</td>
+<td>(none)</td>
+<td>Remodel as a materialized path</td>
+</tr>
+<tr>
+<td>GEOGRAPHY/GEOMETRY</td>
+<td>(spatial)</td>
+<td>(none)</td>
+<td>SDO_GEOMETRY</td>
+<td>Oracle Spatial / PostGIS extension</td>
+</tr>
+</tbody>
+</table>
+<h2 id="general-notes">General notes</h2>
+<ol>
+<li>Read left-to-right: this is a SQL-Server-FIRST reference. Find the SQL Server column/parameter type in the left column, then read across for the .NET/CLR type, the TflOmniDb CoreDataType to use, and the Oracle equivalent when porting the schema.</li>
+<li>Stored procedures: the CoreDataType column is what you pass to StoredProcedureCall.Input/Output(..., CoreDataType.X) and to [DbColumn(CoreType = ...)]. The DAL's per-provider type mappers translate it to the native types shown here.</li>
+<li>Oracle SP-parameter caveat: a CoreDataType.DateTime parameter binds as DbType.DateTime (TIMESTAMP) on Oracle, NOT DateTime2 - Oracle's managed provider rejects DbType.DateTime2 ('Value does not fall within the expected range'). SQL Server keeps full-precision DateTime2. (CoreTypeDbType.Map.)</li>
+<li>'(none)' in the CoreDataType column marks a SQL Server type with no canonical enum value - map it to the nearest CoreDataType, or set a per-column native override via [DbColumn] SqlServerType / OracleType.</li>
+<li>Money is deliberately NUMBER(19,4) to match SQL Server's NUMERIC(19,4) for financial code.</li>
+<li>Identifier casing: Oracle folds unquoted identifiers to UPPER; SQL Server is case-insensitive. The DAL always quotes - call an unquoted-uppercase Oracle object by its UPPERCASE name.</li>
+<li>Oracle DATE always carries a time component (to seconds). Use TIMESTAMP for fractional seconds; for pure dates, enforce truncation in the app.</li>
+<li>Booleans: SQL Server BIT -&gt; Oracle &lt;23c NUMBER(1) 0/1; Oracle 23c+ has a native BOOLEAN.</li>
+<li>Auto-increment: SQL Server IDENTITY -&gt; Oracle 12c+ GENERATED ... AS IDENTITY; older Oracle needs a SEQUENCE + trigger.</li>
+<li>Row versioning: there is no Oracle equivalent to SQL Server ROWVERSION. Use an app-managed integer version column (TflOmniDb IsRowVersion) checked in the UPDATE WHERE clause; ORA_ROWSCN is not a drop-in replacement.</li>
+<li>LOBs: SQL Server (N)VARCHAR(MAX)/VARBINARY(MAX) -&gt; Oracle CLOB/NCLOB/BLOB. Oracle RAW caps at 2000 bytes (use BLOB beyond); VARCHAR2 caps at 4000 bytes (32767 extended).</li>
+</ol>
 </div></div>
 <script>
 (function(){

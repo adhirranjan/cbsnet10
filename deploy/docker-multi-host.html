@@ -59,7 +59,7 @@ ul{padding-left:1.4em}ol{padding-left:1.4em}
 <h1 id="deploy-with-docker-multi-host-gateway-default-host-thin-hosts">Deploy with Docker — Multi Host (gateway + default host + thin hosts)</h1>
 <p>One container per host, wired together with docker-compose. The <strong>gateway container is the only published port</strong>; the browser only ever talks to it.</p>
 <blockquote>
-<p>Read <a href="docker-single-host.html">docker-single-host.md</a> first (Dockerfile pattern, config, Data Protection, the <code>docker/vendor/</code> DLLs). This doc adds the multi-container specifics. See also <a href="../single-sign-on.txt">single-sign-on.txt</a> and <a href="../port-map.html">port-map.md</a>.</p>
+<p>Read <a href="docker-single-host.html">docker-single-host.md</a> first (Dockerfile pattern, config, Data Protection, the <code>docker/vendor/</code> DLLs). This doc adds the multi-container specifics. See also <a href="../single-sign-on.html">single-sign-on.md</a> and <a href="../port-map.html">port-map.md</a>.</p>
 </blockquote>
 <p>The repo <strong>ships <code>compose.multi.yaml</code></strong> + the same parameterized Dockerfile (verified: the default host, a thin host, and the gateway all build).</p>
 <h2 id="deployment-checklist-run-in-order">Deployment checklist (run in order)</h2>
@@ -289,7 +289,7 @@ docker compose -f compose.multi.yaml ps      # all services Up
 <ul>
 <li><a href="docker-single-host.html">docker-single-host.md</a> — the Dockerfile/config basics</li>
 <li><a href="iis-multi-host.html">iis-multi-host.md</a> — same topology on IIS/Windows</li>
-<li><a href="../single-sign-on.txt">single-sign-on.txt</a> — the SSO mechanism in depth</li>
+<li><a href="../single-sign-on.html">single-sign-on.md</a> — the SSO mechanism in depth</li>
 <li><a href="../port-map.html">port-map.md</a> — ports &amp; routing table (dev + deploy)</li>
 </ul>
 </div></div>

@@ -96,7 +96,8 @@ entity classes for SQL Server, Oracle, and PostgreSQL. **All logic lives in the
   connection string; nothing is persisted). App-level setting
   **`Scaffold:RequireTable`** (`appsettings.json`, default `true`) makes the
   table name mandatory — single-table generation by default; set it to `false`
-  to allow whole-schema generation. A single generated file downloads directly;
+  to allow whole-schema generation. **`Scaffold:ShowListTables`** (default
+  `false`) hides the "List tables…" button; set it to `true` to show it. A single generated file downloads directly;
   multiple files use per-file / `.zip` download.
 
 Two acquisition modes converge on one provider-neutral `SchemaModel`, so the

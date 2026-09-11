@@ -146,6 +146,6 @@ now saves you an afternoon of arguing with a red test.
 | How do I build a screen? | [`building-a-crud-screen.md`](building-a-crud-screen.md) |
 | How do search and row tokens work? | [`search-and-rowtoken-flow.md`](search-and-rowtoken-flow.md) |
 | Which new component replaces this legacy control? | [`legacy-vs-new-components.md`](../legacy-vs-new-components.md) |
-| I need a brand-new module | [`starting-a-new-module.txt`](starting-a-new-module.txt) |
+| I need a brand-new module | [`starting-a-new-module.md`](starting-a-new-module.md) |
 | Why is the codebase split this way? | [`architecture/modular-monolith.md`](../architecture/modular-monolith.md) |
 | Everything else | [`docs/README.md`](../README.md) — the full documentation index |

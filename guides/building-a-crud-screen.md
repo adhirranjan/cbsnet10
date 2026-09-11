@@ -5,7 +5,7 @@
 > (one text field, no foreign keys). Every step shows **what** we did and explains **why**.
 >
 > This guide covers adding a screen **inside an existing module**. To create a brand-new module
-> first, see [`starting-a-new-module.txt`](starting-a-new-module.txt).
+> first, see [`starting-a-new-module.md`](starting-a-new-module.md).
 
 ---
 
@@ -746,7 +746,7 @@ one `a_Menus` row per mode, so give each row its own route and each screen keeps
 ## 11. Checklist — build a new master by renaming State
 
 Do these in order. Replace `State` / `G_STATE` / `Hr` with your entity / table / area.
-(If the **module itself** is new, first follow `starting-a-new-module.txt`.)
+(If the **module itself** is new, first follow `starting-a-new-module.md`.)
 
 1. **Entity** — if the table is new, generate it with `TflOmniDb.Scaffold`, then **`dotnet build TflCbs.Entities`** first.
 2. **Service** — add `YourThingService.cs` to `TflCbs.Modules.<Domain>/` (namespace `TflCbs.Modules.<Domain>`):
@@ -755,7 +755,7 @@ Do these in order. Replace `State` / `G_STATE` / `Hr` with your entity / table /
    `…DbErrors;` (never a private copy). Then **run the `cbs-sync-test-demo` agent**.
 3. **Register** — one `services.AddScoped<YourThingService>();` line in that assembly's
    `<Domain>Module.AddServices`. (New *assembly*? Also add it to every host's `AddCbsModules(...)` — see
-   `starting-a-new-module.txt`.)
+   `starting-a-new-module.md`.)
 4. **Form model** — `YourThingForm : IRowForm` (DataAnnotations + `string? Row`, plus `int Version` if the
    table has a row-version column) in the web RCL's `Models/<Area>/`; reuse `EditViewModel<TForm>`.
 5. **Controller** — `TflCbs.Modules.<Area>.Web/Areas/<Area>/Controllers/YourThingController.cs`:

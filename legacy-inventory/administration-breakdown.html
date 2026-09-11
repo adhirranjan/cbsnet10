@@ -1,0 +1,1615 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Legacy Administration module - screen breakdown</title>
+<style>
+:root{color-scheme:light dark}
+*{box-sizing:border-box}
+body{margin:0;background:#f6f8fa;color:#1f2328;font:16px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif}
+.wrap{max-width:900px;margin:0 auto;padding:32px 24px 96px}
+.card{background:#fff;border:1px solid #d0d7de;border-radius:10px;padding:40px 48px}
+h1,h2,h3{line-height:1.25;font-weight:600}
+h1{font-size:1.9rem;margin:0 0 .3em;padding-bottom:.3em;border-bottom:1px solid #d8dee4}
+h2{font-size:1.4rem;margin:1.8em 0 .6em;padding-bottom:.25em;border-bottom:1px solid #eaeef2}
+h3{font-size:1.12rem;margin:1.4em 0 .5em}
+p,li{margin:.5em 0}
+a{color:#0969da;text-decoration:none}
+a:hover{text-decoration:underline}
+code{font-family:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;font-size:.86em;background:#eff1f3;padding:.15em .4em;border-radius:6px}
+pre{background:#f6f8fa;border:1px solid #d8dee4;border-radius:8px;padding:14px 16px;overflow:auto}
+pre code{background:none;padding:0;font-size:.85em;line-height:1.45}
+blockquote{margin:1em 0;padding:.4em 1em;color:#3d444d;border-left:4px solid #d0d7de;background:#f6f8fa;border-radius:0 6px 6px 0}
+blockquote>:first-child{margin-top:0}blockquote>:last-child{margin-bottom:0}
+table{border-collapse:collapse;width:100%;margin:1em 0;display:block;overflow:auto}
+th,td{border:1px solid #d0d7de;padding:8px 12px;text-align:left;vertical-align:top}
+th{background:#f6f8fa;font-weight:600}
+tr:nth-child(2n) td{background:#f6f8fa}
+hr{border:0;border-top:1px solid #d8dee4;margin:2em 0}
+pre{position:relative}
+pre>button.copy{position:absolute;top:8px;right:8px;padding:5px 9px;cursor:pointer;
+  font:600 .68rem/1 ui-monospace,SFMono-Regular,Consolas,monospace;letter-spacing:.03em;
+  color:#636c76;background:#fff;border:1px solid #d0d7de;border-radius:6px;
+  opacity:0;transition:opacity .12s}
+pre:hover>button.copy,pre>button.copy:focus{opacity:1}
+pre>button.copy.done{color:#0a3622;background:#dafbe1;border-color:#4ac26b}
+@media(hover:none){pre>button.copy{opacity:1}}
+td code.cp{cursor:pointer}
+td code.cp:hover,td code.cp:focus{outline:1px solid #8c959f;outline-offset:1px}
+td code.cp.done{color:#0a3622;background:#dafbe1}
+.docnav{margin:0 0 20px;font-size:.85rem;color:#636c76}
+.docnav a{color:#636c76}
+ul{padding-left:1.4em}ol{padding-left:1.4em}
+@media(max-width:640px){.card{padding:24px 18px}.wrap{padding:16px 10px 64px}}
+@media(prefers-color-scheme:dark){
+ body{background:#0d1117;color:#e6edf3}
+ .card{background:#161b22;border-color:#30363d}
+ h1{border-color:#30363d}h2{border-color:#21262d}
+ code{background:#262c34}
+ pre{background:#0d1117;border-color:#30363d}
+ blockquote{background:#161b22;border-color:#30363d;color:#9198a1}
+ th,td{border-color:#30363d}th{background:#161b22}tr:nth-child(2n) td{background:#12171e}
+ a{color:#4493f8}.docnav,.docnav a{color:#9198a1}
+ hr{border-color:#30363d}
+ pre>button.copy{color:#9198a1;background:#161b22;border-color:#30363d}
+ pre>button.copy.done{color:#aff5b4;background:#1b4721;border-color:#2ea043}
+ td code.cp.done{color:#aff5b4;background:#1b4721}
+}
+</style></head>
+<body><div class="wrap"><div class="card">
+<h1 id="legacy-administration-module-screen-breakdown">Legacy Administration module - screen breakdown</h1>
+<p>The <strong>85 screens</strong> on the legacy Administration menu module, sliced four ways. Source: <a href="screens.tsv"><code>screens.tsv</code></a>; regenerate with <code>python scripts/administration-breakdown.py</code>. Module membership comes from the legacy <code>a_Menus</code> -&gt; <code>a_Module</code> tables, <strong>not</strong> from the folder a page sits in - only 13 of the 85 live under <code>HO/Admin</code>.</p>
+<h2 id="1-at-a-glance">1. At a glance</h2>
+<table>
+<thead>
+<tr>
+<th>Measure</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Screens on the Administration menu</td>
+<td><strong>85</strong></td>
+</tr>
+<tr>
+<td>Active menu rows</td>
+<td>82</td>
+</tr>
+<tr>
+<td>Inactive / orphaned menu rows</td>
+<td>3</td>
+</tr>
+<tr>
+<td>Screens that write data</td>
+<td>79 (93%)</td>
+</tr>
+<tr>
+<td>Read-only (inquiry / report)</td>
+<td>6</td>
+</tr>
+<tr>
+<td>Total legacy code lines (aspx + vb)</td>
+<td>152,658</td>
+</tr>
+<tr>
+<td>Distinct stored-proc calls (sum)</td>
+<td>176</td>
+</tr>
+<tr>
+<td>Total effort score</td>
+<td>1,305</td>
+</tr>
+<tr>
+<td>Already migrated</td>
+<td>6</td>
+</tr>
+</tbody>
+</table>
+<h2 id="2-by-effort-tier">2. By effort tier</h2>
+<p>Tiers band the inventory's <code>Score</code> (code length x controls x grids x procs). This is the axis to plan sprints on - the top two tiers are a fifth of the screens and roughly half the total effort.</p>
+<table>
+<thead>
+<tr>
+<th>Tier (score)</th>
+<th style="text-align: right;">Screens</th>
+<th style="text-align: right;">Share</th>
+<th style="text-align: right;">Effort</th>
+<th style="text-align: right;">Effort share</th>
+<th style="text-align: right;">Avg lines</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Trivial (&lt;4)</td>
+<td style="text-align: right;">11</td>
+<td style="text-align: right;">13%</td>
+<td style="text-align: right;">36</td>
+<td style="text-align: right;">3%</td>
+<td style="text-align: right;">336</td>
+</tr>
+<tr>
+<td>Small (4-8)</td>
+<td style="text-align: right;">38</td>
+<td style="text-align: right;">45%</td>
+<td style="text-align: right;">217</td>
+<td style="text-align: right;">17%</td>
+<td style="text-align: right;">585</td>
+</tr>
+<tr>
+<td>Medium (8-15)</td>
+<td style="text-align: right;">25</td>
+<td style="text-align: right;">29%</td>
+<td style="text-align: right;">264</td>
+<td style="text-align: right;">20%</td>
+<td style="text-align: right;">1,171</td>
+</tr>
+<tr>
+<td>Large (15-40)</td>
+<td style="text-align: right;">7</td>
+<td style="text-align: right;">8%</td>
+<td style="text-align: right;">170</td>
+<td style="text-align: right;">13%</td>
+<td style="text-align: right;">2,713</td>
+</tr>
+<tr>
+<td>Very large (40+)</td>
+<td style="text-align: right;">4</td>
+<td style="text-align: right;">5%</td>
+<td style="text-align: right;">618</td>
+<td style="text-align: right;">47%</td>
+<td style="text-align: right;">19,605</td>
+</tr>
+</tbody>
+</table>
+<h2 id="3-by-functional-theme">3. By functional theme</h2>
+<p>A domain axis the inventory does not carry - what the screen actually configures. This is the useful unit of work: one theme is one coherent slice of the Administration area, sharing tables, vocabulary and reviewers.</p>
+<table>
+<thead>
+<tr>
+<th>Theme</th>
+<th style="text-align: right;">Screens</th>
+<th style="text-align: right;">Effort</th>
+<th>Complexity mix</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Other system configuration</td>
+<td style="text-align: right;">40</td>
+<td style="text-align: right;">296</td>
+<td>Medium&nbsp;29, Simple&nbsp;7, Complex&nbsp;3, Report&nbsp;1</td>
+</tr>
+<tr>
+<td>Security &amp; access control</td>
+<td style="text-align: right;">12</td>
+<td style="text-align: right;">132</td>
+<td>Medium&nbsp;8, Complex&nbsp;3, Simple&nbsp;1</td>
+</tr>
+<tr>
+<td>Bank, branch &amp; geography masters</td>
+<td style="text-align: right;">10</td>
+<td style="text-align: right;">83</td>
+<td>Medium&nbsp;9, Complex&nbsp;1</td>
+</tr>
+<tr>
+<td>Accounting heads &amp; mappings</td>
+<td style="text-align: right;">6</td>
+<td style="text-align: right;">101</td>
+<td>Complex&nbsp;3, Medium&nbsp;3</td>
+</tr>
+<tr>
+<td>Charges, fees &amp; tax</td>
+<td style="text-align: right;">4</td>
+<td style="text-align: right;">496</td>
+<td>Complex&nbsp;2, Medium&nbsp;2</td>
+</tr>
+<tr>
+<td>Loan &amp; credit scheme setup</td>
+<td style="text-align: right;">4</td>
+<td style="text-align: right;">135</td>
+<td>Complex&nbsp;3, Medium&nbsp;1</td>
+</tr>
+<tr>
+<td>NPA &amp; risk classification</td>
+<td style="text-align: right;">3</td>
+<td style="text-align: right;">29</td>
+<td>Medium&nbsp;2, Complex&nbsp;1</td>
+</tr>
+<tr>
+<td>Interest &amp; rate configuration</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">15</td>
+<td>Medium&nbsp;2</td>
+</tr>
+<tr>
+<td>Alerts, SMS &amp; mobile banking</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">6</td>
+<td>Simple&nbsp;2</td>
+</tr>
+<tr>
+<td>Letters &amp; document templates</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">7</td>
+<td>Medium&nbsp;1</td>
+</tr>
+<tr>
+<td>Client &amp; KYC configuration</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">4</td>
+<td>Simple&nbsp;1</td>
+</tr>
+</tbody>
+</table>
+<h2 id="4-by-screen-shape">4. By screen shape</h2>
+<p>The build pattern each screen needs, derived from grid and input counts. Shapes matter more than themes for <em>sequencing</em>: everything in one shape reuses the same controller/view scaffold and the same reusable components.</p>
+<table>
+<thead>
+<tr>
+<th>Shape</th>
+<th style="text-align: right;">Screens</th>
+<th style="text-align: right;">Share</th>
+<th style="text-align: right;">Avg score</th>
+<th style="text-align: right;">Avg grids</th>
+<th style="text-align: right;">Avg inputs</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Simple master (grid + form)</td>
+<td style="text-align: right;">39</td>
+<td style="text-align: right;">46%</td>
+<td style="text-align: right;">6.0</td>
+<td style="text-align: right;">1.0</td>
+<td style="text-align: right;">2</td>
+</tr>
+<tr>
+<td>Parent-child grid</td>
+<td style="text-align: right;">22</td>
+<td style="text-align: right;">26%</td>
+<td style="text-align: right;">8.8</td>
+<td style="text-align: right;">2.0</td>
+<td style="text-align: right;">6</td>
+</tr>
+<tr>
+<td>Wide master (grid + many fields)</td>
+<td style="text-align: right;">9</td>
+<td style="text-align: right;">11%</td>
+<td style="text-align: right;">15.2</td>
+<td style="text-align: right;">1.0</td>
+<td style="text-align: right;">13</td>
+</tr>
+<tr>
+<td>Multi-grid / matrix</td>
+<td style="text-align: right;">8</td>
+<td style="text-align: right;">9%</td>
+<td style="text-align: right;">85.7</td>
+<td style="text-align: right;">11.9</td>
+<td style="text-align: right;">65</td>
+</tr>
+<tr>
+<td>Config panel (no grid)</td>
+<td style="text-align: right;">6</td>
+<td style="text-align: right;">7%</td>
+<td style="text-align: right;">6.8</td>
+<td style="text-align: right;">0.0</td>
+<td style="text-align: right;">7</td>
+</tr>
+<tr>
+<td>Report / parameter screen</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">1%</td>
+<td style="text-align: right;">14.9</td>
+<td style="text-align: right;">0.0</td>
+<td style="text-align: right;">1</td>
+</tr>
+</tbody>
+</table>
+<h2 id="5-category-x-complexity">5. Category x complexity</h2>
+<p>The inventory's own two axes, crossed. Complexity bands are population quartiles of <code>Score</code>: Simple &lt; 4.0, Medium 4.0-12.0, Complex &gt; 12.0; reports band separately.</p>
+<table>
+<thead>
+<tr>
+<th>Category</th>
+<th style="text-align: right;">Simple</th>
+<th style="text-align: right;">Medium</th>
+<th style="text-align: right;">Complex</th>
+<th style="text-align: right;">Report</th>
+<th style="text-align: right;">Total</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>CRUD master</td>
+<td style="text-align: right;">9</td>
+<td style="text-align: right;">45</td>
+<td style="text-align: right;">13</td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;"><strong>67</strong></td>
+</tr>
+<tr>
+<td>Transaction / Entry</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">7</td>
+<td style="text-align: right;">3</td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;"><strong>11</strong></td>
+</tr>
+<tr>
+<td>Search / List / Inquiry</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">5</td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;"><strong>6</strong></td>
+</tr>
+<tr>
+<td>Report</td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;"><strong>1</strong></td>
+</tr>
+<tr>
+<td><strong>Total</strong></td>
+<td style="text-align: right;"><strong>11</strong></td>
+<td style="text-align: right;"><strong>57</strong></td>
+<td style="text-align: right;"><strong>16</strong></td>
+<td style="text-align: right;"><strong>1</strong></td>
+<td style="text-align: right;"><strong>85</strong></td>
+</tr>
+</tbody>
+</table>
+<h2 id="6-suggested-migration-waves">6. Suggested migration waves</h2>
+<p>Shape and tier combined into an order of attack. Each wave lands a reusable scaffold the next wave leans on.</p>
+<table>
+<thead>
+<tr>
+<th>Wave</th>
+<th style="text-align: right;">Screens</th>
+<th style="text-align: right;">Effort</th>
+<th>What it needs</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Wave 1 - proven scaffold</td>
+<td style="text-align: right;">32</td>
+<td style="text-align: right;">161</td>
+<td>Straight <code>Repository&lt;T&gt;</code> CRUD on the shape already shipped for Module/Role. No new components.</td>
+</tr>
+<tr>
+<td>Wave 2 - remaining masters &amp; parent-child</td>
+<td style="text-align: right;">38</td>
+<td style="text-align: right;">403</td>
+<td>Wave 1's scaffold plus a child grid, the record picker and heavier field sets.</td>
+</tr>
+<tr>
+<td>Wave 3 - config panels</td>
+<td style="text-align: right;">6</td>
+<td style="text-align: right;">41</td>
+<td>Gridless settings screens (bank/branch variables, access control). Mostly form binding + validation.</td>
+</tr>
+<tr>
+<td>Wave 4 - matrices &amp; rights</td>
+<td style="text-align: right;">4</td>
+<td style="text-align: right;">67</td>
+<td>Rights/menu matrices. Needs a checkbox-tree component that does not exist yet - build it once here.</td>
+</tr>
+<tr>
+<td>Wave 5 - reports</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">15</td>
+<td>Parameter screen + export. Blocked on the reporting strategy decision.</td>
+</tr>
+<tr>
+<td>Wave 6 - the heavies</td>
+<td style="text-align: right;">4</td>
+<td style="text-align: right;">618</td>
+<td>Scheme/LOS/template-designer screens. Each is a project; split before scheduling.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="7-migration-status">7. Migration status</h2>
+<p><strong>6 of 85</strong> carry a <code>MigratedTo</code> value.</p>
+<table>
+<thead>
+<tr>
+<th>Legacy screen</th>
+<th>New route</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>HO/Admin/a_Menus.aspx</code></td>
+<td><code>/Administration/Menu</code></td>
+</tr>
+<tr>
+<td><code>HO/bank/g_State.aspx</code></td>
+<td><code>/Hr/State</code></td>
+</tr>
+<tr>
+<td><code>HO/bank/g_District.aspx</code></td>
+<td><code>/Hr/District</code></td>
+</tr>
+<tr>
+<td><code>HO/Admin/a_RoleMaster.aspx</code></td>
+<td><code>/Administration/Role</code></td>
+</tr>
+<tr>
+<td><code>HO/Admin/a_Module.aspx</code></td>
+<td><code>/Administration/Module</code></td>
+</tr>
+<tr>
+<td><code>HR/h_DiscipActionHistory.aspx</code></td>
+<td><code>/Hr/DiscipActionHistory</code></td>
+</tr>
+</tbody>
+</table>
+<p><code>/Administration/ConnectedUsers</code> is also live, ported from <code>Config/connectedUsers.aspx</code> - but that page sits on the <strong>Retail Banking</strong> menu in <code>a_Menus</code>, so it is not one of these 85 and its <code>MigratedTo</code> cell is still blank. Re-run the inventory to pick it up.</p>
+<h2 id="8-every-screen">8. Every screen</h2>
+<p>Sorted by effort score, descending.</p>
+<table>
+<thead>
+<tr>
+<th style="text-align: right;">#</th>
+<th>Screen</th>
+<th>Theme</th>
+<th>Shape</th>
+<th>Category</th>
+<th>Complexity</th>
+<th style="text-align: right;">Lines</th>
+<th style="text-align: right;">Grids</th>
+<th style="text-align: right;">Inputs</th>
+<th style="text-align: right;">Procs</th>
+<th style="text-align: right;">Score</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: right;">1</td>
+<td><code>HO/ChargesConfig.aspx</code></td>
+<td>Charges, fees &amp; tax</td>
+<td>Multi-grid / matrix</td>
+<td>CRUD master</td>
+<td>Complex</td>
+<td style="text-align: right;">60,240</td>
+<td style="text-align: right;">61</td>
+<td style="text-align: right;">253</td>
+<td style="text-align: right;">6</td>
+<td style="text-align: right;">464.45</td>
+</tr>
+<tr>
+<td style="text-align: right;">2</td>
+<td><code>HO/retailBanking/d_DepositScheme.aspx</code></td>
+<td>Loan &amp; credit scheme setup</td>
+<td>Multi-grid / matrix</td>
+<td>Transaction / Entry</td>
+<td>Complex</td>
+<td style="text-align: right;">8,015</td>
+<td style="text-align: right;">3</td>
+<td style="text-align: right;">62</td>
+<td style="text-align: right;">4</td>
+<td style="text-align: right;">59.70</td>
+</tr>
+<tr>
+<td style="text-align: right;">3</td>
+<td><code>HO/ProjectFormulation/p_SchemeDetails.aspx</code></td>
+<td>Loan &amp; credit scheme setup</td>
+<td>Multi-grid / matrix</td>
+<td>CRUD master</td>
+<td>Complex</td>
+<td style="text-align: right;">5,427</td>
+<td style="text-align: right;">6</td>
+<td style="text-align: right;">45</td>
+<td style="text-align: right;">15</td>
+<td style="text-align: right;">51.79</td>
+</tr>
+<tr>
+<td style="text-align: right;">4</td>
+<td><code>HO/Hr/h_Employee.aspx</code></td>
+<td>Other system configuration</td>
+<td>Multi-grid / matrix</td>
+<td>CRUD master</td>
+<td>Complex</td>
+<td style="text-align: right;">4,741</td>
+<td style="text-align: right;">8</td>
+<td style="text-align: right;">104</td>
+<td style="text-align: right;">7</td>
+<td style="text-align: right;">42.41</td>
+</tr>
+<tr>
+<td style="text-align: right;">5</td>
+<td><code>RetailBanking/g_AllowDebitTransactionAccountHeads_v1.aspx</code></td>
+<td>Accounting heads &amp; mappings</td>
+<td>Wide master (grid + many fields)</td>
+<td>Transaction / Entry</td>
+<td>Complex</td>
+<td style="text-align: right;">4,325</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">17</td>
+<td style="text-align: right;">11</td>
+<td style="text-align: right;">36.71</td>
+</tr>
+<tr>
+<td style="text-align: right;">6</td>
+<td><code>HO/Admin/a_userAppAccessRights.aspx</code></td>
+<td>Security &amp; access control</td>
+<td>Multi-grid / matrix</td>
+<td>CRUD master</td>
+<td>Complex</td>
+<td style="text-align: right;">2,820</td>
+<td style="text-align: right;">8</td>
+<td style="text-align: right;">18</td>
+<td style="text-align: right;">4</td>
+<td style="text-align: right;">26.69</td>
+</tr>
+<tr>
+<td style="text-align: right;">7</td>
+<td><code>HO/bank/g_AccountHead.aspx</code></td>
+<td>Accounting heads &amp; mappings</td>
+<td>Wide master (grid + many fields)</td>
+<td>CRUD master</td>
+<td>Complex</td>
+<td style="text-align: right;">2,727</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">13</td>
+<td style="text-align: right;">9</td>
+<td style="text-align: right;">24.01</td>
+</tr>
+<tr>
+<td style="text-align: right;">8</td>
+<td><code>HO/Admin/A_User.aspx</code></td>
+<td>Security &amp; access control</td>
+<td>Parent-child grid</td>
+<td>CRUD master</td>
+<td>Complex</td>
+<td style="text-align: right;">2,537</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">15</td>
+<td style="text-align: right;">6</td>
+<td style="text-align: right;">22.37</td>
+</tr>
+<tr>
+<td style="text-align: right;">9</td>
+<td><code>HO/Admin/a_UserRights.aspx</code></td>
+<td>Security &amp; access control</td>
+<td>Parent-child grid</td>
+<td>CRUD master</td>
+<td>Complex</td>
+<td style="text-align: right;">2,057</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">5</td>
+<td style="text-align: right;">13</td>
+<td style="text-align: right;">22.27</td>
+</tr>
+<tr>
+<td style="text-align: right;">10</td>
+<td><code>HO/b_ChargesMaster.aspx</code></td>
+<td>Charges, fees &amp; tax</td>
+<td>Wide master (grid + many fields)</td>
+<td>CRUD master</td>
+<td>Complex</td>
+<td style="text-align: right;">2,038</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">16</td>
+<td style="text-align: right;">5</td>
+<td style="text-align: right;">19.25</td>
+</tr>
+<tr>
+<td style="text-align: right;">11</td>
+<td><code>HO/MultiCurrency/tr_CashCurrencyHead.aspx</code></td>
+<td>Accounting heads &amp; mappings</td>
+<td>Simple master (grid + form)</td>
+<td>CRUD master</td>
+<td>Complex</td>
+<td style="text-align: right;">2,491</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">18.22</td>
+</tr>
+<tr>
+<td style="text-align: right;">12</td>
+<td><code>Reports/Admin/AdminReport.aspx</code></td>
+<td>Other system configuration</td>
+<td>Report / parameter screen</td>
+<td>Report</td>
+<td>Report</td>
+<td style="text-align: right;">1,236</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">12</td>
+<td style="text-align: right;">14.90</td>
+</tr>
+<tr>
+<td style="text-align: right;">13</td>
+<td><code>HO/Hr/g_BankDirectors.aspx</code></td>
+<td>Other system configuration</td>
+<td>Multi-grid / matrix</td>
+<td>CRUD master</td>
+<td>Complex</td>
+<td style="text-align: right;">1,865</td>
+<td style="text-align: right;">3</td>
+<td style="text-align: right;">30</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">14.89</td>
+</tr>
+<tr>
+<td style="text-align: right;">14</td>
+<td><code>RetailBanking/npa/b_NPAClassMaster.aspx</code></td>
+<td>NPA &amp; risk classification</td>
+<td>Parent-child grid</td>
+<td>CRUD master</td>
+<td>Complex</td>
+<td style="text-align: right;">1,680</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">4</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">14.42</td>
+</tr>
+<tr>
+<td style="text-align: right;">15</td>
+<td><code>HR/h_Transfer.aspx</code></td>
+<td>Other system configuration</td>
+<td>Wide master (grid + many fields)</td>
+<td>Transaction / Entry</td>
+<td>Complex</td>
+<td style="text-align: right;">1,779</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">11</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">13.74</td>
+</tr>
+<tr>
+<td style="text-align: right;">16</td>
+<td><code>HO/retailBanking/b_Holiday.aspx</code></td>
+<td>Bank, branch &amp; geography masters</td>
+<td>Multi-grid / matrix</td>
+<td>CRUD master</td>
+<td>Complex</td>
+<td style="text-align: right;">1,280</td>
+<td style="text-align: right;">3</td>
+<td style="text-align: right;">5</td>
+<td style="text-align: right;">3</td>
+<td style="text-align: right;">13.31</td>
+</tr>
+<tr>
+<td style="text-align: right;">17</td>
+<td><code>HO/retailBanking/c_LoanIRChange.aspx</code></td>
+<td>Loan &amp; credit scheme setup</td>
+<td>Multi-grid / matrix</td>
+<td>CRUD master</td>
+<td>Complex</td>
+<td style="text-align: right;">1,144</td>
+<td style="text-align: right;">3</td>
+<td style="text-align: right;">6</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">12.17</td>
+</tr>
+<tr>
+<td style="text-align: right;">18</td>
+<td><code>HO/Admin/a_RoleOnMenu.aspx</code></td>
+<td>Security &amp; access control</td>
+<td>Config panel (no grid)</td>
+<td>Transaction / Entry</td>
+<td>Medium</td>
+<td style="text-align: right;">1,503</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">3</td>
+<td style="text-align: right;">4</td>
+<td style="text-align: right;">11.57</td>
+</tr>
+<tr>
+<td style="text-align: right;">19</td>
+<td><code>HO/ProjectFormulation/c_LoanScheme.aspx</code></td>
+<td>Loan &amp; credit scheme setup</td>
+<td>Parent-child grid</td>
+<td>CRUD master</td>
+<td>Medium</td>
+<td style="text-align: right;">1,159</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">8</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">11.45</td>
+</tr>
+<tr>
+<td style="text-align: right;">20</td>
+<td><code>HO/Admin/a_Menus.aspx</code> *</td>
+<td>Security &amp; access control</td>
+<td>Parent-child grid</td>
+<td>CRUD master</td>
+<td>Medium</td>
+<td style="text-align: right;">1,266</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">11</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">11.20</td>
+</tr>
+<tr>
+<td style="text-align: right;">21</td>
+<td><code>RetailBanking/openingBalance.aspx</code></td>
+<td>Accounting heads &amp; mappings</td>
+<td>Parent-child grid</td>
+<td>CRUD master</td>
+<td>Medium</td>
+<td style="text-align: right;">1,145</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">8</td>
+<td style="text-align: right;">4</td>
+<td style="text-align: right;">11.11</td>
+</tr>
+<tr>
+<td style="text-align: right;">22</td>
+<td><code>HO/bank/g_OrgElement.aspx</code></td>
+<td>Other system configuration</td>
+<td>Config panel (no grid)</td>
+<td>Transaction / Entry</td>
+<td>Medium</td>
+<td style="text-align: right;">1,551</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">24</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">10.75</td>
+</tr>
+<tr>
+<td style="text-align: right;">23</td>
+<td><code>HO/MultiCurrency/g_Denomination.aspx</code></td>
+<td>Bank, branch &amp; geography masters</td>
+<td>Parent-child grid</td>
+<td>CRUD master</td>
+<td>Medium</td>
+<td style="text-align: right;">1,128</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">5</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">10.29</td>
+</tr>
+<tr>
+<td style="text-align: right;">24</td>
+<td><code>HO/bank/g_Notes.aspx</code></td>
+<td>Bank, branch &amp; geography masters</td>
+<td>Simple master (grid + form)</td>
+<td>CRUD master</td>
+<td>Medium</td>
+<td style="text-align: right;">1,029</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">3</td>
+<td style="text-align: right;">9.67</td>
+</tr>
+<tr>
+<td style="text-align: right;">25</td>
+<td><code>RetailBanking/DDPOParameterSetting.aspx</code></td>
+<td>Other system configuration</td>
+<td>Wide master (grid + many fields)</td>
+<td>CRUD master</td>
+<td>Medium</td>
+<td style="text-align: right;">1,135</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">14</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">9.43</td>
+</tr>
+<tr>
+<td style="text-align: right;">26</td>
+<td><code>HO/Admin/b_AccLevelConfig.aspx</code></td>
+<td>Other system configuration</td>
+<td>Simple master (grid + form)</td>
+<td>CRUD master</td>
+<td>Medium</td>
+<td style="text-align: right;">1,109</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">6</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">9.35</td>
+</tr>
+<tr>
+<td style="text-align: right;">27</td>
+<td><code>HO/retailBanking/ATMPosTerminalAccMapping.aspx</code></td>
+<td>Other system configuration</td>
+<td>Simple master (grid + form)</td>
+<td>CRUD master</td>
+<td>Medium</td>
+<td style="text-align: right;">994</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">6</td>
+<td style="text-align: right;">3</td>
+<td style="text-align: right;">9.23</td>
+</tr>
+<tr>
+<td style="text-align: right;">28</td>
+<td><code>HO/bank/g_Designation.aspx</code></td>
+<td>Other system configuration</td>
+<td>Parent-child grid</td>
+<td>CRUD master</td>
+<td>Medium</td>
+<td style="text-align: right;">955</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">14</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">9.11</td>
+</tr>
+<tr>
+<td style="text-align: right;">29</td>
+<td><code>HO/retailBanking/IntrBkLendingConfig.aspx</code></td>
+<td>Other system configuration</td>
+<td>Simple master (grid + form)</td>
+<td>CRUD master</td>
+<td>Medium</td>
+<td style="text-align: right;">998</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">3</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">8.96</td>
+</tr>
+<tr>
+<td style="text-align: right;">30</td>
+<td><code>Treasury/Masters/g_Currency.aspx</code></td>
+<td>Other system configuration</td>
+<td>Wide master (grid + many fields)</td>
+<td>CRUD master</td>
+<td>Medium</td>
+<td style="text-align: right;">960</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">8</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">8.81</td>
+</tr>
+<tr>
+<td style="text-align: right;">31</td>
+<td><code>HO/retailBanking/b_BranchList.aspx</code></td>
+<td>Bank, branch &amp; geography masters</td>
+<td>Parent-child grid</td>
+<td>CRUD master</td>
+<td>Medium</td>
+<td style="text-align: right;">796</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">12</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">8.45</td>
+</tr>
+<tr>
+<td style="text-align: right;">32</td>
+<td><code>RetailBanking/cash/x_ChestOpening.aspx</code></td>
+<td>Other system configuration</td>
+<td>Simple master (grid + form)</td>
+<td>CRUD master</td>
+<td>Medium</td>
+<td style="text-align: right;">1,000</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">8.45</td>
+</tr>
+<tr>
+<td style="text-align: right;">33</td>
+<td><code>RetailBanking/LoanInterestUpdation.aspx</code></td>
+<td>Interest &amp; rate configuration</td>
+<td>Wide master (grid + many fields)</td>
+<td>CRUD master</td>
+<td>Medium</td>
+<td style="text-align: right;">921</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">8</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">8.27</td>
+</tr>
+<tr>
+<td style="text-align: right;">34</td>
+<td><code>HO/retailBanking/g_ECSMasterData.aspx</code></td>
+<td>Bank, branch &amp; geography masters</td>
+<td>Wide master (grid + many fields)</td>
+<td>CRUD master</td>
+<td>Medium</td>
+<td style="text-align: right;">963</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">7</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">8.20</td>
+</tr>
+<tr>
+<td style="text-align: right;">35</td>
+<td><code>HO/Admin/a_CashierLimit.aspx</code></td>
+<td>Security &amp; access control</td>
+<td>Wide master (grid + many fields)</td>
+<td>CRUD master</td>
+<td>Medium</td>
+<td style="text-align: right;">1,082</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">24</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">8.17</td>
+</tr>
+<tr>
+<td style="text-align: right;">36</td>
+<td><code>HR/h_TransferHistory.aspx</code></td>
+<td>Other system configuration</td>
+<td>Simple master (grid + form)</td>
+<td>Transaction / Entry</td>
+<td>Medium</td>
+<td style="text-align: right;">615</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">5</td>
+<td style="text-align: right;">8.04</td>
+</tr>
+<tr>
+<td style="text-align: right;">37</td>
+<td><code>HR/h_Promotion.aspx</code></td>
+<td>Other system configuration</td>
+<td>Simple master (grid + form)</td>
+<td>CRUD master</td>
+<td>Medium</td>
+<td style="text-align: right;">660</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">3</td>
+<td style="text-align: right;">4</td>
+<td style="text-align: right;">7.89</td>
+</tr>
+<tr>
+<td style="text-align: right;">38</td>
+<td><code>RetailBanking/b_EcsCompany.aspx</code></td>
+<td>Bank, branch &amp; geography masters</td>
+<td>Simple master (grid + form)</td>
+<td>CRUD master</td>
+<td>Medium</td>
+<td style="text-align: right;">928</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">7.75</td>
+</tr>
+<tr>
+<td style="text-align: right;">39</td>
+<td><code>RetailBanking/npa/c_NPAMethodMapping.aspx</code></td>
+<td>NPA &amp; risk classification</td>
+<td>Simple master (grid + form)</td>
+<td>CRUD master</td>
+<td>Medium</td>
+<td style="text-align: right;">999</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">7.57</td>
+</tr>
+<tr>
+<td style="text-align: right;">40</td>
+<td><code>RetailBanking/npa/b_NPAMaster.aspx</code></td>
+<td>NPA &amp; risk classification</td>
+<td>Parent-child grid</td>
+<td>CRUD master</td>
+<td>Medium</td>
+<td style="text-align: right;">701</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">4</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">7.23</td>
+</tr>
+<tr>
+<td style="text-align: right;">41</td>
+<td><code>HO/TaxConfig.aspx</code></td>
+<td>Charges, fees &amp; tax</td>
+<td>Simple master (grid + form)</td>
+<td>CRUD master</td>
+<td>Medium</td>
+<td style="text-align: right;">864</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">6</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">7.19</td>
+</tr>
+<tr>
+<td style="text-align: right;">42</td>
+<td><code>HO/Admin/PasswordPolicyConfig.aspx</code></td>
+<td>Security &amp; access control</td>
+<td>Config panel (no grid)</td>
+<td>Transaction / Entry</td>
+<td>Medium</td>
+<td style="text-align: right;">1,086</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">9</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">7.14</td>
+</tr>
+<tr>
+<td style="text-align: right;">43</td>
+<td><code>HO/bank/b_GlInterestMapping.aspx</code></td>
+<td>Interest &amp; rate configuration</td>
+<td>Simple master (grid + form)</td>
+<td>CRUD master</td>
+<td>Medium</td>
+<td style="text-align: right;">697</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">3</td>
+<td style="text-align: right;">7.12</td>
+</tr>
+<tr>
+<td style="text-align: right;">44</td>
+<td><code>RetailBanking/b_DocumentType.aspx</code></td>
+<td>Letters &amp; document templates</td>
+<td>Simple master (grid + form)</td>
+<td>CRUD master</td>
+<td>Medium</td>
+<td style="text-align: right;">718</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">6</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">7.11</td>
+</tr>
+<tr>
+<td style="text-align: right;">45</td>
+<td><code>HO/bank/g_City.aspx</code></td>
+<td>Bank, branch &amp; geography masters</td>
+<td>Parent-child grid</td>
+<td>CRUD master</td>
+<td>Medium</td>
+<td style="text-align: right;">663</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">4</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">6.97</td>
+</tr>
+<tr>
+<td style="text-align: right;">46</td>
+<td><code>HR/h_PromHistory.aspx</code></td>
+<td>Other system configuration</td>
+<td>Simple master (grid + form)</td>
+<td>CRUD master</td>
+<td>Medium</td>
+<td style="text-align: right;">518</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">4</td>
+<td style="text-align: right;">6.77</td>
+</tr>
+<tr>
+<td style="text-align: right;">47</td>
+<td><code>HO/bank/g_State.aspx</code></td>
+<td>Bank, branch &amp; geography masters</td>
+<td>Parent-child grid</td>
+<td>CRUD master</td>
+<td>Medium</td>
+<td style="text-align: right;">623</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">6</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">6.68</td>
+</tr>
+<tr>
+<td style="text-align: right;">48</td>
+<td><code>HO/retailBanking/b_BankList.aspx</code></td>
+<td>Bank, branch &amp; geography masters</td>
+<td>Parent-child grid</td>
+<td>CRUD master</td>
+<td>Medium</td>
+<td style="text-align: right;">564</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">4</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">6.39</td>
+</tr>
+<tr>
+<td style="text-align: right;">49</td>
+<td><code>HR/h_QualificationHistory.aspx</code></td>
+<td>Other system configuration</td>
+<td>Parent-child grid</td>
+<td>CRUD master</td>
+<td>Medium</td>
+<td style="text-align: right;">631</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">5</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">6.29</td>
+</tr>
+<tr>
+<td style="text-align: right;">50</td>
+<td><code>HO/bank/g_District.aspx</code> *</td>
+<td>Other system configuration</td>
+<td>Parent-child grid</td>
+<td>CRUD master</td>
+<td>Medium</td>
+<td style="text-align: right;">536</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">6.19</td>
+</tr>
+<tr>
+<td style="text-align: right;">51</td>
+<td><code>HO/bank/g_OrgElementDepartment.aspx</code></td>
+<td>Other system configuration</td>
+<td>Parent-child grid</td>
+<td>Search / List / Inquiry</td>
+<td>Medium</td>
+<td style="text-align: right;">566</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">7</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">5.93</td>
+</tr>
+<tr>
+<td style="text-align: right;">52</td>
+<td><code>HO/LRA_gateway_accounts.aspx</code></td>
+<td>Other system configuration</td>
+<td>Simple master (grid + form)</td>
+<td>Search / List / Inquiry</td>
+<td>Medium</td>
+<td style="text-align: right;">565</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">5.89</td>
+</tr>
+<tr>
+<td style="text-align: right;">53</td>
+<td><code>HR/h_LeaveCancellation.aspx</code></td>
+<td>Other system configuration</td>
+<td>Simple master (grid + form)</td>
+<td>CRUD master</td>
+<td>Medium</td>
+<td style="text-align: right;">632</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">5.72</td>
+</tr>
+<tr>
+<td style="text-align: right;">54</td>
+<td><code>HO/bank/g_FormAccountHeadMapping.aspx</code></td>
+<td>Accounting heads &amp; mappings</td>
+<td>Simple master (grid + form)</td>
+<td>CRUD master</td>
+<td>Medium</td>
+<td style="text-align: right;">727</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">6</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">5.65</td>
+</tr>
+<tr>
+<td style="text-align: right;">55</td>
+<td><code>HO/Admin/a_RoleMaster.aspx</code></td>
+<td>Security &amp; access control</td>
+<td>Simple master (grid + form)</td>
+<td>CRUD master</td>
+<td>Medium</td>
+<td style="text-align: right;">555</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">5.51</td>
+</tr>
+<tr>
+<td style="text-align: right;">56</td>
+<td><code>HO/x_ChequeBookChargeConfig.aspx</code></td>
+<td>Charges, fees &amp; tax</td>
+<td>Simple master (grid + form)</td>
+<td>Transaction / Entry</td>
+<td>Medium</td>
+<td style="text-align: right;">578</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">5.50</td>
+</tr>
+<tr>
+<td style="text-align: right;">57</td>
+<td><code>HO/MultiCurrency/g_DenominationUnit.aspx</code></td>
+<td>Bank, branch &amp; geography masters</td>
+<td>Simple master (grid + form)</td>
+<td>CRUD master</td>
+<td>Medium</td>
+<td style="text-align: right;">573</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">5.43</td>
+</tr>
+<tr>
+<td style="text-align: right;">58</td>
+<td><code>RetailBanking/swift/x_SFTBankCode.aspx</code></td>
+<td>Other system configuration</td>
+<td>Simple master (grid + form)</td>
+<td>CRUD master</td>
+<td>Medium</td>
+<td style="text-align: right;">465</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">5.28</td>
+</tr>
+<tr>
+<td style="text-align: right;">59</td>
+<td><code>HR/g_Bank.aspx</code></td>
+<td>Other system configuration</td>
+<td>Parent-child grid</td>
+<td>CRUD master</td>
+<td>Medium</td>
+<td style="text-align: right;">453</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">8</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">5.27</td>
+</tr>
+<tr>
+<td style="text-align: right;">60</td>
+<td><code>RetailBanking/b_IbtHeadMapping.aspx</code></td>
+<td>Accounting heads &amp; mappings</td>
+<td>Simple master (grid + form)</td>
+<td>CRUD master</td>
+<td>Medium</td>
+<td style="text-align: right;">553</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">5.17</td>
+</tr>
+<tr>
+<td style="text-align: right;">61</td>
+<td><code>RetailBanking/g_DebtCollector.aspx</code></td>
+<td>Other system configuration</td>
+<td>Simple master (grid + form)</td>
+<td>CRUD master</td>
+<td>Medium</td>
+<td style="text-align: right;">452</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">5.13</td>
+</tr>
+<tr>
+<td style="text-align: right;">62</td>
+<td><code>HO/Hr/g_Language.aspx</code></td>
+<td>Other system configuration</td>
+<td>Parent-child grid</td>
+<td>CRUD master</td>
+<td>Medium</td>
+<td style="text-align: right;">467</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">6</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">5.07</td>
+</tr>
+<tr>
+<td style="text-align: right;">63</td>
+<td><code>HO/Hr/h_LeaveType.aspx</code></td>
+<td>Other system configuration</td>
+<td>Simple master (grid + form)</td>
+<td>CRUD master</td>
+<td>Medium</td>
+<td style="text-align: right;">467</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">6</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">4.83</td>
+</tr>
+<tr>
+<td style="text-align: right;">64</td>
+<td><code>HO/bank/g_BranchCategory.aspx</code></td>
+<td>Other system configuration</td>
+<td>Parent-child grid</td>
+<td>CRUD master</td>
+<td>Medium</td>
+<td style="text-align: right;">388</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">4</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">4.59</td>
+</tr>
+<tr>
+<td style="text-align: right;">65</td>
+<td><code>RetailBanking/LRA_custom_accounts.aspx</code> *</td>
+<td>Other system configuration</td>
+<td>Config panel (no grid)</td>
+<td>Transaction / Entry</td>
+<td>Medium</td>
+<td style="text-align: right;">617</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">4.55</td>
+</tr>
+<tr>
+<td style="text-align: right;">66</td>
+<td><code>HO/Admin/Audit.aspx</code></td>
+<td>Security &amp; access control</td>
+<td>Config panel (no grid)</td>
+<td>Transaction / Entry</td>
+<td>Medium</td>
+<td style="text-align: right;">489</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">4.49</td>
+</tr>
+<tr>
+<td style="text-align: right;">67</td>
+<td><code>HR/h_CourseHistory.aspx</code></td>
+<td>Other system configuration</td>
+<td>Simple master (grid + form)</td>
+<td>Search / List / Inquiry</td>
+<td>Medium</td>
+<td style="text-align: right;">523</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">4.49</td>
+</tr>
+<tr>
+<td style="text-align: right;">68</td>
+<td><code>HO/bank/g_ServiceStatus.aspx</code></td>
+<td>Other system configuration</td>
+<td>Parent-child grid</td>
+<td>CRUD master</td>
+<td>Medium</td>
+<td style="text-align: right;">369</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">4</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">4.48</td>
+</tr>
+<tr>
+<td style="text-align: right;">69</td>
+<td><code>HR/h_ExprHistory.aspx</code></td>
+<td>Other system configuration</td>
+<td>Simple master (grid + form)</td>
+<td>CRUD master</td>
+<td>Medium</td>
+<td style="text-align: right;">489</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">3</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">4.39</td>
+</tr>
+<tr>
+<td style="text-align: right;">70</td>
+<td><code>HO/Admin/AuditView.aspx</code></td>
+<td>Security &amp; access control</td>
+<td>Simple master (grid + form)</td>
+<td>Search / List / Inquiry</td>
+<td>Medium</td>
+<td style="text-align: right;">533</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">4.33</td>
+</tr>
+<tr>
+<td style="text-align: right;">71</td>
+<td><code>HO/bank/g_Title.aspx</code></td>
+<td>Other system configuration</td>
+<td>Parent-child grid</td>
+<td>Search / List / Inquiry</td>
+<td>Medium</td>
+<td style="text-align: right;">332</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">4</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">4.27</td>
+</tr>
+<tr>
+<td style="text-align: right;">72</td>
+<td><code>HO/Admin/a_Module.aspx</code></td>
+<td>Security &amp; access control</td>
+<td>Simple master (grid + form)</td>
+<td>CRUD master</td>
+<td>Medium</td>
+<td style="text-align: right;">467</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">3</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">4.16</td>
+</tr>
+<tr>
+<td style="text-align: right;">73</td>
+<td><code>HR/h_DiscipActionHistory.aspx</code></td>
+<td>Other system configuration</td>
+<td>Simple master (grid + form)</td>
+<td>CRUD master</td>
+<td>Medium</td>
+<td style="text-align: right;">459</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">4.14</td>
+</tr>
+<tr>
+<td style="text-align: right;">74</td>
+<td><code>HO/bank/g_Relation.aspx</code></td>
+<td>Other system configuration</td>
+<td>Parent-child grid</td>
+<td>CRUD master</td>
+<td>Medium</td>
+<td style="text-align: right;">336</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">4.13</td>
+</tr>
+<tr>
+<td style="text-align: right;">75</td>
+<td><code>HR/h_Qualification.aspx</code></td>
+<td>Other system configuration</td>
+<td>Simple master (grid + form)</td>
+<td>CRUD master</td>
+<td>Simple</td>
+<td style="text-align: right;">426</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">3.92</td>
+</tr>
+<tr>
+<td style="text-align: right;">76</td>
+<td><code>HR/h_DiscipAction.aspx</code></td>
+<td>Other system configuration</td>
+<td>Simple master (grid + form)</td>
+<td>CRUD master</td>
+<td>Simple</td>
+<td style="text-align: right;">340</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">3.91</td>
+</tr>
+<tr>
+<td style="text-align: right;">77</td>
+<td><code>HR/h_HonAwardHistory.aspx</code></td>
+<td>Other system configuration</td>
+<td>Simple master (grid + form)</td>
+<td>CRUD master</td>
+<td>Simple</td>
+<td style="text-align: right;">436</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">3.87</td>
+</tr>
+<tr>
+<td style="text-align: right;">78</td>
+<td><code>RetailBanking/c_Community.aspx</code></td>
+<td>Client &amp; KYC configuration</td>
+<td>Simple master (grid + form)</td>
+<td>CRUD master</td>
+<td>Simple</td>
+<td style="text-align: right;">430</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">3.85</td>
+</tr>
+<tr>
+<td style="text-align: right;">79</td>
+<td><code>HO/Admin/a_UserInModule.aspx</code></td>
+<td>Security &amp; access control</td>
+<td>Simple master (grid + form)</td>
+<td>CRUD master</td>
+<td>Simple</td>
+<td style="text-align: right;">372</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">3</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">3.80</td>
+</tr>
+<tr>
+<td style="text-align: right;">80</td>
+<td><code>HO/Alerts/al_AlertsRights.aspx</code></td>
+<td>Alerts, SMS &amp; mobile banking</td>
+<td>Simple master (grid + form)</td>
+<td>CRUD master</td>
+<td>Simple</td>
+<td style="text-align: right;">360</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">4</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">3.28</td>
+</tr>
+<tr>
+<td style="text-align: right;">81</td>
+<td><code>HR/h_HonAward.aspx</code></td>
+<td>Other system configuration</td>
+<td>Simple master (grid + form)</td>
+<td>Search / List / Inquiry</td>
+<td>Simple</td>
+<td style="text-align: right;">332</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">3.23</td>
+</tr>
+<tr>
+<td style="text-align: right;">82</td>
+<td><code>HO/bank/g_Step.aspx</code></td>
+<td>Other system configuration</td>
+<td>Simple master (grid + form)</td>
+<td>CRUD master</td>
+<td>Simple</td>
+<td style="text-align: right;">308</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">3.16</td>
+</tr>
+<tr>
+<td style="text-align: right;">83</td>
+<td><code>HR/h_LeaveApproval.aspx</code></td>
+<td>Other system configuration</td>
+<td>Simple master (grid + form)</td>
+<td>CRUD master</td>
+<td>Simple</td>
+<td style="text-align: right;">259</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">2.57</td>
+</tr>
+<tr>
+<td style="text-align: right;">84</td>
+<td><code>HO/b_MinorAgeConfig.aspx</code></td>
+<td>Other system configuration</td>
+<td>Config panel (no grid)</td>
+<td>Transaction / Entry</td>
+<td>Simple</td>
+<td style="text-align: right;">188</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">2.42</td>
+</tr>
+<tr>
+<td style="text-align: right;">85</td>
+<td><code>HO/Alerts/al_AlertConfig.aspx</code></td>
+<td>Alerts, SMS &amp; mobile banking</td>
+<td>Simple master (grid + form)</td>
+<td>CRUD master</td>
+<td>Simple</td>
+<td style="text-align: right;">253</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">2.30</td>
+</tr>
+</tbody>
+</table>
+<p><code>*</code> = menu row is inactive in <code>a_Menus</code>; confirm the screen is still wanted before porting it.</p>
+</div></div>
+<script>
+(function(){
+ function put(t){
+  if(navigator.clipboard&&navigator.clipboard.writeText)return navigator.clipboard.writeText(t);
+  return new Promise(function(res,rej){
+   var a=document.createElement('textarea');a.value=t;a.setAttribute('readonly','');
+   a.style.cssText='position:fixed;top:0;left:0;opacity:0';document.body.appendChild(a);
+   a.select();var ok=false;try{ok=document.execCommand('copy')}catch(e){}
+   document.body.removeChild(a);ok?res():rej()});
+ }
+ function flash(el,txt,ms){
+  var was=el.textContent;el.classList.add('done');if(txt)el.textContent=txt;
+  setTimeout(function(){el.classList.remove('done');if(txt)el.textContent=was},ms||1200);
+ }
+ function copy(text,el,okTxt){
+  put(text).then(function(){flash(el,okTxt)},function(){
+   if(okTxt){var w=el.textContent;el.textContent='Ctrl+C';setTimeout(function(){el.textContent=w},2000)}});
+ }
+ document.querySelectorAll('pre').forEach(function(pre){
+  if(pre.classList.contains('txtdoc'))return;
+  var b=document.createElement('button');
+  b.type='button';b.className='copy';b.textContent='Copy';
+  b.setAttribute('aria-label','Copy this code block to the clipboard');
+  b.addEventListener('click',function(){copy((pre.querySelector('code')||pre).innerText,b,'Copied')});
+  pre.appendChild(b);
+ });
+ document.querySelectorAll('td code').forEach(function(c){
+  if(!c.textContent.trim())return;
+  c.classList.add('cp');c.tabIndex=0;c.setAttribute('role','button');
+  c.title='Click to copy';
+  c.addEventListener('click',function(){copy(c.textContent,c)});
+  c.addEventListener('keydown',function(e){
+   if(e.key==='Enter'||e.key===' '){e.preventDefault();copy(c.textContent,c)}});
+ });
+})();
+</script>
+</body></html>

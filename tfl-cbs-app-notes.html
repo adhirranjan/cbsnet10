@@ -1,0 +1,417 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>TrustBank CBS — Migrated vs. New</title>
+<style>
+:root{color-scheme:light dark}
+*{box-sizing:border-box}
+body{margin:0;background:#f6f8fa;color:#1f2328;font:16px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif}
+.wrap{max-width:900px;margin:0 auto;padding:32px 24px 96px}
+.card{background:#fff;border:1px solid #d0d7de;border-radius:10px;padding:40px 48px}
+h1,h2,h3{line-height:1.25;font-weight:600}
+h1{font-size:1.9rem;margin:0 0 .3em;padding-bottom:.3em;border-bottom:1px solid #d8dee4}
+h2{font-size:1.4rem;margin:1.8em 0 .6em;padding-bottom:.25em;border-bottom:1px solid #eaeef2}
+h3{font-size:1.12rem;margin:1.4em 0 .5em}
+p,li{margin:.5em 0}
+a{color:#0969da;text-decoration:none}
+a:hover{text-decoration:underline}
+code{font-family:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;font-size:.86em;background:#eff1f3;padding:.15em .4em;border-radius:6px}
+pre{background:#f6f8fa;border:1px solid #d8dee4;border-radius:8px;padding:14px 16px;overflow:auto}
+pre code{background:none;padding:0;font-size:.85em;line-height:1.45}
+blockquote{margin:1em 0;padding:.4em 1em;color:#3d444d;border-left:4px solid #d0d7de;background:#f6f8fa;border-radius:0 6px 6px 0}
+blockquote>:first-child{margin-top:0}blockquote>:last-child{margin-bottom:0}
+table{border-collapse:collapse;width:100%;margin:1em 0;display:block;overflow:auto}
+th,td{border:1px solid #d0d7de;padding:8px 12px;text-align:left;vertical-align:top}
+th{background:#f6f8fa;font-weight:600}
+tr:nth-child(2n) td{background:#f6f8fa}
+hr{border:0;border-top:1px solid #d8dee4;margin:2em 0}
+pre{position:relative}
+pre>button.copy{position:absolute;top:8px;right:8px;padding:5px 9px;cursor:pointer;
+  font:600 .68rem/1 ui-monospace,SFMono-Regular,Consolas,monospace;letter-spacing:.03em;
+  color:#636c76;background:#fff;border:1px solid #d0d7de;border-radius:6px;
+  opacity:0;transition:opacity .12s}
+pre:hover>button.copy,pre>button.copy:focus{opacity:1}
+pre>button.copy.done{color:#0a3622;background:#dafbe1;border-color:#4ac26b}
+@media(hover:none){pre>button.copy{opacity:1}}
+td code.cp{cursor:pointer}
+td code.cp:hover,td code.cp:focus{outline:1px solid #8c959f;outline-offset:1px}
+td code.cp.done{color:#0a3622;background:#dafbe1}
+.docnav{margin:0 0 20px;font-size:.85rem;color:#636c76}
+.docnav a{color:#636c76}
+ul{padding-left:1.4em}ol{padding-left:1.4em}
+@media(max-width:640px){.card{padding:24px 18px}.wrap{padding:16px 10px 64px}}
+@media(prefers-color-scheme:dark){
+ body{background:#0d1117;color:#e6edf3}
+ .card{background:#161b22;border-color:#30363d}
+ h1{border-color:#30363d}h2{border-color:#21262d}
+ code{background:#262c34}
+ pre{background:#0d1117;border-color:#30363d}
+ blockquote{background:#161b22;border-color:#30363d;color:#9198a1}
+ th,td{border-color:#30363d}th{background:#161b22}tr:nth-child(2n) td{background:#12171e}
+ a{color:#4493f8}.docnav,.docnav a{color:#9198a1}
+ hr{border-color:#30363d}
+ pre>button.copy{color:#9198a1;background:#161b22;border-color:#30363d}
+ pre>button.copy.done{color:#aff5b4;background:#1b4721;border-color:#2ea043}
+ td code.cp.done{color:#aff5b4;background:#1b4721}
+}
+</style></head>
+<body><div class="wrap"><div class="card">
+<h1 id="trustbank-cbs-migrated-vs-new">TrustBank CBS — Migrated vs. New</h1>
+<h2 id="1-at-a-glance">1. At a Glance</h2>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>Legacy (as found)</th>
+<th>New (.NET 10)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Runtime</td>
+<td>.NET Framework 4.8</td>
+<td><strong>.NET 10</strong></td>
+</tr>
+<tr>
+<td>Language</td>
+<td>VB.NET</td>
+<td><strong>C#</strong></td>
+</tr>
+<tr>
+<td>Web stack</td>
+<td>ASP.NET <strong>WebForms</strong></td>
+<td>ASP.NET Core <strong>MVC</strong> — Controllers, Razor views, attribute routing</td>
+</tr>
+<tr>
+<td>Deployment unit</td>
+<td>One IIS site, one monolithic web app</td>
+<td><strong>Modular Monolith</strong>; Thin per-module hosts; IIS</td>
+</tr>
+<tr>
+<td>Business logic</td>
+<td>stored procedures</td>
+<td>per-domain <strong>service module assemblies</strong>, <strong>no procs / no raw SQL</strong></td>
+</tr>
+<tr>
+<td>Data access</td>
+<td>Enterprise Library Data (Microsoft patterns &amp; practices)</td>
+<td><strong>TflOmniDb</strong> — <code>Repository&lt;T&gt;</code> + <code>DataAccess</code>, async-only</td>
+</tr>
+<tr>
+<td>Database</td>
+<td>SQL Server only</td>
+<td>SQL Server · Oracle</td>
+</tr>
+<tr>
+<td>Observability</td>
+<td>ad-hoc (<code>AdDiagnostics.dll</code>, log files)</td>
+<td><strong>TflOmniLog</strong> (Serilog) + <strong>OpenTelemetry</strong> traces &amp; metrics over OTLP</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Counted legacy scope for context:</strong> 1,458 <code>.aspx</code> screens (1,059 functional + 399 reports) · 5,317 stored procedures · 1,497 VB code-behind files · 19 reusable controls.</p>
+<hr />
+<h2 id="2-architecture">2. Architecture</h2>
+<table>
+<thead>
+<tr>
+<th>Concern</th>
+<th>Legacy</th>
+<th>New</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Business-layer structure</td>
+<td>more than 5300* procedures</td>
+<td><strong>Modular monolith</strong>: per-domain assemblies, module = bounded domain</td>
+</tr>
+<tr>
+<td>Screen packaging</td>
+<td><code>.aspx</code> files in folders</td>
+<td><strong>Per-domain Razor Class Libraries</strong> (<code>TflCbs.Modules.&lt;Area&gt;.Web</code>)</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="3-framework-web-plumbing">3. Framework &amp; web plumbing</h2>
+<table>
+<thead>
+<tr>
+<th>Capability</th>
+<th>Legacy</th>
+<th>New</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Search backend</td>
+<td>encrypted SQL shipped in the popup URL</td>
+<td><strong>the server owns the query</strong>; only values cross the wire</td>
+</tr>
+<tr>
+<td>Primary keys on the client</td>
+<td>raw PKs in query strings and grid rows</td>
+<td><code>RowToken</code> — AES, <strong>single-use</strong></td>
+</tr>
+<tr>
+<td>Database Provider selection</td>
+<td>SQL Server, compile-time</td>
+<td><code>DatabaseSelector</code> + multi-provider <code>DataAccess</code> wiring;</td>
+</tr>
+<tr>
+<td>Health checks</td>
+<td>none</td>
+<td><code>DatabaseHealthCheck</code> + endpoints per host</td>
+</tr>
+<tr>
+<td>Antiforgery</td>
+<td>ViewState/EventValidation</td>
+<td>ASP.NET Core antiforgery</td>
+</tr>
+<tr>
+<td>Login rate limiting</td>
+<td>none (DB lockout counters only)</td>
+<td>Login rate limiting is built on ASP.NET Core's built-in <code>Rate Limiting</code> middleware; the DB lockout policy is kept as the per-account layer</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="4-reusable-ui-components">4. Reusable UI components</h2>
+<table>
+<thead>
+<tr>
+<th>Legacy control</th>
+<th>New counterpart</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>TssiplDatePicker.ascx</code></td>
+<td><code>_DatePicker</code> + <code>DatePickerModel</code> + <code>cbs-datepicker.js</code></td>
+</tr>
+<tr>
+<td><code>TssiplRecordSelector(.ascx)</code> V1/V2 + <code>RecordSelector.aspx</code></td>
+<td><code>_RecordPicker</code> + <code>RecordPickerModel</code> + <code>cbs-search.js</code></td>
+</tr>
+<tr>
+<td><code>TssiplSearchBox.ascx</code> + <code>RecordSelector.aspx</code> grid</td>
+<td><code>_SearchModal</code> + <code>SearchDescriptor</code>/<code>SearchColumn</code>/<code>SearchFilter</code> + <code>SearchEndpoint</code> + <code>RowToken</code></td>
+</tr>
+<tr>
+<td><code>Account.ascx</code> + COA/Account selectors + <code>AccountSelector.aspx</code></td>
+<td><code>_AccountPicker</code> + <code>AccountPickerModel</code> + <code>_AccountSearchModal</code> + <code>cbs-account-picker.js</code></td>
+</tr>
+<tr>
+<td><code>MainMenu.ascx</code> + <code>CollapsablePanelStart/End.ascx</code></td>
+<td><code>_MenuOverlay</code> / <code>_MenuGrid</code> + <code>MenuService</code></td>
+</tr>
+<tr>
+<td>ad-hoc <code>alert()</code> / <code>MessageBox.aspx</code></td>
+<td><code>_Notification</code> ack modal + <code>cbsNotify</code> toast</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Components with no legacy counterpart</strong> — all <strong>New</strong>:</p>
+<table>
+<thead>
+<tr>
+<th>Component</th>
+<th>What it does</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>_CommandPalette</code> + <code>cbs-command-palette.js</code></td>
+<td>Ctrl+K quick-access over the session menu, client-side</td>
+</tr>
+<tr>
+<td><code>cbs-idle.js</code> + <code>KeepAliveController</code></td>
+<td>Idle warning at <code>Cbs:IdleWarnMinutes</code>, logout at <code>IdleLogoutMinutes</code>, keep-alive ping</td>
+</tr>
+<tr>
+<td><code>cbs-uppercase.js</code></td>
+<td>Uppercase user input</td>
+</tr>
+<tr>
+<td><code>RowToken</code></td>
+<td>Encrypted row ids</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="5-data-access-entities-business-logic">5. Data access, entities &amp; business logic</h2>
+<table>
+<thead>
+<tr>
+<th>Concern</th>
+<th>Legacy</th>
+<th>New</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>DAL</td>
+<td>Enterprise Library Data, <code>TSSIPL.Practices.EnterpriseLibrary.Data.dll</code>, <code>AdDataAccessComponent.dll</code></td>
+<td><strong>TflOmniDb</strong> — <code>Repository&lt;T&gt;</code> (<code>GetAsync</code>/<code>GetAllAsync</code>/<code>Where</code>/<code>Count</code>/<code>Insert</code>/<code>Update</code>/<code>Delete</code>) + <code>DataAccess.QueryAsync</code></td>
+</tr>
+<tr>
+<td>Database engines</td>
+<td>SQL Server</td>
+<td><strong>SQL Server · Oracle · PostgreSQL</strong> — per-provider quoting, param prefixes, identity, paging, dirty-read hints</td>
+</tr>
+<tr>
+<td>Sync/async</td>
+<td>synchronous</td>
+<td><strong>Async-only</strong>, <code>CancellationToken</code> throughout (no sync overloads)</td>
+</tr>
+<tr>
+<td>Transactions</td>
+<td>proc-level</td>
+<td><code>BeginTransactionAsync</code>, <code>IUnitOfWork</code>, <code>ExecuteInTransactionAsync</code> with transient-failure retry</td>
+</tr>
+<tr>
+<td>Query composition</td>
+<td>string-concatenated SQL</td>
+<td>LINQ predicates + typed <code>Cols</code> tokens + the shared <code>ServiceQuery</code> helpers (<code>Has</code>/<code>Eq</code>/<code>Val</code>/<code>Paged</code>, page-size bounds)</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="6-security-authentication-session">6. Security, authentication &amp; session</h2>
+<table>
+<thead>
+<tr>
+<th>Concern</th>
+<th>Legacy</th>
+<th>New</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Password storage</td>
+<td>legacy reversible/encoded scheme</td>
+<td><strong>PBKDF2 + per-user salt</strong> (<code>PASSWORDHASH</code>, <code>PASSWORDVERSION</code>)</td>
+</tr>
+<tr>
+<td>Crypto library</td>
+<td>in-app VB routines</td>
+<td><code>TflSecurityCrypto</code> — 1:1 VB.NET port, <strong>byte-for-byte output compatible</strong> (3DES, RC4, salted MD5/SHA1/SHA256/384/512, hardware fingerprint, RNGCSP)</td>
+</tr>
+<tr>
+<td>Cross-host login</td>
+<td>n/a</td>
+<td><strong>Internal SSO</strong> — one login recognized on every CBS host;</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="7-deployment-hosting-operations">7. Deployment, hosting &amp; operations</h2>
+<table>
+<thead>
+<tr>
+<th>Concern</th>
+<th>Legacy</th>
+<th>New</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Hosting shapes</td>
+<td>1 (IIS single site)</td>
+<td>IIS multi-host</td>
+</tr>
+<tr>
+<td>Thin per-module hosts</td>
+<td>none</td>
+<td>each host runs <strong>one</strong> domain + the core modules</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="8-technology-stack-old-new">8. Technology stack — old → new</h2>
+<table>
+<thead>
+<tr>
+<th>Area</th>
+<th>Legacy</th>
+<th>New</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Framework</td>
+<td>.NET Framework 4.8</td>
+<td>.NET 10</td>
+</tr>
+<tr>
+<td>Language</td>
+<td>VB.NET</td>
+<td>C#</td>
+</tr>
+<tr>
+<td>UI</td>
+<td>WebForms, ViewState, postbacks, MasterPages, <code>.ascx</code></td>
+<td>ASP.NET Core MVC, Razor, Razor Class Libraries, tag helpers</td>
+</tr>
+<tr>
+<td>Data</td>
+<td>Enterprise Library Data, <code>AdDataAccessComponent</code></td>
+<td>TflOmniDb (<code>Microsoft.Data.SqlClient</code> 7.0.1 · <code>Oracle.ManagedDataAccess.Core</code> 23.7.0 · <code>Npgsql</code> 9.0.2)</td>
+</tr>
+<tr>
+<td>Logging</td>
+<td><code>AdDiagnostics</code>, EntLib Logging</td>
+<td>TflOmniLog → Serilog 4.2</td>
+</tr>
+<tr>
+<td>Telemetry</td>
+<td>—</td>
+<td>OpenTelemetry 1.17 (hosting, OTLP exporter, ASP.NET Core/HTTP/runtime)</td>
+</tr>
+<tr>
+<td>Proxy</td>
+<td>—</td>
+<td>YARP 2.3</td>
+</tr>
+</tbody>
+</table>
+<hr />
+</div></div>
+<script>
+(function(){
+ function put(t){
+  if(navigator.clipboard&&navigator.clipboard.writeText)return navigator.clipboard.writeText(t);
+  return new Promise(function(res,rej){
+   var a=document.createElement('textarea');a.value=t;a.setAttribute('readonly','');
+   a.style.cssText='position:fixed;top:0;left:0;opacity:0';document.body.appendChild(a);
+   a.select();var ok=false;try{ok=document.execCommand('copy')}catch(e){}
+   document.body.removeChild(a);ok?res():rej()});
+ }
+ function flash(el,txt,ms){
+  var was=el.textContent;el.classList.add('done');if(txt)el.textContent=txt;
+  setTimeout(function(){el.classList.remove('done');if(txt)el.textContent=was},ms||1200);
+ }
+ function copy(text,el,okTxt){
+  put(text).then(function(){flash(el,okTxt)},function(){
+   if(okTxt){var w=el.textContent;el.textContent='Ctrl+C';setTimeout(function(){el.textContent=w},2000)}});
+ }
+ document.querySelectorAll('pre').forEach(function(pre){
+  if(pre.classList.contains('txtdoc'))return;
+  var b=document.createElement('button');
+  b.type='button';b.className='copy';b.textContent='Copy';
+  b.setAttribute('aria-label','Copy this code block to the clipboard');
+  b.addEventListener('click',function(){copy((pre.querySelector('code')||pre).innerText,b,'Copied')});
+  pre.appendChild(b);
+ });
+ document.querySelectorAll('td code').forEach(function(c){
+  if(!c.textContent.trim())return;
+  c.classList.add('cp');c.tabIndex=0;c.setAttribute('role','button');
+  c.title='Click to copy';
+  c.addEventListener('click',function(){copy(c.textContent,c)});
+  c.addEventListener('keydown',function(e){
+   if(e.key==='Enter'||e.key===' '){e.preventDefault();copy(c.textContent,c)}});
+ });
+})();
+</script>
+</body></html>

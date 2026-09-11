@@ -1,0 +1,821 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Search paging — client vs. server</title>
+<style>
+:root{color-scheme:light dark}
+*{box-sizing:border-box}
+body{margin:0;background:#f6f8fa;color:#1f2328;font:16px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif}
+.wrap{max-width:900px;margin:0 auto;padding:32px 24px 96px}
+.card{background:#fff;border:1px solid #d0d7de;border-radius:10px;padding:40px 48px}
+h1,h2,h3{line-height:1.25;font-weight:600}
+h1{font-size:1.9rem;margin:0 0 .3em;padding-bottom:.3em;border-bottom:1px solid #d8dee4}
+h2{font-size:1.4rem;margin:1.8em 0 .6em;padding-bottom:.25em;border-bottom:1px solid #eaeef2}
+h3{font-size:1.12rem;margin:1.4em 0 .5em}
+p,li{margin:.5em 0}
+a{color:#0969da;text-decoration:none}
+a:hover{text-decoration:underline}
+code{font-family:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;font-size:.86em;background:#eff1f3;padding:.15em .4em;border-radius:6px}
+pre{background:#f6f8fa;border:1px solid #d8dee4;border-radius:8px;padding:14px 16px;overflow:auto}
+pre code{background:none;padding:0;font-size:.85em;line-height:1.45}
+blockquote{margin:1em 0;padding:.4em 1em;color:#3d444d;border-left:4px solid #d0d7de;background:#f6f8fa;border-radius:0 6px 6px 0}
+blockquote>:first-child{margin-top:0}blockquote>:last-child{margin-bottom:0}
+table{border-collapse:collapse;width:100%;margin:1em 0;display:block;overflow:auto}
+th,td{border:1px solid #d0d7de;padding:8px 12px;text-align:left;vertical-align:top}
+th{background:#f6f8fa;font-weight:600}
+tr:nth-child(2n) td{background:#f6f8fa}
+hr{border:0;border-top:1px solid #d8dee4;margin:2em 0}
+pre{position:relative}
+pre>button.copy{position:absolute;top:8px;right:8px;padding:5px 9px;cursor:pointer;
+  font:600 .68rem/1 ui-monospace,SFMono-Regular,Consolas,monospace;letter-spacing:.03em;
+  color:#636c76;background:#fff;border:1px solid #d0d7de;border-radius:6px;
+  opacity:0;transition:opacity .12s}
+pre:hover>button.copy,pre>button.copy:focus{opacity:1}
+pre>button.copy.done{color:#0a3622;background:#dafbe1;border-color:#4ac26b}
+@media(hover:none){pre>button.copy{opacity:1}}
+td code.cp{cursor:pointer}
+td code.cp:hover,td code.cp:focus{outline:1px solid #8c959f;outline-offset:1px}
+td code.cp.done{color:#0a3622;background:#dafbe1}
+.docnav{margin:0 0 20px;font-size:.85rem;color:#636c76}
+.docnav a{color:#636c76}
+ul{padding-left:1.4em}ol{padding-left:1.4em}
+@media(max-width:640px){.card{padding:24px 18px}.wrap{padding:16px 10px 64px}}
+@media(prefers-color-scheme:dark){
+ body{background:#0d1117;color:#e6edf3}
+ .card{background:#161b22;border-color:#30363d}
+ h1{border-color:#30363d}h2{border-color:#21262d}
+ code{background:#262c34}
+ pre{background:#0d1117;border-color:#30363d}
+ blockquote{background:#161b22;border-color:#30363d;color:#9198a1}
+ th,td{border-color:#30363d}th{background:#161b22}tr:nth-child(2n) td{background:#12171e}
+ a{color:#4493f8}.docnav,.docnav a{color:#9198a1}
+ hr{border-color:#30363d}
+ pre>button.copy{color:#9198a1;background:#161b22;border-color:#30363d}
+ pre>button.copy.done{color:#aff5b4;background:#1b4721;border-color:#2ea043}
+ td code.cp.done{color:#aff5b4;background:#1b4721}
+}
+</style></head>
+<body><div class="wrap"><div class="card">
+<h1 id="search-paging-client-vs-server">Search paging — client vs. server</h1>
+<p><strong>Decision record + reference.</strong> 2026-09-01.</p>
+<p>How the reusable search picker decides whether to page a result set <strong>in the browser</strong> or <strong>on the server</strong>,
+why the decision is made where it is, every case the implementation handles, and what is deliberately left
+undone.</p>
+<blockquote>
+<p><strong>Live demo:</strong> <code>/Dev/Paging</code> (Development only). Six pickers over a real database table, with a server
+round-trip counter. See <a href="#7-the-demo-screen">§7</a>.</p>
+</blockquote>
+<hr />
+<h2 id="1-the-problem">1. The problem</h2>
+<p>A picker dialog showing 10 rows of 25 was issuing a fresh, unfiltered <code>SELECT</code> against the whole table on
+every single interaction — the initial Search, and then again on every Next and Prev:</p>
+<pre><code>10:54:14  SELECT [MODULEID], [MODULECODE], [MODULENAME], … FROM [dbo].[A_MODULE]   -- Search
+10:54:15  SELECT [MODULEID], [MODULECODE], [MODULENAME], … FROM [dbo].[A_MODULE]   -- Next
+10:55:22  SELECT [MODULEID], [MODULECODE], [MODULENAME], … FROM [dbo].[A_MODULE]   -- Next
+10:55:23  SELECT [MODULEID], [MODULECODE], [MODULENAME], … FROM [dbo].[A_MODULE]   -- Prev
+</code></pre>
+<p>Nothing between two clicks remembered anything. <code>ModuleService.SearchModulesAsync</code> loads every row, filters
+and sorts in memory, slices 10 out with <code>ServiceQuery.Paged</code>, and returns them — the other 15 rows are
+garbage before the response is written. The browser only ever received the current page. So page 2 had to
+come from somewhere, and the only place it existed was the database.</p>
+<p><strong>"Already fetched" was never true across requests.</strong> The set existed for the duration of one request.</p>
+<h3 id="11-what-that-actually-cost-and-what-it-did-not">1.1 What that actually cost — and what it did not</h3>
+<p>Measured on the dev database, per Next/Prev click:</p>
+<table>
+<thead>
+<tr>
+<th>Query</th>
+<th>Rows scanned</th>
+<th>Time</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>SELECT … FROM a_Module</code> (unfiltered)</td>
+<td>25</td>
+<td><strong>1–3 ms</strong></td>
+</tr>
+<tr>
+<td><code>SELECT COUNT(*) FROM b_UserLogTime</code> (per-request session guard)</td>
+<td>201,031</td>
+<td><strong>37–50 ms</strong></td>
+</tr>
+</tbody>
+</table>
+<p>The screen query was never the problem. <code>b_UserLogTime</code> was a 201k-row <strong>heap</strong> whose only index was
+<code>PK_b_UserLogTime(UserLogTimeId)</code>, while <code>AuthenticationService.IsSessionActiveAsync</code> filters on
+<code>UserId + IsOffLine + SessionId</code> — so it full-scanned on <strong>every authenticated request</strong>, not just this
+dialog. That was fixed separately by migration
+<a href="../../TflCbs.Tools.DbMigrator/Migrations/sqlserver/0005_b_userlogtime_session_index.sql"><code>0005_b_userlogtime_session_index.sql</code></a>:
+<strong>68,383 → 3 logical reads, 204 ms → 0 ms CPU</strong>.</p>
+<blockquote>
+<p>Recorded here because the two are easy to confuse. Client paging fixes the <em>round-trips</em>; the index fixed
+the <em>cost per round-trip</em>. Neither substitutes for the other, and neither is the fix for large tables
+(<a href="#8-what-this-does-not-fix">§8</a>).</p>
+</blockquote>
+<hr />
+<h2 id="2-the-decision">2. The decision</h2>
+<h3 id="21-the-row-count-decides-not-the-screen">2.1 The row count decides, not the screen</h3>
+<p>A screen cannot choose the mode, because it does not know the row count until it queries. A picker declared
+"client-paged" against a table that later grew to 40,000 rows would either fall over or silently ignore the
+declaration.</p>
+<p>So the screen expresses a <strong>preference</strong>; the <strong>server</strong> decides from the actual count. This is the same
+ask-and-be-clamped shape <code>ServiceQuery</code> already uses for page size — the caller asks, the app-level bound
+wins.</p>
+<p>The browser decides nothing. It answers exactly one question: <em>do I already hold every row?</em></p>
+<pre><code>SearchDescriptor          →  a preference + an optional lower ceiling   (screen)
+Cbs:Search:…MaxRows       →  the app-level maximum                      (config)
+SearchEndpoint            →  the decision, from the real row count      (server)
+cbs-search.js             →  &quot;do I hold everything?&quot;                    (browser)
+</code></pre>
+<h3 id="22-one-query-decides-it-no-count-then-fetch">2.2 One query decides it — no count-then-fetch</h3>
+<p>The obvious implementation is <em>count, then decide, then fetch</em> — two round-trips on every search. Instead,
+<strong>one probe fetch of up to <code>cap</code> rows decides the mode and serves the answer either way</strong>:</p>
+<ul>
+<li><strong>≤ cap rows</strong> → that <em>is</em> the whole set. Return all of it, flag it client-paged.</li>
+<li><strong>&gt; cap rows</strong> → the delegate has already sorted them, so the first <code>pageSize</code> of them <em>are</em> page 1.
+  Return that slice, flag it server-paged.</li>
+</ul>
+<p>Exactly one call to the fetch delegate in every case. The over-cap path fetches <code>cap</code> rows and uses
+<code>pageSize</code> of them — a bounded waste on the first page only, paid once per dialog, in exchange for never
+paying a second round-trip on the common path.</p>
+<h3 id="23-the-browser-only-slices-it-never-filters-or-sorts">2.3 The browser only slices — it never filters or sorts</h3>
+<p><strong>This is the load-bearing simplification, and it was a change of direction during design.</strong></p>
+<p>The first sketch had the browser filter and sort its cached set too. That creates a second implementation of
+"what matches" and "in what order", in a different language, that must agree with the server <em>forever</em>. Two
+places they drift:</p>
+<ul>
+<li><strong>What counts as a match.</strong> C# and JavaScript both have case-insensitive contains, and for ordinary text
+  they agree. They differ at the edges — most likely on trimming. If the server trims the typed term and the
+  browser does not, <code>admin</code> (trailing space) finds one row on a big table and zero on a small one.</li>
+<li><strong>What order rows come out in.</strong> The server sorts with <code>StringComparer.OrdinalIgnoreCase</code> — strict,
+  character by character. JavaScript's <code>localeCompare</code> uses language rules and orders digits, leading zeros
+  and mixed case differently. Real module codes make this concrete: <code>0010</code>, <code>004</code>, <code>12</code>, <code>123</code>, <code>Admin</code>,
+  <code>AML</code>.</li>
+</ul>
+<p>And the failure mode is invisible: below the cap the browser would sort, above it the server would. <strong>The day
+someone adds the 101st row, every user watches the list silently reorder</strong> — no code changed, no deployment
+happened, and you cannot reproduce it on a small test database.</p>
+<p>So: <strong>page changes slice locally; filter and sort changes refetch.</strong> The server keeps sole ownership of
+matching and ordering, the entire parity class of bug disappears, and the original complaint — Next/Prev
+refetching — is still fixed completely. The cost is that changing a filter still costs a request, which it
+always did.</p>
+<p>Bucket 99 of the demo table seeds those seven awkward codes deliberately, so that if anyone later adds
+client-side filtering, the rows that expose the mismatch are already sitting there.</p>
+<hr />
+<h2 id="3-the-contract">3. The contract</h2>
+<h3 id="31-searchdescriptor-what-a-screen-may-ask-for">3.1 <code>SearchDescriptor</code> — what a screen may ask for</h3>
+<p><code>TflCbs.Framework/Models/Search/SearchDescriptor.cs</code></p>
+<pre><code class="language-csharp">/// &lt;summary&gt;
+/// Opt &lt;b&gt;out&lt;/b&gt; of client-side paging for this search (default &lt;c&gt;true&lt;/c&gt; = let the server decide
+/// from the row count). Set false when the rows change minute to minute (balances, day-end status),
+/// when they should not linger in browser memory after the dialog closes, or when acting on a stale
+/// row would do real damage — every page change then goes back to the server, as it always has.
+/// &lt;/summary&gt;
+public bool ClientPaging { get; init; } = true;
+
+/// &lt;summary&gt;
+/// Per-call ceiling on how many rows the browser may hold (0 = use the app default from
+/// &lt;c&gt;Cbs:Search:ClientPagingMaxRows&lt;/c&gt;). Clamped to the app maximum exactly as
+/// &lt;c&gt;PageSize&lt;/c&gt; is clamped to &lt;c&gt;ServiceQuery.MaxPageSize&lt;/c&gt; — the caller asks, the app bound wins.
+/// Lower it for a grid whose rows carry &lt;c&gt;RowToken&lt;/c&gt;s, since each cached row mints one.
+/// &lt;/summary&gt;
+public int ClientPagingMaxRows { get; init; }
+</code></pre>
+<p>Both are additive with safe defaults. An existing screen that sets neither gets client paging automatically,
+bounded by the app maximum.</p>
+<h3 id="32-searchrequest-searchresponse-the-wire">3.2 <code>SearchRequest</code> / <code>SearchResponse</code> — the wire</h3>
+<pre><code class="language-csharp">// SearchRequest — sent by the widget
+/// &lt;summary&gt;
+/// How many rows the client is willing to hold so it can page in the browser instead of asking the
+/// server for each page. A &lt;b&gt;hint, not an instruction&lt;/b&gt;: the server clamps it to the app-level
+/// maximum and ignores it entirely when the result set turns out to be larger (see
+/// &lt;c&gt;SearchEndpoint&lt;/c&gt;). &lt;c&gt;null&lt;/c&gt; = the screen opted out of client paging; &lt;c&gt;&amp;lt;= 0&lt;/c&gt; = use
+/// the app default. Bound from &lt;c&gt;search.ClientCap&lt;/c&gt;.
+/// &lt;/summary&gt;
+public int? ClientCap { get; set; }
+</code></pre>
+<pre><code class="language-csharp">// SearchResponse — returned to the widget
+/// &lt;summary&gt;
+/// True when &lt;see cref=&quot;Rows&quot;/&gt; is the &lt;b&gt;entire&lt;/b&gt; result set, not one page of it — the client may
+/// then page, and only page, in the browser without asking again. False (the default) means one page,
+/// so every page change is a fresh request. The client never decides this; the server does, from the
+/// row count.
+/// &lt;/summary&gt;
+public bool ClientPaged { get; init; }
+</code></pre>
+<h3 id="33-configuration">3.3 Configuration</h3>
+<p><code>TflCbs.Host.Main/appsettings.json</code></p>
+<pre><code class="language-jsonc">&quot;Cbs&quot;: {
+  &quot;Search&quot;: {
+    // Rows a search result may hold in the browser so the widget can page it locally instead of asking
+    // the server per page. The SERVER applies this, from the actual row count; a screen may only lower it
+    // (SearchDescriptor.ClientPagingMaxRows) or opt out (ClientPaging=false). Clamped to
+    // SearchEndpoint.HardClientPagingMaxRows (500); 0 turns client paging off app-wide.
+    &quot;ClientPagingMaxRows&quot;: 100
+  }
+}
+</code></pre>
+<table>
+<thead>
+<tr>
+<th>Knob</th>
+<th>Where</th>
+<th>Default</th>
+<th>Effect</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>SearchDescriptor.ClientPaging</code></td>
+<td>per screen/picker</td>
+<td><code>true</code></td>
+<td><code>false</code> → always server-paged</td>
+</tr>
+<tr>
+<td><code>SearchDescriptor.ClientPagingMaxRows</code></td>
+<td>per screen/picker</td>
+<td><code>0</code> (= app default)</td>
+<td>may <strong>lower</strong> the ceiling only</td>
+</tr>
+<tr>
+<td><code>Cbs:Search:ClientPagingMaxRows</code></td>
+<td>app config</td>
+<td><code>100</code></td>
+<td>app maximum; <code>0</code> disables app-wide</td>
+</tr>
+<tr>
+<td><code>SearchEndpoint.HardClientPagingMaxRows</code></td>
+<td>const</td>
+<td><code>500</code></td>
+<td>config cannot exceed this</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="4-the-server-side">4. The server side</h2>
+<p><code>TflCbs.Framework/Services/SearchEndpoint.cs</code> — the whole decision:</p>
+<pre><code class="language-csharp">public async Task&lt;SearchResponse&gt; RunAsync(
+    Func&lt;SearchRequest, CancellationToken, Task&lt;(IReadOnlyList&lt;IReadOnlyDictionary&lt;string, object?&gt;&gt; Rows, int Total)&gt;&gt; fetch,
+    string idKey, string screen, SearchRequest req,
+    CancellationToken ct = default, bool tokenizeId = true)
+{
+    var (page, pageSize) = Normalize(req);
+    var cap = ResolveCap(req, page);
+
+    if (cap &gt; 0)
+    {
+        // One probe fetch of up to `cap` rows decides the mode AND serves the answer either way — there
+        // is no count-then-fetch double round-trip. Under the cap, these rows ARE the whole set. Over it,
+        // the delegate has already sorted them, so the first `pageSize` of them ARE page 1.
+        var (probeRows, probeTotal) = await fetch(Rescope(req, page: 1, pageSize: cap), ct);
+
+        return probeTotal &lt;= cap
+            ? Build(probeRows, probeTotal, idKey, screen, 1, pageSize, tokenizeId, clientPaged: true)
+            : Build([.. probeRows.Take(pageSize)], probeTotal, idKey, screen, 1, pageSize, tokenizeId, clientPaged: false);
+    }
+
+    var (rows, total) = await fetch(req, ct);
+    return Build(rows, total, idKey, screen, page, pageSize, tokenizeId, clientPaged: false);
+}
+</code></pre>
+<p>The three exclusions, and the clamp:</p>
+<pre><code class="language-csharp">/// &lt;summary&gt;
+/// Rows the browser may hold for this request, or 0 for &quot;server-paged, as before&quot;. Zero whenever the
+/// screen opted out (&lt;see cref=&quot;SearchRequest.ClientCap&quot;/&gt; null), for a &quot;Go&quot; (a one-row exact resolve
+/// never needs a cache), and for any page but the first (pages 2+ only ever arrive server-paged, since
+/// a client holding the whole set would not have asked).
+/// &lt;/summary&gt;
+private int ResolveCap(SearchRequest req, int page)
+{
+    if (req.ClientCap is not { } asked || req.IsGo || page != 1)
+        return 0;
+    return asked &lt;= 0 ? _appClientMax : Math.Min(asked, _appClientMax);
+}
+
+private static int ResolveAppMax(IConfiguration config)
+{
+    var configured = config.GetValue&lt;int?&gt;(&quot;Cbs:Search:ClientPagingMaxRows&quot;) ?? DefaultClientPagingMaxRows;
+    return Math.Clamp(configured, 0, HardClientPagingMaxRows);
+}
+</code></pre>
+<p>The probe never mutates the model-bound request — screens receive a copy:</p>
+<pre><code class="language-csharp">/// &lt;summary&gt;A copy of the request re-scoped to one page — the bound model itself is never mutated.&lt;/summary&gt;
+private static SearchRequest Rescope(SearchRequest req, int page, int pageSize) =&gt; new()
+{
+    Q = req.Q, Filters = req.Filters, Sort = req.Sort, Desc = req.Desc,
+    Mode = req.Mode, ClientCap = req.ClientCap,
+    Page = page, PageSize = pageSize,
+};
+</code></pre>
+<p><strong>No screen or service changed.</strong> The fetch delegate contract — return the requested page plus the true
+total — is exactly what it always was. <code>SearchEndpoint</code> simply chooses what to request.</p>
+<hr />
+<h2 id="5-the-client-side">5. The client side</h2>
+<p><code>TflCbs.Web.Shared/wwwroot/js/cbs-search.js</code></p>
+<p><strong>Ask</strong> (a hint only; omitted entirely when the screen opted out):</p>
+<pre><code class="language-javascript">body.set(&quot;search.Page&quot;, String(state.page));
+body.set(&quot;search.PageSize&quot;, String(d.pageSize || 10));
+// A hint only: the server clamps it, and ignores it when the result set turns out to be bigger.
+if (d.clientPaging !== false) body.set(&quot;search.ClientCap&quot;, String(d.clientPagingMaxRows || 0));
+
+fetchJson(d.dataUrl, body, d.method).then(function (res) {
+    // clientPaged =&gt; res.rows IS the whole result set, so page it here and stop asking.
+    state.all = res.clientPaged ? (res.rows || []) : null;
+    if (state.all) { renderCachedPage(); return; }
+    …
+});
+</code></pre>
+<p><strong>Answer the one question</strong> — this is the entire "mode system", one <code>if</code>:</p>
+<pre><code class="language-javascript">// Page change only. Everything else (filters, sort) refetches: the server owns which rows match and
+// in what order, so there is exactly one implementation of that and no chance of the browser and the
+// server disagreeing as a table grows past the cap.
+function gotoPage(n) {
+    state.page = n;
+    if (state.all) renderCachedPage(); else load();
+}
+
+// Slice the cached full set. No request, no spinner — this is the whole point of client paging.
+function renderCachedPage() {
+    var size = state.d.pageSize || 10;
+    var total = state.all.length;
+    var pages = Math.max(1, Math.ceil(total / size));
+    state.page = Math.min(Math.max(1, state.page), pages);
+    state.rows = state.all.slice((state.page - 1) * size, (state.page - 1) * size + size);
+    state.totalPages = pages;
+    state.hi = state.rows.length ? 0 : -1;
+    renderRows({ total: total, page: state.page, totalPages: pages, clientPaged: true });
+    if (state.rows.length) bodyEl.focus();
+}
+</code></pre>
+<p>Only the three <strong>page-change</strong> call sites route through <code>gotoPage</code>. Prev, Next, and the go-to-page box:</p>
+<pre><code class="language-javascript">var prev = pageBtn(&quot;‹ Prev&quot;, page &gt; 1, function () { gotoPage(page - 1); });
+var next = pageBtn(&quot;Next ›&quot;, page &lt; pages, function () { gotoPage(page + 1); });
+…
+if (n !== page) gotoPage(n);
+</code></pre>
+<p>Everything else — the Search button, Clear, a sort-header click, Go — still calls <code>load()</code>, which clears
+<code>state.all</code> and refetches.</p>
+<p>The cache lives on <code>state</code>, which <code>close()</code> nulls. <strong>Reopening the dialog always refetches</strong>; there is no TTL
+and no invalidation to get wrong.</p>
+<p>Round-trips are counted so the demo can prove the win:</p>
+<pre><code class="language-javascript">window.cbsSearchRequests = (window.cbsSearchRequests || 0) + 1; // /Dev/Paging reads this to show round-trips
+document.dispatchEvent(new CustomEvent(&quot;cbs-search:fetch&quot;, { detail: { url: dataUrl, count: window.cbsSearchRequests } }));
+</code></pre>
+<hr />
+<h2 id="6-every-case">6. Every case</h2>
+<p><code>TflCbs.ArchTests/SearchPagingTests.cs</code> — 14 cases, all passing. The boundary is the only part of this
+feature that can break <strong>silently</strong>: nothing in the UI says which mode happened, so if the boundary moves,
+or the cap stops being clamped, or a Go starts dragging a hundred rows back, no screen looks wrong. The
+tests are the only signal.</p>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Case</th>
+<th>Expected</th>
+<th>Test</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>1 row, cap 100</td>
+<td>client-paged, whole set, <strong>1 fetch</strong></td>
+<td><code>At_or_under_the_cap_the_whole_set_is_sent_once</code></td>
+</tr>
+<tr>
+<td>2</td>
+<td>99 rows, cap 100</td>
+<td>client-paged, whole set, 1 fetch</td>
+<td>″</td>
+</tr>
+<tr>
+<td>3</td>
+<td><strong>100 rows, cap 100</strong></td>
+<td>client-paged — boundary is <em>at most</em>, not <em>fewer than</em></td>
+<td>″</td>
+</tr>
+<tr>
+<td>4</td>
+<td><strong>101 rows, cap 100</strong></td>
+<td>server-paged, <code>pageSize</code> rows, <strong>1 fetch</strong></td>
+<td><code>Over_the_cap_it_falls_back_to_one_page</code></td>
+</tr>
+<tr>
+<td>5</td>
+<td>5,000 rows, cap 100</td>
+<td>server-paged, <code>pageSize</code> rows, 1 fetch</td>
+<td>″</td>
+</tr>
+<tr>
+<td>6</td>
+<td>500 rows, over cap</td>
+<td>returned page 1 is the <em>real</em> ids 1–10</td>
+<td><code>Over_the_cap_page_one_is_the_real_page_one</code></td>
+</tr>
+<tr>
+<td>7</td>
+<td><code>ClientPaging = false</code>, only 5 rows</td>
+<td>server-paged anyway; asks for a page, not the cap</td>
+<td><code>A_screen_that_opts_out_is_always_server_paged</code></td>
+</tr>
+<tr>
+<td>8</td>
+<td><code>Mode = "go"</code>, only 5 rows</td>
+<td>never client-paged; must not drag the cap back</td>
+<td><code>Go_is_never_client_paged</code></td>
+</tr>
+<tr>
+<td>9</td>
+<td><code>Page = 3</code></td>
+<td>no probe; page passed straight through</td>
+<td><code>Later_pages_are_never_probed</code></td>
+</tr>
+<tr>
+<td>10</td>
+<td>Caller asks 25, set is 50</td>
+<td>server-paged — the caller's lower ceiling is honoured</td>
+<td><code>A_caller_may_lower_the_cap_but_not_raise_it</code></td>
+</tr>
+<tr>
+<td>11</td>
+<td>Caller asks 100,000</td>
+<td>clamped to the app maximum</td>
+<td>″</td>
+</tr>
+<tr>
+<td>12</td>
+<td>Config sets 10,000</td>
+<td>clamped to <code>HardClientPagingMaxRows</code> (500)</td>
+<td><code>Configuration_cannot_raise_the_cap_past_the_hard_ceiling</code></td>
+</tr>
+<tr>
+<td>13</td>
+<td>No config key</td>
+<td><code>DefaultClientPagingMaxRows</code> (100)</td>
+<td><code>Absent_configuration_uses_the_documented_default</code></td>
+</tr>
+<tr>
+<td>14</td>
+<td>Config <code>0</code></td>
+<td>client paging off app-wide</td>
+<td><code>Client_paging_can_be_disabled_app_wide</code></td>
+</tr>
+<tr>
+<td>15</td>
+<td>Any probe</td>
+<td>the bound <code>SearchRequest</code> is left untouched</td>
+<td><code>The_probe_does_not_mutate_the_bound_request</code></td>
+</tr>
+</tbody>
+</table>
+<p>Every case also asserts the fetch delegate ran <strong>exactly once</strong> — the point of the probe design.</p>
+<p>The boundary cases in bold are the ones a small test database would never reach on its own. That is exactly
+why they are asserted rather than demonstrated.</p>
+<pre><code class="language-csharp">[Theory]
+[InlineData(1)]
+[InlineData(99)]
+[InlineData(100)] // the boundary is &quot;at most the cap&quot;, not &quot;fewer than&quot;
+public async Task At_or_under_the_cap_the_whole_set_is_sent_once(int total)
+{
+    var (fetch, calls, _) = Source(total);
+
+    var res = await Run(Endpoint(), fetch, Req());
+
+    Assert.True(res.ClientPaged);
+    Assert.Equal(total, res.Rows.Count); // the WHOLE set, not one page of it
+    Assert.Equal(total, res.Total);
+    Assert.Equal(1, calls());
+}
+
+[Theory]
+[InlineData(101)] // one row over — the case a small test database would never reach
+[InlineData(5000)]
+public async Task Over_the_cap_it_falls_back_to_one_page(int total)
+{
+    var (fetch, calls, _) = Source(total);
+
+    var res = await Run(Endpoint(), fetch, Req(pageSize: 10));
+
+    Assert.False(res.ClientPaged);
+    Assert.Equal(10, res.Rows.Count);
+    Assert.Equal(total, res.Total);
+    Assert.Equal(1, calls()); // the probe served page 1 too — no count-then-fetch second trip
+}
+
+[Fact]
+public async Task A_caller_may_lower_the_cap_but_not_raise_it()
+{
+    var (lowFetch, _, lowLast) = Source(50);
+    var lowered = await Run(Endpoint(), lowFetch, Req(clientCap: 25));
+    Assert.False(lowered.ClientPaged);      // 50 rows, but this caller only wanted 25
+    Assert.Equal(25, lowLast().PageSize);
+
+    var (highFetch, _, highLast) = Source(50);
+    var raised = await Run(Endpoint(), highFetch, Req(clientCap: 100_000));
+    Assert.True(raised.ClientPaged);
+    Assert.Equal(AppMax, highLast().PageSize); // clamped to the app maximum, not honoured
+}
+</code></pre>
+<hr />
+<h2 id="7-the-demo-screen">7. The demo screen</h2>
+<p><code>/Dev/Paging</code> — Development only (404s otherwise), <code>[CbsSkipMenuCheck]</code>, sibling of <code>/Dev/Components</code>.
+That one shows what the components look like; this one shows <strong>how many times they talk to the server</strong>.</p>
+<p>Deliberately backed by a <strong>real database table</strong>, not canned in-memory rows — the point is to prove the SQL,
+not to draw the UI.</p>
+<h3 id="71-the-table">7.1 The table</h3>
+<p><a href="../../scripts/dev-picker-demo-table.sql"><code>scripts/dev-picker-demo-table.sql</code></a>. <strong>Not a DbMigrator
+migration</strong>, so it can never reach a production schema. Run it by hand:</p>
+<pre><code>sqlcmd -S &lt;server&gt; -d &lt;db&gt; -U &lt;user&gt; -P &lt;pwd&gt; -C -i scripts\dev-picker-demo-table.sql
+</code></pre>
+<p>Each <code>Bucket</code> value holds exactly that many rows, putting the cap boundary either side of a picker without
+touching configuration:</p>
+<table>
+<thead>
+<tr>
+<th>Bucket</th>
+<th>Rows</th>
+<th>Mode</th>
+<th>What it shows</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>99</td>
+<td>99</td>
+<td>client-paged</td>
+<td>Under the cap. One request, then 10 free local pages.</td>
+</tr>
+<tr>
+<td>100</td>
+<td>100</td>
+<td>client-paged</td>
+<td>Exactly the cap — the boundary is inclusive.</td>
+</tr>
+<tr>
+<td>101</td>
+<td>101</td>
+<td>server-paged</td>
+<td>One row over. A page per request; nothing else changes.</td>
+</tr>
+<tr>
+<td>5000</td>
+<td>5,000</td>
+<td>server-paged</td>
+<td>A set worth paging, paged <strong>in the database</strong>.</td>
+</tr>
+</tbody>
+</table>
+<p>Bucket 99 also carries seven deliberately awkward codes — <code>0010</code>, <code>004</code>, <code>12</code>, <code>123</code>, <code>admin</code>, <code>Admin</code>,
+<code>AML</code> — the leading-zero, bare-digit and same-letters-different-case rows that would expose a filter/sort
+mismatch if the browser ever started doing that work (<a href="#23-the-browser-only-slices--it-never-filters-or-sorts">§2.3</a>).</p>
+<h3 id="72-the-six-pickers">7.2 The six pickers</h3>
+<p>Same action, same table; only the bucket and the two knobs differ:</p>
+<pre><code class="language-csharp">SearchDescriptor Desc(string title, int bucket, bool clientPaging = true, int maxRows = 0) =&gt; new()
+{
+    Title = title,
+    DataUrl = $&quot;/Dev/Paging/search?bucket={bucket}&quot;,
+    Method = &quot;GET&quot;,
+    IdKey = &quot;Id&quot;,
+    Columns = [new SearchColumn(&quot;Code&quot;, &quot;Code&quot;), new SearchColumn(&quot;Name&quot;, &quot;Name&quot;), new SearchColumn(&quot;Status&quot;, &quot;Status&quot;)],
+    Filters = [new SearchFilter(&quot;Name&quot;, &quot;Name&quot;), new SearchFilter(&quot;Code&quot;, &quot;Code&quot;)],
+    GoFilterKey = &quot;Code&quot;,
+    PageSize = 10,
+    AutoLoad = true,
+    SelectMode = &quot;callback&quot;,
+    PickValueKey = &quot;Id&quot;,
+    PickTextKey = &quot;Code&quot;,
+    ClientPaging = clientPaging,
+    ClientPagingMaxRows = maxRows,
+};
+
+var p99   = Picker(&quot;pg99&quot;,   Desc(&quot;Demo — 99 rows&quot;, 99));
+var p100  = Picker(&quot;pg100&quot;,  Desc(&quot;Demo — 100 rows&quot;, 100));
+var p101  = Picker(&quot;pg101&quot;,  Desc(&quot;Demo — 101 rows&quot;, 101));
+var p5000 = Picker(&quot;pg5000&quot;, Desc(&quot;Demo — 5,000 rows&quot;, 5000));
+var pOff  = Picker(&quot;pgOff&quot;,  Desc(&quot;Demo — caching off&quot;, 99, clientPaging: false));   // opt-out
+var pLow  = Picker(&quot;pgLow&quot;,  Desc(&quot;Demo — per-call cap 25&quot;, 99, maxRows: 25));       // lower ceiling
+</code></pre>
+<h3 id="73-how-to-read-it">7.3 How to read it</h3>
+<p>Open a picker, then click <strong>Next</strong> and <strong>Prev</strong> several times, watching the round-trip counter:</p>
+<ul>
+<li><strong>99 / 100</strong> — the counter does not move after the first request.</li>
+<li><strong>101 / 5000</strong> — it climbs by one per page.</li>
+<li><strong>caching off / cap 25</strong> — same 99 rows as the first picker, but the counter climbs. The opt-outs work.</li>
+<li><strong>Go</strong> — type <code>D0007</code> and press Go in any picker: exactly one request, whatever the bucket.</li>
+</ul>
+<h3 id="74-the-reference-for-real-server-side-paging">7.4 The reference for real server-side paging</h3>
+<p><code>TflCbs.Modules.General/PickerDemoService.cs</code> is the only service in the solution that is <strong>genuinely
+server-paged</strong> — a COUNT plus an <code>ORDER BY … OFFSET/FETCH</code> page, both composed with the dialected <code>SqlQuery</code>
+builder (no hand-written SQL, per the CLAUDE.md rule). The masters still load everything and page in memory.</p>
+<pre><code class="language-csharp">// One builder shape, used twice: once counted, once paged. WhereIf keeps an absent filter out
+// of the SQL entirely rather than emitting &quot;(@p IS NULL OR …)&quot;, which would defeat the index.
+SqlQuery Filtered() =&gt; SqlQuery.From&lt;DEV_PICKERDEMO&gt;(&quot;d&quot;, data.Options.Provider)
+    .Where(DEV_PICKERDEMO.Cols.BUCKET.As(&quot;d&quot;), &quot;=&quot;, bucket)
+    .WhereIf(hasCode, DEV_PICKERDEMO.Cols.CODE.As(&quot;d&quot;), exact ? &quot;=&quot; : &quot;LIKE&quot;, exact ? c : $&quot;%{c}%&quot;)
+    .WhereIf(hasName, DEV_PICKERDEMO.Cols.NAME.As(&quot;d&quot;), &quot;LIKE&quot;, $&quot;%{n}%&quot;);
+
+var countRow = await Filtered().Select(Agg.Count(&quot;Total&quot;)).ToDictionariesAsync(data, ct);
+var total = countRow.Count == 1 &amp;&amp; countRow[0].TryGetValue(&quot;Total&quot;, out var t) ? Convert.ToInt32(t) : 0;
+if (total == 0) return Ok([], 0);
+
+var rows = await Filtered()
+    .SelectCols(
+        DEV_PICKERDEMO.Cols.DEMOID.As(&quot;d&quot;).As(&quot;Id&quot;),
+        DEV_PICKERDEMO.Cols.CODE.As(&quot;d&quot;).As(&quot;Code&quot;),
+        DEV_PICKERDEMO.Cols.NAME.As(&quot;d&quot;).As(&quot;Name&quot;),
+        DEV_PICKERDEMO.Cols.STATUS.As(&quot;d&quot;).As(&quot;Status&quot;))
+    .OrderBy(sortCol.As(&quot;d&quot;), desc)
+    .Page((page - 1) * pageSize, pageSize)
+    .ToDictionariesAsync(data, ct);
+</code></pre>
+<p>Verified from the SQL Server plan cache — not merely from a passing test:</p>
+<pre><code class="language-sql">(@tflw0 int)
+SELECT d.[DemoId] AS Id, d.[Code] AS Code, d.[Name] AS Name, d.[Status] AS Status
+FROM dev_PickerDemo d
+WHERE d.[Bucket] = @tflw0
+ORDER BY d.[Code] DESC OFFSET 0 ROWS FETCH NEXT 10 ROWS ONLY
+</code></pre>
+<p><code>TflCbs.Tests/PickerDemoServiceTests.cs</code> covers it against the live database — exact bucket counts, disjoint
+page slices, the short last page (bucket 101, page 11 → 1 row), exact-vs-contains resolve, the empty result,
+and every sort key on every dialect. <strong>All six skip silently where the table does not exist</strong>; a skip means
+"not set up here", never a failure.</p>
+<hr />
+<h2 id="8-what-this-does-not-fix">8. What this does <strong>not</strong> fix</h2>
+<p><strong>Large tables are exactly as slow as before.</strong> In server mode the real master services still call
+<code>GetAllAsync</code> and page in memory. Client paging made small sets fast — <code>a_Module</code> is 25 rows and took 1 ms;
+it was never the problem.</p>
+<p>The fix for large tables is pushing the filter into SQL, and it has a genuine blocker: <code>ServiceQuery.Has</code>
+becomes a SQL <code>LIKE</code>, which is <strong>case-sensitive on Oracle and PostgreSQL</strong>. Searching <code>admin</code> would stop
+finding <code>Admin</code>. The TflOmniDb expression translator supports <code>Contains</code>/<code>StartsWith</code>/<code>EndsWith</code> → <code>LIKE</code>,
+but has no <code>ToUpper</code>. Three ways out, none yet chosen:</p>
+<ol>
+<li>Require a case-insensitive collation on Oracle/PostgreSQL deployments.</li>
+<li>Emit a provider-specific predicate (<code>ILIKE</code> on PostgreSQL, <code>UPPER()</code> on Oracle).</li>
+<li>Persist a lowercase shadow column on the searchable fields and match on that.</li>
+</ol>
+<p><code>PickerDemoService</code> is written the way the masters should be written, and its XML doc flags this explicitly —
+it is only correct today because SQL Server's default collation is case-insensitive.</p>
+<h3 id="81-known-costs-accepted">8.1 Known costs, accepted</h3>
+<ul>
+<li><strong>Token minting.</strong> A tokenized grid mints a <code>RowToken</code> (encrypted, ~200 bytes) per cached row, of which the
+  user clicks one. At cap 100 that is ~20 KB of waste per search. This is the reason the cap is 100 and the
+  hard ceiling 500 — not an arbitrary number. Reference pickers (<code>tokenizeId: false</code>) pay none of it.</li>
+<li><strong>Staleness.</strong> A cached set goes stale while the dialog is open. This is a <strong>display</strong> concern, not a
+  correctness one: tokenized ids are session-bound and resolved against live data on use, and reference ids
+  are re-validated as FKs on save. A stale pick fails safely.</li>
+<li><strong>Over-cap first page.</strong> Fetches <code>cap</code> rows, uses <code>pageSize</code>. Paid once per dialog on the uncommon path.</li>
+</ul>
+<h3 id="82-not-done">8.2 Not done</h3>
+<ul>
+<li><strong>Cap relative to page size.</strong> A cap of 100 with <code>PageSize = 50</code> buys two local pages — barely worth the
+  branch. "Client-page while total ≤ 10 × pageSize, clamped to the app max" would degrade better. Not
+  implemented; revisit if a screen sets a large page size.</li>
+<li><strong>The Module picker's Go still contains-matches.</strong> <code>ModuleService.SearchModulesAsync</code> has no <code>exact</code>
+  parameter, so Go on that picker is a browse, not a 0/1 resolve — the only Go call site in the solution that
+  is not exact. With live data, typing <code>12</code> matches <code>12</code> <em>and</em> <code>123</code>; <code>REC</code> matches four codes; <code>Inv</code> matches
+  <code>Inv</code> and <code>Invoice</code>. The client copes (&gt;1 row opens the disambiguation dialog) but Go exists to skip it.
+  Unrelated to paging; recorded here because it was found alongside.</li>
+</ul>
+<hr />
+<h2 id="9-files">9. Files</h2>
+<table>
+<thead>
+<tr>
+<th>File</th>
+<th>What changed</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>TflCbs.Framework/Services/SearchEndpoint.cs</code></td>
+<td>The decision: probe, cap resolution, clamping, <code>Rescope</code></td>
+</tr>
+<tr>
+<td><code>TflCbs.Framework/Models/Search/SearchRequest.cs</code></td>
+<td><code>+ ClientCap</code></td>
+</tr>
+<tr>
+<td><code>TflCbs.Framework/Models/Search/SearchResponse.cs</code></td>
+<td><code>+ ClientPaged</code></td>
+</tr>
+<tr>
+<td><code>TflCbs.Framework/Models/Search/SearchDescriptor.cs</code></td>
+<td><code>+ ClientPaging</code>, <code>+ ClientPagingMaxRows</code></td>
+</tr>
+<tr>
+<td><code>TflCbs.Web.Shared/wwwroot/js/cbs-search.js</code></td>
+<td><code>state.all</code> cache, <code>gotoPage</code>, <code>renderCachedPage</code>, round-trip counter</td>
+</tr>
+<tr>
+<td><code>TflCbs.Host.Main/appsettings.json</code></td>
+<td><code>Cbs:Search:ClientPagingMaxRows</code></td>
+</tr>
+<tr>
+<td><code>TflCbs.Modules.General/PickerDemoService.cs</code></td>
+<td>Demo service + hand-written <code>DEV_PICKERDEMO</code> entity</td>
+</tr>
+<tr>
+<td><code>TflCbs.Modules.General/GeneralModule.cs</code></td>
+<td>Registers <code>PickerDemoService</code></td>
+</tr>
+<tr>
+<td><code>TflCbs.Core.Shell.Web/Controllers/PagingDemoController.cs</code></td>
+<td><code>/Dev/Paging</code></td>
+</tr>
+<tr>
+<td><code>TflCbs.Core.Shell.Web/Views/PagingDemo/Index.cshtml</code></td>
+<td>The showcase</td>
+</tr>
+<tr>
+<td><code>TflCbs.ArchTests/SearchPagingTests.cs</code></td>
+<td>14 boundary cases</td>
+</tr>
+<tr>
+<td><code>TflCbs.Tests/PickerDemoServiceTests.cs</code></td>
+<td>6 live-database cases</td>
+</tr>
+<tr>
+<td><code>scripts/dev-picker-demo-table.sql</code></td>
+<td>The dummy table</td>
+</tr>
+</tbody>
+</table>
+<p>The entity is hand-written and lives beside its service rather than in <code>TflCbs.Entities</code>, which is machine
+generated from the real CBS schema — a hand-added class there would be lost on the next regeneration, and
+would imply the table belongs to CBS.</p>
+<p><strong>No screen, service or view outside the demo was modified.</strong> Every existing picker gained client paging
+without a line of change, because the decision moved into <code>SearchEndpoint</code> rather than into the screens.</p>
+<hr />
+<h2 id="10-verification">10. Verification</h2>
+<table>
+<thead>
+<tr>
+<th>Suite</th>
+<th>Result</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>dotnet build TflCbs.Host.Main</code></td>
+<td>clean — 0 warnings, 0 errors</td>
+</tr>
+<tr>
+<td><code>node --check cbs-search.js</code></td>
+<td>OK</td>
+</tr>
+<tr>
+<td><code>dotnet test TflCbs.Tests</code></td>
+<td>160 passed</td>
+</tr>
+<tr>
+<td><code>dotnet test TflCbs.ArchTests</code></td>
+<td>108 passed (incl. 14 new)</td>
+</tr>
+<tr>
+<td><code>dotnet test TflCbs.IntegrationTests</code></td>
+<td>76 passed</td>
+</tr>
+</tbody>
+</table>
+<p>Runtime: app started in Development, <code>/Dev/Paging</code> served, generated SQL confirmed from the plan cache, app
+stopped.</p>
+</div></div>
+<script>
+(function(){
+ function put(t){
+  if(navigator.clipboard&&navigator.clipboard.writeText)return navigator.clipboard.writeText(t);
+  return new Promise(function(res,rej){
+   var a=document.createElement('textarea');a.value=t;a.setAttribute('readonly','');
+   a.style.cssText='position:fixed;top:0;left:0;opacity:0';document.body.appendChild(a);
+   a.select();var ok=false;try{ok=document.execCommand('copy')}catch(e){}
+   document.body.removeChild(a);ok?res():rej()});
+ }
+ function flash(el,txt,ms){
+  var was=el.textContent;el.classList.add('done');if(txt)el.textContent=txt;
+  setTimeout(function(){el.classList.remove('done');if(txt)el.textContent=was},ms||1200);
+ }
+ function copy(text,el,okTxt){
+  put(text).then(function(){flash(el,okTxt)},function(){
+   if(okTxt){var w=el.textContent;el.textContent='Ctrl+C';setTimeout(function(){el.textContent=w},2000)}});
+ }
+ document.querySelectorAll('pre').forEach(function(pre){
+  if(pre.classList.contains('txtdoc'))return;
+  var b=document.createElement('button');
+  b.type='button';b.className='copy';b.textContent='Copy';
+  b.setAttribute('aria-label','Copy this code block to the clipboard');
+  b.addEventListener('click',function(){copy((pre.querySelector('code')||pre).innerText,b,'Copied')});
+  pre.appendChild(b);
+ });
+ document.querySelectorAll('td code').forEach(function(c){
+  if(!c.textContent.trim())return;
+  c.classList.add('cp');c.tabIndex=0;c.setAttribute('role','button');
+  c.title='Click to copy';
+  c.addEventListener('click',function(){copy(c.textContent,c)});
+  c.addEventListener('keydown',function(e){
+   if(e.key==='Enter'||e.key===' '){e.preventDefault();copy(c.textContent,c)}});
+ });
+})();
+</script>
+</body></html>

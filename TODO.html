@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>//DONE - actual menus from a_menus (no routecutover.json) -&gt; DbMigrator 0004_menu_routes_cutover.sql; RouteCutover deleted</title>
+<title>TODO</title>
 <style>
 :root{color-scheme:light dark}
 *{box-sizing:border-box}
@@ -54,35 +54,36 @@ ul{padding-left:1.4em}ol{padding-left:1.4em}
  pre>button.copy.done{color:#aff5b4;background:#1b4721;border-color:#2ea043}
  td code.cp.done{color:#aff5b4;background:#1b4721}
 }
-
-pre.txtdoc{font-size:.8rem;line-height:1.45;white-space:pre;overflow-x:auto;
-           border:0;background:none;padding:0;margin-top:1.2em}
-@media(prefers-color-scheme:dark){pre.txtdoc{background:none}}
 </style></head>
 <body><div class="wrap"><div class="card">
-<div class="docnav"><a href="index.html">&#8592; All docs</a> &middot;
-plain-text document &middot; <a href="TODO.txt">view raw .txt</a></div>
-<h1>//DONE - actual menus from a_menus (no routecutover.json) -&gt; DbMigrator 0004_menu_routes_cutover.sql; RouteCutover deleted</h1>
-<pre class="txtdoc">//DONE - actual menus from a_menus (no routecutover.json) -&gt; DbMigrator 0004_menu_routes_cutover.sql; RouteCutover deleted
-- create 2 docs : 1) //DONE why not microservice -&gt; docs/architecture/Why-Modular-Monolith-Not-Microservices.md  2) //DONE is ours a 3 tiers application -&gt; docs/architecture/Is-CBS-A-Multi-Tier-Application.md
-- Avoid paging or less than 100 rows (configurable) 
-- Why stoping hr module still showing hr pages (iis -multi)
-//DONe - Add calender to datetime picker
-
-***handover-checklist***
-- End-to-End check with Oracle before handover
-
- //DONE TflCbsServices - module wise
-================================================
-- RC4 Login
-- MFA_AD_LOGIN_ENABLED
-- MFA_QR_AT_LOGIN_ENABLED
-- MFA_OTP_AT_LOGIN_ENABLED
-- Login.aspx (Tag: new code for payroll)
-- PR_G_GETLOGINOUTTIME
-================================================
-
- </pre>
+<h1 id="todo">TODO</h1>
+<p>Task checklist. <code>//DONE</code> markers from the original list are kept as ticked boxes.</p>
+<h2 id="open">Open</h2>
+<ul>
+<li>[ ] Avoid paging for less than 100 rows (configurable).</li>
+<li>[ ] Why does stopping the HR module still show HR pages? (IIS multi-host)</li>
+</ul>
+<h2 id="done">Done</h2>
+<ul>
+<li>[x] Entity Builder — hosted on the network at <a href="http://192.168.0.6:4013/">http://192.168.0.6:4013/</a>.</li>
+<li>[x] Actual menus from <code>a_Menus</code> (no <code>routecutover.json</code>) → DbMigrator <code>0004_menu_routes_cutover.sql</code>; <code>RouteCutover</code> deleted.</li>
+<li>[x] Two docs written: <a href="architecture/Why-Modular-Monolith-Not-Microservices.html">Why-Modular-Monolith-Not-Microservices.md</a> and <a href="architecture/Is-CBS-A-Multi-Tier-Application.html">Is-CBS-A-Multi-Tier-Application.md</a>.</li>
+<li>[x] Add calendar to the date/time picker.</li>
+<li>[x] <code>TflCbsServices</code> split module-wise.</li>
+</ul>
+<h2 id="handover-checklist">Handover checklist</h2>
+<ul>
+<li>[ ] End-to-end check with Oracle before handover.</li>
+</ul>
+<h2 id="login-auth-backlog">Login / auth backlog</h2>
+<ul>
+<li>[ ] RC4 login</li>
+<li>[ ] <code>MFA_AD_LOGIN_ENABLED</code></li>
+<li>[ ] <code>MFA_QR_AT_LOGIN_ENABLED</code></li>
+<li>[ ] <code>MFA_OTP_AT_LOGIN_ENABLED</code></li>
+<li>[ ] <code>Login.aspx</code> (tag: new code for payroll)</li>
+<li>[ ] <code>PR_G_GETLOGINOUTTIME</code></li>
+</ul>
 </div></div>
 <script>
 (function(){

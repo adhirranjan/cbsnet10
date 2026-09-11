@@ -1,0 +1,1109 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Legacy screens shaped like the State master</title>
+<style>
+:root{color-scheme:light dark}
+*{box-sizing:border-box}
+body{margin:0;background:#f6f8fa;color:#1f2328;font:16px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif}
+.wrap{max-width:900px;margin:0 auto;padding:32px 24px 96px}
+.card{background:#fff;border:1px solid #d0d7de;border-radius:10px;padding:40px 48px}
+h1,h2,h3{line-height:1.25;font-weight:600}
+h1{font-size:1.9rem;margin:0 0 .3em;padding-bottom:.3em;border-bottom:1px solid #d8dee4}
+h2{font-size:1.4rem;margin:1.8em 0 .6em;padding-bottom:.25em;border-bottom:1px solid #eaeef2}
+h3{font-size:1.12rem;margin:1.4em 0 .5em}
+p,li{margin:.5em 0}
+a{color:#0969da;text-decoration:none}
+a:hover{text-decoration:underline}
+code{font-family:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;font-size:.86em;background:#eff1f3;padding:.15em .4em;border-radius:6px}
+pre{background:#f6f8fa;border:1px solid #d8dee4;border-radius:8px;padding:14px 16px;overflow:auto}
+pre code{background:none;padding:0;font-size:.85em;line-height:1.45}
+blockquote{margin:1em 0;padding:.4em 1em;color:#3d444d;border-left:4px solid #d0d7de;background:#f6f8fa;border-radius:0 6px 6px 0}
+blockquote>:first-child{margin-top:0}blockquote>:last-child{margin-bottom:0}
+table{border-collapse:collapse;width:100%;margin:1em 0;display:block;overflow:auto}
+th,td{border:1px solid #d0d7de;padding:8px 12px;text-align:left;vertical-align:top}
+th{background:#f6f8fa;font-weight:600}
+tr:nth-child(2n) td{background:#f6f8fa}
+hr{border:0;border-top:1px solid #d8dee4;margin:2em 0}
+pre{position:relative}
+pre>button.copy{position:absolute;top:8px;right:8px;padding:5px 9px;cursor:pointer;
+  font:600 .68rem/1 ui-monospace,SFMono-Regular,Consolas,monospace;letter-spacing:.03em;
+  color:#636c76;background:#fff;border:1px solid #d0d7de;border-radius:6px;
+  opacity:0;transition:opacity .12s}
+pre:hover>button.copy,pre>button.copy:focus{opacity:1}
+pre>button.copy.done{color:#0a3622;background:#dafbe1;border-color:#4ac26b}
+@media(hover:none){pre>button.copy{opacity:1}}
+td code.cp{cursor:pointer}
+td code.cp:hover,td code.cp:focus{outline:1px solid #8c959f;outline-offset:1px}
+td code.cp.done{color:#0a3622;background:#dafbe1}
+.docnav{margin:0 0 20px;font-size:.85rem;color:#636c76}
+.docnav a{color:#636c76}
+ul{padding-left:1.4em}ol{padding-left:1.4em}
+@media(max-width:640px){.card{padding:24px 18px}.wrap{padding:16px 10px 64px}}
+@media(prefers-color-scheme:dark){
+ body{background:#0d1117;color:#e6edf3}
+ .card{background:#161b22;border-color:#30363d}
+ h1{border-color:#30363d}h2{border-color:#21262d}
+ code{background:#262c34}
+ pre{background:#0d1117;border-color:#30363d}
+ blockquote{background:#161b22;border-color:#30363d;color:#9198a1}
+ th,td{border-color:#30363d}th{background:#161b22}tr:nth-child(2n) td{background:#12171e}
+ a{color:#4493f8}.docnav,.docnav a{color:#9198a1}
+ hr{border-color:#30363d}
+ pre>button.copy{color:#9198a1;background:#161b22;border-color:#30363d}
+ pre>button.copy.done{color:#aff5b4;background:#1b4721;border-color:#2ea043}
+ td code.cp.done{color:#aff5b4;background:#1b4721}
+}
+</style></head>
+<body><div class="wrap"><div class="card">
+<h1 id="legacy-screens-shaped-like-the-state-master">Legacy screens shaped like the State master</h1>
+<blockquote>
+<p><strong>Generated:</strong> 2026-09-05 by <code>scripts/state-like-screens.py</code> - regenerate after each port, do not hand-edit.
+Machine-readable twin: <a href="state-like-screens.tsv"><code>state-like-screens.tsv</code></a>. Full screen census: <a href="screens.tsv"><code>screens.tsv</code></a>.</p>
+</blockquote>
+<p><a href="../../TflCbs.Modules.Hr.Web/Areas/Hr/Controllers/StateController.cs"><code>/Hr/State</code></a> is the reference slice for a <strong>single-entity master</strong>: one table, one <code>Result</code>-returning service, one form, one view, search modal plus row tokens. This page lists every legacy screen cast in the same mould, so each one is a copy-and-swap rather than a design exercise.</p>
+<h2 id="what-qualifies">What qualifies</h2>
+<p>A screen is on this list only if <strong>all four</strong> hold:</p>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Condition</th>
+<th>Why it matters</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>Category <code>CRUD master</code></td>
+<td>It is master data, not a transaction, report or inquiry.</td>
+</tr>
+<tr>
+<td>2</td>
+<td>Buttons <code>uxSave</code> + <code>uxUpdate</code> + <code>uxDelete</code> + <code>uxSearch</code></td>
+<td>The exact State action bar, so <code>CbsScreenController</code>'s save/update/delete/search lifecycle maps one-to-one.</td>
+</tr>
+<tr>
+<td>3</td>
+<td><strong>Writes exactly one entity</strong></td>
+<td><strong>The primary condition.</strong> One table means one <code>Repository&lt;T&gt;</code>, one <code>Result</code>-returning service, no cross-table transaction.</td>
+</tr>
+<tr>
+<td>4</td>
+<td>No maker-checker scroll</td>
+<td><code>x_Scroll</code> writes a second entity and adds an authorize step - a different shape (compare <code>b_AccHoldingAmount</code>).</td>
+</tr>
+</tbody>
+</table>
+<h3 id="how-condition-3-is-decided">How condition 3 is decided</h3>
+<p>The written set is the union of <strong>every write the screen can reach</strong> - not just the ones visible in the code-behind:</p>
+<table>
+<thead>
+<tr>
+<th>Source</th>
+<th>Signal</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Code-behind</td>
+<td><code>.Entity = &lt;var&gt;</code> (the variable's class name <em>is</em> the table), <code>New &lt;X&gt;BLLC</code> (X is the table), inline <code>INSERT</code>/<code>UPDATE</code>/<code>DELETE</code>.</td>
+</tr>
+<tr>
+<td><strong>Stored procedures</strong></td>
+<td>every <code>pr_*</code> the code-behind names is opened from the proc tree and its own <code>INSERT</code>/<code>UPDATE</code>/<code>DELETE</code>/<code>MERGE</code> targets are folded in (one level of proc-calls-proc included).</td>
+</tr>
+<tr>
+<td>Banner comment</td>
+<td>the hand-maintained <code>Tables Affected</code> block - fallback only, never allowed to override evidence found in code.</td>
+</tr>
+</tbody>
+</table>
+<p>So a screen writing one table inline and a second through a proc is correctly <strong>rejected</strong>, and a screen writing nothing inline but driving one table through a proc is correctly <strong>admitted</strong>.</p>
+<p><strong>Reads never disqualify.</strong> A State dropdown on a District screen is a lookup, not a second entity - it is reported and counted separately below.</p>
+<p><strong>78 screens qualify.</strong> 5 are already ported, so <strong>73 remain</strong>.</p>
+<table>
+<thead>
+<tr>
+<th>Tier</th>
+<th>Shape</th>
+<th style="text-align: right;">Pure</th>
+<th style="text-align: right;">With lookups</th>
+<th style="text-align: right;">Remaining</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>A</strong></td>
+<td>1-3 plain text fields, no lookup dropdown.</td>
+<td style="text-align: right;">7</td>
+<td style="text-align: right;">3</td>
+<td style="text-align: right;">10</td>
+</tr>
+<tr>
+<td><strong>B</strong></td>
+<td>Up to 8 fields, and/or a dropdown or picker.</td>
+<td style="text-align: right;">15</td>
+<td style="text-align: right;">42</td>
+<td style="text-align: right;">57</td>
+</tr>
+<tr>
+<td><strong>C</strong></td>
+<td>9 or more fields on one entity.</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">6</td>
+<td style="text-align: right;">6</td>
+</tr>
+<tr>
+<td></td>
+<td><strong>Total</strong></td>
+<td style="text-align: right;"><strong>22</strong></td>
+<td style="text-align: right;"><strong>51</strong></td>
+<td style="text-align: right;"><strong>73</strong></td>
+</tr>
+</tbody>
+</table>
+<p><em>Pure</em> = writes and reads only its own table, exactly like <code>g_State</code>. <em>With lookups</em> = writes one table, reads others to populate dropdowns or resolve codes.</p>
+<h3 id="screens-that-did-not-qualify">Screens that did not qualify</h3>
+<p>Of the 336 <code>CRUD master</code> screens in the census:</p>
+<table>
+<thead>
+<tr>
+<th>Reason</th>
+<th style="text-align: right;">Screens</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>not the State button set</td>
+<td style="text-align: right;">154</td>
+</tr>
+<tr>
+<td>writes 4 entities</td>
+<td style="text-align: right;">35</td>
+</tr>
+<tr>
+<td>maker-checker scroll</td>
+<td style="text-align: right;">30</td>
+</tr>
+<tr>
+<td>writes 2 entities</td>
+<td style="text-align: right;">24</td>
+</tr>
+<tr>
+<td>writes 3 entities</td>
+<td style="text-align: right;">9</td>
+</tr>
+<tr>
+<td>writes no detectable table</td>
+<td style="text-align: right;">6</td>
+</tr>
+</tbody>
+</table>
+<p><code>writes N entities</code> is now measured across code <strong>and</strong> procs, so a screen whose second write only happens inside a <code>pr_*</code> is rejected here rather than slipping through. <code>writes no detectable table</code> means neither the code-behind nor any proc it names contains a write - typically a screen driven by a proc the export does not carry.</p>
+<h2 id="tier-a-direct-state-clones-10">Tier A - direct State clones (10)</h2>
+<p><em>1-3 plain text fields, no lookup dropdown.</em> Copy the State slice and swap the entity: service + form + controller + one view. No new shared components needed.</p>
+<h3 id="-no-module-yet-1-0-pure-1-with-lookups">-&gt; <code>(no module yet)</code> (1 - 0 pure, 1 with lookups)</h3>
+<table>
+<thead>
+<tr>
+<th>Legacy screen</th>
+<th>Entity (written)</th>
+<th style="text-align: right;">Fields</th>
+<th>Lookup reads</th>
+<th>Needs</th>
+<th style="text-align: right;">VB LoC</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>Inventory/i_UnitOfMeasurement.aspx</code></td>
+<td><code>i_unitofmeasurement</code></td>
+<td style="text-align: right;">2</td>
+<td>1: <code>i_item</code></td>
+<td>-</td>
+<td style="text-align: right;">642</td>
+</tr>
+</tbody>
+</table>
+<h3 id="-bank-general-4-4-pure-0-with-lookups">-&gt; <code>Bank / General</code> (4 - 4 pure, 0 with lookups)</h3>
+<table>
+<thead>
+<tr>
+<th>Legacy screen</th>
+<th>Entity (written)</th>
+<th style="text-align: right;">Fields</th>
+<th>Lookup reads</th>
+<th>Needs</th>
+<th style="text-align: right;">VB LoC</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>HO/b_MailInfo.aspx</code></td>
+<td><code>b_mailinfo</code></td>
+<td style="text-align: right;">3</td>
+<td><strong>pure</strong></td>
+<td>-</td>
+<td style="text-align: right;">377</td>
+</tr>
+<tr>
+<td><code>HO/bank/g_Circle.aspx</code></td>
+<td><code>g_circle</code></td>
+<td style="text-align: right;">3</td>
+<td><strong>pure</strong></td>
+<td>-</td>
+<td style="text-align: right;">326</td>
+</tr>
+<tr>
+<td><code>HO/bank/g_Relation.aspx</code></td>
+<td><code>g_relation</code></td>
+<td style="text-align: right;">2</td>
+<td><strong>pure</strong></td>
+<td>-</td>
+<td style="text-align: right;">200</td>
+</tr>
+<tr>
+<td><code>HO/bank/g_Step.aspx</code></td>
+<td><code>g_step</code></td>
+<td style="text-align: right;">2</td>
+<td><strong>pure</strong></td>
+<td>-</td>
+<td style="text-align: right;">222</td>
+</tr>
+</tbody>
+</table>
+<h3 id="-hr-2-2-pure-0-with-lookups">-&gt; <code>HR</code> (2 - 2 pure, 0 with lookups)</h3>
+<table>
+<thead>
+<tr>
+<th>Legacy screen</th>
+<th>Entity (written)</th>
+<th style="text-align: right;">Fields</th>
+<th>Lookup reads</th>
+<th>Needs</th>
+<th style="text-align: right;">VB LoC</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>HR/h_DiscipAction.aspx</code></td>
+<td><code>h_discipaction</code></td>
+<td style="text-align: right;">1</td>
+<td><strong>pure</strong></td>
+<td>-</td>
+<td style="text-align: right;">275</td>
+</tr>
+<tr>
+<td><code>HR/h_Qualification.aspx</code></td>
+<td><code>h_qualification</code></td>
+<td style="text-align: right;">1</td>
+<td><strong>pure</strong></td>
+<td>-</td>
+<td style="text-align: right;">360</td>
+</tr>
+</tbody>
+</table>
+<h3 id="-retailbanking-3-1-pure-2-with-lookups">-&gt; <code>RetailBanking</code> (3 - 1 pure, 2 with lookups)</h3>
+<table>
+<thead>
+<tr>
+<th>Legacy screen</th>
+<th>Entity (written)</th>
+<th style="text-align: right;">Fields</th>
+<th>Lookup reads</th>
+<th>Needs</th>
+<th style="text-align: right;">VB LoC</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>RetailBanking/c_Community.aspx</code></td>
+<td><code>c_community</code></td>
+<td style="text-align: right;">1</td>
+<td><strong>pure</strong></td>
+<td>-</td>
+<td style="text-align: right;">350</td>
+</tr>
+<tr>
+<td><code>RetailBanking/Legal/lg_Section.aspx</code></td>
+<td><code>lg_section</code></td>
+<td style="text-align: right;">3</td>
+<td>2: <code>lg_suitcase</code>, <code>lg_suitcasehistory</code></td>
+<td>-</td>
+<td style="text-align: right;">368</td>
+</tr>
+<tr>
+<td><code>RetailBanking/Legal/lg_ActivityMaster.aspx</code></td>
+<td><code>lg_activitymaster</code></td>
+<td style="text-align: right;">3</td>
+<td>3: <code>lg_section</code>, <code>lg_suitcase</code>, <code>lg_suitcasehistory</code></td>
+<td>-</td>
+<td style="text-align: right;">493</td>
+</tr>
+</tbody>
+</table>
+<h2 id="tier-b-state-plus-a-lookup-57">Tier B - State plus a lookup (57)</h2>
+<p><em>Up to 8 fields, and/or a dropdown or picker.</em> The same slice as State plus a lookup load (<code>_RecordPicker</code>, <code>_DatePicker</code>, or a plain <code>&lt;select&gt;</code>). Still one entity, one form, one view.</p>
+<h3 id="-no-module-yet-16-2-pure-14-with-lookups">-&gt; <code>(no module yet)</code> (16 - 2 pure, 14 with lookups)</h3>
+<table>
+<thead>
+<tr>
+<th>Legacy screen</th>
+<th>Entity (written)</th>
+<th style="text-align: right;">Fields</th>
+<th>Lookup reads</th>
+<th>Needs</th>
+<th style="text-align: right;">VB LoC</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>Helpdesk/hd_EmailConfig.aspx</code></td>
+<td><code>hd_emailconfig</code></td>
+<td style="text-align: right;">7</td>
+<td><strong>pure</strong></td>
+<td>-</td>
+<td style="text-align: right;">631</td>
+</tr>
+<tr>
+<td><code>Treasury/Masters/tr_Broker.aspx</code></td>
+<td><code>tr_broker</code></td>
+<td style="text-align: right;">4</td>
+<td><strong>pure</strong></td>
+<td>record picker, date picker</td>
+<td style="text-align: right;">404</td>
+</tr>
+<tr>
+<td><code>Treasury/Masters/tr_DealType.aspx</code></td>
+<td><code>tr_dealtype</code></td>
+<td style="text-align: right;">2</td>
+<td>1: <code>g_currency</code></td>
+<td>record picker</td>
+<td style="text-align: right;">467</td>
+</tr>
+<tr>
+<td><code>Treasury/Masters/tr_Holiday.aspx</code></td>
+<td><code>tr_holiday</code></td>
+<td style="text-align: right;">1</td>
+<td>1: <code>g_currency</code></td>
+<td>record picker, date picker</td>
+<td style="text-align: right;">489</td>
+</tr>
+<tr>
+<td><code>Treasury/Masters/tr_Product.aspx</code></td>
+<td><code>tr_product</code></td>
+<td style="text-align: right;">5</td>
+<td>1: <code>b_code</code></td>
+<td>record picker, date picker</td>
+<td style="text-align: right;">515</td>
+</tr>
+<tr>
+<td><code>Treasury/Masters/tr_RateReasonabilitySpread.aspx</code></td>
+<td><code>tr_ratereasonabilityspread</code></td>
+<td style="text-align: right;">7</td>
+<td>1: <code>tr_product</code></td>
+<td>record picker, date picker</td>
+<td style="text-align: right;">602</td>
+</tr>
+<tr>
+<td><code>Inventory/i_Depriciation.aspx</code></td>
+<td><code>i_depriciation</code></td>
+<td style="text-align: right;">3</td>
+<td>2: <code>b_financialyear</code>, <code>g_inventorycategory</code></td>
+<td>record picker, date picker</td>
+<td style="text-align: right;">723</td>
+</tr>
+<tr>
+<td><code>Inventory/i_Object.aspx</code></td>
+<td><code>i_object</code></td>
+<td style="text-align: right;">2</td>
+<td>2: <code>g_inventorycategory</code>, <code>i_item</code></td>
+<td>record picker</td>
+<td style="text-align: right;">607</td>
+</tr>
+<tr>
+<td><code>Inventory/i_ObjectDetail.aspx</code></td>
+<td><code>i_objectdetail</code></td>
+<td style="text-align: right;">3</td>
+<td>2: <code>g_inventorycategory</code>, <code>i_item</code></td>
+<td>record picker</td>
+<td style="text-align: right;">517</td>
+</tr>
+<tr>
+<td><code>Treasury/Masters/tr_CurrencyGLMapping.aspx</code></td>
+<td><code>tr_currencyglmapping</code></td>
+<td style="text-align: right;">0</td>
+<td>2: <code>g_accounthead</code>, <code>g_currency</code></td>
+<td>record picker</td>
+<td style="text-align: right;">469</td>
+</tr>
+<tr>
+<td><code>Treasury/Masters/tr_DealersAddLimit.aspx</code></td>
+<td><code>tr_dealerlimit</code></td>
+<td style="text-align: right;">3</td>
+<td>2: <code>a_user</code>, <code>a_userinmodule</code></td>
+<td>record picker, date picker</td>
+<td style="text-align: right;">543</td>
+</tr>
+<tr>
+<td><code>Treasury/Masters/tr_DealersLimit.aspx</code></td>
+<td><code>tr_dealerlimit</code></td>
+<td style="text-align: right;">2</td>
+<td>2: <code>a_user</code>, <code>a_userinmodule</code></td>
+<td>record picker, date picker</td>
+<td style="text-align: right;">548</td>
+</tr>
+<tr>
+<td><code>Treasury/Masters/tr_BankAccounts.aspx</code></td>
+<td><code>tr_bankaccounts</code></td>
+<td style="text-align: right;">3</td>
+<td>3: <code>b_account</code>, <code>g_accounthead</code>, <code>g_globalclient</code></td>
+<td>record picker</td>
+<td style="text-align: right;">445</td>
+</tr>
+<tr>
+<td><code>Treasury/Masters/tr_ClientLimit.aspx</code></td>
+<td><code>tr_clientlimit</code></td>
+<td style="text-align: right;">1</td>
+<td>4: <code>g_currency</code>, <code>g_globalclient</code>, <code>tr_customer</code> +1</td>
+<td>record picker, date picker</td>
+<td style="text-align: right;">660</td>
+</tr>
+<tr>
+<td><code>Reconciliation/re_ReconciliationRollBack.aspx</code></td>
+<td><code>re_oledgerauthentication</code></td>
+<td style="text-align: right;">4</td>
+<td>6: <code>b_financialyear</code>, <code>b_workingdate</code>, <code>g_currency</code> +3</td>
+<td>record picker</td>
+<td style="text-align: right;">479</td>
+</tr>
+<tr>
+<td><code>Inventory/i_Item.aspx</code></td>
+<td><code>i_item</code></td>
+<td style="text-align: right;">3</td>
+<td>8: <code>g_inventorycategory</code>, <code>i_assetdisposal</code>, <code>i_depriciation</code> +5</td>
+<td>record picker, date picker</td>
+<td style="text-align: right;">970</td>
+</tr>
+</tbody>
+</table>
+<h3 id="-bank-general-17-7-pure-10-with-lookups">-&gt; <code>Bank / General</code> (17 - 7 pure, 10 with lookups)</h3>
+<table>
+<thead>
+<tr>
+<th>Legacy screen</th>
+<th>Entity (written)</th>
+<th style="text-align: right;">Fields</th>
+<th>Lookup reads</th>
+<th>Needs</th>
+<th style="text-align: right;">VB LoC</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>HO/BG/Bg_CommissionRateMaster.aspx</code></td>
+<td><code>bg_commissionratemaster</code></td>
+<td style="text-align: right;">4</td>
+<td><strong>pure</strong></td>
+<td>-</td>
+<td style="text-align: right;">280</td>
+</tr>
+<tr>
+<td><code>HO/Hr/g_Language.aspx</code></td>
+<td><code>g_language</code></td>
+<td style="text-align: right;">6</td>
+<td><strong>pure</strong></td>
+<td>2 lookup</td>
+<td style="text-align: right;">292</td>
+</tr>
+<tr>
+<td><code>HO/Hr/h_LeaveType.aspx</code></td>
+<td><code>h_leavetype</code></td>
+<td style="text-align: right;">6</td>
+<td><strong>pure</strong></td>
+<td>-</td>
+<td style="text-align: right;">328</td>
+</tr>
+<tr>
+<td><code>HO/ProjectFormulation/p_FeedbackMaster.aspx</code></td>
+<td><code>p_feedbackmaster</code></td>
+<td style="text-align: right;">6</td>
+<td><strong>pure</strong></td>
+<td>2 lookup</td>
+<td style="text-align: right;">336</td>
+</tr>
+<tr>
+<td><code>HO/bank/b_ChargesConfig.aspx</code></td>
+<td><code>b_chargesconfig</code></td>
+<td style="text-align: right;">2</td>
+<td><strong>pure</strong></td>
+<td>record picker</td>
+<td style="text-align: right;">540</td>
+</tr>
+<tr>
+<td><code>HO/bank/g_BranchCategory.aspx</code></td>
+<td><code>g_branchcategory</code></td>
+<td style="text-align: right;">4</td>
+<td><strong>pure</strong></td>
+<td>-</td>
+<td style="text-align: right;">245</td>
+</tr>
+<tr>
+<td><code>HO/bank/g_ServiceStatus.aspx</code></td>
+<td><code>g_servicestatus</code></td>
+<td style="text-align: right;">4</td>
+<td><strong>pure</strong></td>
+<td>-</td>
+<td style="text-align: right;">216</td>
+</tr>
+<tr>
+<td><code>HO/BG/Bg_CurrencyGLMapping.aspx</code></td>
+<td><code>td_bg_currencyglmapping</code></td>
+<td style="text-align: right;">2</td>
+<td>1: <code>g_currency</code></td>
+<td>record picker</td>
+<td style="text-align: right;">343</td>
+</tr>
+<tr>
+<td><code>HO/MultiCurrency/g_DenominationUnit.aspx</code></td>
+<td><code>g_denominationunit</code></td>
+<td style="text-align: right;">1</td>
+<td>1: <code>g_currency</code></td>
+<td>record picker, date picker</td>
+<td style="text-align: right;">466</td>
+</tr>
+<tr>
+<td><code>HO/bank/g_Notes.aspx</code></td>
+<td><code>g_notes</code></td>
+<td style="text-align: right;">2</td>
+<td>1: <code>g_accounthead</code></td>
+<td>record picker</td>
+<td style="text-align: right;">917</td>
+</tr>
+<tr>
+<td><code>HO/MultiCurrency/tr_CurrencyGLMapping.aspx</code></td>
+<td><code>tr_currencyglmapping</code></td>
+<td style="text-align: right;">0</td>
+<td>2: <code>g_accounthead</code>, <code>g_currency</code></td>
+<td>record picker</td>
+<td style="text-align: right;">460</td>
+</tr>
+<tr>
+<td><code>HO/lc/lc_CurrencyGLMapping.aspx</code></td>
+<td><code>lc_currencyglmapping</code></td>
+<td style="text-align: right;">4</td>
+<td>2: <code>g_accounthead</code>, <code>g_currency</code></td>
+<td>record picker</td>
+<td style="text-align: right;">623</td>
+</tr>
+<tr>
+<td><code>HO/MultiCurrency/tr_CashCurrencyHead.aspx</code></td>
+<td><code>tr_cashcurrencyhead</code></td>
+<td style="text-align: right;">0</td>
+<td>3: <code>g_accounthead</code>, <code>g_bankvariables</code>, <code>g_currency</code></td>
+<td>record picker</td>
+<td style="text-align: right;">2229</td>
+</tr>
+<tr>
+<td><code>HO/ProjectFormulation/p_Document.aspx</code></td>
+<td><code>p_document</code></td>
+<td style="text-align: right;">6</td>
+<td>3: <code>p_loanpurpose</code>, <code>p_scheme</code>, <code>p_schemepurpose</code></td>
+<td>record picker</td>
+<td style="text-align: right;">601</td>
+</tr>
+<tr>
+<td><code>HO/b_CommissionSlab.aspx</code></td>
+<td><code>b_commissionslab</code></td>
+<td style="text-align: right;">5</td>
+<td>3: <code>g_globalclient</code>, <code>g_ngo</code>, <code>g_title</code></td>
+<td>record picker, date picker</td>
+<td style="text-align: right;">656</td>
+</tr>
+<tr>
+<td><code>HO/GlobalClientDocAttach.aspx</code></td>
+<td><code>g_clientdocmap</code></td>
+<td style="text-align: right;">3</td>
+<td>5: <code>b_address</code>, <code>b_doctypecategory</code>, <code>b_documenttype</code> +2</td>
+<td>record picker</td>
+<td style="text-align: right;">710</td>
+</tr>
+<tr>
+<td><code>HO/ProjectFormulation/P_CreditOfficer.aspx</code></td>
+<td><code>p_creditofficer</code></td>
+<td style="text-align: right;">0</td>
+<td>5: <code>a_user</code>, <code>c_loan</code>, <code>h_employee</code> +2</td>
+<td>record picker, date picker</td>
+<td style="text-align: right;">699</td>
+</tr>
+</tbody>
+</table>
+<h3 id="-hr-5-1-pure-4-with-lookups">-&gt; <code>HR</code> (5 - 1 pure, 4 with lookups)</h3>
+<table>
+<thead>
+<tr>
+<th>Legacy screen</th>
+<th>Entity (written)</th>
+<th style="text-align: right;">Fields</th>
+<th>Lookup reads</th>
+<th>Needs</th>
+<th style="text-align: right;">VB LoC</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>HR/g_Bank.aspx</code></td>
+<td><code>g_bank</code></td>
+<td style="text-align: right;">8</td>
+<td><strong>pure</strong></td>
+<td>-</td>
+<td style="text-align: right;">293</td>
+</tr>
+<tr>
+<td><code>HR/h_ExprHistory.aspx</code></td>
+<td><code>h_exprhistory</code></td>
+<td style="text-align: right;">3</td>
+<td>1: <code>vw_h_employee</code></td>
+<td>record picker, date picker</td>
+<td style="text-align: right;">371</td>
+</tr>
+<tr>
+<td><code>HR/h_HonAwardHistory.aspx</code></td>
+<td><code>h_honawardhistory</code></td>
+<td style="text-align: right;">1</td>
+<td>2: <code>h_honaward</code>, <code>vw_h_employee</code></td>
+<td>record picker, date picker</td>
+<td style="text-align: right;">322</td>
+</tr>
+<tr>
+<td><code>HR/h_PromHistory.aspx</code></td>
+<td><code>h_promhistory</code></td>
+<td style="text-align: right;">0</td>
+<td>2: <code>g_designation</code>, <code>vw_h_employee</code></td>
+<td>record picker, date picker</td>
+<td style="text-align: right;">409</td>
+</tr>
+<tr>
+<td><code>HR/h_LeaveApplication.aspx</code></td>
+<td><code>h_leaveapplication</code></td>
+<td style="text-align: right;">1</td>
+<td>3: <code>h_leavecancellation</code>, <code>h_leavetype</code>, <code>vw_h_employee</code></td>
+<td>record picker, date picker</td>
+<td style="text-align: right;">601</td>
+</tr>
+</tbody>
+</table>
+<h3 id="-lockers-2-0-pure-2-with-lookups">-&gt; <code>Lockers</code> (2 - 0 pure, 2 with lookups)</h3>
+<table>
+<thead>
+<tr>
+<th>Legacy screen</th>
+<th>Entity (written)</th>
+<th style="text-align: right;">Fields</th>
+<th>Lookup reads</th>
+<th>Needs</th>
+<th style="text-align: right;">VB LoC</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>Lockers/k_LockerReturn.aspx</code></td>
+<td><code>l_lockerreturn</code></td>
+<td style="text-align: right;">6</td>
+<td>3: <code>b_account</code>, <code>g_orgelement</code>, <code>k_lockerreturn</code></td>
+<td>record picker, date picker, account picker</td>
+<td style="text-align: right;">640</td>
+</tr>
+<tr>
+<td><code>Lockers/k_LockerVisiting.aspx</code></td>
+<td><code>l_lockervisiting</code></td>
+<td style="text-align: right;">8</td>
+<td>9: <code>b_account</code>, <code>b_workingdate</code>, <code>g_orgelement</code> +6</td>
+<td>record picker, date picker, account picker</td>
+<td style="text-align: right;">805</td>
+</tr>
+</tbody>
+</table>
+<h3 id="-reference-1-0-pure-1-with-lookups">-&gt; <code>Reference</code> (1 - 0 pure, 1 with lookups)</h3>
+<table>
+<thead>
+<tr>
+<th>Legacy screen</th>
+<th>Entity (written)</th>
+<th style="text-align: right;">Fields</th>
+<th>Lookup reads</th>
+<th>Needs</th>
+<th style="text-align: right;">VB LoC</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>HO/bank/g_City.aspx</code></td>
+<td><code>g_state</code></td>
+<td style="text-align: right;">4</td>
+<td>1: <code>g_city</code></td>
+<td>record picker</td>
+<td style="text-align: right;">469</td>
+</tr>
+</tbody>
+</table>
+<h3 id="-retailbanking-16-5-pure-11-with-lookups">-&gt; <code>RetailBanking</code> (16 - 5 pure, 11 with lookups)</h3>
+<table>
+<thead>
+<tr>
+<th>Legacy screen</th>
+<th>Entity (written)</th>
+<th style="text-align: right;">Fields</th>
+<th>Lookup reads</th>
+<th>Needs</th>
+<th style="text-align: right;">VB LoC</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>HO/retailBanking/b_BankList.aspx</code></td>
+<td><code>b_banklist</code></td>
+<td style="text-align: right;">4</td>
+<td><strong>pure</strong></td>
+<td>-</td>
+<td style="text-align: right;">424</td>
+</tr>
+<tr>
+<td><code>HO/retailBanking/g_BaseRate.aspx</code></td>
+<td><code>g_baserate</code></td>
+<td style="text-align: right;">2</td>
+<td><strong>pure</strong></td>
+<td>date picker</td>
+<td style="text-align: right;">594</td>
+</tr>
+<tr>
+<td><code>HO/retailBanking/g_PLR.aspx</code></td>
+<td><code>g_plr</code></td>
+<td style="text-align: right;">2</td>
+<td><strong>pure</strong></td>
+<td>date picker</td>
+<td style="text-align: right;">594</td>
+</tr>
+<tr>
+<td><code>RetailBanking/b_DocumentType.aspx</code></td>
+<td><code>b_documenttype</code></td>
+<td style="text-align: right;">6</td>
+<td><strong>pure</strong></td>
+<td>date picker</td>
+<td style="text-align: right;">557</td>
+</tr>
+<tr>
+<td><code>RetailBanking/npa/b_NPAClassMaster.aspx</code></td>
+<td><code>b_npaclassmaster</code></td>
+<td style="text-align: right;">4</td>
+<td><strong>pure</strong></td>
+<td>-</td>
+<td style="text-align: right;">1557</td>
+</tr>
+<tr>
+<td><code>RetailBanking/LC/LCTemplate.aspx</code></td>
+<td><code>lctemplate</code></td>
+<td style="text-align: right;">7</td>
+<td>1: <code>b_templateitems</code></td>
+<td>2 lookup</td>
+<td style="text-align: right;">526</td>
+</tr>
+<tr>
+<td><code>HO/retailBanking/b_Holiday.aspx</code></td>
+<td><code>b_holiday</code></td>
+<td style="text-align: right;">5</td>
+<td>2: <code>b_financialyear</code>, <code>g_orgelement</code></td>
+<td>date picker</td>
+<td style="text-align: right;">1024</td>
+</tr>
+<tr>
+<td><code>RetailBanking/b_WaiveOff.aspx</code></td>
+<td><code>b_waiveoff</code></td>
+<td style="text-align: right;">3</td>
+<td>2: <code>b_applicationconfig</code>, <code>g_allowdebittransactionaccountheads</code></td>
+<td>record picker, date picker, account picker</td>
+<td style="text-align: right;">635</td>
+</tr>
+<tr>
+<td><code>RetailBanking/npa/c_NPAMethodMapping.aspx</code></td>
+<td><code>c_npamethodmapping</code></td>
+<td style="text-align: right;">0</td>
+<td>2: <code>c_npamethodmaster</code>, <code>g_accounthead</code></td>
+<td>record picker</td>
+<td style="text-align: right;">919</td>
+</tr>
+<tr>
+<td><code>RetailBanking/swift/x_SFTBankCode.aspx</code></td>
+<td><code>x_sftbankcode</code></td>
+<td style="text-align: right;">2</td>
+<td>2: <code>x_sftcountry</code>, <code>x_sftoutward</code></td>
+<td>record picker</td>
+<td style="text-align: right;">348</td>
+</tr>
+<tr>
+<td><code>HO/retailBanking/x_WHTMaster.aspx</code></td>
+<td><code>x_whtmaster</code></td>
+<td style="text-align: right;">4</td>
+<td>3: <code>g_accounthead</code>, <code>g_bankvariables</code>, <code>g_currency</code></td>
+<td>record picker, date picker</td>
+<td style="text-align: right;">1066</td>
+</tr>
+<tr>
+<td><code>RetailBanking/b_SpecialInstruction.aspx</code></td>
+<td><code>b_specialinstruction</code></td>
+<td style="text-align: right;">3</td>
+<td>4: <code>b_account</code>, <code>g_accounthead</code>, <code>g_globalclient</code> +1</td>
+<td>record picker, date picker, account picker</td>
+<td style="text-align: right;">1069</td>
+</tr>
+<tr>
+<td><code>RetailBanking/b_Signature_V1.aspx</code></td>
+<td><code>b_signature</code></td>
+<td style="text-align: right;">7</td>
+<td>7: <code>b_account</code>, <code>g_accounthead</code>, <code>g_globalclient</code> +4</td>
+<td>record picker, account picker</td>
+<td style="text-align: right;">2606</td>
+</tr>
+<tr>
+<td><code>RetailBanking/Account/SiTran.aspx</code></td>
+<td><code>x_fdsitran</code></td>
+<td style="text-align: right;">7</td>
+<td>9: <code>b_account</code>, <code>b_banklist</code>, <code>b_branchlist</code> +6</td>
+<td>record picker, date picker</td>
+<td style="text-align: right;">1081</td>
+</tr>
+<tr>
+<td><code>RetailBanking/Legal/lg_SuitCaseClosing.aspx</code></td>
+<td><code>lg_suitcase</code></td>
+<td style="text-align: right;">4</td>
+<td>10: <code>b_account</code>, <code>b_applicationconfig</code>, <code>b_client</code> +7</td>
+<td>record picker, date picker</td>
+<td style="text-align: right;">1458</td>
+</tr>
+<tr>
+<td><code>RetailBanking/b_SwiftBankAccMap.aspx</code></td>
+<td><code>b_swiftbankaccmap</code></td>
+<td style="text-align: right;">2</td>
+<td>14: <code>a_user</code>, <code>b_account</code>, <code>b_accountagent</code> +11</td>
+<td>record picker</td>
+<td style="text-align: right;">687</td>
+</tr>
+</tbody>
+</table>
+<h2 id="tier-c-wide-single-entity-master-6">Tier C - wide single-entity master (6)</h2>
+<p><em>9 or more fields on one entity.</em> Structurally identical to State, just a longer form - the work is typing, not design.</p>
+<h3 id="-no-module-yet-2-0-pure-2-with-lookups">-&gt; <code>(no module yet)</code> (2 - 0 pure, 2 with lookups)</h3>
+<table>
+<thead>
+<tr>
+<th>Legacy screen</th>
+<th>Entity (written)</th>
+<th style="text-align: right;">Fields</th>
+<th>Lookup reads</th>
+<th>Needs</th>
+<th style="text-align: right;">VB LoC</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>Reconciliation/Re_OutPutType.aspx</code></td>
+<td><code>re_outputtype</code></td>
+<td style="text-align: right;">16</td>
+<td>1: <code>re_code</code></td>
+<td>record picker</td>
+<td style="text-align: right;">1045</td>
+</tr>
+<tr>
+<td><code>Treasury/Masters/tr_Customer.aspx</code></td>
+<td><code>tr_customer</code></td>
+<td style="text-align: right;">10</td>
+<td>4: <code>b_account</code>, <code>b_code</code>, <code>g_currency</code> +1</td>
+<td>record picker</td>
+<td style="text-align: right;">545</td>
+</tr>
+</tbody>
+</table>
+<h3 id="-administration-1-0-pure-1-with-lookups">-&gt; <code>Administration</code> (1 - 0 pure, 1 with lookups)</h3>
+<table>
+<thead>
+<tr>
+<th>Legacy screen</th>
+<th>Entity (written)</th>
+<th style="text-align: right;">Fields</th>
+<th>Lookup reads</th>
+<th>Needs</th>
+<th style="text-align: right;">VB LoC</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>HO/Admin/a_CashierLimit.aspx</code></td>
+<td><code>a_cashierlimit</code></td>
+<td style="text-align: right;">24</td>
+<td>5: <code>a_role</code>, <code>a_userrights</code>, <code>a_usertranauthlimit</code> +2</td>
+<td>record picker</td>
+<td style="text-align: right;">548</td>
+</tr>
+</tbody>
+</table>
+<h3 id="-bank-general-1-0-pure-1-with-lookups">-&gt; <code>Bank / General</code> (1 - 0 pure, 1 with lookups)</h3>
+<table>
+<thead>
+<tr>
+<th>Legacy screen</th>
+<th>Entity (written)</th>
+<th style="text-align: right;">Fields</th>
+<th>Lookup reads</th>
+<th>Needs</th>
+<th style="text-align: right;">VB LoC</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>HO/bank/g_Designation.aspx</code></td>
+<td><code>g_designation</code></td>
+<td style="text-align: right;">14</td>
+<td>1: <code>b_code</code></td>
+<td>date picker</td>
+<td style="text-align: right;">665</td>
+</tr>
+</tbody>
+</table>
+<h3 id="-lockers-1-0-pure-1-with-lookups">-&gt; <code>Lockers</code> (1 - 0 pure, 1 with lookups)</h3>
+<table>
+<thead>
+<tr>
+<th>Legacy screen</th>
+<th>Entity (written)</th>
+<th style="text-align: right;">Fields</th>
+<th>Lookup reads</th>
+<th>Needs</th>
+<th style="text-align: right;">VB LoC</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>Lockers/k_LockerIssue.aspx</code></td>
+<td><code>g_relation</code></td>
+<td style="text-align: right;">16</td>
+<td>9: <code>b_account</code>, <code>b_workingdate</code>, <code>g_bankvariables</code> +6</td>
+<td>record picker, date picker, account picker</td>
+<td style="text-align: right;">1667</td>
+</tr>
+</tbody>
+</table>
+<h3 id="-retailbanking-1-0-pure-1-with-lookups">-&gt; <code>RetailBanking</code> (1 - 0 pure, 1 with lookups)</h3>
+<table>
+<thead>
+<tr>
+<th>Legacy screen</th>
+<th>Entity (written)</th>
+<th style="text-align: right;">Fields</th>
+<th>Lookup reads</th>
+<th>Needs</th>
+<th style="text-align: right;">VB LoC</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>RetailBanking/LC/LCPurchase.aspx</code></td>
+<td><code>lcpurchase</code></td>
+<td style="text-align: right;">42</td>
+<td>19: <code>a_user</code>, <code>b_account</code>, <code>b_banklist</code> +16</td>
+<td>record picker, date picker</td>
+<td style="text-align: right;">2161</td>
+</tr>
+</tbody>
+</table>
+<h2 id="already-ported">Already ported</h2>
+<table>
+<thead>
+<tr>
+<th>Legacy screen</th>
+<th>Entity</th>
+<th>New route</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>HO/Admin/a_Module.aspx</code></td>
+<td><code>a_module</code></td>
+<td>/Administration/Module</td>
+</tr>
+<tr>
+<td><code>HO/Admin/a_RoleMaster.aspx</code></td>
+<td><code>a_role</code></td>
+<td>/Administration/Role</td>
+</tr>
+<tr>
+<td><code>HO/bank/g_District.aspx</code></td>
+<td><code>g_state</code></td>
+<td>/Hr/District</td>
+</tr>
+<tr>
+<td><code>HO/bank/g_State.aspx</code></td>
+<td><code>g_state</code></td>
+<td>/Hr/State</td>
+</tr>
+<tr>
+<td><code>HO/Admin/a_Menus.aspx</code></td>
+<td><code>a_menus</code></td>
+<td>/Administration/Menu</td>
+</tr>
+</tbody>
+</table>
+<h2 id="how-to-port-one">How to port one</h2>
+<p>Follow the State slice file for file:</p>
+<ol>
+<li><strong>Service</strong> - <code>TflCbs.Modules.&lt;Module&gt;/&lt;Name&gt;Service.cs</code>: <code>Repository&lt;T&gt;</code> over the entity; <code>Search...Async</code> / <code>Load...Async</code> / <code>Save...Async</code> / <code>Update...Async</code> / <code>Delete...Async</code>, each returning <code>Result</code>/<code>Result&lt;T&gt;</code>. No raw SQL, no procs.</li>
+<li><strong>Form</strong> - <code>Models/&lt;Area&gt;/&lt;Name&gt;Models.cs</code>: an <code>IRowForm</code> with <code>Row</code>, the fields, and <code>Version</code> for optimistic concurrency.</li>
+<li><strong>Controller</strong> - <code>Areas/&lt;Area&gt;/Controllers/&lt;Name&gt;Controller.cs</code> extending <code>CbsScreenController</code>: <code>[CbsAccessScreen]</code>, the <code>search</code>/<code>save</code>/<code>update</code>/<code>delete</code> actions, row tokens via <code>TryOpenRecord</code> / <code>TryBeginWrite</code> / <code>TryConsume</code>.</li>
+<li><strong>View</strong> - <code>Areas/&lt;Area&gt;/Views/&lt;Name&gt;/Index.cshtml</code>: one <code>.card</code>, a <code>SearchDescriptor</code>, the standard action bar.</li>
+<li>Register the route in the menu cutover migration, then run the <strong>cbs-sync-test-demo</strong> agent to sync <code>TflCbs.Tests</code> and <code>TflCbs.Demo</code>.</li>
+</ol>
+<h2 id="caveats">Caveats</h2>
+<ul>
+<li><strong>63 proc names could not be resolved</strong> against the 5254-file proc export (the code-behind names them, the tree does not carry them). A screen whose only write lives in one of those shows up as <code>writes no detectable table</code> and is held back rather than guessed at.</li>
+<li>Proc-calls-proc is followed one level deep. A write hidden two levels down is not seen.</li>
+<li>Dynamic SQL built by string concatenation inside a proc is not evaluated, so a table named only in a <code>sp_executesql</code> payload can be missed.</li>
+<li>The tiers measure <em>form width</em>, not business rules. A 2-field screen can still hide validation the port has to reproduce - read the code-behind before quoting a number.</li>
+</ul>
+</div></div>
+<script>
+(function(){
+ function put(t){
+  if(navigator.clipboard&&navigator.clipboard.writeText)return navigator.clipboard.writeText(t);
+  return new Promise(function(res,rej){
+   var a=document.createElement('textarea');a.value=t;a.setAttribute('readonly','');
+   a.style.cssText='position:fixed;top:0;left:0;opacity:0';document.body.appendChild(a);
+   a.select();var ok=false;try{ok=document.execCommand('copy')}catch(e){}
+   document.body.removeChild(a);ok?res():rej()});
+ }
+ function flash(el,txt,ms){
+  var was=el.textContent;el.classList.add('done');if(txt)el.textContent=txt;
+  setTimeout(function(){el.classList.remove('done');if(txt)el.textContent=was},ms||1200);
+ }
+ function copy(text,el,okTxt){
+  put(text).then(function(){flash(el,okTxt)},function(){
+   if(okTxt){var w=el.textContent;el.textContent='Ctrl+C';setTimeout(function(){el.textContent=w},2000)}});
+ }
+ document.querySelectorAll('pre').forEach(function(pre){
+  if(pre.classList.contains('txtdoc'))return;
+  var b=document.createElement('button');
+  b.type='button';b.className='copy';b.textContent='Copy';
+  b.setAttribute('aria-label','Copy this code block to the clipboard');
+  b.addEventListener('click',function(){copy((pre.querySelector('code')||pre).innerText,b,'Copied')});
+  pre.appendChild(b);
+ });
+ document.querySelectorAll('td code').forEach(function(c){
+  if(!c.textContent.trim())return;
+  c.classList.add('cp');c.tabIndex=0;c.setAttribute('role','button');
+  c.title='Click to copy';
+  c.addEventListener('click',function(){copy(c.textContent,c)});
+  c.addEventListener('keydown',function(e){
+   if(e.key==='Enter'||e.key===' '){e.preventDefault();copy(c.textContent,c)}});
+ });
+})();
+</script>
+</body></html>

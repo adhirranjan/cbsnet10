@@ -154,7 +154,7 @@ Client assets are served from the shared RCL at `~/_content/TflCbs.Web.Shared/` 
 | Crypto library | in-app VB routines | `TflSecurityCrypto` — 1:1 VB.NET port, **byte-for-byte output compatible** (3DES, RC4, salted MD5/SHA1/SHA256/384/512, hardware fingerprint, RNGCSP) | **Ported** |
 | Stale-session recovery | — | `b_UserLogTime.LoginInfo` must carry `<REMOTE_HOST>`; `AuthenticateUserAsync` force-logs-out the user's own stale session from the same workstation *before* the "already connected" gate. Parsed only via `LoginInfo` — one sanctioned parser | **Ported** (intent) / **New** (single-parser discipline) |
 | Logout bookkeeping | `Authentication.TraceLogoutTime` | `AuthenticationService.TraceLogoutTimeAsync` + `AcctGrp21Service.UserSwitchLogTimeAsync` — closes open `b_UserLogTime` rows | **Ported** |
-| Idle policy | ASP.NET session timeout only | **Three clocks that must agree** — client warn/logout (`Cbs:IdleWarnMinutes`/`IdleLogoutMinutes`) and server TTL (`Auth:SessionIdleMinutes`); `CbsSessionOptions.Resolve` **refuses to start** if the server TTL doesn't exceed the client logout | **New** |
+| Idle policy | ASP.NET session timeout only (InProc, 20 min — one server clock, no client timer) | **Four clocks that must agree** — client warn/logout (`Cbs:IdleWarnMinutes`/`IdleLogoutMinutes`), server TTL (`Auth:SessionIdleMinutes`) and the identity cookie (`Auth:Cookie:ExpireMinutes`, which defaults to the server TTL); `CbsSessionOptions.Resolve` **refuses to start** if the server TTL doesn't exceed the client logout, or if the cookie outlives the server TTL | **New** |
 | Cross-host login | n/a | **Internal SSO** — one login recognized on every CBS host; shared DataProtection key ring in `CBS_DATAPROTECTIONKEYS`; global logout via `CBS_SESSIONREVOCATIONS`; per-host session rehydration from the cookie ticket. No external IdP/SAML/OIDC | **New** |
 | Secrets | connection strings in `Web.Config` | Config/env only — `appsettings.Development.json` is gitignored and `CopyToPublishDirectory=Never`; prod supplies `Database__ConnectionStrings__SqlServer` via env/secret store | **New** |
 | Connected-user administration | — | `/Administration/ConnectedUsers` + `ConnectedUserService` | **Rebuilt** |
@@ -236,7 +236,7 @@ All **New** — no automated tests were found in the legacy application.
 | Perf harness | Proves a rewrite is no slower than the procedure it replaced ([perf/](perf/)) |
 | Doc tooling | `render-all-docs-html.py` / `render-docs-html.py` / `build-docs.mjs` / `build-arch-doc.mjs` — Markdown is the source of truth, every other format is generated |
 
-Repeatable-delivery assets that did not exist before: the [CRUD-screen tutorial](guides/building-a-crud-screen.md), the [new-module recipe](guides/starting-a-new-module.txt), the [search/RowToken flow reference](guides/search-and-rowtoken-flow.md), and three maintenance subagents (`cbs-sync-test-demo`, `component-demo`, `component-docs-sync`).
+Repeatable-delivery assets that did not exist before: the [CRUD-screen tutorial](guides/building-a-crud-screen.md), the [new-module recipe](guides/starting-a-new-module.md), the [search/RowToken flow reference](guides/search-and-rowtoken-flow.md), and three maintenance subagents (`cbs-sync-test-demo`, `component-demo`, `component-docs-sync`).
 
 ---
 
@@ -260,7 +260,7 @@ Stated plainly so nobody assumes parity where there is none.
 - **Reports** — 399 of the 1,458 legacy screens. No reporting stack chosen yet; the legacy Excel/PDF/DOS-print DLL zoo has no counterpart.
 - **The bulk of functional screens** — 1,059 counted; roughly a dozen are live in the new host (State, District, Taluka, DiscipActionHistory, LockerType, AccHoldingAmount, Module, Role, Account, Clients, ReferenceCache, ConnectedUsers) plus the shell (Login, Modules, Home/menu, AccessDenied, Error).
 - **Core engine procedures** — interest, GL, day-end, clearing (~600 pd in the estimate).
-- **Login extras** — MFA (AD / QR / OTP), RC4 login path, `InitSession` (see [TODO.txt](TODO.txt)).
+- **Login extras** — MFA (AD / QR / OTP), RC4 login path, `InitSession` (see [TODO.md](TODO.md)).
 - **Oracle gap in TflOmniDb** and server-side uppercase normalisation (the current uppercase behaviour is a client convenience only).
 - **Data migration + parallel-run tooling.**
 
@@ -278,7 +278,7 @@ Effort and sequencing for the above: [migration-estimate/00-SUMMARY.md](migratio
 | [libraries/tflomnidb/README.md](libraries/tflomnidb/README.md) + [api-reference](libraries/tflomnidb/docs/api-reference.md) · [usage-guide](libraries/tflomnidb/docs/usage-guide.md) | Full TflOmniDb surface behind §5 — including [AdDataAccessComponent-vs-TflOmniDb](libraries/tflomnidb/docs/AdDataAccessComponent-vs-TflOmniDb.html) and the [porting cheat-sheet](libraries/tflomnidb/docs/Migration-from-AdDataAccessComponent.md) off the legacy Enterprise-Library DAL |
 | [libraries/tflsecuritycrypto/README.md](libraries/tflsecuritycrypto/README.md) + [security-notes](libraries/tflsecuritycrypto/docs/security-notes.md) | Full TflSecurityCrypto surface behind §6 — how the byte-for-byte legacy compatibility is *proven*, and the primitive-by-primitive security posture |
 | [architecture/modular-monolith.md](architecture/modular-monolith.md) · [reusable-boundary.md](architecture/reusable-boundary.md) | The decision records behind §2 |
-| [FEATURES-SHOWCASE.txt](FEATURES-SHOWCASE.txt) | Flat one-line-per-feature capability list (no migrated/new distinction) |
+| [FEATURES-SHOWCASE.md](FEATURES-SHOWCASE.md) | Flat one-line-per-feature capability list (no migrated/new distinction) |
 | [architecture/TrustBank-CBS-Architecture-Brief.md](architecture/TrustBank-CBS-Architecture-Brief.md) | Management-altitude summary with counted figures and open risks |
 | [migration-estimate/00-SUMMARY.md](migration-estimate/00-SUMMARY.md) | Legacy scope counted; effort and timeline |
 | [README.md](README.md) | The full documentation index |

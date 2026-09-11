@@ -1,0 +1,1166 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>TflOmniDb — Writing queries without raw SQL</title>
+<style>
+:root{color-scheme:light dark}
+*{box-sizing:border-box}
+body{margin:0;background:#f6f8fa;color:#1f2328;font:16px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif}
+.wrap{max-width:900px;margin:0 auto;padding:32px 24px 96px}
+.card{background:#fff;border:1px solid #d0d7de;border-radius:10px;padding:40px 48px}
+h1,h2,h3{line-height:1.25;font-weight:600}
+h1{font-size:1.9rem;margin:0 0 .3em;padding-bottom:.3em;border-bottom:1px solid #d8dee4}
+h2{font-size:1.4rem;margin:1.8em 0 .6em;padding-bottom:.25em;border-bottom:1px solid #eaeef2}
+h3{font-size:1.12rem;margin:1.4em 0 .5em}
+p,li{margin:.5em 0}
+a{color:#0969da;text-decoration:none}
+a:hover{text-decoration:underline}
+code{font-family:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;font-size:.86em;background:#eff1f3;padding:.15em .4em;border-radius:6px}
+pre{background:#f6f8fa;border:1px solid #d8dee4;border-radius:8px;padding:14px 16px;overflow:auto}
+pre code{background:none;padding:0;font-size:.85em;line-height:1.45}
+blockquote{margin:1em 0;padding:.4em 1em;color:#3d444d;border-left:4px solid #d0d7de;background:#f6f8fa;border-radius:0 6px 6px 0}
+blockquote>:first-child{margin-top:0}blockquote>:last-child{margin-bottom:0}
+table{border-collapse:collapse;width:100%;margin:1em 0;display:block;overflow:auto}
+th,td{border:1px solid #d0d7de;padding:8px 12px;text-align:left;vertical-align:top}
+th{background:#f6f8fa;font-weight:600}
+tr:nth-child(2n) td{background:#f6f8fa}
+hr{border:0;border-top:1px solid #d8dee4;margin:2em 0}
+pre{position:relative}
+pre>button.copy{position:absolute;top:8px;right:8px;padding:5px 9px;cursor:pointer;
+  font:600 .68rem/1 ui-monospace,SFMono-Regular,Consolas,monospace;letter-spacing:.03em;
+  color:#636c76;background:#fff;border:1px solid #d0d7de;border-radius:6px;
+  opacity:0;transition:opacity .12s}
+pre:hover>button.copy,pre>button.copy:focus{opacity:1}
+pre>button.copy.done{color:#0a3622;background:#dafbe1;border-color:#4ac26b}
+@media(hover:none){pre>button.copy{opacity:1}}
+td code.cp{cursor:pointer}
+td code.cp:hover,td code.cp:focus{outline:1px solid #8c959f;outline-offset:1px}
+td code.cp.done{color:#0a3622;background:#dafbe1}
+.docnav{margin:0 0 20px;font-size:.85rem;color:#636c76}
+.docnav a{color:#636c76}
+ul{padding-left:1.4em}ol{padding-left:1.4em}
+@media(max-width:640px){.card{padding:24px 18px}.wrap{padding:16px 10px 64px}}
+@media(prefers-color-scheme:dark){
+ body{background:#0d1117;color:#e6edf3}
+ .card{background:#161b22;border-color:#30363d}
+ h1{border-color:#30363d}h2{border-color:#21262d}
+ code{background:#262c34}
+ pre{background:#0d1117;border-color:#30363d}
+ blockquote{background:#161b22;border-color:#30363d;color:#9198a1}
+ th,td{border-color:#30363d}th{background:#161b22}tr:nth-child(2n) td{background:#12171e}
+ a{color:#4493f8}.docnav,.docnav a{color:#9198a1}
+ hr{border-color:#30363d}
+ pre>button.copy{color:#9198a1;background:#161b22;border-color:#30363d}
+ pre>button.copy.done{color:#aff5b4;background:#1b4721;border-color:#2ea043}
+ td code.cp.done{color:#aff5b4;background:#1b4721}
+}
+</style></head>
+<body><div class="wrap"><div class="card">
+<h1 id="tflomnidb-writing-queries-without-raw-sql">TflOmniDb — Writing queries without raw SQL</h1>
+<p>Every query shape you would normally write as SQL, and the TflOmniDb call that replaces it:
+<strong>SQL on the left, C# on the right.</strong> Companion to <a href="usage-guide.html">usage-guide.md</a> (task recipes)
+and <a href="api-reference.html">api-reference.md</a> (signatures). Examples target the <strong>net10</strong> leg; items
+marked <strong>net10</strong> have no Fx equivalent.</p>
+<p>The goal is not "never type SQL again" — it is that <strong>the query is expressed in C#, so it compiles,
+refactors, and runs unchanged on SQL Server, Oracle and PostgreSQL</strong>. §17 is the honest list of
+shapes that still need the raw-SQL escape hatch.</p>
+<hr />
+<h2 id="contents">Contents</h2>
+<ol>
+<li><a href="#1-three-layers-and-when-each-is-enough">Three layers, and when each is enough</a></li>
+<li><a href="#2-master-index--sql-construct--tflomnidb-api">Master index — SQL construct → TflOmniDb API</a></li>
+<li><a href="#3-the-worked-schema">The worked schema</a></li>
+<li><a href="#4-select--whole-rows">SELECT — whole rows</a></li>
+<li><a href="#5-select--fewer-columns">SELECT — fewer columns</a></li>
+<li><a href="#6-where--the-predicate-cheat-sheet">WHERE — the predicate cheat-sheet</a></li>
+<li><a href="#7-order-by-top-paging">ORDER BY, TOP, paging</a></li>
+<li><a href="#8-count-exists-aggregates">COUNT, EXISTS, aggregates</a></li>
+<li><a href="#9-insert">INSERT</a></li>
+<li><a href="#10-update">UPDATE</a></li>
+<li><a href="#11-delete">DELETE</a></li>
+<li><a href="#12-transactions-concurrency-locking-hints">Transactions, concurrency, locking hints</a></li>
+<li><a href="#13-join-group-by-distinct--the-sqlquery-composer">JOIN, GROUP BY, DISTINCT — the <code>SqlQuery</code> composer</a></li>
+<li><a href="#14-dynamic-where--retiring-dynamic-sql">Dynamic WHERE — retiring dynamic SQL</a></li>
+<li><a href="#15-portable-scalar-functions--fn">Portable scalar functions — <code>Fn</code></a></li>
+<li><a href="#16-sub-queries-union-cursors-procedures">Sub-queries, UNION, cursors, procedures</a></li>
+<li><a href="#17-where-the-no-sql-surface-ends">Where the no-SQL surface ends</a></li>
+<li><a href="#18-gotchas">Gotchas</a></li>
+</ol>
+<hr />
+<h2 id="1-three-layers-and-when-each-is-enough">1. Three layers, and when each is enough</h2>
+<table>
+<thead>
+<tr>
+<th>Layer</th>
+<th>SQL you write</th>
+<th>Covers</th>
+<th>Provider-portable?</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>1. Typed repository</strong> — <code>IRepository&lt;T&gt;</code></td>
+<td><strong>none at all</strong></td>
+<td>Single-table CRUD, filter, order, page, project, count, exists, aggregates, bulk insert, streaming</td>
+<td>Yes — the SQL is generated per dialect</td>
+</tr>
+<tr>
+<td><strong>2. <code>SqlQuery</code> composer</strong> (<code>TflOmniDb.Query</code>)</td>
+<td><strong>none on the common path</strong> — columns are <code>Col</code> / <code>Agg</code> tokens; only <code>HAVING</code>, <code>CASE</code> and aggregate-alias <code>ORDER BY</code> still take a short text fragment</td>
+<td>JOIN, GROUP BY, HAVING, DISTINCT, conditional WHERE, paging, scalar, EXISTS</td>
+<td>Yes — identifiers auto-quoted, <code>@p</code> → <code>:p</code> on Oracle, paging per dialect</td>
+</tr>
+<tr>
+<td><strong>3. Raw SQL</strong> — <code>DataAccess.QueryAsync</code> / <code>ExecuteNonQueryAsync</code></td>
+<td>the whole statement</td>
+<td>Window functions, CTE, PIVOT, MERGE, UNION, <code>INSERT…SELECT</code>, DDL</td>
+<td>No — you write dialect-aware text</td>
+</tr>
+</tbody>
+</table>
+<p>Rule of thumb: <strong>stay in layer 1 until the query touches more than one table or groups rows.</strong>
+Then move to layer 2. Layer 3 is a deliberate escape hatch, not a fallback to drift into.</p>
+<p>All three go through the same pipeline — command logging, sensitive-value redaction, correlation
+id, transient-fault retry, <code>UseDirtyReads()</code>, <code>UseCommandTimeout()</code>. Choosing layer 1 or 2 costs
+nothing operationally.</p>
+<hr />
+<h2 id="2-master-index-sql-construct-tflomnidb-api">2. Master index — SQL construct → TflOmniDb API</h2>
+<table>
+<thead>
+<tr>
+<th>SQL</th>
+<th>TflOmniDb</th>
+<th>Layer</th>
+<th>§</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>SELECT * FROM t WHERE pk = @id</code></td>
+<td><code>repo.GetAsync(new object[] { id })</code></td>
+<td>1</td>
+<td><a href="#4-select--whole-rows">4</a></td>
+</tr>
+<tr>
+<td><code>SELECT * FROM t</code></td>
+<td><code>repo.GetAllAsync()</code></td>
+<td>1</td>
+<td><a href="#4-select--whole-rows">4</a></td>
+</tr>
+<tr>
+<td><code>SELECT a, b FROM t</code></td>
+<td><code>repo.GetAllAsync(x =&gt; x.A, x =&gt; x.B)</code></td>
+<td>1</td>
+<td><a href="#5-select--fewer-columns">5</a></td>
+</tr>
+<tr>
+<td><code>SELECT a, b FROM t WHERE …</code></td>
+<td><code>repo.WhereAsync(pred, [x =&gt; x.A, x =&gt; x.B])</code> <strong>net10</strong></td>
+<td>1</td>
+<td><a href="#5-select--fewer-columns">5</a></td>
+</tr>
+<tr>
+<td><code>WHERE … = / &lt;&gt; / &lt; / &gt;</code></td>
+<td><code>repo.WhereAsync(x =&gt; x.Col == v)</code></td>
+<td>1</td>
+<td><a href="#6-where--the-predicate-cheat-sheet">6</a></td>
+</tr>
+<tr>
+<td><code>WHERE … AND / OR / NOT</code></td>
+<td><code>&amp;&amp;</code> / <code>\|\|</code> / <code>!</code></td>
+<td>1</td>
+<td><a href="#6-where--the-predicate-cheat-sheet">6</a></td>
+</tr>
+<tr>
+<td><code>WHERE c IS NULL</code></td>
+<td><code>x =&gt; x.C == null</code></td>
+<td>1</td>
+<td><a href="#6-where--the-predicate-cheat-sheet">6</a></td>
+</tr>
+<tr>
+<td><code>WHERE c BETWEEN a AND b</code></td>
+<td><code>x =&gt; x.C &gt;= a &amp;&amp; x.C &lt;= b</code></td>
+<td>1</td>
+<td><a href="#6-where--the-predicate-cheat-sheet">6</a></td>
+</tr>
+<tr>
+<td><code>WHERE c LIKE '%x%'</code></td>
+<td><code>x =&gt; x.C!.Contains("x")</code></td>
+<td>1</td>
+<td><a href="#6-where--the-predicate-cheat-sheet">6</a></td>
+</tr>
+<tr>
+<td><code>WHERE c IN (…)</code></td>
+<td><code>x =&gt; list.Contains(x.C!.Value)</code></td>
+<td>1</td>
+<td><a href="#6-where--the-predicate-cheat-sheet">6</a></td>
+</tr>
+<tr>
+<td><code>ORDER BY c DESC</code></td>
+<td><code>orderBy: x =&gt; x.C!, descending: true</code></td>
+<td>1</td>
+<td><a href="#7-order-by-top-paging">7</a></td>
+</tr>
+<tr>
+<td><code>TOP (n)</code> / <code>OFFSET … FETCH</code> / <code>LIMIT</code></td>
+<td><code>skip:</code> / <code>take:</code></td>
+<td>1</td>
+<td><a href="#7-order-by-top-paging">7</a></td>
+</tr>
+<tr>
+<td><code>SELECT COUNT(*)</code></td>
+<td><code>repo.CountAsync(pred)</code></td>
+<td>1</td>
+<td><a href="#8-count-exists-aggregates">8</a></td>
+</tr>
+<tr>
+<td><code>IF EXISTS (SELECT 1 …)</code></td>
+<td><code>repo.AnyAsync(pred)</code></td>
+<td>1</td>
+<td><a href="#8-count-exists-aggregates">8</a></td>
+</tr>
+<tr>
+<td><code>SELECT MAX/MIN/SUM/AVG(c)</code></td>
+<td><code>repo.MaxAsync&lt;T&gt;(x =&gt; x.C, pred)</code> … <strong>net10</strong></td>
+<td>1</td>
+<td><a href="#8-count-exists-aggregates">8</a></td>
+</tr>
+<tr>
+<td><code>SELECT MAX(pk)</code></td>
+<td><code>repo.MaxKeyAsync&lt;long&gt;()</code> <strong>net10</strong></td>
+<td>1</td>
+<td><a href="#8-count-exists-aggregates">8</a></td>
+</tr>
+<tr>
+<td><code>INSERT</code> + <code>SCOPE_IDENTITY()</code></td>
+<td><code>repo.InsertAsync(e)</code> — id written back into <code>e</code></td>
+<td>1</td>
+<td><a href="#9-insert">9</a></td>
+</tr>
+<tr>
+<td><code>BULK INSERT</code> / many <code>INSERT</code>s</td>
+<td><code>repo.BulkInsertAsync(rows)</code></td>
+<td>1</td>
+<td><a href="#9-insert">9</a></td>
+</tr>
+<tr>
+<td><code>UPDATE t SET &lt;all&gt; WHERE pk</code></td>
+<td><code>repo.UpdateAsync(e)</code></td>
+<td>1</td>
+<td><a href="#10-update">10</a></td>
+</tr>
+<tr>
+<td><code>UPDATE t SET a, b WHERE pk</code></td>
+<td><code>repo.UpdateAsync(e, x =&gt; x.A, x =&gt; x.B)</code> <strong>net10</strong></td>
+<td>1</td>
+<td><a href="#10-update">10</a></td>
+</tr>
+<tr>
+<td><code>UPDATE t SET … WHERE &lt;pred&gt;</code></td>
+<td><code>repo.UpdateWhereAsync(pred, assignments)</code></td>
+<td>1</td>
+<td><a href="#10-update">10</a></td>
+</tr>
+<tr>
+<td><code>DELETE FROM t WHERE pk</code></td>
+<td><code>repo.DeleteAsync(e)</code></td>
+<td>1</td>
+<td><a href="#11-delete">11</a></td>
+</tr>
+<tr>
+<td><code>DELETE FROM t WHERE &lt;pred&gt;</code></td>
+<td><code>repo.DeleteWhereAsync(pred)</code></td>
+<td>1</td>
+<td><a href="#11-delete">11</a></td>
+</tr>
+<tr>
+<td><code>BEGIN TRAN … COMMIT</code></td>
+<td><code>using var uow = await data.BeginTransactionAsync()</code></td>
+<td>1</td>
+<td><a href="#12-transactions-concurrency-locking-hints">12</a></td>
+</tr>
+<tr>
+<td><code>WHERE … AND VERSION = @v</code> (concurrency)</td>
+<td><code>[DbColumn(IsRowVersion = true)]</code> — automatic</td>
+<td>1</td>
+<td><a href="#12-transactions-concurrency-locking-hints">12</a></td>
+</tr>
+<tr>
+<td><code>WITH (NOLOCK)</code></td>
+<td><code>using (data.UseDirtyReads())</code></td>
+<td>1</td>
+<td><a href="#12-transactions-concurrency-locking-hints">12</a></td>
+</tr>
+<tr>
+<td><code>INNER JOIN</code> / <code>LEFT JOIN</code></td>
+<td><code>q.InnerJoin&lt;TRight&gt;("b", left, right)</code></td>
+<td>2</td>
+<td><a href="#13-join-group-by-distinct--the-sqlquery-composer">13</a></td>
+</tr>
+<tr>
+<td><code>GROUP BY</code> + <code>COUNT/SUM/AVG/MIN/MAX</code></td>
+<td><code>.GroupBy(Cols.X)</code> + <code>.Select(Agg.Sum(…))</code></td>
+<td>2</td>
+<td><a href="#13-join-group-by-distinct--the-sqlquery-composer">13</a></td>
+</tr>
+<tr>
+<td><code>HAVING</code></td>
+<td><code>.Having("COUNT(*) &gt; @n", ("n", 5))</code> <em>(fragment)</em></td>
+<td>2</td>
+<td><a href="#13-join-group-by-distinct--the-sqlquery-composer">13</a></td>
+</tr>
+<tr>
+<td><code>SELECT DISTINCT</code></td>
+<td><code>.Distinct()</code></td>
+<td>2</td>
+<td><a href="#13-join-group-by-distinct--the-sqlquery-composer">13</a></td>
+</tr>
+<tr>
+<td><code>IF @p IS NOT NULL</code> branch / <code>sp_executesql</code></td>
+<td><code>.WhereIf(cond, col, "=", v)</code></td>
+<td>2</td>
+<td><a href="#14-dynamic-where--retiring-dynamic-sql">14</a></td>
+</tr>
+<tr>
+<td><code>ISNULL</code> / <code>NVL</code> / <code>COALESCE</code></td>
+<td><code>Fn.Coalesce(a, b)</code></td>
+<td>2</td>
+<td><a href="#15-portable-scalar-functions--fn">15</a></td>
+</tr>
+<tr>
+<td><code>GETDATE()</code> / <code>SYSDATE</code></td>
+<td><code>Fn.Now()</code></td>
+<td>2</td>
+<td><a href="#15-portable-scalar-functions--fn">15</a></td>
+</tr>
+<tr>
+<td><code>a + b</code> (string concat)</td>
+<td><code>Fn.Concat(a, b)</code></td>
+<td>2</td>
+<td><a href="#15-portable-scalar-functions--fn">15</a></td>
+</tr>
+<tr>
+<td><code>CHARINDEX</code> / <code>INSTR</code> / <code>POSITION</code></td>
+<td><code>Fn.CharIndex(needle, haystack)</code></td>
+<td>2</td>
+<td><a href="#15-portable-scalar-functions--fn">15</a></td>
+</tr>
+<tr>
+<td><code>LEN</code>, <code>SUBSTRING</code>, <code>CAST</code></td>
+<td><code>Fn.Length</code> / <code>Fn.Substring</code> / <code>Fn.Cast</code></td>
+<td>2</td>
+<td><a href="#15-portable-scalar-functions--fn">15</a></td>
+</tr>
+<tr>
+<td><code>WHERE c IN (SELECT …)</code></td>
+<td>two-step: read keys, then <code>Contains</code></td>
+<td>1</td>
+<td><a href="#16-sub-queries-union-cursors-procedures">16</a></td>
+</tr>
+<tr>
+<td><code>UNION ALL</code></td>
+<td>run both, concatenate in C#</td>
+<td>1</td>
+<td><a href="#16-sub-queries-union-cursors-procedures">16</a></td>
+</tr>
+<tr>
+<td><code>DECLARE CURSOR</code> / <code>WHILE</code> fetch loop</td>
+<td><code>await foreach (var e in repo.StreamAllAsync())</code> <strong>net10</strong></td>
+<td>1</td>
+<td><a href="#16-sub-queries-union-cursors-procedures">16</a></td>
+</tr>
+<tr>
+<td><code>EXEC usp_x @a, @b OUTPUT</code></td>
+<td><code>new StoredProcedureCall("usp_x").Input(…).Output(…)</code></td>
+<td>1</td>
+<td><a href="#16-sub-queries-union-cursors-procedures">16</a></td>
+</tr>
+<tr>
+<td>Window fn, CTE, PIVOT, MERGE, <code>INSERT…SELECT</code>, DDL</td>
+<td>raw SQL — by design</td>
+<td>3</td>
+<td><a href="#17-where-the-no-sql-surface-ends">17</a></td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="3-the-worked-schema">3. The worked schema</h2>
+<p>Two tables — <code>ACCOUNT</code> and <code>BRANCH</code> — in the scaffolder's default shape (unquoted-uppercase
+identifiers, <code>partial</code> class, nested <code>Cols</code> tokens). Everything below uses them.</p>
+<pre><code class="language-sql">CREATE TABLE BRANCH (
+    BRANCH_ID    INT          NOT NULL PRIMARY KEY,
+    BRANCH_NAME  NVARCHAR(60) NOT NULL,
+    REGION       NVARCHAR(30) NULL);
+
+CREATE TABLE ACCOUNT (
+    ACCOUNT_ID   BIGINT        NOT NULL IDENTITY PRIMARY KEY,
+    BRANCH_ID    INT           NOT NULL REFERENCES BRANCH(BRANCH_ID),
+    ACCOUNT_NAME NVARCHAR(100) NOT NULL,
+    BALANCE      DECIMAL(19,4) NOT NULL,
+    STATUS       INT           NOT NULL,
+    OPENED_ON    DATETIME2     NOT NULL,
+    VERSION_NO   INT           NOT NULL);
+</code></pre>
+<p>The entity is what the scaffolder emits (<code>dotnet run --project TflOmniDb.Scaffold</code>), trimmed here:</p>
+<pre><code class="language-csharp">using TflOmniDb.Core;
+using TflOmniDb.Query;      // for the nested Cols tokens
+
+[DbTable(TableName = &quot;ACCOUNT&quot;)]
+public partial class ACCOUNT : Entity
+{
+    [DbColumn(ColumnName = &quot;ACCOUNT_ID&quot;, CoreType = CoreDataType.Int64, AllowDbNull = false,
+              IsPrimaryKey = true, KeyGeneration = KeyGenerationStrategy.Identity)]
+    public virtual long? ACCOUNT_ID { get; set; }
+
+    [DbColumn(ColumnName = &quot;BRANCH_ID&quot;, CoreType = CoreDataType.Int32, AllowDbNull = false,
+              IsForeignKey = true, FkTableName = &quot;BRANCH&quot;, FkColumnName = &quot;BRANCH_ID&quot;)]
+    public virtual int? BRANCH_ID { get; set; }
+
+    [DbColumn(ColumnName = &quot;ACCOUNT_NAME&quot;, CoreType = CoreDataType.UnicodeString, Size = 100, AllowDbNull = false)]
+    public virtual string? ACCOUNT_NAME { get; set; }
+
+    [DbColumn(ColumnName = &quot;BALANCE&quot;, CoreType = CoreDataType.Money, AllowDbNull = false)]
+    public virtual decimal? BALANCE { get; set; }
+
+    [DbColumn(ColumnName = &quot;STATUS&quot;, CoreType = CoreDataType.Int32, AllowDbNull = false)]
+    public virtual int? STATUS { get; set; }
+
+    [DbColumn(ColumnName = &quot;OPENED_ON&quot;, CoreType = CoreDataType.DateTime, AllowDbNull = false)]
+    public virtual DateTime? OPENED_ON { get; set; }
+
+    // App-managed optimistic-concurrency token — see §12.
+    [DbColumn(ColumnName = &quot;VERSION_NO&quot;, CoreType = CoreDataType.Int32, AllowDbNull = false, IsRowVersion = true)]
+    public virtual int? VERSION_NO { get; set; }
+
+    /// &lt;summary&gt;Strongly-typed column tokens for the SqlQuery composer.&lt;/summary&gt;
+    public static class Cols
+    {
+        public const string Table = &quot;ACCOUNT&quot;;
+
+        public static readonly Col ACCOUNT_ID   = new(&quot;ACCOUNT_ID&quot;);
+        public static readonly Col BRANCH_ID    = new(&quot;BRANCH_ID&quot;);
+        public static readonly Col ACCOUNT_NAME = new(&quot;ACCOUNT_NAME&quot;);
+        public static readonly Col BALANCE      = new(&quot;BALANCE&quot;);
+        public static readonly Col STATUS       = new(&quot;STATUS&quot;);
+        public static readonly Col OPENED_ON    = new(&quot;OPENED_ON&quot;);
+        public static readonly Col VERSION_NO   = new(&quot;VERSION_NO&quot;);
+    }
+}
+</code></pre>
+<p><code>BRANCH</code> is the same shape with <code>BRANCH_ID</code> / <code>BRANCH_NAME</code> / <code>REGION</code> and its own <code>Cols</code>.</p>
+<p>One <code>DataAccess</code> per connection string, for the life of the process:</p>
+<pre><code class="language-csharp">var data = new DataAccess(new DataAccessOptions
+{
+    Provider         = DbProvider.SqlServer,   // or Oracle / PostgreSql — nothing below changes
+    ConnectionString = cs,
+    DefaultSchema    = &quot;dbo&quot;,
+});
+
+var repo     = data.Repository&lt;ACCOUNT&gt;();
+var branches = data.Repository&lt;BRANCH&gt;();
+var provider = data.Options.Provider;
+</code></pre>
+<blockquote>
+<p>Entity properties are <code>Nullable&lt;T&gt;</code> so partial rows can materialize. That is why order-by
+selectors carry a <code>!</code> (<code>orderBy: x =&gt; x.BALANCE!</code>) and IN-lists read <code>x.BRANCH_ID!.Value</code>.</p>
+</blockquote>
+<hr />
+<h2 id="4-select-whole-rows">4. SELECT — whole rows</h2>
+<p><strong>By primary key</strong></p>
+<pre><code class="language-sql">SELECT * FROM ACCOUNT WHERE ACCOUNT_ID = @id;
+</code></pre>
+<pre><code class="language-csharp">ACCOUNT? a = await repo.GetAsync(new object[] { id });   // null when no row matches
+</code></pre>
+<p>Composite key: pass the values in the order the key columns are declared —
+<code>GetAsync(new object[] { orgId, accountId })</code>.</p>
+<p><strong>All rows</strong></p>
+<pre><code class="language-sql">SELECT * FROM ACCOUNT;
+</code></pre>
+<pre><code class="language-csharp">IReadOnlyList&lt;ACCOUNT&gt; all = await repo.GetAllAsync();
+</code></pre>
+<p><strong>Filtered rows</strong></p>
+<pre><code class="language-sql">SELECT * FROM ACCOUNT WHERE STATUS = 1;
+</code></pre>
+<pre><code class="language-csharp">var open = await repo.WhereAsync(x =&gt; x.STATUS == 1);
+</code></pre>
+<p><strong>Large result set — stream instead of buffering (net10)</strong></p>
+<pre><code class="language-sql">-- the T-SQL habit: a cursor, or SELECT everything and loop in the app
+</code></pre>
+<pre><code class="language-csharp">await foreach (var acct in repo.StreamWhereAsync(x =&gt; x.STATUS == 1, ct: ct))
+    await ProcessAsync(acct);        // O(1) memory, one open reader
+</code></pre>
+<hr />
+<h2 id="5-select-fewer-columns">5. SELECT — fewer columns</h2>
+<p><strong>Projection on a key read / full read</strong></p>
+<pre><code class="language-sql">SELECT ACCOUNT_ID, ACCOUNT_NAME FROM ACCOUNT;
+</code></pre>
+<pre><code class="language-csharp">var list = await repo.GetAllAsync(x =&gt; x.ACCOUNT_ID, x =&gt; x.ACCOUNT_NAME);
+var one  = await repo.GetAsync(new object[] { id }, x =&gt; x.ACCOUNT_NAME);
+</code></pre>
+<p><strong>Projection + filter (net10)</strong> — the column array is the second argument:</p>
+<pre><code class="language-sql">SELECT ACCOUNT_ID, BALANCE FROM ACCOUNT WHERE ACCOUNT_NAME = @n;
+</code></pre>
+<pre><code class="language-csharp">var row = (await repo.WhereAsync(
+        x =&gt; x.ACCOUNT_NAME == name,
+        [x =&gt; x.BALANCE],                 // the primary key is always added back
+        take: 1))
+    .FirstOrDefault();
+</code></pre>
+<p>Rules: the primary key is always included (round-trip identity); properties outside the projection
+stay at their <strong>default</strong> on the returned entity; each selector must be a plain property access —
+a computed expression throws <code>ArgumentException</code> (use the composer, §13).</p>
+<hr />
+<h2 id="6-where-the-predicate-cheat-sheet">6. WHERE — the predicate cheat-sheet</h2>
+<p>Every value in a predicate — literal, captured local, closure field, IN-list item, LIKE pattern —
+is bound as a <code>DbParameter</code>. Nothing is concatenated, so predicates are injection-safe by
+construction.</p>
+<table>
+<thead>
+<tr>
+<th>SQL</th>
+<th>C# predicate</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>STATUS = 1</code></td>
+<td><code>x =&gt; x.STATUS == 1</code></td>
+</tr>
+<tr>
+<td><code>STATUS &lt;&gt; 1</code></td>
+<td><code>x =&gt; x.STATUS != 1</code></td>
+</tr>
+<tr>
+<td><code>BALANCE &gt; 1000</code></td>
+<td><code>x =&gt; x.BALANCE &gt; 1000m</code></td>
+</tr>
+<tr>
+<td><code>A = 1 AND B = 2</code></td>
+<td><code>x =&gt; x.A == 1 &amp;&amp; x.B == 2</code></td>
+</tr>
+<tr>
+<td><code>A = 1 OR B = 2</code></td>
+<td><code>x =&gt; x.A == 1 \|\| x.B == 2</code></td>
+</tr>
+<tr>
+<td><code>NOT (STATUS = 9)</code></td>
+<td><code>x =&gt; !(x.STATUS == 9)</code></td>
+</tr>
+<tr>
+<td><code>BALANCE BETWEEN 10 AND 50</code></td>
+<td><code>x =&gt; x.BALANCE &gt;= 10m &amp;&amp; x.BALANCE &lt;= 50m</code></td>
+</tr>
+<tr>
+<td><code>ACCOUNT_NAME IS NULL</code></td>
+<td><code>x =&gt; x.ACCOUNT_NAME == null</code></td>
+</tr>
+<tr>
+<td><code>ACCOUNT_NAME IS NOT NULL</code></td>
+<td><code>x =&gt; x.ACCOUNT_NAME != null</code> — or <code>x =&gt; x.OPENED_ON.HasValue</code> for a nullable value type</td>
+</tr>
+<tr>
+<td><code>ACCOUNT_NAME LIKE 'ACME%'</code></td>
+<td><code>x =&gt; x.ACCOUNT_NAME!.StartsWith("ACME")</code></td>
+</tr>
+<tr>
+<td><code>ACCOUNT_NAME LIKE '%ACME%'</code></td>
+<td><code>x =&gt; x.ACCOUNT_NAME!.Contains("ACME")</code></td>
+</tr>
+<tr>
+<td><code>ACCOUNT_NAME LIKE '%LTD'</code></td>
+<td><code>x =&gt; x.ACCOUNT_NAME!.EndsWith("LTD")</code></td>
+</tr>
+<tr>
+<td><code>BRANCH_ID IN (1,2,3)</code></td>
+<td><code>int[] ids = [1,2,3];</code> → <code>x =&gt; ids.Contains(x.BRANCH_ID!.Value)</code></td>
+</tr>
+<tr>
+<td><code>BRANCH_ID NOT IN (…)</code></td>
+<td><code>x =&gt; !ids.Contains(x.BRANCH_ID!.Value)</code></td>
+</tr>
+<tr>
+<td><code>BALANCE &gt; MIN_BALANCE</code> (column vs column)</td>
+<td><code>x =&gt; x.BALANCE &gt; x.MIN_BALANCE</code></td>
+</tr>
+<tr>
+<td><code>OPENED_ON &gt;= @from</code> (a variable)</td>
+<td><code>x =&gt; x.OPENED_ON &gt;= from</code> — the local is captured and bound</td>
+</tr>
+</tbody>
+</table>
+<p><code>Contains</code> / <code>StartsWith</code> / <code>EndsWith</code> <strong>escape the LIKE metacharacters</strong> (<code>%</code>, <code>_</code>, <code>[</code>, <code>]</code>) in
+your argument, so <code>Contains("50%")</code> searches for the literal text <code>50%</code>. When you genuinely want a
+caller-supplied <em>pattern</em>, use the composer's <code>Where(col, "LIKE", pattern)</code> (§13), which binds the
+pattern verbatim.</p>
+<p>Not translatable — throws <code>NotSupportedException</code>, go to §13 / §17: method calls other than the
+four above (<code>ToUpper()</code>, <code>Substring()</code>, date functions), arithmetic on columns, sub-queries, and a
+bare boolean column (write <code>x =&gt; x.IS_ACTIVE == true</code>, not <code>x =&gt; x.IS_ACTIVE</code>).</p>
+<hr />
+<h2 id="7-order-by-top-paging">7. ORDER BY, TOP, paging</h2>
+<pre><code class="language-sql">SELECT TOP (10) * FROM ACCOUNT WHERE STATUS = 1 ORDER BY OPENED_ON DESC;
+</code></pre>
+<pre><code class="language-csharp">var latest = await repo.WhereAsync(
+    x =&gt; x.STATUS == 1,
+    orderBy:    x =&gt; x.OPENED_ON!,
+    descending: true,
+    take:       10);
+</code></pre>
+<pre><code class="language-sql">-- page 3, 20 rows per page
+SELECT * FROM ACCOUNT ORDER BY ACCOUNT_ID OFFSET 40 ROWS FETCH NEXT 20 ROWS ONLY;   -- SQL Server / Oracle
+SELECT * FROM ACCOUNT ORDER BY ACCOUNT_ID LIMIT 20 OFFSET 40;                       -- PostgreSQL
+</code></pre>
+<pre><code class="language-csharp">var page3 = await repo.WhereAsync(predicate: null, skip: 40, take: 20);
+</code></pre>
+<p>One call, three dialects: OFFSET/FETCH on SQL Server and Oracle, LIMIT/OFFSET on PostgreSQL. When
+<code>skip</code> / <code>take</code> are set and no <code>orderBy</code> is given, the first primary-key column is used so paging
+stays deterministic.</p>
+<hr />
+<h2 id="8-count-exists-aggregates">8. COUNT, EXISTS, aggregates</h2>
+<pre><code class="language-sql">SELECT COUNT(*) FROM ACCOUNT;
+SELECT COUNT(*) FROM ACCOUNT WHERE STATUS = 1;
+</code></pre>
+<pre><code class="language-csharp">long total = await repo.CountAsync();
+long open  = await repo.CountAsync(x =&gt; x.STATUS == 1);   // long — banking tables outgrow int
+</code></pre>
+<pre><code class="language-sql">IF EXISTS (SELECT 1 FROM ACCOUNT WHERE BALANCE &gt; 1000000) …
+</code></pre>
+<pre><code class="language-csharp">bool any = await repo.AnyAsync(x =&gt; x.BALANCE &gt; 1_000_000m);   // cheaper than CountAsync(...) &gt; 0
+</code></pre>
+<p><strong>Scalar aggregates (net10)</strong> — the write-once replacement for the legacy <code>Max(type, criteria)</code> /
+<code>MaxPrimaryKeyValue(type)</code> idiom:</p>
+<pre><code class="language-sql">SELECT MAX(BALANCE) FROM ACCOUNT;
+SELECT SUM(BALANCE) FROM ACCOUNT WHERE STATUS = 1;
+SELECT MAX(ACCOUNT_ID) FROM ACCOUNT;
+</code></pre>
+<pre><code class="language-csharp">decimal  max  = await repo.MaxAsync&lt;decimal&gt;(x =&gt; x.BALANCE);
+decimal  sum  = await repo.SumAsync&lt;decimal&gt;(x =&gt; x.BALANCE, x =&gt; x.STATUS == 1);
+long     next = await repo.MaxKeyAsync&lt;long&gt;();                 // single-PK entities only
+decimal? none = await repo.MaxAsync&lt;decimal?&gt;(x =&gt; x.BALANCE);  // nullable ⇒ null when no rows match
+</code></pre>
+<p><code>MinAsync</code> / <code>AvgAsync</code> complete the set. An empty result set (or an all-NULL column) yields
+<code>default(TResult)</code> — ask for a <strong>nullable</strong> <code>TResult</code> when "no rows" must be distinguishable from a
+real zero. <code>AVG</code> follows the engine's native rule: averaging an integer column truncates on SQL
+Server and Oracle, so average a decimal column or cast with <code>Fn.Cast</code> in the composer.</p>
+<p>Aggregates <strong>grouped by a column</strong> are §13.</p>
+<hr />
+<h2 id="9-insert">9. INSERT</h2>
+<pre><code class="language-sql">INSERT INTO ACCOUNT (BRANCH_ID, ACCOUNT_NAME, BALANCE, STATUS, OPENED_ON, VERSION_NO)
+VALUES (@b, @n, @bal, @s, @d, 1);
+SELECT SCOPE_IDENTITY();
+</code></pre>
+<pre><code class="language-csharp">var a = new ACCOUNT
+{
+    BRANCH_ID = 7, ACCOUNT_NAME = &quot;ACME LTD&quot;, BALANCE = 0m,
+    STATUS = 1, OPENED_ON = DateTime.UtcNow, VERSION_NO = 1,
+};
+await repo.InsertAsync(a);
+long id = a.ACCOUNT_ID!.Value;   // identity written straight back into the instance
+</code></pre>
+<p>The identity round-trip is dialect-specific under the hood (<code>SCOPE_IDENTITY()</code> /
+<code>RETURNING … INTO :ret</code> / <code>INSERT … RETURNING</code>) and identical from C#.</p>
+<p><strong>Many rows</strong> — the provider's bulk path (<code>SqlBulkCopy</code> / binary <code>COPY</code> / <code>OracleBulkCopy</code>), orders
+of magnitude faster than a loop above ~50 rows:</p>
+<pre><code class="language-sql">BULK INSERT ACCOUNT FROM '…';   -- or 10 000 INSERT round-trips
+</code></pre>
+<pre><code class="language-csharp">int written = await repo.BulkInsertAsync(rows, new BulkInsertOptions { BatchSize = 5000 });
+</code></pre>
+<p>Bulk insert does <strong>not</strong> write generated identity values back into the entities, and it is excluded
+from auto-retry (a partial batch can't be replayed). On Oracle it requires unquoted-uppercase table
+names.</p>
+<hr />
+<h2 id="10-update">10. UPDATE</h2>
+<p><strong>Whole row, by primary key</strong></p>
+<pre><code class="language-sql">UPDATE ACCOUNT SET BRANCH_ID=@b, ACCOUNT_NAME=@n, BALANCE=@bal, STATUS=@s, OPENED_ON=@d,
+                   VERSION_NO = VERSION_NO + 1
+WHERE ACCOUNT_ID = @id AND VERSION_NO = @v;
+</code></pre>
+<pre><code class="language-csharp">a.BALANCE = 500m;
+int rows = await repo.UpdateAsync(a);     // every updatable column; the version is handled for you
+</code></pre>
+<p><strong>Only the columns that changed (net10)</strong> — no prior read needed; a fresh entity carrying the key
+(plus the row-version, if the entity has one) is enough:</p>
+<pre><code class="language-sql">UPDATE ACCOUNT SET STATUS = @s, VERSION_NO = VERSION_NO + 1
+WHERE ACCOUNT_ID = @id AND VERSION_NO = @v;
+</code></pre>
+<pre><code class="language-csharp">await repo.UpdateAsync(
+    new ACCOUNT { ACCOUNT_ID = id, STATUS = 9, VERSION_NO = currentVersion },
+    x =&gt; x.STATUS);
+</code></pre>
+<p>The row-version is <strong>always</strong> enforced on a partial update even when it isn't in the column list —
+which is why the instance must carry its current value. A stale value throws <code>ConcurrencyException</code>.</p>
+<p><strong>Set-based — many rows, no primary key</strong></p>
+<pre><code class="language-sql">UPDATE ACCOUNT SET STATUS = 9 WHERE BALANCE = 0 AND OPENED_ON &lt; @cutoff;
+</code></pre>
+<pre><code class="language-csharp">using System.Linq.Expressions;
+
+int affected = await repo.UpdateWhereAsync(
+    x =&gt; x.BALANCE == 0m &amp;&amp; x.OPENED_ON &lt; cutoff,
+    new (Expression&lt;Func&lt;ACCOUNT, object?&gt;&gt;, object?)[]
+    {
+        (x =&gt; x.STATUS, 9),
+    });
+</code></pre>
+<p><code>repo.UpdateAsync(predicate, assignments)</code> is the same method under the <code>UpdateAsync</code> name.
+Set-based writes carry <strong>no</strong> row-version semantics — they are the deliberate bulk-change tool.</p>
+<blockquote>
+<p><code>SET BALANCE = BALANCE + @amt</code> (an assignment that references a column) is <strong>not</strong> expressible:
+the assignment value is a bound parameter, not an expression. Either read-modify-write inside a
+transaction (where the row-version protects you), or drop to <code>data.ExecuteNonQueryAsync</code> — §17.</p>
+</blockquote>
+<hr />
+<h2 id="11-delete">11. DELETE</h2>
+<pre><code class="language-sql">DELETE FROM ACCOUNT WHERE ACCOUNT_ID = @id;
+</code></pre>
+<pre><code class="language-csharp">await repo.DeleteAsync(a);        // key read from the entity
+</code></pre>
+<pre><code class="language-sql">DELETE FROM ACCOUNT WHERE STATUS = 9 AND OPENED_ON &lt; @cutoff;
+</code></pre>
+<pre><code class="language-csharp">int purged = await repo.DeleteWhereAsync(x =&gt; x.STATUS == 9 &amp;&amp; x.OPENED_ON &lt; cutoff);
+</code></pre>
+<hr />
+<h2 id="12-transactions-concurrency-locking-hints">12. Transactions, concurrency, locking hints</h2>
+<p><strong>Explicit transaction</strong></p>
+<pre><code class="language-sql">BEGIN TRAN;
+    UPDATE ACCOUNT SET BALANCE = … WHERE ACCOUNT_ID = @from;
+    UPDATE ACCOUNT SET BALANCE = … WHERE ACCOUNT_ID = @to;
+COMMIT;
+</code></pre>
+<pre><code class="language-csharp">using var uow = await data.BeginTransactionAsync();
+var r = uow.Repository&lt;ACCOUNT&gt;();          // enlisted in the transaction
+
+await r.UpdateAsync(from, x =&gt; x.BALANCE);
+await r.UpdateAsync(to,   x =&gt; x.BALANCE);
+
+await uow.CommitAsync();                    // disposing without committing rolls back
+</code></pre>
+<p><strong>Retryable transaction</strong> — the only safe way to replay multi-statement work after a deadlock:</p>
+<pre><code class="language-csharp">await data.ExecuteInTransactionAsync(async uow =&gt;
+{
+    var r = uow.Repository&lt;ACCOUNT&gt;();
+    // …                                     make this delegate idempotent — it may run twice
+});
+</code></pre>
+<p><strong>Optimistic concurrency</strong> — there is no <code>WHERE VERSION = @v</code> to write by hand. A column marked
+<code>IsRowVersion = true</code> is incremented in <code>SET</code> and checked in <code>WHERE</code> on every update; zero matched
+rows throws <code>ConcurrencyException</code>. Identical on all three engines — no <code>ROWVERSION</code> / <code>xmin</code> /
+<code>ORA_ROWSCN</code> divergence.</p>
+<p><strong>Dirty reads</strong></p>
+<pre><code class="language-sql">SELECT * FROM ACCOUNT WITH (NOLOCK) WHERE STATUS = 1;
+</code></pre>
+<pre><code class="language-csharp">using (data.UseDirtyReads())                 // WITH(NOLOCK) on SQL Server; no-op on Oracle/PG (MVCC)
+{
+    var rows = await repo.WhereAsync(x =&gt; x.STATUS == 1);
+}
+</code></pre>
+<p><strong>Per-scope command timeout (net10)</strong></p>
+<pre><code class="language-csharp">using (data.UseCommandTimeout(120))          // seconds; 0 = no timeout. Nested scopes shadow + restore
+{
+    var slow = await repo.CountAsync();
+}
+</code></pre>
+<hr />
+<h2 id="13-join-group-by-distinct-the-sqlquery-composer">13. JOIN, GROUP BY, DISTINCT — the <code>SqlQuery</code> composer</h2>
+<p>The typed repository deliberately generates no joins and no GROUP BY. Those live in
+<code>TflOmniDb.Query.SqlQuery</code>, which builds the statement from <strong>column tokens</strong>: identifiers are
+quoted per dialect, values are bound to auto-named parameters, <code>@p</code> becomes <code>:p</code> on Oracle, and
+paging uses each engine's syntax. It never opens a connection — <code>ToListAsync(data)</code> /
+<code>ToListAsync(uow)</code> hand the built statement to the same pipeline everything else uses.</p>
+<p><strong>INNER JOIN + projection</strong></p>
+<pre><code class="language-sql">SELECT a.ACCOUNT_NAME, b.BRANCH_NAME
+FROM ACCOUNT a
+INNER JOIN BRANCH b ON a.BRANCH_ID = b.BRANCH_ID
+WHERE a.STATUS = 1
+ORDER BY a.ACCOUNT_NAME;
+</code></pre>
+<pre><code class="language-csharp">using TflOmniDb.Query;
+
+public sealed class AccountRow
+{
+    public string? ACCOUNT_NAME { get; set; }
+    public string? BRANCH_NAME { get; set; }
+}
+
+var rows = await SqlQuery.From&lt;ACCOUNT&gt;(&quot;a&quot;, provider)
+    .InnerJoin&lt;BRANCH&gt;(&quot;b&quot;, ACCOUNT.Cols.BRANCH_ID.As(&quot;a&quot;), BRANCH.Cols.BRANCH_ID.As(&quot;b&quot;))
+    .SelectCols(ACCOUNT.Cols.ACCOUNT_NAME.As(&quot;a&quot;), BRANCH.Cols.BRANCH_NAME.As(&quot;b&quot;))
+    .Where(ACCOUNT.Cols.STATUS.As(&quot;a&quot;), &quot;=&quot;, 1)
+    .OrderBy(ACCOUNT.Cols.ACCOUNT_NAME.As(&quot;a&quot;))
+    .ToListAsync&lt;AccountRow&gt;(data);
+</code></pre>
+<p><code>From&lt;TEntity&gt;</code> takes the table name from <code>[DbTable]</code>; <code>InnerJoin&lt;TRight&gt;</code> takes the joined table
+from the right entity's <code>[DbTable]</code> and the ON clause from <code>Col</code> tokens. <code>LeftJoin&lt;TRight&gt;</code> is the
+outer-join twin, and a composite ON is <code>params (Col Left, Col Right)[]</code>. The <strong>first</strong> <code>.As("a")</code>
+sets the table alias; a second <code>.As("Name")</code> sets the SELECT-list output alias. Target POCOs need
+no <code>[DbTable]</code>, no key and no base class — columns map to properties by name.</p>
+<p>For a view, a derived table, or a mixed-case quoted table, the string overloads
+<code>From(table, alias, provider)</code> / <code>InnerJoin("BRANCH b", "b.X = a.X")</code> stay available.</p>
+<p><strong>GROUP BY + aggregates + HAVING</strong></p>
+<pre><code class="language-sql">SELECT a.BRANCH_ID, COUNT(*) AS Cnt, SUM(a.BALANCE) AS Total
+FROM ACCOUNT a
+WHERE a.STATUS = 1
+GROUP BY a.BRANCH_ID
+HAVING COUNT(*) &gt; 5
+ORDER BY Total DESC;
+</code></pre>
+<pre><code class="language-csharp">public sealed class BranchTotal
+{
+    public int BRANCH_ID { get; set; }
+    public int Cnt { get; set; }
+    public decimal Total { get; set; }
+}
+
+var totals = await SqlQuery.From&lt;ACCOUNT&gt;(&quot;a&quot;, provider)
+    .SelectCols(ACCOUNT.Cols.BRANCH_ID.As(&quot;a&quot;))
+    .Select(Agg.Count(&quot;Cnt&quot;), Agg.Sum(ACCOUNT.Cols.BALANCE.As(&quot;a&quot;), &quot;Total&quot;))
+    .Where(ACCOUNT.Cols.STATUS.As(&quot;a&quot;), &quot;=&quot;, 1)
+    .GroupBy(ACCOUNT.Cols.BRANCH_ID.As(&quot;a&quot;))
+    .Having(&quot;COUNT(*) &gt; @n&quot;, (&quot;n&quot;, 5))       // fragment — see the note below
+    .OrderBy(&quot;Total DESC&quot;)                   // aggregate alias — fragment
+    .ToListAsync&lt;BranchTotal&gt;(data);
+</code></pre>
+<p><code>Agg.Count / Sum / Avg / Min / Max</code> render <code>FUNC(col) AS alias</code> with the column quoted per dialect
+and the <strong>alias left unquoted</strong>, so an unquoted <code>ORDER BY Total DESC</code> matches on all three engines.</p>
+<blockquote>
+<p><strong>The two remaining fragments.</strong> <code>Having(...)</code> and ordering by an aggregate alias take short text.
+They are still parameterized — bind values as <code>("n", 5)</code>, never concatenate — and they are the
+only text in an otherwise token-built query. The typed <code>Where(Col, op, value)</code> accepts a
+whitelisted operator only (<code>=  &lt;&gt;  &lt;  &lt;=  &gt;  &gt;=  LIKE  NOT LIKE</code>); anything else throws, so the
+operator can't be injected either.</p>
+</blockquote>
+<p><strong>DISTINCT</strong></p>
+<pre><code class="language-sql">SELECT DISTINCT REGION FROM BRANCH ORDER BY REGION;
+</code></pre>
+<pre><code class="language-csharp">var regions = await SqlQuery.From&lt;BRANCH&gt;(&quot;b&quot;, provider)
+    .SelectCols(BRANCH.Cols.REGION.As(&quot;b&quot;))
+    .Distinct()
+    .OrderBy(BRANCH.Cols.REGION.As(&quot;b&quot;))
+    .ToDictionariesAsync(data);
+</code></pre>
+<p>Dedup happens in the database — this replaces an in-memory <code>DistinctBy</code> over a full table read.
+Under <code>DISTINCT</code>, every ORDER BY column must also be selected.</p>
+<p><strong>Paging, scalars, EXISTS, streaming</strong></p>
+<pre><code class="language-csharp">q.Page(skip, take);                                             // OFFSET/FETCH or LIMIT/OFFSET per dialect
+
+decimal total  = await q.ScalarAsync&lt;decimal&gt;(data);            // first column of the first row
+bool    exists = await q.ExistsAsync(data);                     // ≥ 1 row?
+await foreach (var r in q.StreamAsync&lt;AccountRow&gt;(data)) { }    // net10
+
+var (sql, ps) = q.Build();                                      // inspect / log what was generated
+</code></pre>
+<p><code>ToListAsync</code> and <code>ScalarAsync</code> also accept an <code>IUnitOfWork</code>, which is how a composed query joins
+an open transaction. Untyped rows come back from <code>ToDictionariesAsync</code> — read them with the
+<code>RowAccess</code> helpers (<code>row.GetDecimal("Total")</code>, <code>row.Get&lt;int&gt;("Cnt")</code>) rather than casting <code>object?</code>
+by hand.</p>
+<hr />
+<h2 id="14-dynamic-where-retiring-dynamic-sql">14. Dynamic WHERE — retiring dynamic SQL</h2>
+<p>The report pattern that spawns eight near-identical procedures, or an <code>sp_executesql</code> string built
+at runtime:</p>
+<pre><code class="language-sql">-- the &quot;optional filter&quot; proc
+IF @BranchId IS NULL AND @From IS NULL
+    SELECT … FROM ACCOUNT
+ELSE IF @BranchId IS NOT NULL AND @From IS NULL
+    SELECT … FROM ACCOUNT WHERE BRANCH_ID = @BranchId
+ELSE IF …
+
+-- or the index-hostile one-liner
+WHERE BRANCH_ID = ISNULL(@BranchId, BRANCH_ID)
+</code></pre>
+<pre><code class="language-csharp">var q = SqlQuery.From&lt;ACCOUNT&gt;(&quot;a&quot;, provider)
+    .SelectCols(ACCOUNT.Cols.ACCOUNT_ID.As(&quot;a&quot;), ACCOUNT.Cols.BALANCE.As(&quot;a&quot;))
+    .WhereIf(branchId is not null, ACCOUNT.Cols.BRANCH_ID.As(&quot;a&quot;), &quot;=&quot;,  branchId)
+    .WhereIf(from     is not null, ACCOUNT.Cols.OPENED_ON.As(&quot;a&quot;), &quot;&gt;=&quot;, from)
+    .WhereIf(minBal   is not null, ACCOUNT.Cols.BALANCE.As(&quot;a&quot;),   &quot;&gt;=&quot;, minBal)
+    .OrderBy(ACCOUNT.Cols.ACCOUNT_ID.As(&quot;a&quot;))
+    .Page(skip, take);
+
+var rows = await q.ToListAsync&lt;AccountRow&gt;(data);
+</code></pre>
+<p>An unsupplied filter is <strong>absent from the SQL</strong> — not <code>col = COALESCE(@p, col)</code> — so the optimizer
+still picks the index. This is the composer's headline feature and the single biggest lever when
+porting report procedures.</p>
+<p>When the filter varies over a <em>set</em> rather than a value, stay in layer 1:
+<code>repo.WhereAsync(x =&gt; ids.Contains(x.BRANCH_ID!.Value))</code>.</p>
+<hr />
+<h2 id="15-portable-scalar-functions-fn">15. Portable scalar functions — <code>Fn</code></h2>
+<p><code>SqlFunctions.For(provider)</code> (or <code>q.Fn</code> on a composer instance) renders the scalar vocabulary that
+otherwise pins code to one engine. Each call returns a <strong>SQL fragment string</strong> you place in a
+select list or predicate.</p>
+<table>
+<thead>
+<tr>
+<th>SQL Server</th>
+<th>Oracle</th>
+<th>PostgreSQL</th>
+<th><code>Fn</code></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>ISNULL(a, b)</code></td>
+<td><code>NVL(a, b)</code></td>
+<td><code>COALESCE(a, b)</code></td>
+<td><code>Fn.Coalesce("a", "b")</code></td>
+</tr>
+<tr>
+<td><code>a + b</code></td>
+<td><code>a \|\| b</code></td>
+<td><code>a \|\| b</code></td>
+<td><code>Fn.Concat("a", "b")</code></td>
+</tr>
+<tr>
+<td><code>GETDATE()</code></td>
+<td><code>SYSTIMESTAMP</code></td>
+<td><code>now()</code></td>
+<td><code>Fn.Now()</code></td>
+</tr>
+<tr>
+<td><code>CHARINDEX(n, h)</code></td>
+<td><code>INSTR(h, n)</code></td>
+<td><code>POSITION(n IN h)</code></td>
+<td><code>Fn.CharIndex("n", "h")</code></td>
+</tr>
+<tr>
+<td><code>SUBSTRING(e,1,3)</code></td>
+<td><code>SUBSTR(e,1,3)</code></td>
+<td><code>SUBSTRING(e,1,3)</code></td>
+<td><code>Fn.Substring("e", 1, 3)</code></td>
+</tr>
+<tr>
+<td><code>LEN(e)</code></td>
+<td><code>LENGTH(e)</code></td>
+<td><code>LENGTH(e)</code></td>
+<td><code>Fn.Length("e")</code></td>
+</tr>
+<tr>
+<td><code>UPPER</code> / <code>LOWER</code> / <code>TRIM</code></td>
+<td>same</td>
+<td>same</td>
+<td><code>Fn.Upper</code> / <code>Fn.Lower</code> / <code>Fn.Trim</code></td>
+</tr>
+<tr>
+<td><code>CAST(e AS NVARCHAR(50))</code></td>
+<td><code>CAST(e AS NVARCHAR2(50))</code></td>
+<td><code>CAST(e AS VARCHAR(50))</code></td>
+<td><code>Fn.Cast("e", CoreDataType.UnicodeString, size: 50)</code></td>
+</tr>
+</tbody>
+</table>
+<pre><code class="language-csharp">var fn = SqlFunctions.For(provider);
+var label = fn.Concat(
+    fn.Cast(&quot;a.ACCOUNT_NAME&quot;, CoreDataType.AnsiString, size: 100),
+    &quot;' — '&quot;,
+    fn.Coalesce(&quot;b.REGION&quot;, &quot;'n/a'&quot;));
+
+var labelled = await SqlQuery.From&lt;ACCOUNT&gt;(&quot;a&quot;, provider)
+    .InnerJoin&lt;BRANCH&gt;(&quot;b&quot;, ACCOUNT.Cols.BRANCH_ID.As(&quot;a&quot;), BRANCH.Cols.BRANCH_ID.As(&quot;b&quot;))
+    .Select($&quot;{label} AS Label&quot;)
+    .ToDictionariesAsync(data);
+</code></pre>
+<p><code>Fn.CharIndex</code> is the one worth memorising: Oracle's <code>INSTR</code> flips the operand order, which is a
+silent wrong-answer bug when a proc is ported by hand. <code>Fn</code> also gives you the case-insensitive
+comparison the lambda translator can't express — <code>Where($"{fn.Upper("a.ACCOUNT_NAME")} = @n", ("n", v.ToUpper()))</code>.</p>
+<hr />
+<h2 id="16-sub-queries-union-cursors-procedures">16. Sub-queries, UNION, cursors, procedures</h2>
+<p><strong><code>IN (SELECT …)</code> → two steps.</strong> One extra round-trip buys a portable, index-friendly query:</p>
+<pre><code class="language-sql">SELECT * FROM ACCOUNT WHERE BRANCH_ID IN (SELECT BRANCH_ID FROM BRANCH WHERE REGION = 'EAST');
+</code></pre>
+<pre><code class="language-csharp">var eastIds = (await branches.WhereAsync(x =&gt; x.REGION == &quot;EAST&quot;, [x =&gt; x.BRANCH_ID]))
+    .Select(b =&gt; b.BRANCH_ID!.Value)
+    .ToArray();
+
+var accounts = await repo.WhereAsync(x =&gt; eastIds.Contains(x.BRANCH_ID!.Value));
+</code></pre>
+<p>Watch the id-list size — a few hundred is fine, tens of thousands wants a join (§13) or raw SQL.
+An <code>EXISTS</code> sub-query used purely as a filter usually becomes <code>InnerJoin</code> + <code>Distinct()</code>.</p>
+<p><strong>UNION → concatenate in C#</strong>, when the branches are really separate queries:</p>
+<pre><code class="language-sql">SELECT 'dormant' AS Bucket, COUNT(*) AS N FROM ACCOUNT WHERE STATUS = 9
+UNION ALL
+SELECT 'open',            COUNT(*)      FROM ACCOUNT WHERE STATUS = 1;
+</code></pre>
+<pre><code class="language-csharp">var buckets = new[]
+{
+    (&quot;dormant&quot;, await repo.CountAsync(x =&gt; x.STATUS == 9)),
+    (&quot;open&quot;,    await repo.CountAsync(x =&gt; x.STATUS == 1)),
+};
+</code></pre>
+<p>If it must be one statement — one snapshot, one round-trip — that is raw SQL (§17).</p>
+<p><strong>Cursor / <code>WHILE</code> fetch loop → streaming (net10)</strong></p>
+<pre><code class="language-sql">DECLARE c CURSOR FOR SELECT …; OPEN c; FETCH NEXT …; WHILE @@FETCH_STATUS = 0 …
+</code></pre>
+<pre><code class="language-csharp">await foreach (var a in repo.StreamWhereAsync(x =&gt; x.STATUS == 1, ct: ct))
+    await PostAsync(a);
+</code></pre>
+<p><strong><code>EXEC</code> a stored procedure</strong> — still no SQL text, just a described call:</p>
+<pre><code class="language-sql">EXEC usp_Transfer @p_from = 1001, @p_amount = 500, @p_new_balance = @bal OUTPUT;
+</code></pre>
+<pre><code class="language-csharp">var call = new StoredProcedureCall(&quot;usp_Transfer&quot;)
+    .Input(&quot;p_from&quot;, 1001)
+    .Input(&quot;p_amount&quot;, 500m, CoreDataType.Money)
+    .Output(&quot;p_new_balance&quot;, CoreDataType.Money)
+    .ReturnValue();                                   // SQL Server / Oracle only
+
+var r = await data.ExecuteProcedureAsync(call);       // or uow.ExecuteProcedureAsync in a transaction
+decimal bal  = r.GetOutput&lt;decimal&gt;(&quot;p_new_balance&quot;);
+var     rows = r.FirstResultSet.ToList&lt;AccountRow&gt;(); // RowAccess maps the raw set to a POCO
+</code></pre>
+<p>Parameter names go in <strong>without</strong> the <code>@</code> / <code>:</code> prefix, in the procedure's declared order
+(PostgreSQL binds positionally). Per-engine differences — Oracle REF CURSORs, TVPs, arrays — are in
+<a href="usage-guide.html">usage-guide.md §14</a>.</p>
+<hr />
+<h2 id="17-where-the-no-sql-surface-ends">17. Where the no-SQL surface ends</h2>
+<p>These are <strong>by design</strong>, not gaps waiting to be filled — the DAL deliberately stops short of being
+a query compiler. Each has a supported escape hatch that still gets logging, redaction, correlation
+and retry.</p>
+<table>
+<thead>
+<tr>
+<th>Shape</th>
+<th>Why it isn't modelled</th>
+<th>Use instead</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Window functions (<code>ROW_NUMBER</code>, <code>OVER</code>)</td>
+<td>dialect-divergent syntax</td>
+<td><code>data.QueryAsync&lt;TPoco&gt;(sql, ps)</code></td>
+</tr>
+<tr>
+<td>CTE / <code>WITH</code></td>
+<td>ditto</td>
+<td><code>data.QueryAsync&lt;TPoco&gt;</code></td>
+</tr>
+<tr>
+<td><code>PIVOT</code> / <code>UNPIVOT</code></td>
+<td>SQL-Server-specific</td>
+<td><code>data.QueryAsync&lt;TPoco&gt;</code>, or pivot in C#</td>
+</tr>
+<tr>
+<td><code>MERGE</code> / upsert</td>
+<td>no portable form</td>
+<td><code>AnyAsync</code> + insert/update in a transaction, or raw SQL</td>
+</tr>
+<tr>
+<td><code>UNION</code> in one statement</td>
+<td>branch shapes are arbitrary</td>
+<td><code>data.QueryAsync</code> / <code>QueryAsync&lt;T&gt;</code></td>
+</tr>
+<tr>
+<td><code>INSERT … SELECT</code></td>
+<td>crosses read and write</td>
+<td>read + <code>BulkInsertAsync</code>, or <code>ExecuteNonQueryAsync</code></td>
+</tr>
+<tr>
+<td><code>SET col = col + @x</code></td>
+<td>assignment values are bound parameters</td>
+<td>read-modify-write in a transaction, or <code>ExecuteNonQueryAsync</code></td>
+</tr>
+<tr>
+<td>Correlated sub-query / <code>EXISTS</code> in a predicate</td>
+<td>would require expression-tree modelling</td>
+<td>two-step (§16), or a composer join</td>
+</tr>
+<tr>
+<td><code>CASE WHEN …</code> in the SELECT list</td>
+<td>arbitrary expression</td>
+<td>composer <code>Select("CASE … AS Bucket")</code> fragment</td>
+</tr>
+<tr>
+<td>Function on a column in a predicate (<code>UPPER(NAME) = @n</code>)</td>
+<td>not translatable from a lambda</td>
+<td>composer <code>Where($"{fn.Upper("a.NAME")} = @n", ("n", v))</code></td>
+</tr>
+<tr>
+<td>DDL, temp tables, table variables</td>
+<td>not a schema tool</td>
+<td><code>ExecuteNonQueryAsync</code>, or <code>CreateTableEmitter</code> / <code>TflOmniDbMigration</code></td>
+</tr>
+<tr>
+<td>Multi-row <code>VALUES</code> insert</td>
+<td>covered better elsewhere</td>
+<td><code>BulkInsertAsync</code></td>
+</tr>
+</tbody>
+</table>
+<p>The raw helpers, for reference — all parameterized, all through the normal pipeline:</p>
+<pre><code class="language-csharp">var pocos  = await data.QueryAsync&lt;CustomerSummary&gt;(sql, ps);   // rows → POCO by column name
+var rows   = await data.QueryAsync(sql, ps);                    // untyped dictionaries
+var scalar = await data.ExecuteScalarAsync&lt;decimal&gt;(sql, ps);
+bool any   = await data.ExistsAsync(sql, ps);
+int  n     = await data.ExecuteNonQueryAsync(sql, ps);          // UPDATE / INSERT / DELETE / DDL
+</code></pre>
+<p>Parameter keys here <strong>do</strong> carry the dialect prefix (<code>"@id"</code> on SQL Server / PostgreSQL, <code>":id"</code> on
+Oracle), and the SQL text is yours to keep portable — that is the whole point of an escape hatch.
+Quote identifiers through the dialect when the statement has to run on all three engines.</p>
+<hr />
+<h2 id="18-gotchas">18. Gotchas</h2>
+<ul>
+<li><strong>Nullable properties.</strong> Entity properties are <code>Nullable&lt;T&gt;</code>, so <code>orderBy: x =&gt; x.BALANCE!</code> and
+  <code>ids.Contains(x.BRANCH_ID!.Value)</code> need the null-forgiving <code>!</code>. Plain comparisons
+  (<code>x.BALANCE &gt; 100m</code>) don't.</li>
+<li><strong>A bare boolean column is not a predicate.</strong> Write <code>x =&gt; x.IS_ACTIVE == true</code>.</li>
+<li><strong>LIKE arguments are escaped.</strong> <code>Contains("50%")</code> looks for the literal <code>50%</code>. Caller-supplied
+  patterns belong in the composer's <code>Where(col, "LIKE", pattern)</code>.</li>
+<li><strong><code>take</code> without <code>orderBy</code></strong> silently orders by the first primary-key column. Be explicit when
+  the order matters.</li>
+<li><strong>Projections leave properties at their default</strong>, not at their stored value — never round-trip a
+  projected entity through a full <code>UpdateAsync</code> (use the partial overload, §10).</li>
+<li><strong>Aggregate aliases are unquoted on purpose</strong> so <code>ORDER BY Total DESC</code> matches across dialects;
+  keep them simple identifiers.</li>
+<li><strong>Identifier casing.</strong> The DAL always quotes, so the name in <code>[DbColumn]</code> / <code>Col</code> must match the
+  catalog exactly. The scaffolder defaults to uppercase — create PostgreSQL tables with quoted
+  uppercase names so they line up with Oracle's folding.</li>
+<li><strong>Oracle bulk insert</strong> needs unquoted-uppercase tables (<code>OracleBulkCopy</code> strips quotes).</li>
+<li><strong><code>SqlQuery</code> never opens a connection.</strong> It builds; <code>DataAccess</code> / <code>IUnitOfWork</code> execute. Passing
+  a <code>uow</code> is what puts the composed query inside your transaction.</li>
+</ul>
+<hr />
+<h2 id="see-also">See also</h2>
+<ul>
+<li><a href="usage-guide.html">usage-guide.md</a> — task-oriented recipes over the same surface</li>
+<li><a href="api-reference.html">api-reference.md</a> — every signature</li>
+<li><a href="StoredProcMigration.html">StoredProcMigration.md</a> — the proc-by-proc migration playbook this
+  cookbook supports</li>
+<li><a href="Migration-from-AdDataAccessComponent.html">Migration-from-AdDataAccessComponent.md</a> — idiom-by-idiom
+  port off the legacy DAL</li>
+<li><code>TflOmniDb.Demo</code> — menu #17 <code>ComplexQuery</code> (composer vs raw, side by side), #18 <code>RowAccess</code>,
+  #22 <code>Aggregates</code>, plus the filtered-query and column-projection entries</li>
+</ul>
+</div></div>
+<script>
+(function(){
+ function put(t){
+  if(navigator.clipboard&&navigator.clipboard.writeText)return navigator.clipboard.writeText(t);
+  return new Promise(function(res,rej){
+   var a=document.createElement('textarea');a.value=t;a.setAttribute('readonly','');
+   a.style.cssText='position:fixed;top:0;left:0;opacity:0';document.body.appendChild(a);
+   a.select();var ok=false;try{ok=document.execCommand('copy')}catch(e){}
+   document.body.removeChild(a);ok?res():rej()});
+ }
+ function flash(el,txt,ms){
+  var was=el.textContent;el.classList.add('done');if(txt)el.textContent=txt;
+  setTimeout(function(){el.classList.remove('done');if(txt)el.textContent=was},ms||1200);
+ }
+ function copy(text,el,okTxt){
+  put(text).then(function(){flash(el,okTxt)},function(){
+   if(okTxt){var w=el.textContent;el.textContent='Ctrl+C';setTimeout(function(){el.textContent=w},2000)}});
+ }
+ document.querySelectorAll('pre').forEach(function(pre){
+  if(pre.classList.contains('txtdoc'))return;
+  var b=document.createElement('button');
+  b.type='button';b.className='copy';b.textContent='Copy';
+  b.setAttribute('aria-label','Copy this code block to the clipboard');
+  b.addEventListener('click',function(){copy((pre.querySelector('code')||pre).innerText,b,'Copied')});
+  pre.appendChild(b);
+ });
+ document.querySelectorAll('td code').forEach(function(c){
+  if(!c.textContent.trim())return;
+  c.classList.add('cp');c.tabIndex=0;c.setAttribute('role','button');
+  c.title='Click to copy';
+  c.addEventListener('click',function(){copy(c.textContent,c)});
+  c.addEventListener('keydown',function(e){
+   if(e.key==='Enter'||e.key===' '){e.preventDefault();copy(c.textContent,c)}});
+ });
+})();
+</script>
+</body></html>

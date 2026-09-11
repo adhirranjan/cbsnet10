@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>HOW TO START A NEW MODULE&#x27;S DEVELOPMENT - TrustBank CBS (.NET 10)</title>
+<title>How to start a new module&#x27;s development — TrustBank CBS (.NET 10)</title>
 <style>
 :root{color-scheme:light dark}
 *{box-sizing:border-box}
@@ -54,557 +54,534 @@ ul{padding-left:1.4em}ol{padding-left:1.4em}
  pre>button.copy.done{color:#aff5b4;background:#1b4721;border-color:#2ea043}
  td code.cp.done{color:#aff5b4;background:#1b4721}
 }
-
-pre.txtdoc{font-size:.8rem;line-height:1.45;white-space:pre;overflow-x:auto;
-           border:0;background:none;padding:0;margin-top:1.2em}
-@media(prefers-color-scheme:dark){pre.txtdoc{background:none}}
 </style></head>
 <body><div class="wrap"><div class="card">
-<div class="docnav"><a href="../index.html">&#8592; All docs</a> &middot;
-plain-text document &middot; <a href="starting-a-new-module.txt">view raw .txt</a></div>
-<h1>HOW TO START A NEW MODULE&#x27;S DEVELOPMENT - TrustBank CBS (.NET 10)</h1>
-<pre class="txtdoc"> A step-by-step recipe for adding a brand-new DOMAIN MODULE end to end.
- Worked example: &quot;Administration&quot; (Module + Role masters) - copy it and rename.
- It is the cleanest complete pair: TflCbs.Modules.Administration (services) +
- TflCbs.Modules.Administration.Web (screens), both leaf, both monolith-free.
+<h1 id="how-to-start-a-new-modules-development-trustbank-cbs-net-10">How to start a new module's development — TrustBank CBS (.NET 10)</h1>
+<p>A step-by-step recipe for adding a brand-new DOMAIN MODULE end to end.
+Worked example: <strong>Administration</strong> (Module + Role masters) — copy it and rename.
+It is the cleanest complete pair: <code>TflCbs.Modules.Administration</code> (services) +
+<code>TflCbs.Modules.Administration.Web</code> (screens), both leaf, both monolith-free.</p>
+<p>Prereqs to read first:</p>
+<ul>
+<li><a href="../architecture-overview.html">docs/architecture-overview.md</a> — what modules are / how they compose</li>
+<li><a href="../architecture/modular-monolith.html">docs/architecture/modular-monolith.md</a> — WHY the split is shaped this way</li>
+<li><a href="building-a-crud-screen.html">docs/guides/building-a-crud-screen.md</a> — how ONE screen inside a module works</li>
+</ul>
+<p>This doc is the layer ABOVE that: creating the module itself and wiring it in.</p>
+<blockquote>
+<p><strong>Current as of 2026-08-05.</strong> The modular split COMPLETED on 2026-07-29: all 8
+domains were promoted and <code>TflCbsServices</code> was DISSOLVED. If you are reading an
+older copy of this guide that says "the service side is a FOLDER inside
+TflCbsServices, auto-discovered" — that is gone. Both sides are projects now.</p>
+</blockquote>
+<h2 id="0-key-concepts-read-this-before-you-start">0. Key concepts (read this before you start)</h2>
+<p>A MODULE = a bounded business domain (Administration, HR, Lockers, …). It is TWO projects:</p>
+<ul>
+<li><strong>Service side</strong> — business logic. Its OWN class library: <code>TflCbs.Modules.&lt;Name&gt;</code>.
+  Contains a <code>&lt;Name&gt;Module : ICbsModule</code> that registers its services. References
+  <code>TflCbs.Abstractions</code> ONLY (plus the <code>TflCbs.Entities</code>/<code>TflOmniDb</code> bare DLLs) —
+  never another module's implementation.</li>
+<li><strong>Web side</strong> — screens (controllers/views/models). Its own Razor Class Library:
+  <code>TflCbs.Modules.&lt;Name&gt;.Web</code>. The host composes it via <code>AddApplicationPart</code>, gated
+  by <code>Modules:Enabled</code>.</li>
+<li><strong>Optional thin host</strong> — <code>TflCbs.Host.&lt;Name&gt;</code>, a standalone <code>Sdk.Web</code> host that
+  runs ONLY this module + core, behind the gateway. Add later if you want the
+  module to deploy/scale independently.</li>
+</ul>
+<p>NOT every module needs a web side: Accounts and Clearing are service-only (no
+screens migrated yet, so no RCL). And a web area can be backed by a module of a
+different name — the Bank area is backed by the core General module, and the Hr
+area's State/District/Taluka screens are backed by core Reference. Area and module
+are separate axes; menu placement is preserved from legacy as-is.</p>
+<h3 id="core-vs-domain-which-interface-you-implement">Core vs domain — which interface you implement</h3>
+<ul>
+<li><strong><code>ICoreCbsModule</code></strong> — registered UNCONDITIONALLY in every host, never gated.
+  Only General (menu/bank vars/broadcast/scroll/process-block), Reference (shared
+  geography masters) and Authentication.</li>
+<li><strong><code>ICbsModule</code></strong> — a DOMAIN module, gated by <code>Modules:Enabled</code>. This is what a
+  NEW module implements. The six today: HR, Lockers, Accounts, Clearing,
+  Administration, RetailBanking.</li>
+</ul>
+<p>Admission rule for Reference, so it does not become a dumping ground: a master
+belongs there only if it has NO domain behaviour (pure CRUD + lookup) AND two or
+more domains consume it. Geography passes; <code>LockerMake</code> does not.</p>
+<p><strong>Namespace == assembly.</strong> Every type sits under a namespace beginning with its own
+assembly name: <code>TflCbs.Modules.&lt;Name&gt;</code>, <code>TflCbs.Modules.&lt;Name&gt;.Web</code>. There is NO
+<code>TflCbs.Host.Main.*</code> namespace in a module any more (web RCLs used to share
+<code>RootNamespace=TflCbs.Host.Main</code> — that was removed 2026-07-28, and
+<code>NamespaceDisciplineTests</code> now holds with no exceptions).</p>
+<p><strong>The one thing that matters most:</strong> a new module name must be registered in ~14
+places. <a href="#10-checklist--every-place-a-new-module-name-must-be-registered">Section 10</a>
+is the exhaustive checklist — use it.</p>
+<h2 id="1-the-composition-contract-how-modules-plug-in">1. The composition contract (how modules plug in)</h2>
+<p>File: <code>TflCbs.Abstractions/ICbsModule.cs</code> (ns <code>TflCbs.Abstractions</code>)</p>
+<pre><code class="language-csharp">public interface ICbsModule
+{
+    string Name { get; }   // matches Modules:Enabled (case-insensitive)
+    void AddServices(IServiceCollection services, IConfiguration config);
+}
 
- Prereqs to read first:
-   - docs/architecture-overview.md          (what modules are / how they compose)
-   - docs/architecture/modular-monolith.md   (WHY the split is shaped this way)
-   - docs/guides/building-a-crud-screen.txt  (how ONE screen inside a module works)
- This doc is the layer ABOVE that: creating the module itself and wiring it in.
-
- CURRENT AS OF 2026-08-05. The modular split COMPLETED on 2026-07-29: all 8
- domains were promoted and TflCbsServices was DISSOLVED. If you are reading an
- older copy of this guide that says &quot;the service side is a FOLDER inside
- TflCbsServices, auto-discovered&quot; - that is gone. Both sides are projects now.
-
-
-==============================================================================
- 0. KEY CONCEPTS (read this before you start)
-==============================================================================
-A MODULE = a bounded business domain (Administration, HR, Lockers, ...). It is
-TWO projects:
-
-  SERVICE SIDE  - business logic. Its OWN class library:
-                  TflCbs.Modules.&lt;Name&gt;. Contains a &lt;Name&gt;Module : ICbsModule
-                  that registers its services. References TflCbs.Abstractions
-                  ONLY (plus the TflCbs.Entities/TflOmniDb bare DLLs) - never
-                  another module&#x27;s implementation.
-
-  WEB SIDE      - screens (controllers/views/models). Its own Razor Class
-                  Library: TflCbs.Modules.&lt;Name&gt;.Web. The host composes it via
-                  AddApplicationPart, gated by Modules:Enabled.
-
-  OPTIONAL THIN HOST - TflCbs.Host.&lt;Name&gt;, a standalone Sdk.Web host that runs
-                  ONLY this module + core, behind the gateway. Add later if you
-                  want the module to deploy/scale independently.
-
-NOT every module needs a web side: Accounts and Clearing are service-only (no
-screens migrated yet, so no RCL). And a web area can be backed by a module of
-a different name - the Bank area is backed by the core General module, and the
-Hr area&#x27;s State/District/Taluka screens are backed by core Reference. Area and
-module are separate axes; menu placement is preserved from legacy as-is.
-
-CORE vs DOMAIN - which interface you implement:
-
-  ICoreCbsModule - registered UNCONDITIONALLY in every host, never gated.
-                   Only General (menu/bank vars/broadcast/scroll/process-block),
-                   Reference (shared geography masters) and Authentication.
-  ICbsModule     - a DOMAIN module, gated by Modules:Enabled. This is what a
-                   NEW module implements. The six today: HR, Lockers, Accounts,
-                   Clearing, Administration, RetailBanking.
-
-  Admission rule for Reference, so it does not become a dumping ground: a master
-  belongs there only if it has NO domain behaviour (pure CRUD + lookup) AND two
-  or more domains consume it. Geography passes; LockerMake does not.
-
-NAMESPACE == ASSEMBLY. Every type sits under a namespace beginning with its own
-assembly name: TflCbs.Modules.&lt;Name&gt;, TflCbs.Modules.&lt;Name&gt;.Web. There is NO
-TflCbs.Host.Main.* namespace in a module any more (web RCLs used to share
-RootNamespace=TflCbs.Host.Main - that was removed 2026-07-28, and
-NamespaceDisciplineTests now holds with no exceptions).
-
-THE ONE THING THAT MATTERS MOST: a new module name must be registered in ~14
-places. Section 10 is the exhaustive checklist - use it.
-
-
-==============================================================================
- 1. THE COMPOSITION CONTRACT (how modules plug in)
-==============================================================================
-File: TflCbs.Abstractions/ICbsModule.cs  (ns TflCbs.Abstractions)
-
-    public interface ICbsModule
+public interface ICoreCbsModule : ICbsModule { }   // marker: never gated
+</code></pre>
+<p>File: <code>TflCbs.Abstractions/ModuleRegistration.cs</code> (ns
+<code>Microsoft.Extensions.DependencyInjection</code> — so the host gets <code>AddCbsModules</code> via
+implicit using, no import)</p>
+<pre><code class="language-csharp">AddCbsModules(this IServiceCollection services, IConfiguration config,
+              params Assembly[] moduleAssemblies)
+</code></pre>
+<ul>
+<li>Discovery is FULLY EXPLICIT. There is no implicit anchor: it reflects over
+  exactly the assemblies the host hands it. Anchor each with a type, e.g.
+  <code>typeof(AdministrationModule).Assembly</code>. (It used to start from the
+  <code>TflCbsServices</code> assembly and add promoted ones to it. That assembly is gone.)</li>
+<li>Registers every <code>ICoreCbsModule</code> unconditionally, then the domain modules named
+  in <code>Modules:Enabled</code> (missing section or <code>"*"</code> = all).</li>
+<li>Fails LOUD, two ways:</li>
+<li>an Enabled name matching no known DOMAIN module throws at startup;</li>
+<li><code>VerifyNoDeployedModuleWasMissed</code> scans the output directory for
+    <code>TflCbs.Modules.&lt;X&gt;.dll</code> / <code>TflCbs.Core.&lt;X&gt;.dll</code> and throws if one is deployed
+    but was not passed in.</li>
+</ul>
+<p>The second check is the one that matters for a NEW module: a host running
+  <code>Modules:Enabled="*"</code> never names a module, so the unknown-name check cannot
+  fire — a forgotten <code>typeof(...).Assembly</code> would otherwise be silently dropped
+  and surface as a 500 deep in a request (or, for a core module, an empty menu,
+  because the framework's no-op ports quietly take over).
+- Composition TESTS that build partial module sets pass <code>verifyDeployedModules: false</code>
+  — every module DLL sits in the test output dir, so the deployment check would
+  fire on a scenario that is intentional there.</p>
+<p>⇒ <strong>EVERY host that deploys your module must name its assembly.</strong> That is now a
+required edit, not an optional one (<a href="#4-step-3--wire-it-into-the-default-host-tflcbshostmain">section 4</a>).</p>
+<h2 id="2-step-1-create-the-service-project-tflcbsmodulesname">2. Step 1 — create the service project (<code>TflCbs.Modules.&lt;Name&gt;</code>)</h2>
+<p>New project folder: <code>TflCbs.Modules.&lt;Name&gt;/</code></p>
+<p><code>TflCbs.Modules.&lt;Name&gt;.csproj</code> — plain class library (Administration, verbatim
+shape; <code>TargetFramework</code>/<code>Nullable</code>/<code>ImplicitUsings</code> come from <code>Directory.Build.props</code>):</p>
+<pre><code class="language-xml">&lt;Project Sdk=&quot;Microsoft.NET.Sdk&quot;&gt;
+  &lt;PropertyGroup&gt;
+    &lt;RootNamespace&gt;TflCbs.Modules.&lt;Name&gt;&lt;/RootNamespace&gt;
+  &lt;/PropertyGroup&gt;
+  &lt;ItemGroup&gt;
+    &lt;!-- DI + Configuration ABSTRACTIONS only (ICbsModule.AddServices). --&gt;
+    &lt;PackageReference Include=&quot;Microsoft.Extensions.DependencyInjection.Abstractions&quot; /&gt;
+    &lt;PackageReference Include=&quot;Microsoft.Extensions.Configuration.Abstractions&quot; /&gt;
+  &lt;/ItemGroup&gt;
+  &lt;ItemGroup&gt;
+    &lt;ProjectReference Include=&quot;..\TflCbs.Abstractions\TflCbs.Abstractions.csproj&quot; /&gt;
+  &lt;/ItemGroup&gt;
+  &lt;ItemGroup&gt;
+    &lt;!-- Data layer (bare DLLs - these do NOT flow transitively). --&gt;
+    &lt;Reference Include=&quot;TflCbs.Entities&quot;&gt;
+      &lt;HintPath&gt;..\TflCbs.Entities\bin\Debug\net10.0\TflCbs.Entities.dll&lt;/HintPath&gt;
+    &lt;/Reference&gt;
+    &lt;Reference Include=&quot;TflOmniDb&quot;&gt;
+      &lt;HintPath&gt;..\..\..\_Archive\Ad.ProjectLibrary\AdDataAccessComponent\TflOmniDb\TflOmniDb\bin\Debug\net10.0\TflOmniDb.dll&lt;/HintPath&gt;
+    &lt;/Reference&gt;
+  &lt;/ItemGroup&gt;
+&lt;/Project&gt;
+</code></pre>
+<p><strong>ZERO ASP.NET.</strong> A service module references abstractions-only DI/Configuration
+packages — never <code>Microsoft.AspNetCore.*</code>. This is arch-tested.</p>
+<p><code>&lt;Name&gt;Module.cs</code> — the <code>ICbsModule</code> impl (ns <code>TflCbs.Modules.&lt;Name&gt;</code>):</p>
+<pre><code class="language-csharp">public sealed class AdministrationModule : ICbsModule
+{
+    public string Name =&gt; &quot;Administration&quot;;
+    public void AddServices(IServiceCollection services, IConfiguration config)
     {
-        string Name { get; }   // matches Modules:Enabled (case-insensitive)
-        void AddServices(IServiceCollection services, IConfiguration config);
+        services.AddScoped&lt;ModuleService&gt;();
+        services.AddScoped&lt;RoleService&gt;();
     }
-
-    public interface ICoreCbsModule : ICbsModule { }   // marker: never gated
-
-File: TflCbs.Abstractions/ModuleRegistration.cs
-   (ns Microsoft.Extensions.DependencyInjection - so the host gets AddCbsModules
-    via implicit using, no import)
-
-    AddCbsModules(this IServiceCollection services, IConfiguration config,
-                  params Assembly[] moduleAssemblies)
-
-  - Discovery is FULLY EXPLICIT. There is no implicit anchor: it reflects over
-    exactly the assemblies the host hands it. Anchor each with a type, e.g.
-    typeof(AdministrationModule).Assembly. (It used to start from the
-    TflCbsServices assembly and add promoted ones to it. That assembly is gone.)
-  - Registers every ICoreCbsModule unconditionally, then the domain modules
-    named in Modules:Enabled (missing section or &quot;*&quot; = all).
-  - Fails LOUD, two ways:
-      * an Enabled name matching no known DOMAIN module throws at startup;
-      * VerifyNoDeployedModuleWasMissed scans the output directory for
-        TflCbs.Modules.&lt;X&gt;.dll / TflCbs.Core.&lt;X&gt;.dll and throws if one is
-        deployed but was not passed in.
-    The second check is the one that matters for a NEW module: a host running
-    Modules:Enabled=&quot;*&quot; never names a module, so the unknown-name check cannot
-    fire - a forgotten typeof(...).Assembly would otherwise be silently dropped
-    and surface as a 500 deep in a request (or, for a core module, an empty
-    menu, because the framework&#x27;s no-op ports quietly take over).
-  - Composition TESTS that build partial module sets pass
-    verifyDeployedModules: false - every module DLL sits in the test output dir,
-    so the deployment check would fire on a scenario that is intentional there.
-
-  =&gt; EVERY host that deploys your module must name its assembly. That is now a
-     required edit, not an optional one (section 4).
-
-
-==============================================================================
- 2. STEP 1 - CREATE THE SERVICE PROJECT (TflCbs.Modules.&lt;Name&gt;)
-==============================================================================
-New project folder: TflCbs.Modules.&lt;Name&gt;/
-
-  TflCbs.Modules.&lt;Name&gt;.csproj - plain class library (Administration, verbatim
-  shape; TargetFramework/Nullable/ImplicitUsings come from Directory.Build.props):
-
-    &lt;Project Sdk=&quot;Microsoft.NET.Sdk&quot;&gt;
-      &lt;PropertyGroup&gt;
-        &lt;RootNamespace&gt;TflCbs.Modules.&lt;Name&gt;&lt;/RootNamespace&gt;
-      &lt;/PropertyGroup&gt;
-      &lt;ItemGroup&gt;
-        &lt;!-- DI + Configuration ABSTRACTIONS only (ICbsModule.AddServices). --&gt;
-        &lt;PackageReference Include=&quot;Microsoft.Extensions.DependencyInjection.Abstractions&quot; /&gt;
-        &lt;PackageReference Include=&quot;Microsoft.Extensions.Configuration.Abstractions&quot; /&gt;
-      &lt;/ItemGroup&gt;
-      &lt;ItemGroup&gt;
-        &lt;ProjectReference Include=&quot;..\TflCbs.Abstractions\TflCbs.Abstractions.csproj&quot; /&gt;
-      &lt;/ItemGroup&gt;
-      &lt;ItemGroup&gt;
-        &lt;!-- Data layer (bare DLLs - these do NOT flow transitively). --&gt;
-        &lt;Reference Include=&quot;TflCbs.Entities&quot;&gt;
-          &lt;HintPath&gt;..\TflCbs.Entities\bin\Debug\net10.0\TflCbs.Entities.dll&lt;/HintPath&gt;
-        &lt;/Reference&gt;
-        &lt;Reference Include=&quot;TflOmniDb&quot;&gt;
-          &lt;HintPath&gt;..\..\..\_Archive\Ad.ProjectLibrary\AdDataAccessComponent\TflOmniDb\TflOmniDb\bin\Debug\net10.0\TflOmniDb.dll&lt;/HintPath&gt;
-        &lt;/Reference&gt;
-      &lt;/ItemGroup&gt;
-    &lt;/Project&gt;
-
-  ZERO ASP.NET. A service module references abstractions-only DI/Configuration
-  packages - never Microsoft.AspNetCore.*. This is arch-tested.
-
-  &lt;Name&gt;Module.cs - the ICbsModule impl (ns TflCbs.Modules.&lt;Name&gt;):
-
-    public sealed class AdministrationModule : ICbsModule
-    {
-        public string Name =&gt; &quot;Administration&quot;;
-        public void AddServices(IServiceCollection services, IConfiguration config)
-        {
-            services.AddScoped&lt;ModuleService&gt;();
-            services.AddScoped&lt;RoleService&gt;();
-        }
-    }
-
-  &lt;Thing&gt;Service.cs - one per aggregate:
-
-    using TflCbs.Abstractions;
-    using TflCbs.Entities;
-    using TflOmniDb.Repository;
-    using static TflCbs.Abstractions.ServiceQuery;   // Has/Eq/Val/Paged
-    using static TflCbs.Abstractions.DbErrors;       // IsDuplicate/IsForeignKey
-
-    namespace TflCbs.Modules.&lt;Name&gt;;
-
-    public sealed class ModuleService(DataAccess data)              // primary ctor
-    {
-        private Repository&lt;A_MODULE&gt; Modules =&gt; data.Repository&lt;A_MODULE&gt;();
-        // Search/Load/Save/Update/Delete - each returns Result / Result&lt;T&gt;,
-        // try/catch -&gt; Result.Fail(ex). No stored procs, no raw SQL.
-    }
-
-  Notes:
-    - Every public method returns Result / Result&lt;T&gt; (TflCbs.Abstractions).
-    - NEVER re-declare the shared helpers privately. Has/Eq/Val/Paged and
-      IsDuplicate/IsForeignKey live in TflCbs.Abstractions; they were
-      copy-pasted into 8 services before extraction, so SharedServiceHelperTests
-      now FAILS THE BUILD on any private copy. Different semantics? Different
-      name.
-    - Small lookups: GetAllAsync then filter/sort/page in memory.
-    - PK TYPE: parse the row token to the SERVICE&#x27;s PK type at the call site.
-      A_MODULE.MODULEID is int, but A_ROLE.ROLEID is DECIMAL. Never narrow a
-      decimal/guid PK through int.TryParse.
-    - Module A must never reference module B&#x27;s implementation. If a cross-module
-      call is genuinely needed, publish an interface from
-      TflCbs.Modules.&lt;B&gt;.Contracts and inject that (the only two today:
-      IScrollService and IProcessBlockCheck, both from General.Contracts).
-
-  &gt;&gt; After adding service methods, RUN the cbs-sync-test-demo agent (syncs
-     TflCbs.Tests + .Demo, builds, runs). Both project names are
-     HISTORICAL - they cover all nine module assemblies.
-
-
-==============================================================================
- 3. STEP 2 - CREATE THE WEB RCL PROJECT (TflCbs.Modules.&lt;Name&gt;.Web)
-==============================================================================
-Skip this section entirely if the module has no screens yet (Accounts and
-Clearing are service-only).
-
-New project folder: TflCbs.Modules.&lt;Name&gt;.Web/
-
-  TflCbs.Modules.&lt;Name&gt;.Web.csproj - Razor Class Library:
-
-    &lt;Project Sdk=&quot;Microsoft.NET.Sdk.Razor&quot;&gt;
-      &lt;PropertyGroup&gt;
-        &lt;RootNamespace&gt;TflCbs.Modules.&lt;Name&gt;.Web&lt;/RootNamespace&gt;   &lt;!-- == assembly --&gt;
-        &lt;AddRazorSupportForMvc&gt;true&lt;/AddRazorSupportForMvc&gt;
-      &lt;/PropertyGroup&gt;
-      &lt;!-- Sdk.Razor doesn&#x27;t add Web SDK implicit usings; add them manually: --&gt;
-      &lt;ItemGroup&gt;
-        &lt;Using Include=&quot;Microsoft.AspNetCore.Builder&quot; /&gt;
-        &lt;Using Include=&quot;Microsoft.AspNetCore.Hosting&quot; /&gt;
-        &lt;Using Include=&quot;Microsoft.AspNetCore.Http&quot; /&gt;
-        &lt;Using Include=&quot;Microsoft.AspNetCore.Routing&quot; /&gt;
-        &lt;Using Include=&quot;Microsoft.Extensions.Configuration&quot; /&gt;
-        &lt;Using Include=&quot;Microsoft.Extensions.DependencyInjection&quot; /&gt;
-        &lt;Using Include=&quot;Microsoft.Extensions.Hosting&quot; /&gt;
-        &lt;Using Include=&quot;Microsoft.Extensions.Logging&quot; /&gt;
-      &lt;/ItemGroup&gt;
-      &lt;ItemGroup&gt;
-        &lt;ProjectReference Include=&quot;..\TflCbs.Web.Shared\TflCbs.Web.Shared.csproj&quot; /&gt;
-        &lt;ProjectReference Include=&quot;..\TflCbs.Framework\TflCbs.Framework.csproj&quot; /&gt;
-        &lt;ProjectReference Include=&quot;..\TflCbs.Modules.&lt;Name&gt;\TflCbs.Modules.&lt;Name&gt;.csproj&quot; /&gt;
-        &lt;ProjectReference Include=&quot;..\TflCbs.Entities\TflCbs.Entities.csproj&quot; /&gt;
-      &lt;/ItemGroup&gt;
-    &lt;/Project&gt;
-    (No bare-DLL refs on a web RCL - those live on the hosts. Reference YOUR
-     module and core modules only - never a sibling domain; arch-tested.)
-
-  &lt;Name&gt;WebModuleMarker.cs  - a stable handle for AddApplicationPart + arch tests:
-
-    namespace TflCbs.Modules.&lt;Name&gt;.Web;
-    public sealed class &lt;Name&gt;WebModuleMarker { }
-
-  Folder layout inside the RCL (mirror the CRUD-screen guide):
-    _ViewImports.cshtml                      (root: Framework usings + tag helpers)
-    Areas/&lt;Name&gt;/Controllers/&lt;Screen&gt;Controller.cs
-    Areas/&lt;Name&gt;/Views/&lt;Screen&gt;/Index.cshtml
-    Areas/&lt;Name&gt;/Views/_ViewImports.cshtml
-    Models/&lt;Name&gt;/&lt;Screen&gt;Models.cs
-    wwwroot/js/&lt;screen&gt;.js                   (only if the screen needs its own JS)
-
-  NAMESPACES (one prefix per RCL - the Areas/ folder is ROUTING, not namespacing):
-    controllers -&gt; TflCbs.Modules.&lt;Name&gt;.Web.Controllers
-    models      -&gt; TflCbs.Modules.&lt;Name&gt;.Web.Models
-    view models -&gt; TflCbs.Modules.&lt;Name&gt;.Web.ViewModels
-
-  Controller shape:
-    - [Area(&quot;&lt;Name&gt;&quot;)], [Route(&quot;&lt;Name&gt;/&lt;Screen&gt;&quot;)], [CbsAccessScreen(&quot;&lt;Name&gt;/&lt;Screen&gt;&quot;)]
-    - inherits CbsScreenController(store, tokens, searchEndpoint)
-    - injects the domain service(s); form models implement IRowForm (string? Row).
-    (See docs/guides/building-a-crud-screen.txt for the full per-screen recipe.)
-
-
-==============================================================================
- 4. STEP 3 - WIRE IT INTO THE DEFAULT HOST (TflCbs.Host.Main)
-==============================================================================
-Three edits (all required):
-
-  A. TflCbs.Host.Main/TflCbs.Host.Main.csproj - add BOTH project references:
-       &lt;ProjectReference Include=&quot;..\TflCbs.Modules.&lt;Name&gt;\TflCbs.Modules.&lt;Name&gt;.csproj&quot; /&gt;
-       &lt;ProjectReference Include=&quot;..\TflCbs.Modules.&lt;Name&gt;.Web\TflCbs.Modules.&lt;Name&gt;.Web.csproj&quot; /&gt;
-
-  B. TflCbs.Host.Main/Program.cs - gated AddApplicationPart (next to the others):
-       if (ModuleOn(&quot;&lt;Name&gt;&quot;))
-           mvc.AddApplicationPart(typeof(TflCbs.Modules.&lt;Name&gt;.Web.&lt;Name&gt;WebModuleMarker).Assembly);
-
-     where ModuleOn(name) = enabledModules.Contains(&quot;*&quot;)
-                            || enabledModules.Contains(name, OrdinalIgnoreCase).
-
-  C. TflCbs.Host.Main/Program.cs - add the SERVICE assembly to AddCbsModules:
-       builder.Services.AddCbsModules(
-           builder.Configuration,
-           typeof(TflCbs.Modules.General.GeneralModule).Assembly,
-           typeof(TflCbs.Modules.Reference.ReferenceModule).Assembly,
-           typeof(TflCbs.Core.Authentication.AuthenticationModule).Assembly,
-           ... existing domain modules ...,
-           typeof(TflCbs.Modules.&lt;Name&gt;.&lt;Name&gt;Module).Assembly);   // &lt;-- yours
-
-     THIS EDIT IS NOT OPTIONAL. Older guidance said the service side needed no
-     Program.cs change because discovery was implicit - that has not been true
-     since TflCbsServices was dissolved. Forget it and the startup deployment
-     check aborts the host naming your assembly (which is the good outcome; the
-     check exists precisely because &quot;*&quot; hosts cannot catch this any other way).
-
-  Modules:Enabled: the default host&#x27;s appsettings.json has
-       &quot;Modules&quot;: { &quot;Enabled&quot;: &quot;*&quot; }
-  so &quot;*&quot; turns every domain module on - no per-name edit needed in the default
-  host. (A thin host lists names explicitly - see section 8.)
-
-  Only hosts that ENABLE a module should reference it. Adding the reference to
-  every host &quot;for consistency&quot; re-ships the code everywhere and defeats the
-  whole exercise - each thin host today ships exactly one domain module.
-
-
-==============================================================================
- 5. STEP 4 - REGISTER IN THE ARCH TESTS
-==============================================================================
-The boundary tests are DELIBERATELY hard-coded so a new module must declare
-itself. Everything now funnels through ONE registry file.
-
-  A. TflCbs.ArchTests/TflCbs.ArchTests.csproj
-     -&gt; &lt;ProjectReference&gt; to your service project (and the web RCL, if any),
-        so the anchors below can be typeof()&#x27;d.
-
-  B. TflCbs.ArchTests/ArchBoundaries.cs  - the single source of truth.
-     Add, in order:
-       1) an assembly anchor property, e.g.
-            internal static Assembly &lt;Name&gt;Module =&gt;
-                typeof(TflCbs.Modules.&lt;Name&gt;.SomeService).Assembly;
-       2) that anchor to PromotedModuleAssemblies (domain) or
-          CoreModuleAssemblies (core - rare);
-       3) PromotedServiceNamespaces: [&quot;&lt;Name&gt;&quot;] = &quot;TflCbs.Modules.&lt;Name&gt;&quot;,
-          which drives PromotedModules and re-partitions every sibling rule
-          automatically (both the Namespace-level and Reference-level halves);
-       4) if it has an RCL: DomainWebModules += (&quot;&lt;Name&gt;&quot;,
-            typeof(...&lt;Name&gt;WebModuleMarker).Assembly), and
-          DomainServiceNamespaceForArea[&quot;&lt;Name&gt;&quot;] = &quot;TflCbs.Modules.&lt;Name&gt;&quot;;
-       5) if the RCL references no other domain&#x27;s services (it should not):
-          add &quot;&lt;Name&gt;&quot; to MonolithFreeWebModules.
-
-     PromotedModules and MonolithFreeWebModules are deliberately SEPARATE lists
-     - a service module&#x27;s isolation says nothing about its RCL&#x27;s. Get one wrong
-     and BoundaryGuaranteeTests fails telling you exactly which.
-
-  C. TflCbs.ArchTests/NamespaceDisciplineTests.cs
-     -&gt; Anchors dictionary, add one entry per new assembly:
-          [&quot;TflCbs.Modules.&lt;Name&gt;&quot;] = typeof(...SomeService).Assembly,
-          [&quot;TflCbs.Modules.&lt;Name&gt;.Web&quot;] = typeof(...WebModuleMarker).Assembly,
-
-  ModuleBoundaryTests (service-graph resolvability) needs NO edit - it builds
-  the graph via AddCbsModules and validates automatically. ModuleConfigTests
-  needs no edit either, but WILL fail if you put a name in any compose*.yaml /
-  appsettings*.json Modules:Enabled that no ICbsModule answers to.
-
-
-==============================================================================
- 6. STEP 5 - ADD TO SOLUTION + ROUTE CUTOVER
-==============================================================================
-  A. TflCbsNet10Sol.slnx - add a &lt;Project&gt; line for EACH new project (service,
-     web RCL, and the thin host if you add one):
-        &lt;Project Path=&quot;TflCbs.Modules.&lt;Name&gt;/TflCbs.Modules.&lt;Name&gt;.csproj&quot; /&gt;
-        &lt;Project Path=&quot;TflCbs.Modules.&lt;Name&gt;.Web/TflCbs.Modules.&lt;Name&gt;.Web.csproj&quot; /&gt;
-
-  B. Route cutover - point each screen&#x27;s a_Menus.NavigateURL at its new route
-     with a DbMigrator migration (one NNNN_*.sql per provider). Example:
-        UPDATE dbo.A_MENUS SET NavigateURL = &#x27;/Administration/Module&#x27;
-         WHERE LOWER(REPLACE(NavigateURL, &#x27;~&#x27;, &#x27;&#x27;)) = &#x27;/ho/admin/a_module.aspx?&#x27;;
-     Match the WHOLE legacy URL, not a LIKE fragment. That column is both what
-     the menu links to and what AllowedUrls is derived from, so until it holds
-     the new route the screen is unreachable. Apply with:
-        dotnet run --project TflCbs.Tools.DbMigrator -- preview
-        dotnet run --project TflCbs.Tools.DbMigrator -- upgrade
-
-
-==============================================================================
- 7. STEP 6 - BUILD &amp; VERIFY
-==============================================================================
-  1. If you added/changed entities: dotnet build TflCbs.Entities  (FIRST - it is
-     referenced by bare-DLL HintPath, so there is no build-order edge).
-  2. dotnet build TflCbs.Host.Main          (should be 0/0).
-  3. dotnet test TflCbs.ArchTests (boundaries pass).
-  4. If you added service methods: cbs-sync-test-demo agent, then
-     dotnet test TflCbs.Tests.
-  5. dotnet test TflCbs.IntegrationTests (real pipeline in-process:
-     access guard, antiforgery, authenticated access).
-  6. Run the app (dotnet run --project TflCbs.Host.Main), sign in, confirm the
-     module&#x27;s screens render under its menu, search returns rows, and the row
-     token round-trips (search -&gt; open pre-fills the edit form). STOP the app
-     before the next build (it holds DLL locks - including when launched by the
-     VS debugger).
-  (The module&#x27;s menu entry must exist for your user - access is fail-closed.)
-
-
-==============================================================================
- 8. STEP 7 (OPTIONAL) - ADD A THIN HOST (TflCbs.Host.&lt;Name&gt;)
-==============================================================================
-Only when you want the module to run standalone behind the gateway. It&#x27;s a
-mechanical copy of an existing thin host (e.g. TflCbs.Host.Hr).
-
-  A. New project TflCbs.Host.&lt;Name&gt;/ (Sdk.Web, net10.0,
-     RootNamespace=TflCbs.Host.&lt;Name&gt;):
-       - PackageReferences: Microsoft.Data.SqlClient, Oracle.ManagedDataAccess.Core,
-         Npgsql (bare-DLL deps don&#x27;t flow transitively - re-declare per host).
-       - Bare-DLL &lt;Reference&gt; HintPaths: TflCbs.Entities, TflOmniDb, TflSecurityCrypto.
-       - ProjectReferences: TflCbs.Entities, TflOmniLog, TflCbs.Framework,
-         TflCbs.Web.Shared, TflCbs.Core.Authentication.Web,
-         TflCbs.Core.Shell.Web, the CORE service modules
-         (TflCbs.Modules.General, TflCbs.Modules.Reference,
-         TflCbs.Core.Authentication), and YOUR TflCbs.Modules.&lt;Name&gt; +
-         TflCbs.Modules.&lt;Name&gt;.Web. Nothing else - no sibling domain.
-       - LINK the canonical config file (don&#x27;t copy) from solution-level config/:
-         &lt;Content Include=&quot;..\config\logmasking.json&quot; Link=&quot;logmasking.json&quot;
-                  CopyToOutputDirectory=&quot;PreserveNewest&quot; /&gt;
-
-  B. Program.cs (~same shape as the full host):
-       if (ModuleOn(&quot;&lt;Name&gt;&quot;))
-           mvc.AddApplicationPart(typeof(TflCbs.Modules.&lt;Name&gt;.Web.&lt;Name&gt;WebModuleMarker).Assembly);
-       ...
-       builder.Services.AddCbsModules(
-           builder.Configuration,
-           typeof(TflCbs.Modules.General.GeneralModule).Assembly,
-           typeof(TflCbs.Modules.Reference.ReferenceModule).Assembly,
-           typeof(TflCbs.Core.Authentication.AuthenticationModule).Assembly,
-           typeof(TflCbs.Modules.&lt;Name&gt;.&lt;Name&gt;Module).Assembly);
-     &gt;&gt; Load logmasking.json from AppContext.BaseDirectory, NOT the content root
-        (the thin-host gotcha: under `dotnet run` the content root is the
-        project dir and a relative AddJsonFile silently misses the linked
-        file). logmasking.json is optional:false on purpose -
-        a missing file falls back to an EMPTY Patterns list and PII stops being
-        masked with nothing to notice.
-
-  C. appsettings.json:
-       &quot;Modules&quot;: { &quot;Enabled&quot;: [ &quot;&lt;Name&gt;&quot; ] },
-       &quot;Observability&quot;: { &quot;HostName&quot;: &quot;&lt;name&gt;-host&quot; }
-     ONLY the domain module. General / Reference / Authentication are core -
-     registered unconditionally by AddCbsModules - so they must NOT be listed
-     (older guidance listing &quot;General&quot;,&quot;Authentication&quot;,&quot;Misc&quot;,&quot;Accounts&quot; is
-     obsolete; &quot;Misc&quot; in particular is not a module and crashed all four Docker
-     thin hosts at startup until ModuleConfigTests caught it).
-     Also set: Auth:LoginUrl -&gt; the gateway, DataProtection:KeyRing=TflOmniDb
-     and Auth:SessionRevocation=TflOmniDb for cross-host SSO, ForwardedHeaders,
-     Security:Headers + Security:LoginRateLimit.
-
-  D. TflCbsNet10Sol.slnx - add a &lt;Project&gt; entry for the host.
-
-  E. TflCbs.Gateway/appsettings.json (+ appsettings.Development.json):
-       - a route  &lt;name&gt;          Path: /&lt;Name&gt;/{**catch-all}        -&gt; cluster &lt;name&gt;-host
-       - a route  &lt;name&gt;-content  Path: /_content/TflCbs.Modules.&lt;Name&gt;.Web/{**catch-all}
-       - a cluster &lt;name&gt;-host with an http destination (base) overridden to
-         its https backend port in appsettings.Development.json.
-     Pick fresh ports - see docs/port-map.md for what is taken (Hr 5300/7300,
-     Lockers 5200/7200, RetailBanking 5400/7400, Administration 5500/7500,
-     Gateway 5100/7100).
-
-  For shared-SSO across hosts see docs/single-sign-on.txt; for deployment
-  shapes see docs/deploy/iis-multi-host.md and docs/deploy/docker-multi-host.md.
-
-
-==============================================================================
- 9. VARIANT - CARVING A NEW MODULE OUT OF AN EXISTING ONE
-==============================================================================
-Rarer than adding a greenfield module, but it is how Reference was created
-(split out of General, 2026-07-29). The mechanics are section 2 plus:
-
-  - Move the service files + their tests/demo sections; fix namespaces.
-  - Decide core vs domain FIRST (section 0). Reference is core because 66 entity
-    tables carry STATEID/DISTRICTID/TALUKAID, so gating it would mean a thin host
-    that forgot to list it fails at runtime on the first district lookup.
-  - Re-point every consumer&#x27;s ProjectReference at the new assembly. If a
-    consumer needed only the moved part, it may now drop the old reference
-    entirely - that is the payoff (Hr.Web dropped General for Reference and
-    became monolith-free).
-  - Update ArchBoundaries + NamespaceDisciplineTests anchors (section 5).
-  - A moved public method still counts as an API change: run cbs-sync-test-demo.
-  - Deleting a stored proc is a CUTOVER decision, not a code one. During the
-    strangler-fig migration both apps share one database, so &quot;no C# callers&quot;
-    NEVER means &quot;unused&quot; for a proc - a legacy .aspx screen may still call it.
-
-
-==============================================================================
- 10. CHECKLIST - EVERY PLACE A NEW MODULE NAME MUST BE REGISTERED
-==============================================================================
-Replace &lt;Name&gt; with your module (e.g. Administration).
-
-  SERVICE SIDE (new class library)
-   [ ] 1. TflCbs.Modules.&lt;Name&gt;/TflCbs.Modules.&lt;Name&gt;.csproj
-          (RootNamespace == assembly; refs TflCbs.Abstractions + bare DLLs)
-   [ ] 2. &lt;Name&gt;Module.cs  (ICbsModule, Name =&gt; &quot;&lt;Name&gt;&quot;)
-   [ ] 3. &lt;Thing&gt;Service.cs (ns TflCbs.Modules.&lt;Name&gt;, Result-returning)
-
-  WEB SIDE (new RCL project - skip if the module has no screens)
-   [ ] 4. TflCbs.Modules.&lt;Name&gt;.Web/ (Sdk.Razor, RootNamespace == assembly)
-   [ ] 5. &lt;Name&gt;WebModuleMarker.cs
-   [ ] 6. Areas/&lt;Name&gt;/Controllers + Views (+ _ViewImports) + Models/&lt;Name&gt;/
-
-  DEFAULT HOST (TflCbs.Host.Main)
-   [ ] 7.  TflCbs.Host.Main.csproj - &lt;ProjectReference&gt; to BOTH new projects
-   [ ] 8.  Program.cs - if (ModuleOn(&quot;&lt;Name&gt;&quot;)) mvc.AddApplicationPart(...Marker.Assembly)
-   [ ] 9.  Program.cs - typeof(&lt;Name&gt;Module).Assembly in the AddCbsModules call
-   [ ] 10. appsettings.json Modules:Enabled - only if NOT &quot;*&quot; (default is &quot;*&quot;)
-
-  ARCH TESTS
-   [ ] 11. ArchTests.csproj - &lt;ProjectReference&gt; to the new project(s)
-   [ ] 12. ArchBoundaries.cs - anchor + PromotedServiceNamespaces
-           (+ DomainWebModules / DomainServiceNamespaceForArea /
-           MonolithFreeWebModules if it has an RCL)
-   [ ] 13. NamespaceDisciplineTests.cs - Anchors entry per new assembly
-
-  SOLUTION + ROUTING
-   [ ] 14. TflCbsNet10Sol.slnx - &lt;Project&gt; per new project
-   [ ] 15. DbMigrator migration - a_Menus.NavigateURL -&gt; new route per screen
-
-  OPTIONAL THIN HOST (TflCbs.Host.&lt;Name&gt;)
-   [ ] 16. New Sdk.Web csproj + Program.cs + appsettings.json (Modules:Enabled
-           = [&lt;Name&gt;] only + Observability:HostName) + linked logmasking.json
-   [ ] 17. TflCbsNet10Sol.slnx - &lt;Project&gt; for the host
-   [ ] 18. TflCbs.Gateway/appsettings.json (+ .Development.json) - routes +
-           cluster + destination (fresh ports; see docs/port-map.md)
-
-
-==============================================================================
- 11. GOTCHAS
-==============================================================================
-  - BOTH sides are projects now. Any doc, comment or memory that says the
-    service side is a folder inside TflCbsServices predates 2026-07-29.
-  - Forgetting typeof(&lt;Name&gt;Module).Assembly in a host&#x27;s AddCbsModules aborts
-    that host at startup naming your assembly. Add it - do NOT work around the
-    check.
-  - RootNamespace is the ASSEMBLY name on every project (the old
-    RootNamespace=TflCbs.Host.Main on web RCLs is gone and NamespaceDisciplineTests
-    fails if you reintroduce it).
-  - A private copy of Has/Eq/Val/Paged/IsDuplicate/IsForeignKey fails the build
-    (SharedServiceHelperTests). Use `using static TflCbs.Abstractions.*`.
-  - Arch tests fail if you forget section 5 - that&#x27;s by design; add the entries.
-  - A module must NOT reference a sibling module or its RCL. Cross-module needs
-    go through the owner&#x27;s .Contracts interface, a shared component in
-    Web.Shared/Framework, or a route.
-  - Reading another module&#x27;s TABLES via TflCbs.Entities is table-level coupling to
-    the shared schema, not an assembly dependency - it needs no .Contracts and
-    does not make your module a non-leaf.
-  - Thin host denies every screen? AllowedUrls comes from a_Menus.NavigateURL -
-    check the screen&#x27;s DbMigrator migration actually ran (`-- preview`).
-  - New module screens 404/AccessDenied? Check route + a_Menus.NavigateURL +
-    the user&#x27;s menu right + Modules:Enabled - access is fail-closed.
-  - Enabled name with no matching DOMAIN module throws at startup. Listing a
-    CORE name (General/Reference/Authentication) is ignored, not an error - but
-    drop it, it is noise.
-
-
-==============================================================================
- 12. RELATED DOCS
-==============================================================================
-  docs/architecture-overview.md             project map, module composition
-  docs/architecture/modular-monolith.md      why the split is shaped this way
-  docs/guides/building-a-crud-screen.txt     one screen inside a module
-  docs/port-map.md                           which ports are already taken
-  docs/single-sign-on.txt                    multi-host / thin-host SSO
-  docs/faq-how-to.txt                        day-to-day how-tos + troubleshooting
-  CLAUDE.md                                  authoritative project instructions
-==============================================================================</pre>
+}
+</code></pre>
+<p><code>&lt;Thing&gt;Service.cs</code> — one per aggregate:</p>
+<pre><code class="language-csharp">using TflCbs.Abstractions;
+using TflCbs.Entities;
+using TflOmniDb.Repository;
+using static TflCbs.Abstractions.ServiceQuery;   // Has/Eq/Val/Paged
+using static TflCbs.Abstractions.DbErrors;       // IsDuplicate/IsForeignKey
+
+namespace TflCbs.Modules.&lt;Name&gt;;
+
+public sealed class ModuleService(DataAccess data)              // primary ctor
+{
+    private Repository&lt;A_MODULE&gt; Modules =&gt; data.Repository&lt;A_MODULE&gt;();
+    // Search/Load/Save/Update/Delete - each returns Result / Result&lt;T&gt;,
+    // try/catch -&gt; Result.Fail(ex). No stored procs, no raw SQL.
+}
+</code></pre>
+<p>Notes:</p>
+<ul>
+<li>Every public method returns <code>Result</code> / <code>Result&lt;T&gt;</code> (<code>TflCbs.Abstractions</code>).</li>
+<li>NEVER re-declare the shared helpers privately. <code>Has</code>/<code>Eq</code>/<code>Val</code>/<code>Paged</code> and
+  <code>IsDuplicate</code>/<code>IsForeignKey</code> live in <code>TflCbs.Abstractions</code>; they were copy-pasted
+  into 8 services before extraction, so <code>SharedServiceHelperTests</code> now FAILS THE
+  BUILD on any private copy. Different semantics? Different name.</li>
+<li>Small lookups: <code>GetAllAsync</code> then filter/sort/page in memory.</li>
+<li><strong>PK type:</strong> parse the row token to the SERVICE's PK type at the call site.
+  <code>A_MODULE.MODULEID</code> is <code>int</code>, but <code>A_ROLE.ROLEID</code> is <strong>decimal</strong>. Never narrow a
+  decimal/guid PK through <code>int.TryParse</code>.</li>
+<li>Module A must never reference module B's implementation. If a cross-module call
+  is genuinely needed, publish an interface from <code>TflCbs.Modules.&lt;B&gt;.Contracts</code>
+  and inject that (the only two today: <code>IScrollService</code> and <code>IProcessBlockCheck</code>,
+  both from <code>General.Contracts</code>).</li>
+</ul>
+<blockquote>
+<p>After adding service methods, RUN the <strong>cbs-sync-test-demo</strong> agent (syncs
+<code>TflCbs.Tests</code> + <code>.Demo</code>, builds, runs). Both project names are HISTORICAL —
+they cover all nine module assemblies.</p>
+</blockquote>
+<h2 id="3-step-2-create-the-web-rcl-project-tflcbsmodulesnameweb">3. Step 2 — create the web RCL project (<code>TflCbs.Modules.&lt;Name&gt;.Web</code>)</h2>
+<p>Skip this section entirely if the module has no screens yet (Accounts and Clearing
+are service-only).</p>
+<p>New project folder: <code>TflCbs.Modules.&lt;Name&gt;.Web/</code></p>
+<p><code>TflCbs.Modules.&lt;Name&gt;.Web.csproj</code> — Razor Class Library:</p>
+<pre><code class="language-xml">&lt;Project Sdk=&quot;Microsoft.NET.Sdk.Razor&quot;&gt;
+  &lt;PropertyGroup&gt;
+    &lt;RootNamespace&gt;TflCbs.Modules.&lt;Name&gt;.Web&lt;/RootNamespace&gt;   &lt;!-- == assembly --&gt;
+    &lt;AddRazorSupportForMvc&gt;true&lt;/AddRazorSupportForMvc&gt;
+  &lt;/PropertyGroup&gt;
+  &lt;!-- Sdk.Razor doesn't add Web SDK implicit usings; add them manually: --&gt;
+  &lt;ItemGroup&gt;
+    &lt;Using Include=&quot;Microsoft.AspNetCore.Builder&quot; /&gt;
+    &lt;Using Include=&quot;Microsoft.AspNetCore.Hosting&quot; /&gt;
+    &lt;Using Include=&quot;Microsoft.AspNetCore.Http&quot; /&gt;
+    &lt;Using Include=&quot;Microsoft.AspNetCore.Routing&quot; /&gt;
+    &lt;Using Include=&quot;Microsoft.Extensions.Configuration&quot; /&gt;
+    &lt;Using Include=&quot;Microsoft.Extensions.DependencyInjection&quot; /&gt;
+    &lt;Using Include=&quot;Microsoft.Extensions.Hosting&quot; /&gt;
+    &lt;Using Include=&quot;Microsoft.Extensions.Logging&quot; /&gt;
+  &lt;/ItemGroup&gt;
+  &lt;ItemGroup&gt;
+    &lt;ProjectReference Include=&quot;..\TflCbs.Web.Shared\TflCbs.Web.Shared.csproj&quot; /&gt;
+    &lt;ProjectReference Include=&quot;..\TflCbs.Framework\TflCbs.Framework.csproj&quot; /&gt;
+    &lt;ProjectReference Include=&quot;..\TflCbs.Modules.&lt;Name&gt;\TflCbs.Modules.&lt;Name&gt;.csproj&quot; /&gt;
+    &lt;ProjectReference Include=&quot;..\TflCbs.Entities\TflCbs.Entities.csproj&quot; /&gt;
+  &lt;/ItemGroup&gt;
+&lt;/Project&gt;
+</code></pre>
+<p>(No bare-DLL refs on a web RCL — those live on the hosts. Reference YOUR module
+and core modules only — never a sibling domain; arch-tested.)</p>
+<p><code>&lt;Name&gt;WebModuleMarker.cs</code> — a stable handle for <code>AddApplicationPart</code> + arch tests:</p>
+<pre><code class="language-csharp">namespace TflCbs.Modules.&lt;Name&gt;.Web;
+public sealed class &lt;Name&gt;WebModuleMarker { }
+</code></pre>
+<p>Folder layout inside the RCL (mirror the CRUD-screen guide):</p>
+<pre><code>_ViewImports.cshtml                      (root: Framework usings + tag helpers)
+Areas/&lt;Name&gt;/Controllers/&lt;Screen&gt;Controller.cs
+Areas/&lt;Name&gt;/Views/&lt;Screen&gt;/Index.cshtml
+Areas/&lt;Name&gt;/Views/_ViewImports.cshtml
+Models/&lt;Name&gt;/&lt;Screen&gt;Models.cs
+wwwroot/js/&lt;screen&gt;.js                   (only if the screen needs its own JS)
+</code></pre>
+<p>Namespaces (one prefix per RCL — the <code>Areas/</code> folder is ROUTING, not namespacing):</p>
+<table>
+<thead>
+<tr>
+<th>Kind</th>
+<th>Namespace</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>controllers</td>
+<td><code>TflCbs.Modules.&lt;Name&gt;.Web.Controllers</code></td>
+</tr>
+<tr>
+<td>models</td>
+<td><code>TflCbs.Modules.&lt;Name&gt;.Web.Models</code></td>
+</tr>
+<tr>
+<td>view models</td>
+<td><code>TflCbs.Modules.&lt;Name&gt;.Web.ViewModels</code></td>
+</tr>
+</tbody>
+</table>
+<p>Controller shape:</p>
+<ul>
+<li><code>[Area("&lt;Name&gt;")]</code>, <code>[Route("&lt;Name&gt;/&lt;Screen&gt;")]</code>, <code>[CbsAccessScreen("&lt;Name&gt;/&lt;Screen&gt;")]</code></li>
+<li>inherits <code>CbsScreenController(store, tokens, searchEndpoint)</code></li>
+<li>injects the domain service(s); form models implement <code>IRowForm</code> (<code>string? Row</code>).</li>
+</ul>
+<p>(See <a href="building-a-crud-screen.html">docs/guides/building-a-crud-screen.md</a> for the
+full per-screen recipe.)</p>
+<h2 id="4-step-3-wire-it-into-the-default-host-tflcbshostmain">4. Step 3 — wire it into the default host (<code>TflCbs.Host.Main</code>)</h2>
+<p>Three edits (all required):</p>
+<p><strong>A. <code>TflCbs.Host.Main/TflCbs.Host.Main.csproj</code></strong> — add BOTH project references:</p>
+<pre><code class="language-xml">&lt;ProjectReference Include=&quot;..\TflCbs.Modules.&lt;Name&gt;\TflCbs.Modules.&lt;Name&gt;.csproj&quot; /&gt;
+&lt;ProjectReference Include=&quot;..\TflCbs.Modules.&lt;Name&gt;.Web\TflCbs.Modules.&lt;Name&gt;.Web.csproj&quot; /&gt;
+</code></pre>
+<p><strong>B. <code>TflCbs.Host.Main/Program.cs</code></strong> — gated <code>AddApplicationPart</code> (next to the others):</p>
+<pre><code class="language-csharp">if (ModuleOn(&quot;&lt;Name&gt;&quot;))
+    mvc.AddApplicationPart(typeof(TflCbs.Modules.&lt;Name&gt;.Web.&lt;Name&gt;WebModuleMarker).Assembly);
+</code></pre>
+<p>where <code>ModuleOn(name)</code> = <code>enabledModules.Contains("*") || enabledModules.Contains(name, OrdinalIgnoreCase)</code>.</p>
+<p><strong>C. <code>TflCbs.Host.Main/Program.cs</code></strong> — add the SERVICE assembly to <code>AddCbsModules</code>:</p>
+<pre><code class="language-csharp">builder.Services.AddCbsModules(
+    builder.Configuration,
+    typeof(TflCbs.Modules.General.GeneralModule).Assembly,
+    typeof(TflCbs.Modules.Reference.ReferenceModule).Assembly,
+    typeof(TflCbs.Core.Authentication.AuthenticationModule).Assembly,
+    ... existing domain modules ...,
+    typeof(TflCbs.Modules.&lt;Name&gt;.&lt;Name&gt;Module).Assembly);   // &lt;-- yours
+</code></pre>
+<p>THIS EDIT IS NOT OPTIONAL. Older guidance said the service side needed no
+<code>Program.cs</code> change because discovery was implicit — that has not been true since
+<code>TflCbsServices</code> was dissolved. Forget it and the startup deployment check aborts
+the host naming your assembly (which is the good outcome; the check exists
+precisely because <code>"*"</code> hosts cannot catch this any other way).</p>
+<p><code>Modules:Enabled</code>: the default host's <code>appsettings.json</code> has</p>
+<pre><code class="language-json">&quot;Modules&quot;: { &quot;Enabled&quot;: &quot;*&quot; }
+</code></pre>
+<p>so <code>"*"</code> turns every domain module on — no per-name edit needed in the default host.
+(A thin host lists names explicitly — see <a href="#8-step-7-optional--add-a-thin-host-tflcbshostname">section 8</a>.)</p>
+<p>Only hosts that ENABLE a module should reference it. Adding the reference to every
+host "for consistency" re-ships the code everywhere and defeats the whole exercise
+— each thin host today ships exactly one domain module.</p>
+<h2 id="5-step-4-register-in-the-arch-tests">5. Step 4 — register in the arch tests</h2>
+<p>The boundary tests are DELIBERATELY hard-coded so a new module must declare itself.
+Everything now funnels through ONE registry file.</p>
+<p><strong>A. <code>TflCbs.ArchTests/TflCbs.ArchTests.csproj</code></strong> → <code>&lt;ProjectReference&gt;</code> to your
+service project (and the web RCL, if any), so the anchors below can be <code>typeof()</code>'d.</p>
+<p><strong>B. <code>TflCbs.ArchTests/ArchBoundaries.cs</code></strong> — the single source of truth. Add, in order:</p>
+<ol>
+<li>an assembly anchor property, e.g.</li>
+</ol>
+<p><code>csharp
+   internal static Assembly &lt;Name&gt;Module =&gt;
+       typeof(TflCbs.Modules.&lt;Name&gt;.SomeService).Assembly;</code>
+2. that anchor to <code>PromotedModuleAssemblies</code> (domain) or <code>CoreModuleAssemblies</code> (core — rare);
+3. <code>PromotedServiceNamespaces: ["&lt;Name&gt;"] = "TflCbs.Modules.&lt;Name&gt;"</code>, which drives
+   <code>PromotedModules</code> and re-partitions every sibling rule automatically (both the
+   Namespace-level and Reference-level halves);
+4. if it has an RCL: <code>DomainWebModules += ("&lt;Name&gt;", typeof(...&lt;Name&gt;WebModuleMarker).Assembly)</code>,
+   and <code>DomainServiceNamespaceForArea["&lt;Name&gt;"] = "TflCbs.Modules.&lt;Name&gt;"</code>;
+5. if the RCL references no other domain's services (it should not): add <code>"&lt;Name&gt;"</code>
+   to <code>MonolithFreeWebModules</code>.</p>
+<p><code>PromotedModules</code> and <code>MonolithFreeWebModules</code> are deliberately SEPARATE lists — a
+service module's isolation says nothing about its RCL's. Get one wrong and
+<code>BoundaryGuaranteeTests</code> fails telling you exactly which.</p>
+<p><strong>C. <code>TflCbs.ArchTests/NamespaceDisciplineTests.cs</code></strong> → <code>Anchors</code> dictionary, add one
+entry per new assembly:</p>
+<pre><code class="language-csharp">[&quot;TflCbs.Modules.&lt;Name&gt;&quot;] = typeof(...SomeService).Assembly,
+[&quot;TflCbs.Modules.&lt;Name&gt;.Web&quot;] = typeof(...WebModuleMarker).Assembly,
+</code></pre>
+<p><code>ModuleBoundaryTests</code> (service-graph resolvability) needs NO edit — it builds the
+graph via <code>AddCbsModules</code> and validates automatically. <code>ModuleConfigTests</code> needs no
+edit either, but WILL fail if you put a name in any <code>compose*.yaml</code> /
+<code>appsettings*.json</code> <code>Modules:Enabled</code> that no <code>ICbsModule</code> answers to.</p>
+<h2 id="6-step-5-add-to-solution-route-cutover">6. Step 5 — add to solution + route cutover</h2>
+<p><strong>A. <code>TflCbsNet10Sol.slnx</code></strong> — add a <code>&lt;Project&gt;</code> line for EACH new project (service,
+web RCL, and the thin host if you add one):</p>
+<pre><code class="language-xml">&lt;Project Path=&quot;TflCbs.Modules.&lt;Name&gt;/TflCbs.Modules.&lt;Name&gt;.csproj&quot; /&gt;
+&lt;Project Path=&quot;TflCbs.Modules.&lt;Name&gt;.Web/TflCbs.Modules.&lt;Name&gt;.Web.csproj&quot; /&gt;
+</code></pre>
+<p><strong>B. Route cutover</strong> — point each screen's <code>a_Menus.NavigateURL</code> at its new route
+with a DbMigrator migration (one <code>NNNN_*.sql</code> per provider). Example:</p>
+<pre><code class="language-sql">UPDATE dbo.A_MENUS SET NavigateURL = '/Administration/Module'
+ WHERE LOWER(REPLACE(NavigateURL, '~', '')) = '/ho/admin/a_module.aspx?';
+</code></pre>
+<p>Match the WHOLE legacy URL, not a LIKE fragment. That column is both what the menu
+links to and what <code>AllowedUrls</code> is derived from, so until it holds the new route
+the screen is unreachable. Apply with:</p>
+<pre><code>dotnet run --project TflCbs.Tools.DbMigrator -- preview
+dotnet run --project TflCbs.Tools.DbMigrator -- upgrade
+</code></pre>
+<h2 id="7-step-6-build-verify">7. Step 6 — build &amp; verify</h2>
+<ol>
+<li>If you added/changed entities: <code>dotnet build TflCbs.Entities</code> (FIRST — it is
+   referenced by bare-DLL HintPath, so there is no build-order edge).</li>
+<li><code>dotnet build TflCbs.Host.Main</code> (should be 0/0).</li>
+<li><code>dotnet test TflCbs.ArchTests</code> (boundaries pass).</li>
+<li>If you added service methods: <strong>cbs-sync-test-demo</strong> agent, then <code>dotnet test TflCbs.Tests</code>.</li>
+<li><code>dotnet test TflCbs.IntegrationTests</code> (real pipeline in-process: access guard,
+   antiforgery, authenticated access).</li>
+<li>Run the app (<code>dotnet run --project TflCbs.Host.Main</code>), sign in, confirm the
+   module's screens render under its menu, search returns rows, and the row token
+   round-trips (search → open pre-fills the edit form). STOP the app before the
+   next build (it holds DLL locks — including when launched by the VS debugger).</li>
+</ol>
+<p>(The module's menu entry must exist for your user — access is fail-closed.)</p>
+<h2 id="8-step-7-optional-add-a-thin-host-tflcbshostname">8. Step 7 (optional) — add a thin host (<code>TflCbs.Host.&lt;Name&gt;</code>)</h2>
+<p>Only when you want the module to run standalone behind the gateway. It's a
+mechanical copy of an existing thin host (e.g. <code>TflCbs.Host.Hr</code>).</p>
+<p><strong>A. New project <code>TflCbs.Host.&lt;Name&gt;/</code></strong> (<code>Sdk.Web</code>, <code>net10.0</code>, <code>RootNamespace=TflCbs.Host.&lt;Name&gt;</code>):</p>
+<ul>
+<li>PackageReferences: <code>Microsoft.Data.SqlClient</code>, <code>Oracle.ManagedDataAccess.Core</code>,
+  <code>Npgsql</code> (bare-DLL deps don't flow transitively — re-declare per host).</li>
+<li>Bare-DLL <code>&lt;Reference&gt;</code> HintPaths: <code>TflCbs.Entities</code>, <code>TflOmniDb</code>, <code>TflSecurityCrypto</code>.</li>
+<li>ProjectReferences: <code>TflCbs.Entities</code>, <code>TflOmniLog</code>, <code>TflCbs.Framework</code>,
+  <code>TflCbs.Web.Shared</code>, <code>TflCbs.Core.Authentication.Web</code>, <code>TflCbs.Core.Shell.Web</code>,
+  the CORE service modules (<code>TflCbs.Modules.General</code>, <code>TflCbs.Modules.Reference</code>,
+  <code>TflCbs.Core.Authentication</code>), and YOUR <code>TflCbs.Modules.&lt;Name&gt;</code> +
+  <code>TflCbs.Modules.&lt;Name&gt;.Web</code>. Nothing else — no sibling domain.</li>
+<li>LINK the canonical config file (don't copy) from solution-level <code>config/</code>:</li>
+</ul>
+<p><code>xml
+  &lt;Content Include="..\config\logmasking.json" Link="logmasking.json"
+           CopyToOutputDirectory="PreserveNewest" /&gt;</code></p>
+<p><strong>B. <code>Program.cs</code></strong> (~same shape as the full host):</p>
+<pre><code class="language-csharp">if (ModuleOn(&quot;&lt;Name&gt;&quot;))
+    mvc.AddApplicationPart(typeof(TflCbs.Modules.&lt;Name&gt;.Web.&lt;Name&gt;WebModuleMarker).Assembly);
+...
+builder.Services.AddCbsModules(
+    builder.Configuration,
+    typeof(TflCbs.Modules.General.GeneralModule).Assembly,
+    typeof(TflCbs.Modules.Reference.ReferenceModule).Assembly,
+    typeof(TflCbs.Core.Authentication.AuthenticationModule).Assembly,
+    typeof(TflCbs.Modules.&lt;Name&gt;.&lt;Name&gt;Module).Assembly);
+</code></pre>
+<blockquote>
+<p>Load <code>logmasking.json</code> from <code>AppContext.BaseDirectory</code>, NOT the content root (the
+thin-host gotcha: under <code>dotnet run</code> the content root is the project dir and a
+relative <code>AddJsonFile</code> silently misses the linked file). <code>logmasking.json</code> is
+<code>optional:false</code> on purpose — a missing file falls back to an EMPTY <code>Patterns</code>
+list and PII stops being masked with nothing to notice.</p>
+</blockquote>
+<p><strong>C. <code>appsettings.json</code>:</strong></p>
+<pre><code class="language-json">&quot;Modules&quot;: { &quot;Enabled&quot;: [ &quot;&lt;Name&gt;&quot; ] },
+&quot;Observability&quot;: { &quot;HostName&quot;: &quot;&lt;name&gt;-host&quot; }
+</code></pre>
+<p>ONLY the domain module. General / Reference / Authentication are core — registered
+unconditionally by <code>AddCbsModules</code> — so they must NOT be listed (older guidance
+listing <code>"General"</code>,<code>"Authentication"</code>,<code>"Misc"</code>,<code>"Accounts"</code> is obsolete; <code>"Misc"</code>
+in particular is not a module and crashed all four Docker thin hosts at startup
+until <code>ModuleConfigTests</code> caught it). Also set: <code>Auth:LoginUrl</code> → the gateway,
+<code>DataProtection:KeyRing=TflOmniDb</code> and <code>Auth:SessionRevocation=TflOmniDb</code> for
+cross-host SSO, <code>ForwardedHeaders</code>, <code>Security:Headers</code> + <code>Security:LoginRateLimit</code>.</p>
+<p><strong>D. <code>TflCbsNet10Sol.slnx</code></strong> — add a <code>&lt;Project&gt;</code> entry for the host.</p>
+<p><strong>E. <code>TflCbs.Gateway/appsettings.json</code></strong> (+ <code>appsettings.Development.json</code>):</p>
+<ul>
+<li>a route <code>&lt;name&gt;</code> — Path: <code>/&lt;Name&gt;/{**catch-all}</code> → cluster <code>&lt;name&gt;-host</code></li>
+<li>a route <code>&lt;name&gt;-content</code> — Path: <code>/_content/TflCbs.Modules.&lt;Name&gt;.Web/{**catch-all}</code></li>
+<li>a cluster <code>&lt;name&gt;-host</code> with an http destination (base) overridden to its https
+  backend port in <code>appsettings.Development.json</code>.</li>
+</ul>
+<p>Pick fresh ports — see <a href="../port-map.html">docs/port-map.md</a> for what is taken
+(Hr 5300/7300, Lockers 5200/7200, RetailBanking 5400/7400, Administration 5500/7500,
+Gateway 5100/7100).</p>
+<p>For shared-SSO across hosts see <a href="../single-sign-on.html">docs/single-sign-on.md</a>; for
+deployment shapes see <a href="../deploy/iis-multi-host.html">docs/deploy/iis-multi-host.md</a>
+and <a href="../deploy/docker-multi-host.html">docs/deploy/docker-multi-host.md</a>.</p>
+<h2 id="9-variant-carving-a-new-module-out-of-an-existing-one">9. Variant — carving a new module out of an existing one</h2>
+<p>Rarer than adding a greenfield module, but it is how Reference was created (split
+out of General, 2026-07-29). The mechanics are <a href="#2-step-1--create-the-service-project-tflcbsmodulesname">section 2</a> plus:</p>
+<ul>
+<li>Move the service files + their tests/demo sections; fix namespaces.</li>
+<li>Decide core vs domain FIRST (<a href="#0-key-concepts-read-this-before-you-start">section 0</a>).
+  Reference is core because 66 entity tables carry <code>STATEID</code>/<code>DISTRICTID</code>/<code>TALUKAID</code>,
+  so gating it would mean a thin host that forgot to list it fails at runtime on the
+  first district lookup.</li>
+<li>Re-point every consumer's <code>ProjectReference</code> at the new assembly. If a consumer
+  needed only the moved part, it may now drop the old reference entirely — that is
+  the payoff (<code>Hr.Web</code> dropped General for Reference and became monolith-free).</li>
+<li>Update <code>ArchBoundaries</code> + <code>NamespaceDisciplineTests</code> anchors (<a href="#5-step-4--register-in-the-arch-tests">section 5</a>).</li>
+<li>A moved public method still counts as an API change: run <strong>cbs-sync-test-demo</strong>.</li>
+<li>Deleting a stored proc is a CUTOVER decision, not a code one. During the
+  strangler-fig migration both apps share one database, so "no C# callers" NEVER
+  means "unused" for a proc — a legacy <code>.aspx</code> screen may still call it.</li>
+</ul>
+<h2 id="10-checklist-every-place-a-new-module-name-must-be-registered">10. Checklist — every place a new module name must be registered</h2>
+<p>Replace <code>&lt;Name&gt;</code> with your module (e.g. Administration).</p>
+<p><strong>Service side (new class library)</strong></p>
+<ul>
+<li>[ ] 1. <code>TflCbs.Modules.&lt;Name&gt;/TflCbs.Modules.&lt;Name&gt;.csproj</code> (RootNamespace == assembly; refs <code>TflCbs.Abstractions</code> + bare DLLs)</li>
+<li>[ ] 2. <code>&lt;Name&gt;Module.cs</code> (<code>ICbsModule</code>, <code>Name =&gt; "&lt;Name&gt;"</code>)</li>
+<li>[ ] 3. <code>&lt;Thing&gt;Service.cs</code> (ns <code>TflCbs.Modules.&lt;Name&gt;</code>, <code>Result</code>-returning)</li>
+</ul>
+<p><strong>Web side (new RCL project — skip if the module has no screens)</strong></p>
+<ul>
+<li>[ ] 4. <code>TflCbs.Modules.&lt;Name&gt;.Web/</code> (<code>Sdk.Razor</code>, RootNamespace == assembly)</li>
+<li>[ ] 5. <code>&lt;Name&gt;WebModuleMarker.cs</code></li>
+<li>[ ] 6. <code>Areas/&lt;Name&gt;/Controllers</code> + <code>Views</code> (+ <code>_ViewImports</code>) + <code>Models/&lt;Name&gt;/</code></li>
+</ul>
+<p><strong>Default host (<code>TflCbs.Host.Main</code>)</strong></p>
+<ul>
+<li>[ ] 7. <code>TflCbs.Host.Main.csproj</code> — <code>&lt;ProjectReference&gt;</code> to BOTH new projects</li>
+<li>[ ] 8. <code>Program.cs</code> — <code>if (ModuleOn("&lt;Name&gt;")) mvc.AddApplicationPart(...Marker.Assembly)</code></li>
+<li>[ ] 9. <code>Program.cs</code> — <code>typeof(&lt;Name&gt;Module).Assembly</code> in the <code>AddCbsModules</code> call</li>
+<li>[ ] 10. <code>appsettings.json</code> <code>Modules:Enabled</code> — only if NOT <code>"*"</code> (default is <code>"*"</code>)</li>
+</ul>
+<p><strong>Arch tests</strong></p>
+<ul>
+<li>[ ] 11. <code>ArchTests.csproj</code> — <code>&lt;ProjectReference&gt;</code> to the new project(s)</li>
+<li>[ ] 12. <code>ArchBoundaries.cs</code> — anchor + <code>PromotedServiceNamespaces</code> (+ <code>DomainWebModules</code> / <code>DomainServiceNamespaceForArea</code> / <code>MonolithFreeWebModules</code> if it has an RCL)</li>
+<li>[ ] 13. <code>NamespaceDisciplineTests.cs</code> — <code>Anchors</code> entry per new assembly</li>
+</ul>
+<p><strong>Solution + routing</strong></p>
+<ul>
+<li>[ ] 14. <code>TflCbsNet10Sol.slnx</code> — <code>&lt;Project&gt;</code> per new project</li>
+<li>[ ] 15. DbMigrator migration — <code>a_Menus.NavigateURL</code> → new route per screen</li>
+</ul>
+<p><strong>Optional thin host (<code>TflCbs.Host.&lt;Name&gt;</code>)</strong></p>
+<ul>
+<li>[ ] 16. New <code>Sdk.Web</code> csproj + <code>Program.cs</code> + <code>appsettings.json</code> (<code>Modules:Enabled</code> = <code>[&lt;Name&gt;]</code> only + <code>Observability:HostName</code>) + linked <code>logmasking.json</code></li>
+<li>[ ] 17. <code>TflCbsNet10Sol.slnx</code> — <code>&lt;Project&gt;</code> for the host</li>
+<li>[ ] 18. <code>TflCbs.Gateway/appsettings.json</code> (+ <code>.Development.json</code>) — routes + cluster + destination (fresh ports; see <a href="../port-map.html">docs/port-map.md</a>)</li>
+</ul>
+<h2 id="11-gotchas">11. Gotchas</h2>
+<ul>
+<li>BOTH sides are projects now. Any doc, comment or memory that says the service
+  side is a folder inside <code>TflCbsServices</code> predates 2026-07-29.</li>
+<li>Forgetting <code>typeof(&lt;Name&gt;Module).Assembly</code> in a host's <code>AddCbsModules</code> aborts that
+  host at startup naming your assembly. Add it — do NOT work around the check.</li>
+<li><code>RootNamespace</code> is the ASSEMBLY name on every project (the old
+  <code>RootNamespace=TflCbs.Host.Main</code> on web RCLs is gone and <code>NamespaceDisciplineTests</code>
+  fails if you reintroduce it).</li>
+<li>A private copy of <code>Has</code>/<code>Eq</code>/<code>Val</code>/<code>Paged</code>/<code>IsDuplicate</code>/<code>IsForeignKey</code> fails the
+  build (<code>SharedServiceHelperTests</code>). Use <code>using static TflCbs.Abstractions.*</code>.</li>
+<li>Arch tests fail if you forget <a href="#5-step-4--register-in-the-arch-tests">section 5</a>
+  — that's by design; add the entries.</li>
+<li>A module must NOT reference a sibling module or its RCL. Cross-module needs go
+  through the owner's <code>.Contracts</code> interface, a shared component in Web.Shared/Framework,
+  or a route.</li>
+<li>Reading another module's TABLES via <code>TflCbs.Entities</code> is table-level coupling to
+  the shared schema, not an assembly dependency — it needs no <code>.Contracts</code> and does
+  not make your module a non-leaf.</li>
+<li>Thin host denies every screen? <code>AllowedUrls</code> comes from <code>a_Menus.NavigateURL</code> —
+  check the screen's DbMigrator migration actually ran (<code>-- preview</code>).</li>
+<li>New module screens 404/AccessDenied? Check route + <code>a_Menus.NavigateURL</code> + the
+  user's menu right + <code>Modules:Enabled</code> — access is fail-closed.</li>
+<li>Enabled name with no matching DOMAIN module throws at startup. Listing a CORE name
+  (General/Reference/Authentication) is ignored, not an error — but drop it, it is noise.</li>
+</ul>
+<h2 id="12-related-docs">12. Related docs</h2>
+<table>
+<thead>
+<tr>
+<th>Doc</th>
+<th>What</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a href="../architecture-overview.html">docs/architecture-overview.md</a></td>
+<td>project map, module composition</td>
+</tr>
+<tr>
+<td><a href="../architecture/modular-monolith.html">docs/architecture/modular-monolith.md</a></td>
+<td>why the split is shaped this way</td>
+</tr>
+<tr>
+<td><a href="building-a-crud-screen.html">docs/guides/building-a-crud-screen.md</a></td>
+<td>one screen inside a module</td>
+</tr>
+<tr>
+<td><a href="../port-map.html">docs/port-map.md</a></td>
+<td>which ports are already taken</td>
+</tr>
+<tr>
+<td><a href="../single-sign-on.html">docs/single-sign-on.md</a></td>
+<td>multi-host / thin-host SSO</td>
+</tr>
+<tr>
+<td><a href="../faq-how-to.html">docs/faq-how-to.md</a></td>
+<td>day-to-day how-tos + troubleshooting</td>
+</tr>
+<tr>
+<td><code>CLAUDE.md</code></td>
+<td>authoritative project instructions</td>
+</tr>
+</tbody>
+</table>
 </div></div>
 <script>
 (function(){

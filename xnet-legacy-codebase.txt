@@ -1,0 +1,51 @@
+database connection string
+
+
+Data Source=192.168.0.13\SQLSERVER_2024;Initial Catalog=Trustbank_XNETT_ORCL;Persist Security Info=True;User ID=app;Password=app@123;Connect Timeout=30;User Instance=False
+
+
+codebase
+
+E:\adtemp\_del_now\20260904_cbs_source_code_xnet
+
+
+cbs users:
+
+ratnesh
+acooper
+ahenry
+asweede
+aneufville
+ 
+ 
+password: a 
+
+password is "a" for all users
+
+ 
+screen rights (batch 7)
+
+All five users above are granted the 13 migrated screens (menus 828, 890, 893,
+951, 952, 998, 2784-2788, 3287, 3288) plus modules 1 and 7, applied 2026-09-07.
+Re-apply or repair with: scripts\xnet-grant-batch7-screens.sql (idempotent).
+Screen list: BACKLOG-screens-xnet-7.md -> "Screens delivered".
+
+-------------
+http://192.168.0.13:8086/trustbank_xnett_v2/login.aspx?rnd=0.2644751673585345&hash=mdgxnq==
+ 
+ 
+Users:
+1.ratnesh
+2.santosh
+3.acooper
+4.ahenry
+5.asweede
+6.Santosh1
+ 
+ 
+password: 'a' for all
+ 
+Trustbank_XNETT_Test--DB
+192.168.0.13\SQLSERVER_2024
+ 
+-------------

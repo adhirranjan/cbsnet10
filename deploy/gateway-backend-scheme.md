@@ -133,4 +133,4 @@ app.UseWhen(
 
 - [iis-multi-host.md](iis-multi-host.md) — the multi-host deploy (uses these HTTPS destinations)
 - [self-signed-cert.md](self-signed-cert.md) — the trusted cert the gateway validates against
-- [single-sign-on.txt](../single-sign-on.txt) — why the gateway exists (one origin for cross-host SSO)
+- [single-sign-on.md](../single-sign-on.md) — why the gateway exists (one origin for cross-host SSO)

@@ -61,9 +61,11 @@ ul{padding-left:1.4em}ol{padding-left:1.4em}
 request flows through them.</p>
 <ul>
 <li><strong>Solution root:</strong> <code>E:\Adhir\AdWork\TrustBank.Code\TflCbsNet10Sol\</code></li>
-<li><strong>Solution file:</strong> <code>TflCbsNet10Sol.slnx</code> — <strong>36 projects</strong>.</li>
-<li><strong>All projects target <code>net10.0</code></strong> (set centrally in <code>Directory.Build.props</code>), with Central Package
-  Management (versions in <code>Directory.Packages.props</code>).</li>
+<li><strong>Solution file:</strong> <code>TflCbsNet10Sol.slnx</code> — <strong>45 projects</strong>.</li>
+<li><strong>Almost all projects target <code>net10.0</code></strong> (set centrally in <code>Directory.Build.props</code>), with Central Package
+  Management (versions in <code>Directory.Packages.props</code>). Two exceptions, both under <code>libs/</code>: the MFA-AD
+  server projects target <strong><code>net10.0-windows</code></strong> (§3), and everything under <code>libs/</code> opts out of Central
+  Package Management so the vendored libraries stay buildable in place.</li>
 </ul>
 <p><strong>Also on disk, deliberately outside the <code>.slnx</code>:</strong> <code>TflCbs.Lab</code> / <code>TflCbs.Lab.Demo</code>
 (the proc-conversion lab — experimental, API-drifted) and <code>TflCbs.Tools.PerfProbe</code> (a measurement
@@ -71,9 +73,10 @@ tool run directly with <code>dotnet run</code>). Plus two <strong>vendored in-ho
 solutions — <code>libs/TflOmniDb/</code> and <code>libs/TflSecurityCrypto/</code> (§3) — the <code>TflCbs.E2E</code> Playwright
 suite (a Node project, not a .NET one), and the gitignored <code>codebase_shared/</code> handover tree (§4).</p>
 <blockquote>
-<p><strong>Last reviewed:</strong> 2026-08-21. The modular-monolith split completed on 2026-07-29 (<code>TflCbsServices</code>
+<p><strong>Last reviewed:</strong> 2026-09-03. The modular-monolith split completed on 2026-07-29 (<code>TflCbsServices</code>
 dissolved); the in-house libraries were vendored into the repo on 2026-08-19; the canonical config
-files moved to solution-level <code>config/</code> on 2026-08-21.</p>
+files moved to solution-level <code>config/</code> on 2026-08-21; the MFA vendor stack was replaced with our own
+.NET 10 rewrite on 2026-09-03 (§3.1).</p>
 </blockquote>
 <hr />
 <h2 id="1-the-big-picture-why-this-shape">1. The big picture (why this shape)</h2>
@@ -154,12 +157,101 @@ folder outside the solution root. Before that they sat two levels above it under
 <td><code>..\libs\TflSecurityCrypto\TflSecurityCrypto\bin\Debug\net10.0\</code></td>
 <td>PBKDF2 password storage plus a byte-for-byte port of the legacy VB.NET crypto helpers (used by login).</td>
 </tr>
+<tr>
+<td><code>TssiplCryptoLibNet.dll</code></td>
+<td>not in repo — built from the <code>_Archive/Crypto/TssiplCryptoLibNet/</code> tree</td>
+<td><code>libs/TssiplCryptoLibNet/</code></td>
+<td>RSA over PEM keys, AES-GCM, PGP, X509. The .NET 10 rewrite of the legacy <code>TssiplCryptoLib</code>; landed 2026-09-03 for the MFA-QR payload crypto (3.1). <strong>Not self-contained</strong> — a consumer must also declare <code>BouncyCastle.Cryptography</code> and <code>PemUtils</code>, or every RSA call fails at runtime with nothing failing at build time.</td>
+</tr>
 </tbody>
 </table>
 <p><code>TflCbs.Entities.dll</code> is referenced the same way (<code>..\TflCbs.Entities\bin\Debug\net10.0\</code>) but IS a
 solution project — see §4. <code>TflOmniLog</code> is a first-party solution project, referenced normally.</p>
 <p><strong>Consequence of the bare-DLL style:</strong> these references and the ADO.NET drivers do <strong>not</strong> flow
 transitively, so every project in the closure re-declares the ones it needs.</p>
+<h3 id="31-the-mfa-stack-libstssipl_mfa__net">3.1 The MFA stack (<code>libs/tssipl_mfa_*_net</code>)</h3>
+<p>Multi-factor authentication — OTP, Active Directory and QR at login — was a <strong>vendor</strong> product
+(<code>tssipl_mfa_*</code>, source of record <code>E:/Adhir/AdWork/TrustBank.Code/tssipl_mfa/</code>). Those assemblies target
+.NET Framework 3.5 and cannot be used from .NET 10, so as of <strong>2026-09-03 the whole stack is ours</strong>. See
+<a href="../BACKLOG-legacy-app-wide.html">BACKLOG-legacy-app-wide.md §1.10</a> for the divergences and the outstanding
+deployment gates.</p>
+<p><strong>Naming:</strong> the assembly carries a <code>_net</code> suffix, the <strong>namespace does not</strong> — so call sites read exactly as
+they did against the vendor library. These projects sit outside the namespace==assembly rule, which anchors
+an explicit allow-list of <code>TflCbs.*</code> assemblies.</p>
+<table>
+<thead>
+<tr>
+<th>Project</th>
+<th>TFM</th>
+<th>Referenced by CBS</th>
+<th>Role</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>tssipl_mfa_otp_net</code></td>
+<td>net10.0</td>
+<td>yes</td>
+<td>SMS gateway helper (<code>SmsHelper</code>)</td>
+</tr>
+<tr>
+<td><code>tssipl_mfa_ad_client_net</code></td>
+<td>net10.0</td>
+<td>yes</td>
+<td>HTTP client for the MFA-AD service</td>
+</tr>
+<tr>
+<td><code>tssipl_mfa_qr_client_net</code></td>
+<td>net10.0</td>
+<td>yes</td>
+<td>HTTP client for the MFA-QR service</td>
+</tr>
+<tr>
+<td><code>tssipl_mfa_ad_lib_net</code></td>
+<td><strong>net10.0-windows</strong></td>
+<td>no</td>
+<td>AD operations + handler pipeline</td>
+</tr>
+<tr>
+<td><code>tssipl_mfa_ad_api_net</code></td>
+<td><strong>net10.0-windows</strong></td>
+<td>no</td>
+<td><code>/adapi</code> — separate deployable</td>
+</tr>
+<tr>
+<td><code>tssipl_mfa_qr_lib_net</code></td>
+<td>net10.0</td>
+<td>no</td>
+<td>QR state machine, RSA payloads, QR imaging</td>
+</tr>
+<tr>
+<td><code>tssipl_mfa_qr_api_net</code></td>
+<td>net10.0</td>
+<td>no</td>
+<td><code>/qrapi</code> — separate deployable</td>
+</tr>
+<tr>
+<td><code>tssipl_mfa_ad_tests_net</code> · <code>tssipl_mfa_qr_tests_net</code></td>
+<td></td>
+<td>no</td>
+<td>wire-contract tests</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Why two services rather than code inside CBS</strong>, and why only one of them is Windows-bound:</p>
+<ul>
+<li><strong>MFA-AD is Windows-only</strong> because <code>PrincipalContext.ValidateCredentials</code> needs
+  <code>System.DirectoryServices.AccountManagement</code>. Keeping it in its own service quarantines that dependency
+  away from the CBS hosts, which run Linux containers. <strong>Only the three clients are referenced by CBS</strong>, and
+  all three are plain <code>net10.0</code>.</li>
+<li><strong>MFA-QR is the phone-facing surface.</strong> Four of its ten actions are called by CBS; the rest are called by
+  the paired mobile app. It needs the CBS database (the <code>mfa_qr_*</code> procedures of migration 0007, SQL Server
+  only) but references no CBS assembly.</li>
+</ul>
+<p><strong>The wire contract is the thing to be careful with.</strong> Client and server deploy to different machines, so a
+drift between them fails no build — it fails every login. <code>tssipl_mfa_ad_tests_net</code> and
+<code>tssipl_mfa_qr_tests_net</code> exist to pin it: they are the only places both halves load into one process.</p>
+<hr />
 <hr />
 <h2 id="4-every-project-by-layer">4. Every project, by layer</h2>
 <h3 id="layer-foundation-dependency-free">Layer: foundation (dependency-free)</h3>
@@ -266,11 +358,6 @@ Without that test this project becomes a dumping ground.</p>
 <tr>
 <td><code>TflCbs.Modules.Accounts</code></td>
 <td><code>BusinessAssessmentService</code> (+ models)</td>
-<td></td>
-</tr>
-<tr>
-<td><code>TflCbs.Modules.Clearing</code></td>
-<td><code>InwardClearingService</code> (+ models)</td>
 <td></td>
 </tr>
 <tr>
@@ -388,8 +475,9 @@ module reference it</strong>, so a thin host no longer ships other domains' code
 <h3 id="layer-hosts-composition-roots">Layer: hosts / composition roots</h3>
 <p><strong><code>TflCbs.Host.Main</code></strong> — ASP.NET web app, <strong>THE PRIMARY/DEFAULT HOST</strong>. Dev <code>http :5019</code> / <code>https :7225</code>.</p>
 <ul>
-<li><strong>Purpose.</strong> Thin MVC host + composition root: <code>Program.cs</code> wiring, health checks, and two utility
-  controllers (<code>DevController</code>, <code>KeepAliveController</code>). Registers core web parts always, domain web
+<li><strong>Purpose.</strong> Thin MVC host + composition root: <code>Program.cs</code> wiring, health checks, and the
+  <code>DevController</code> utility controller (<code>KeepAliveController</code> lives in <code>TflCbs.Core.Authentication.Web</code>,
+  so every host answers <code>/Account/Ping</code>). Registers core web parts always, domain web
   parts gated by <code>Modules:Enabled</code> (which is <code>"*"</code> here). Also the login authority behind the
   gateway. Its own <code>Views/</code> and <code>wwwroot/</code> are empty but for <code>_ViewImports.cshtml</code>.</li>
 <li><strong>Refs.</strong> all five <code>Modules.*.Web</code> + both <code>Core.*.Web</code> + Web.Shared + Framework + ALL NINE service
@@ -658,7 +746,7 @@ modules are separate axes and are NOT realigned to match.</p>
 alongside its paths). Login happens ONCE on the central authority; the encrypted <code>CbsAuth</code> cookie
 (shared DataProtection key ring in the DB) is decrypted by whichever host the gateway routes to; that
 host rehydrates the session and reloads ITS OWN menu from the DB. Global logout is enforced via the
-shared revocation table. Details: <a href="single-sign-on.txt"><code>single-sign-on.txt</code></a>; port table:
+shared revocation table. Details: <a href="single-sign-on.html"><code>single-sign-on.md</code></a>; port table:
 <a href="port-map.html"><code>port-map.md</code></a>.</p>
 <hr />
 <h2 id="7-why-each-layer-is-separate-the-reasoning">7. Why each layer is separate (the reasoning)</h2>
@@ -798,7 +886,7 @@ shared revocation table. Details: <a href="single-sign-on.txt"><code>single-sign
 <td>The review gate for a migrated screen</td>
 </tr>
 <tr>
-<td><a href="guides/starting-a-new-module.txt"><code>guides/starting-a-new-module.txt</code></a></td>
+<td><a href="guides/starting-a-new-module.html"><code>guides/starting-a-new-module.md</code></a></td>
 <td>How to add a whole new domain module</td>
 </tr>
 <tr>
@@ -810,7 +898,7 @@ shared revocation table. Details: <a href="single-sign-on.txt"><code>single-sign
 <td>Every project's dev + deployed ports</td>
 </tr>
 <tr>
-<td><a href="single-sign-on.txt"><code>single-sign-on.txt</code></a></td>
+<td><a href="single-sign-on.html"><code>single-sign-on.md</code></a></td>
 <td>Cross-host SSO</td>
 </tr>
 <tr>
@@ -822,11 +910,11 @@ shared revocation table. Details: <a href="single-sign-on.txt"><code>single-sign
 <td>Logs/metrics/traces + the dev backend</td>
 </tr>
 <tr>
-<td><a href="faq-how-to.txt"><code>faq-how-to.txt</code></a></td>
+<td><a href="faq-how-to.html"><code>faq-how-to.md</code></a></td>
 <td>Day-to-day how-tos + troubleshooting</td>
 </tr>
 <tr>
-<td><a href="FEATURES-SHOWCASE.txt"><code>FEATURES-SHOWCASE.txt</code></a></td>
+<td><a href="FEATURES-SHOWCASE.html"><code>FEATURES-SHOWCASE.md</code></a></td>
 <td>One-line feature inventory</td>
 </tr>
 <tr>

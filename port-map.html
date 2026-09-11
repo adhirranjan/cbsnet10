@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>TrustBank CBS — Port &amp;amp; Project Map</title>
+<title>port-map</title>
 <style>
 :root{color-scheme:light dark}
 *{box-sizing:border-box}
@@ -56,10 +56,10 @@ ul{padding-left:1.4em}ol{padding-left:1.4em}
 }
 </style></head>
 <body><div class="wrap"><div class="card">
-<h1 id="trustbank-cbs-port-project-map">TrustBank CBS — Port &amp; Project Map</h1>
+<p>﻿# TrustBank CBS — Port &amp; Project Map</p>
 <blockquote>
 <p><strong>Last updated:</strong> 2026-08-01
-One page: which project runs where, what the gateway routes to it, and the everyday commands. See <a href="architecture-overview.txt">architecture-overview.txt</a> for the full picture.</p>
+One page: which project runs where, what the gateway routes to it, and the everyday commands. See <a href="architecture-overview.html">architecture-overview.md</a> for the full picture.</p>
 <p><strong>NOTE:</strong> §1–2 are the DEV <code>dotnet run</code> ports (5xxx/7xxx). For the DEPLOYED IIS + Docker ports (different, so they all coexist), see §5.</p>
 </blockquote>
 <h2 id="1-runnable-hosts-dev-dotnet-run-ports">1. Runnable hosts (dev <code>dotnet run</code> ports)</h2>
@@ -109,9 +109,21 @@ One page: which project runs where, what the gateway routes to it, and the every
 <td>5500</td>
 <td>7500</td>
 </tr>
+<tr>
+<td><code>TflCbs.Host.Inventory</code></td>
+<td>Thin host — Inventory only (Unit of Measurement, Asset/Consumable Category)</td>
+<td>5600</td>
+<td>7600</td>
+</tr>
 </tbody>
 </table>
-<p><strong>Port pattern:</strong> HTTP = <code>5x00</code>, HTTPS = <code>7x00</code>, paired per host (gateway x=1, Lockers 2, Hr 3, RetailBanking 4, Administration 5; the default host predates the pattern at 5019/7225).</p>
+<p><strong>Port pattern:</strong> HTTP = <code>5x00</code>, HTTPS = <code>7x00</code>, paired per host (gateway x=1, Lockers 2, Hr 3, RetailBanking 4, Administration 5, Inventory 6; the default host predates the pattern at 5019/7225).</p>
+<blockquote>
+<p><strong>The pattern runs out at x=9.</strong> Six of the nine slots are taken. The four xnet modules added alongside Inventory
+(Trade Finance, Internet Banking, Reconciliation, Loan Origination) deliberately have <strong>no thin host</strong> — they run in
+the default host. Inventory got one as the proof that the new slices are isolated; adding the rest would need a
+wider scheme, and there is no trigger for it yet.</p>
+</blockquote>
 <h2 id="2-gateway-routing-tflcbsgatewayappsettingsjson">2. Gateway routing (<code>TflCbs.Gateway/appsettings.json</code>)</h2>
 <table>
 <thead>
@@ -138,7 +150,11 @@ One page: which project runs where, what the gateway routes to it, and the every
 <td>Administration host (5500/7500)</td>
 </tr>
 <tr>
-<td>everything else (<code>/Account</code>, <code>/Modules</code>, <code>/Home</code>, <code>/Bank/*</code>, shared <code>/_content</code>, …)</td>
+<td><code>/Inventory/*</code> + <code>/_content/TflCbs.Modules.Inventory.Web/*</code></td>
+<td>Inventory host (5600/7600)</td>
+</tr>
+<tr>
+<td>everything else (<code>/Account</code>, <code>/Modules</code>, <code>/Home</code>, <code>/Bank/*</code>, <code>/TradeFinance/*</code>, <code>/InternetBanking/*</code>, <code>/Reconciliation/*</code>, <code>/LoanOrigination/*</code>, shared <code>/_content</code>, …)</td>
 <td>default host (5019/7225)</td>
 </tr>
 </tbody>
@@ -155,7 +171,7 @@ One page: which project runs where, what the gateway routes to it, and the every
 <tbody>
 <tr>
 <td>Domain web RCLs (screens)</td>
-<td><code>TflCbs.Modules.{Bank,Hr,Lockers,RetailBanking,Administration}.Web</code></td>
+<td><code>TflCbs.Modules.{Bank,Hr,Lockers,RetailBanking,Administration,Inventory,TradeFinance,InternetBanking,Reconciliation,LoanOrigination}.Web</code></td>
 </tr>
 <tr>
 <td>Core web RCLs</td>
@@ -171,7 +187,7 @@ One page: which project runs where, what the gateway routes to it, and the every
 </tr>
 <tr>
 <td>Services (business modules)</td>
-<td>Core, always registered: <code>TflCbs.Modules.General</code>, <code>TflCbs.Modules.Reference</code>, <code>TflCbs.Core.Authentication</code> · Domains, gated by <code>Modules:Enabled</code>: <code>TflCbs.Modules.{Accounts,Administration,Clearing,HR,Lockers,RetailBanking}</code> · Shared: <code>TflCbs.Abstractions</code>, <code>TflCbs.Modules.General.Contracts</code></td>
+<td>Core, always registered: <code>TflCbs.Modules.General</code>, <code>TflCbs.Modules.Reference</code>, <code>TflCbs.Core.Authentication</code> · Domains, gated by <code>Modules:Enabled</code>: <code>TflCbs.Modules.{Accounts,Administration,Clearing,HR,Lockers,RetailBanking,Inventory,TradeFinance,InternetBanking,Reconciliation,LoanOrigination}</code> · Shared: <code>TflCbs.Abstractions</code>, <code>TflCbs.Modules.General.Contracts</code></td>
 </tr>
 <tr>
 <td>Data / logging</td>
@@ -214,7 +230,7 @@ One page: which project runs where, what the gateway routes to it, and the every
 </tr>
 <tr>
 <td><strong>Login authority rule</strong></td>
-<td>A host whose <code>Auth:LoginUrl</code> is an absolute URL on another origin defers login there (thin hosts → gateway); relative <code>LoginUrl</code> = serves login itself (the default host). See <a href="single-sign-on.txt">single-sign-on.txt</a>.</td>
+<td>A host whose <code>Auth:LoginUrl</code> is an absolute URL on another origin defers login there (thin hosts → gateway); relative <code>LoginUrl</code> = serves login itself (the default host). See <a href="single-sign-on.html">single-sign-on.md</a>.</td>
 </tr>
 </tbody>
 </table>
@@ -272,6 +288,12 @@ One page: which project runs where, what the gateway routes to it, and the every
 <td><code>cbs-admin</code></td>
 <td>http 8150 / https 8151</td>
 <td><code>D:\publish\multi\admin</code></td>
+</tr>
+<tr>
+<td></td>
+<td><code>cbs-inventory</code></td>
+<td>http 8160 / https 8161</td>
+<td><code>D:\publish\multi\inventory</code></td>
 </tr>
 </tbody>
 </table>

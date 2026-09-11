@@ -118,7 +118,7 @@ ul{padding-left:1.4em}ol{padding-left:1.4em}
 </tr>
 <tr>
 <td>8</td>
-<td>~~<strong>No metrics / tracing / APM</strong>~~ (✅ instrumented — OTel); <strong>no DB migration tooling</strong>; <strong>no DR/HA</strong></td>
+<td><del><strong>No metrics / tracing / APM</strong></del> (✅ instrumented — OTel); <strong>no DB migration tooling</strong>; <strong>no DR/HA</strong></td>
 <td><strong>Medium</strong></td>
 </tr>
 </tbody>
@@ -457,7 +457,7 @@ No module→module references at the project level (enforced by NetArchTest). Th
 <h2 id="11-project-by-project-review">11. Project-by-Project Review</h2>
 <ul>
 <li><strong>TflCbs.Entities</strong> (3,680 generated files, 15.6 MB DLL) — faithful 1:1 DB mirror, zero hand edits (safe to regenerate), but ~10% is junk/backup-table noise and carries DB typos. Referenced by <strong>bare Debug-path DLL</strong>, creating build-order fragility (no MSBuild edge; relies on incidental slnx ordering). Recommend a table allowlist for generation.</li>
-<li><strong>TflCbsServices</strong> (35 files, ~4,100 LoC) — the crown jewel of discipline (Result, async, transactions, parameterized SQL). Weaknesses: in-memory paging, ~~duplicated helpers~~, no caching, no concurrency tokens. Folder structure matches the modular-monolith doc. <em>(</em><em>Duplicated helpers resolved 2026-07-29:</em><em> the ~37 byte-identical private members across 8 services — <code>Has</code>/<code>Eq</code>/<code>Val</code>/<code>Paged</code>/<code>IsDuplicate</code>/<code>IsForeignKey</code> + the page-size consts — were extracted to <code>ServiceQuery</code>/<code>DbErrors</code> in <code>TflCbs.Abstractions</code> and consumed via <code>using static</code>, so no call site changed. Placed in Abstractions rather than <code>TflCbsServices</code> because that assembly dissolves under the modular-monolith plan. <code>SharedServiceHelperTests</code> now fails the build on a private re-declaration — mutation-verified — since two of the copies had been added </em>after<em> this finding was first written.)</em></li>
+<li><strong>TflCbsServices</strong> (35 files, ~4,100 LoC) — the crown jewel of discipline (Result, async, transactions, parameterized SQL). Weaknesses: in-memory paging, <del>duplicated helpers</del>, no caching, no concurrency tokens. Folder structure matches the modular-monolith doc. <em>(</em><em>Duplicated helpers resolved 2026-07-29:</em><em> the ~37 byte-identical private members across 8 services — <code>Has</code>/<code>Eq</code>/<code>Val</code>/<code>Paged</code>/<code>IsDuplicate</code>/<code>IsForeignKey</code> + the page-size consts — were extracted to <code>ServiceQuery</code>/<code>DbErrors</code> in <code>TflCbs.Abstractions</code> and consumed via <code>using static</code>, so no call site changed. Placed in Abstractions rather than <code>TflCbsServices</code> because that assembly dissolves under the modular-monolith plan. <code>SharedServiceHelperTests</code> now fails the build on a private re-declaration — mutation-verified — since two of the copies had been added </em>after<em> this finding was first written.)</em></li>
 <li><strong>TflCbs.Lab / .Lab.Demo</strong> (excluded from build) — 67k LoC staging ground, 16× the production layer; a 406 KB single-file Roslyn promotion driver. Where god-service risk lives; fine as a staging area but keep it out of the shipped closure (it is).</li>
 <li><strong>TflCbs.Framework</strong> (48 files) — excellent (see §3). Fix: extract Abstractions assembly (DIP), fix bare-DLL refs, add an ordering assertion for the access guard, audit denied access attempts (a <code>TODO</code>), prune the never-pruned <code>_gates</code> semaphore dictionary.</li>
 <li><strong>TflCbs.Web.Shared</strong> — clean RCL; XSS-safe; one JSON island to tighten; ships unused jQuery/validation (~13k lines dead weight — prune).</li>
@@ -492,21 +492,21 @@ No module→module references at the project level (enforced by NetArchTest). Th
 <td><code>MFA_AD_LOGIN_ENABLED</code> auth bypass</td>
 <td><strong>Critical</strong> · ✅ <strong>FIXED</strong> (C-1)</td>
 <td>Any password logs in a valid user when flag set</td>
-<td>~~Block success on unverified credential~~ — done: fail-closed guard + pinned test</td>
+<td><del>Block success on unverified credential</del> — done: fail-closed guard + pinned test</td>
 </tr>
 <tr>
 <td>2</td>
 <td>Reversible password encryption</td>
 <td><strong>Critical</strong> · ✅ <strong>FIXED</strong> (C-2)</td>
 <td>DB compromise → mass plaintext recovery</td>
-<td>~~Salted PBKDF2 + rehash~~ — done: PBKDF2 primitive, all users migrated, login/change-password verify it</td>
+<td><del>Salted PBKDF2 + rehash</del> — done: PBKDF2 primitive, all users migrated, login/change-password verify it</td>
 </tr>
 <tr>
 <td>3</td>
 <td>No CSRF on any POST</td>
 <td><strong>High</strong> · ✅ <strong>FIXED</strong> (H-1)</td>
 <td>Forged Save/Login/Logout/DB-switch</td>
-<td>~~Global <code>AutoValidateAntiforgeryToken</code>~~ — done: registered in <code>AddCbsFramework</code> + AJAX token header</td>
+<td><del>Global <code>AutoValidateAntiforgeryToken</code></del> — done: registered in <code>AddCbsFramework</code> + AJAX token header</td>
 </tr>
 <tr>
 <td>4</td>
@@ -534,14 +534,14 @@ No module→module references at the project level (enforced by NetArchTest). Th
 <td>Latent fail-open on guard ordering</td>
 <td><strong>High (latent)</strong> · ✅ <strong>FIXED</strong> (H-4)</td>
 <td>Total access-control bypass on misordering</td>
-<td>~~Startup assertion routing ran~~ — done: <code>EnsureEndpointRoutingRegistered()</code> + 2 pinned tests</td>
+<td><del>Startup assertion routing ran</del> — done: <code>EnsureEndpointRoutingRegistered()</code> + 2 pinned tests</td>
 </tr>
 <tr>
 <td>8</td>
 <td>No security headers</td>
 <td><strong>Medium</strong> · ✅ <strong>FIXED</strong> (M-1)</td>
 <td>Clickjacking, MIME-sniffing</td>
-<td>~~Add CSP/X-Frame-Options/X-Content-Type-Options middleware~~ — done: <code>UseCbsSecurityHeaders</code>, fully strict CSP + 4 companion headers</td>
+<td><del>Add CSP/X-Frame-Options/X-Content-Type-Options middleware</del> — done: <code>UseCbsSecurityHeaders</code>, fully strict CSP + 4 companion headers</td>
 </tr>
 <tr>
 <td>9</td>
@@ -562,14 +562,14 @@ No module→module references at the project level (enforced by NetArchTest). Th
 <td>No metrics/tracing/APM</td>
 <td><strong>Medium</strong> · ✅ <strong>INSTRUMENTED</strong></td>
 <td>Blind in production</td>
-<td>~~OpenTelemetry traces+metrics~~ — done: <code>AddCbsObservability</code> (traces incl. DAL/Oracle spans, RED + runtime metrics, correlated; gateway→host→DB proven). Remaining: dashboards / SLO alerting / logs→Loki</td>
+<td><del>OpenTelemetry traces+metrics</del> — done: <code>AddCbsObservability</code> (traces incl. DAL/Oracle spans, RED + runtime metrics, correlated; gateway→host→DB proven). Remaining: dashboards / SLO alerting / logs→Loki</td>
 </tr>
 <tr>
 <td>12</td>
 <td>No DB migration tooling</td>
 <td><strong>Medium</strong> · ✅ <strong>FIXED</strong></td>
 <td>Unrepeatable, un-versioned schema changes for a regulated cutover</td>
-<td>~~DbUp/EF/Flyway; version DDL~~ — done: <code>TflCbs.Tools.DbMigrator</code> (DbUp), versioned DDL in <code>Migrations/&lt;provider&gt;/NNNN_*.sql</code>, <code>CbsSchemaVersions</code> journal, <code>status</code>/<code>preview</code>/<code>upgrade</code>/<code>baseline</code>; deploy-script check + Docker <code>migrate</code> profile. Remaining: a <code>0000</code> legacy-schema baseline; PostgreSQL scripts unrun on a live instance (SQL Server + Oracle verified)</td>
+<td><del>DbUp/EF/Flyway; version DDL</del> — done: <code>TflCbs.Tools.DbMigrator</code> (DbUp), versioned DDL in <code>Migrations/&lt;provider&gt;/NNNN_*.sql</code>, <code>CbsSchemaVersions</code> journal, <code>status</code>/<code>preview</code>/<code>upgrade</code>/<code>baseline</code>; deploy-script check + Docker <code>migrate</code> profile. Remaining: a <code>0000</code> legacy-schema baseline; PostgreSQL scripts unrun on a live instance (SQL Server + Oracle verified)</td>
 </tr>
 <tr>
 <td>13</td>
@@ -604,14 +604,14 @@ No module→module references at the project level (enforced by NetArchTest). Th
 <td>Login rate limiting absent on direct host</td>
 <td><strong>Medium</strong> · ✅ <strong>FIXED</strong> (M-3)</td>
 <td>Credential stuffing</td>
-<td>~~Login-specific limiter on all hosts~~ — done: <code>cbs-login</code> policy in <code>AddCbsFramework</code>/<code>UseCbsFramework</code> (all 5 hosts), per client IP + path, 10/60s, 429 + <code>Retry-After</code>, on both credential POSTs. Its prerequisite shipped with it — CIDR <code>KnownNetworks</code> so the Docker multi-host stack actually trusts the gateway, malformed trust entries failing startup, and a once-per-start warning when a proxy's header is discarded as untrusted. 25 pinned tests. Gateway limiter and DB lockout both retained as complementary layers</td>
+<td><del>Login-specific limiter on all hosts</del> — done: <code>cbs-login</code> policy in <code>AddCbsFramework</code>/<code>UseCbsFramework</code> (all 5 hosts), per client IP + path, 10/60s, 429 + <code>Retry-After</code>, on both credential POSTs. Its prerequisite shipped with it — CIDR <code>KnownNetworks</code> so the Docker multi-host stack actually trusts the gateway, malformed trust entries failing startup, and a once-per-start warning when a proxy's header is discarded as untrusted. 25 pinned tests. Gateway limiter and DB lockout both retained as complementary layers</td>
 </tr>
 <tr>
 <td>18</td>
 <td>PII masking missing on thin hosts</td>
 <td><strong>Medium</strong> · ✅ <strong>FIXED</strong> (M-4)</td>
 <td>Half-masked logging on 4 of 5 hosts — name redaction on, <strong>regex redaction silently off</strong> (empty <code>Patterns</code> default), so PAN/Aadhaar in free text was written in clear</td>
-<td>~~Share masking config across hosts~~ — done: canonical <code>logmasking.json</code> linked into every host, loaded <code>optional: false</code> before the pipeline, env provider re-added after; <code>LogMaskingConfigTests</code> (mutation-verified). Remaining in-area: <strong>M-5</strong> (<code>LogParameterValues</code>)</td>
+<td><del>Share masking config across hosts</del> — done: canonical <code>logmasking.json</code> linked into every host, loaded <code>optional: false</code> before the pipeline, env provider re-added after; <code>LogMaskingConfigTests</code> (mutation-verified). Remaining in-area: <strong>M-5</strong> (<code>LogParameterValues</code>)</td>
 </tr>
 <tr>
 <td>19</td>
@@ -779,7 +779,7 @@ No module→module references at the project level (enforced by NetArchTest). Th
 <li>Prune unused jQuery/validation, empty <code>_CommonPackages</code>, committed <code>node_modules</code>, junk entity tables; fix <code>LASTMODOFIEDON</code> typo at generation.</li>
 <li>Update stale docs (<code>CLAUDE.md</code> command-dispatch, <code>compose.multi.yaml</code>).</li>
 <li>Introduce lightweight value types for money/account if the domain grows.</li>
-<li>~~Controller + E2E (Playwright) tests~~ <strong>done 2026-07-29/30</strong> (<code>…UI.IntegrationTests</code> + <code>TflCbs.E2E</code>); <strong>make the DAL mockable for true unit tests</strong> — still open, and now the binding constraint on Testability: every authenticated tier of all four suites needs a live database because <code>DataAccess</code> is <code>sealed</code> with no <code>IDataAccess</code> (<code>IRepository&lt;T&gt;</code> exists, but <code>DataAccess.Repository&lt;T&gt;()</code> hands back the concrete <code>Repository&lt;T&gt;</code>).</li>
+<li><del>Controller + E2E (Playwright) tests</del> <strong>done 2026-07-29/30</strong> (<code>…UI.IntegrationTests</code> + <code>TflCbs.E2E</code>); <strong>make the DAL mockable for true unit tests</strong> — still open, and now the binding constraint on Testability: every authenticated tier of all four suites needs a live database because <code>DataAccess</code> is <code>sealed</code> with no <code>IDataAccess</code> (<code>IRepository&lt;T&gt;</code> exists, but <code>DataAccess.Repository&lt;T&gt;()</code> hands back the concrete <code>Repository&lt;T&gt;</code>).</li>
 <li>Audit denied-access attempts (framework <code>TODO</code>).</li>
 </ul>
 <h3 id="road-to-100-remaining-work-by-category">Road to 100 — remaining work by category</h3>
@@ -856,11 +856,11 @@ No module→module references at the project level (enforced by NetArchTest). Th
 <td style="text-align: center;">M</td>
 </tr>
 <tr>
-<td>~~Controller + end-to-end (Playwright) test coverage~~</td>
+<td><del>Controller + end-to-end (Playwright) test coverage</del></td>
 <td>✅ <strong>DONE (both halves).</strong> <code>TflCbs.IntegrationTests</code> (2026-07-29, 23 tests, ~2s) boots the real <code>Program</code> via <code>WebApplicationFactory</code>, so middleware <strong>order</strong> is under test; its guard/antiforgery half needs no database. <code>TflCbs.E2E</code> (2026-07-30, 80 tests, exit 0) drives a real browser — Playwright/TypeScript, outside the <code>.slnx</code>, <strong>no app source changes</strong>. Components are covered against the Development-gated <code>/Dev/Components</code> showcase (canned data, TempData-only notifications), so the bank database is never written; real screens self-calibrate against menu rights and skip with a reason. Found and pinned <strong>3 real defects</strong> (<code>Model.Disabled</code> undone at runtime on the account picker; the showcase's dependent picker clearing itself; a signed-cookie/closed-session <strong>infinite redirect loop</strong> on <code>/Account/Login</code>). <strong>Banked as ~+1, not +1.5</strong> — nothing runs these automatically until <strong>H-3 (CI)</strong> lands.</td>
 <td><strong>Coding</strong></td>
 <td>~90</td>
-<td style="text-align: center;">~~+1.5~~ banked</td>
+<td style="text-align: center;"><del>+1.5</del> banked</td>
 <td style="text-align: center;">M</td>
 </tr>
 <tr>
@@ -912,7 +912,7 @@ No module→module references at the project level (enforced by NetArchTest). Th
 <td style="text-align: center;">S (procure)</td>
 </tr>
 <tr>
-<td>~~PII masking shared to thin hosts~~</td>
+<td><del>PII masking shared to thin hosts</del></td>
 <td>✅ <strong>DONE (2026-07-31).</strong> The finding was <strong>under-stated</strong>: the thin hosts were <strong>half-masked</strong>, not unmasked — <code>MaskingOptions</code> defaults <code>Keys</code> to the banking PII list but defaults <code>Patterns</code> to <strong>empty</strong>, so name-based redaction worked while value-regex redaction (PAN/Aadhaar in free text) silently did not, on the four hosts that serve the domain screens. Config extracted to a canonical <code>TflCbs.Host.Main/logmasking.json</code> (<strong>deleted</strong> from <code>appsettings.json</code> — no second copy), linked into all four thin hosts like <code>routecutover.json</code>, loaded from <code>AppContext.BaseDirectory</code> <strong>before</strong> <code>ConfigureTflLogging()</code> and <strong><code>optional: false</code></strong> (a missing file would degrade to half-masked logging silently, so the host now refuses to start), with <code>AddEnvironmentVariables()</code> re-added after so <code>TflLog__Masking__*</code> still overrides. Pinned by <code>LogMaskingConfigTests</code> (4 facts, <strong>mutation-verified</strong>). <strong>Full +0.5 taken</strong> — the fix ships with the build whether or not CI exists; only the guard's value waits on H-3. ⬜ Not covered: <strong>M-5</strong> (<code>Database:LogParameterValues</code>) and an end-to-end assertion on a real log file.</td>
 <td><strong>Coding</strong></td>
 <td>~90</td>
@@ -920,7 +920,7 @@ No module→module references at the project level (enforced by NetArchTest). Th
 <td style="text-align: center;">S</td>
 </tr>
 <tr>
-<td>~~Login-specific rate limiting on all hosts (not just the gateway)~~</td>
+<td><del>Login-specific rate limiting on all hosts (not just the gateway)</del></td>
 <td>✅ <strong>DONE (2026-07-31).</strong> The finding was <strong>two gaps, not one</strong>: the gateway's limiter was <em>volumetric</em> (600/60 s over all traffic — ~600 password guesses a minute) <em>and</em> absent from any host reached without it, including the whole single-host shape. Both closed by one control in the framework: <code>AddCbsFramework</code> registers the <code>cbs-login</code> policy, <code>UseCbsFramework</code> inserts <code>UseRateLimiter()</code> <strong>first</strong> (cheapest possible rejection — before session, cookie decryption or DB), and the two credential POSTs opt in with <code>[EnableRateLimiting]</code>. Since <code>AccountController</code> lives in <code>TflCbs.Core.Authentication.Web</code> — an application part in <strong>all 5 hosts</strong> — one attribute covers every deployment shape. Partition = <strong>client IP + path</strong>, so a burst on login can't lock everyone out of change-password. Default 10/60 s, <code>Security:LoginRateLimit</code>; disabled still <strong>registers</strong> the policy as a no-limiter (an unregistered name would 500 the login page), and a zero/negative value is a <strong>startup error</strong>, never a silent "off". Pinned by 9 tests, incl. a fixture guard proving the pinned limit reaches the framework (the first draft silently didn't — eager config reads don't see <code>ConfigureAppConfiguration</code>). ⬜ Not covered: the <strong>per-username</strong> dimension stays with the DB lockout (<code>MAXIMUMLOGINATTEMPT</code>) — partitioning on the posted username needs a sync form-body read, which Kestrel disables; the per-user partition behind the gateway is now real (<code>ForwardedHeaders</code> gained CIDR <code>KnownNetworks</code>, the Docker multi-host stack trusts the gateway, malformed trust entries fail startup and a <em>missing</em> one is warned about once per host start — 16 further tests), but <strong>IIS farms still set <code>KnownProxies</code> by hand</strong> — now detectable in the log rather than silent, though still not enforced.</td>
 <td><strong>Coding</strong></td>
 <td>~90</td>

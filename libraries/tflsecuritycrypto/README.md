@@ -310,7 +310,7 @@ The demo's machine-identity section is skipped automatically on non-Windows.
 | `TflCbs.Core.Authentication.Web/Controllers/AccountController.cs` | `PasswordHash.Verify`, `Cryptography.Decrypt` | Change-password flow; decrypting a legacy value |
 | `TflCbs.Tools.PasswordReset/Program.cs` | `PasswordHash.Create` | Administrative reset tool |
 | `TflCbs.Modules.General/GeneralService.cs` | `Cryptography.Decrypt` | Reading a legacy-encrypted stored value |
-| `TflCbs.Lab.Demo` (`Program.cs`, `Perf.cs`) | `Cryptography.Encrypt` | Proc-migration parity + perf harness |
+| `TflCbsServices.Lab.Demo` (`Program.cs`, `Perf.cs`) | `Cryptography.Encrypt` | Proc-migration parity + perf harness |
 
 All 1,731 CBS user records were migrated from the legacy reversible storage to `PasswordHash` — the migration
 that closed the "reversible password storage" finding in the CBS architecture review.

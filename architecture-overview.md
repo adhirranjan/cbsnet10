@@ -4,9 +4,11 @@ Every project in the solution, why it exists, what it does, how they depend on e
 request flows through them.
 
 - **Solution root:** `E:\Adhir\AdWork\TrustBank.Code\TflCbsNet10Sol\`
-- **Solution file:** `TflCbsNet10Sol.slnx` — **36 projects**.
-- **All projects target `net10.0`** (set centrally in `Directory.Build.props`), with Central Package
-  Management (versions in `Directory.Packages.props`).
+- **Solution file:** `TflCbsNet10Sol.slnx` — **45 projects**.
+- **Almost all projects target `net10.0`** (set centrally in `Directory.Build.props`), with Central Package
+  Management (versions in `Directory.Packages.props`). Two exceptions, both under `libs/`: the MFA-AD
+  server projects target **`net10.0-windows`** (§3), and everything under `libs/` opts out of Central
+  Package Management so the vendored libraries stay buildable in place.
 
 **Also on disk, deliberately outside the `.slnx`:** `TflCbs.Lab` / `TflCbs.Lab.Demo`
 (the proc-conversion lab — experimental, API-drifted) and `TflCbs.Tools.PerfProbe` (a measurement
@@ -14,9 +16,10 @@ tool run directly with `dotnet run`). Plus two **vendored in-house library trees
 solutions — `libs/TflOmniDb/` and `libs/TflSecurityCrypto/` (§3) — the `TflCbs.E2E` Playwright
 suite (a Node project, not a .NET one), and the gitignored `codebase_shared/` handover tree (§4).
 
-> **Last reviewed:** 2026-08-21. The modular-monolith split completed on 2026-07-29 (`TflCbsServices`
+> **Last reviewed:** 2026-09-03. The modular-monolith split completed on 2026-07-29 (`TflCbsServices`
 > dissolved); the in-house libraries were vendored into the repo on 2026-08-19; the canonical config
-> files moved to solution-level `config/` on 2026-08-21.
+> files moved to solution-level `config/` on 2026-08-21; the MFA vendor stack was replaced with our own
+> .NET 10 rewrite on 2026-09-03 (§3.1).
 
 ---
 
@@ -94,12 +97,52 @@ folder outside the solution root. Before that they sat two levels above it under
 |---|---|---|---|
 | `TflOmniDb.dll` | `libs/TflOmniDb/TflOmniDb/` | `..\libs\TflOmniDb\TflOmniDb\bin\Debug\net10.0\` | Generic multi-provider DAL: `Repository<T>`, `DataAccess`, `IUnitOfWork`, SQL Server / Oracle / PostgreSQL dialects. Editable in-house SOURCE, not a black box — it also ships a scaffolder, a migration tool, benchmarks and a demo (own solution under `libs/TflOmniDb/`). |
 | `TflSecurityCrypto.dll` | `libs/TflSecurityCrypto/TflSecurityCrypto/` | `..\libs\TflSecurityCrypto\TflSecurityCrypto\bin\Debug\net10.0\` | PBKDF2 password storage plus a byte-for-byte port of the legacy VB.NET crypto helpers (used by login). |
+| `TssiplCryptoLibNet.dll` | not in repo — built from the `_Archive/Crypto/TssiplCryptoLibNet/` tree | `libs/TssiplCryptoLibNet/` | RSA over PEM keys, AES-GCM, PGP, X509. The .NET 10 rewrite of the legacy `TssiplCryptoLib`; landed 2026-09-03 for the MFA-QR payload crypto (3.1). **Not self-contained** — a consumer must also declare `BouncyCastle.Cryptography` and `PemUtils`, or every RSA call fails at runtime with nothing failing at build time. |
 
 `TflCbs.Entities.dll` is referenced the same way (`..\TflCbs.Entities\bin\Debug\net10.0\`) but IS a
 solution project — see §4. `TflOmniLog` is a first-party solution project, referenced normally.
 
 **Consequence of the bare-DLL style:** these references and the ADO.NET drivers do **not** flow
 transitively, so every project in the closure re-declares the ones it needs.
+### 3.1 The MFA stack (`libs/tssipl_mfa_*_net`)
+
+Multi-factor authentication — OTP, Active Directory and QR at login — was a **vendor** product
+(`tssipl_mfa_*`, source of record `E:/Adhir/AdWork/TrustBank.Code/tssipl_mfa/`). Those assemblies target
+.NET Framework 3.5 and cannot be used from .NET 10, so as of **2026-09-03 the whole stack is ours**. See
+[BACKLOG-legacy-app-wide.md §1.10](../BACKLOG-legacy-app-wide.md) for the divergences and the outstanding
+deployment gates.
+
+**Naming:** the assembly carries a `_net` suffix, the **namespace does not** — so call sites read exactly as
+they did against the vendor library. These projects sit outside the namespace==assembly rule, which anchors
+an explicit allow-list of `TflCbs.*` assemblies.
+
+| Project | TFM | Referenced by CBS | Role |
+|---|---|---|---|
+| `tssipl_mfa_otp_net` | net10.0 | yes | SMS gateway helper (`SmsHelper`) |
+| `tssipl_mfa_ad_client_net` | net10.0 | yes | HTTP client for the MFA-AD service |
+| `tssipl_mfa_qr_client_net` | net10.0 | yes | HTTP client for the MFA-QR service |
+| `tssipl_mfa_ad_lib_net` | **net10.0-windows** | no | AD operations + handler pipeline |
+| `tssipl_mfa_ad_api_net` | **net10.0-windows** | no | `/adapi` — separate deployable |
+| `tssipl_mfa_qr_lib_net` | net10.0 | no | QR state machine, RSA payloads, QR imaging |
+| `tssipl_mfa_qr_api_net` | net10.0 | no | `/qrapi` — separate deployable |
+| `tssipl_mfa_ad_tests_net` · `tssipl_mfa_qr_tests_net` | | no | wire-contract tests |
+
+**Why two services rather than code inside CBS**, and why only one of them is Windows-bound:
+
+- **MFA-AD is Windows-only** because `PrincipalContext.ValidateCredentials` needs
+  `System.DirectoryServices.AccountManagement`. Keeping it in its own service quarantines that dependency
+  away from the CBS hosts, which run Linux containers. **Only the three clients are referenced by CBS**, and
+  all three are plain `net10.0`.
+- **MFA-QR is the phone-facing surface.** Four of its ten actions are called by CBS; the rest are called by
+  the paired mobile app. It needs the CBS database (the `mfa_qr_*` procedures of migration 0007, SQL Server
+  only) but references no CBS assembly.
+
+**The wire contract is the thing to be careful with.** Client and server deploy to different machines, so a
+drift between them fails no build — it fails every login. `tssipl_mfa_ad_tests_net` and
+`tssipl_mfa_qr_tests_net` exist to pin it: they are the only places both halves load into one process.
+
+---
+
 
 ---
 
@@ -177,7 +220,6 @@ called out per project.
 | `TflCbs.Modules.HR` | `DiscipActionHistoryService` | Module name is **`HR`** (UPPERCASE) everywhere — module class, `Modules:Enabled` in every host, and `compose.multi.yaml`. The web RCL stays `TflCbs.Modules.Hr.Web` and routes stay `/Hr/…`; assembly and URL identifiers are a separate axis from the module name. |
 | `TflCbs.Modules.Lockers` | `LockerTypeService` | The Phase-B template and the first fully isolated vertical slice. |
 | `TflCbs.Modules.Accounts` | `BusinessAssessmentService` (+ models) | |
-| `TflCbs.Modules.Clearing` | `InwardClearingService` (+ models) | |
 | `TflCbs.Modules.Administration` | `ModuleService`, `RoleService` | |
 | `TflCbs.Modules.RetailBanking` | `AccountService`, `HoldingAmountService` | + `General.Contracts` (for `IScrollService`) |
 
@@ -237,8 +279,9 @@ module reference it**, so a thin host no longer ships other domains' code.
 
 **`TflCbs.Host.Main`** — ASP.NET web app, **THE PRIMARY/DEFAULT HOST**. Dev `http :5019` / `https :7225`.
 
-- **Purpose.** Thin MVC host + composition root: `Program.cs` wiring, health checks, and two utility
-  controllers (`DevController`, `KeepAliveController`). Registers core web parts always, domain web
+- **Purpose.** Thin MVC host + composition root: `Program.cs` wiring, health checks, and the
+  `DevController` utility controller (`KeepAliveController` lives in `TflCbs.Core.Authentication.Web`,
+  so every host answers `/Account/Ping`). Registers core web parts always, domain web
   parts gated by `Modules:Enabled` (which is `"*"` here). Also the login authority behind the
   gateway. Its own `Views/` and `wwwroot/` are empty but for `_ViewImports.cshtml`.
 - **Refs.** all five `Modules.*.Web` + both `Core.*.Web` + Web.Shared + Framework + ALL NINE service
@@ -430,7 +473,7 @@ Each host runs the SAME pipeline as above (each Area's `/_content/*` is routed t
 alongside its paths). Login happens ONCE on the central authority; the encrypted `CbsAuth` cookie
 (shared DataProtection key ring in the DB) is decrypted by whichever host the gateway routes to; that
 host rehydrates the session and reloads ITS OWN menu from the DB. Global logout is enforced via the
-shared revocation table. Details: [`single-sign-on.txt`](single-sign-on.txt); port table:
+shared revocation table. Details: [`single-sign-on.md`](single-sign-on.md); port table:
 [`port-map.md`](port-map.md).
 
 ---
@@ -499,12 +542,12 @@ shared revocation table. Details: [`single-sign-on.txt`](single-sign-on.txt); po
 | [`guides/day-one.md`](guides/day-one.md) | Hands-on first-day setup for a new developer |
 | [`guides/building-a-crud-screen.md`](guides/building-a-crud-screen.md) | How to build one screen end-to-end |
 | [`guides/screen-definition-of-done.md`](guides/screen-definition-of-done.md) | The review gate for a migrated screen |
-| [`guides/starting-a-new-module.txt`](guides/starting-a-new-module.txt) | How to add a whole new domain module |
+| [`guides/starting-a-new-module.md`](guides/starting-a-new-module.md) | How to add a whole new domain module |
 | [`guides/search-and-rowtoken-flow.md`](guides/search-and-rowtoken-flow.md) | The search + RowToken round trip |
 | [`port-map.md`](port-map.md) | Every project's dev + deployed ports |
-| [`single-sign-on.txt`](single-sign-on.txt) | Cross-host SSO |
+| [`single-sign-on.md`](single-sign-on.md) | Cross-host SSO |
 | [`deploy/db-migrations.md`](deploy/db-migrations.md) | Versioned DDL and the migration runner |
 | [`observability/observability-primer.md`](observability/observability-primer.md) | Logs/metrics/traces + the dev backend |
-| [`faq-how-to.txt`](faq-how-to.txt) | Day-to-day how-tos + troubleshooting |
-| [`FEATURES-SHOWCASE.txt`](FEATURES-SHOWCASE.txt) | One-line feature inventory |
+| [`faq-how-to.md`](faq-how-to.md) | Day-to-day how-tos + troubleshooting |
+| [`FEATURES-SHOWCASE.md`](FEATURES-SHOWCASE.md) | One-line feature inventory |
 | [`../CLAUDE.md`](../CLAUDE.md) | The project contract; **WINS on conflict** |

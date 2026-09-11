@@ -31,7 +31,6 @@ Nine module assemblies, each namespace == assembly, each an `ICbsModule` that se
 | **Domains** (gated by `Modules:Enabled`) | `TflCbs.Modules.HR` | `DiscipActionHistoryService` |
 | | `TflCbs.Modules.Lockers` | `LockerTypeService` |
 | | `TflCbs.Modules.Accounts` | `BusinessAssessmentService` |
-| | `TflCbs.Modules.Clearing` | `InwardClearingService` |
 | | `TflCbs.Modules.Administration` | `ModuleService`, `RoleService` |
 | | `TflCbs.Modules.RetailBanking` | `AccountService`, `HoldingAmountService` (+ `General.Contracts` for `IScrollService`) |
 
@@ -362,7 +361,7 @@ is now the single registry, and every sibling rule is `Enforcement.Reference`.
   to contain exactly one domain module, which is the evidence that the boundaries are real. The
   platform therefore runs in four deployment shapes from one codebase (IIS single, IIS multi-host,
   Docker single, Docker multi-host); see [`../port-map.md`](../port-map.md) and
-  [`../single-sign-on.txt`](../single-sign-on.txt).
+  [`../single-sign-on.md`](../single-sign-on.md).
 
 **Promotion triggers (folder → own assembly):** module must run/deploy on its own ✅ · a team needs hard
 ownership + internal hiding ✅ · monolith build time hurts · module ships as a package · cross-module

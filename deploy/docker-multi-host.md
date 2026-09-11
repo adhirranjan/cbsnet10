@@ -2,7 +2,7 @@
 
 One container per host, wired together with docker-compose. The **gateway container is the only published port**; the browser only ever talks to it.
 
-> Read [docker-single-host.md](docker-single-host.md) first (Dockerfile pattern, config, Data Protection, the `docker/vendor/` DLLs). This doc adds the multi-container specifics. See also [single-sign-on.txt](../single-sign-on.txt) and [port-map.md](../port-map.md).
+> Read [docker-single-host.md](docker-single-host.md) first (Dockerfile pattern, config, Data Protection, the `docker/vendor/` DLLs). This doc adds the multi-container specifics. See also [single-sign-on.md](../single-sign-on.md) and [port-map.md](../port-map.md).
 
 The repo **ships `compose.multi.yaml`** + the same parameterized Dockerfile (verified: the default host, a thin host, and the gateway all build).
 
@@ -207,5 +207,5 @@ Verify (same sequence as IIS multi-host, through the gateway only):
 
 - [docker-single-host.md](docker-single-host.md) — the Dockerfile/config basics
 - [iis-multi-host.md](iis-multi-host.md) — same topology on IIS/Windows
-- [single-sign-on.txt](../single-sign-on.txt) — the SSO mechanism in depth
+- [single-sign-on.md](../single-sign-on.md) — the SSO mechanism in depth
 - [port-map.md](../port-map.md) — ports & routing table (dev + deploy)

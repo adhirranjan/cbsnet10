@@ -1,0 +1,288 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Know your code — CBS coding help &amp;amp; FAQ</title>
+<style>
+:root{color-scheme:light dark}
+*{box-sizing:border-box}
+body{margin:0;background:#f6f8fa;color:#1f2328;font:16px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif}
+.wrap{max-width:900px;margin:0 auto;padding:32px 24px 96px}
+.card{background:#fff;border:1px solid #d0d7de;border-radius:10px;padding:40px 48px}
+h1,h2,h3{line-height:1.25;font-weight:600}
+h1{font-size:1.9rem;margin:0 0 .3em;padding-bottom:.3em;border-bottom:1px solid #d8dee4}
+h2{font-size:1.4rem;margin:1.8em 0 .6em;padding-bottom:.25em;border-bottom:1px solid #eaeef2}
+h3{font-size:1.12rem;margin:1.4em 0 .5em}
+p,li{margin:.5em 0}
+a{color:#0969da;text-decoration:none}
+a:hover{text-decoration:underline}
+code{font-family:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;font-size:.86em;background:#eff1f3;padding:.15em .4em;border-radius:6px}
+pre{background:#f6f8fa;border:1px solid #d8dee4;border-radius:8px;padding:14px 16px;overflow:auto}
+pre code{background:none;padding:0;font-size:.85em;line-height:1.45}
+blockquote{margin:1em 0;padding:.4em 1em;color:#3d444d;border-left:4px solid #d0d7de;background:#f6f8fa;border-radius:0 6px 6px 0}
+blockquote>:first-child{margin-top:0}blockquote>:last-child{margin-bottom:0}
+table{border-collapse:collapse;width:100%;margin:1em 0;display:block;overflow:auto}
+th,td{border:1px solid #d0d7de;padding:8px 12px;text-align:left;vertical-align:top}
+th{background:#f6f8fa;font-weight:600}
+tr:nth-child(2n) td{background:#f6f8fa}
+hr{border:0;border-top:1px solid #d8dee4;margin:2em 0}
+pre{position:relative}
+pre>button.copy{position:absolute;top:8px;right:8px;padding:5px 9px;cursor:pointer;
+  font:600 .68rem/1 ui-monospace,SFMono-Regular,Consolas,monospace;letter-spacing:.03em;
+  color:#636c76;background:#fff;border:1px solid #d0d7de;border-radius:6px;
+  opacity:0;transition:opacity .12s}
+pre:hover>button.copy,pre>button.copy:focus{opacity:1}
+pre>button.copy.done{color:#0a3622;background:#dafbe1;border-color:#4ac26b}
+@media(hover:none){pre>button.copy{opacity:1}}
+td code.cp{cursor:pointer}
+td code.cp:hover,td code.cp:focus{outline:1px solid #8c959f;outline-offset:1px}
+td code.cp.done{color:#0a3622;background:#dafbe1}
+.docnav{margin:0 0 20px;font-size:.85rem;color:#636c76}
+.docnav a{color:#636c76}
+ul{padding-left:1.4em}ol{padding-left:1.4em}
+@media(max-width:640px){.card{padding:24px 18px}.wrap{padding:16px 10px 64px}}
+@media(prefers-color-scheme:dark){
+ body{background:#0d1117;color:#e6edf3}
+ .card{background:#161b22;border-color:#30363d}
+ h1{border-color:#30363d}h2{border-color:#21262d}
+ code{background:#262c34}
+ pre{background:#0d1117;border-color:#30363d}
+ blockquote{background:#161b22;border-color:#30363d;color:#9198a1}
+ th,td{border-color:#30363d}th{background:#161b22}tr:nth-child(2n) td{background:#12171e}
+ a{color:#4493f8}.docnav,.docnav a{color:#9198a1}
+ hr{border-color:#30363d}
+ pre>button.copy{color:#9198a1;background:#161b22;border-color:#30363d}
+ pre>button.copy.done{color:#aff5b4;background:#1b4721;border-color:#2ea043}
+ td code.cp.done{color:#aff5b4;background:#1b4721}
+}
+</style></head>
+<body><div class="wrap"><div class="card">
+<h1 id="know-your-code-cbs-coding-help-faq">Know your code — CBS coding help &amp; FAQ</h1>
+<p>Answers to "how does this actually work, and how do I not break it" for the .NET 10 CBS codebase.
+Companion to <a href="screens-code-guide-xnet-7.html"><code>screens-code-guide-xnet-7.md</code></a>, which is per-screen; <strong>this
+file is per-mechanism</strong> and grows as questions come up.</p>
+<p><strong>Adding an entry:</strong> one <code>##</code> section per mechanism, numbered, with a line in the Contents. End each section
+with a <em>Cheat sheet</em> and a <em>Ways to get it wrong</em> list — those two are what people come back for.</p>
+<h2 id="contents">Contents</h2>
+<ul>
+<li><a href="#1-row-tokens--the-four-helpers">1. Row tokens — the four helpers</a></li>
+<li><a href="#11-what-a-token-actually-is">1.1 What a token actually is</a></li>
+<li><a href="#12-the-four-methods">1.2 The four methods</a></li>
+<li><a href="#13-the-order-on-an-update-and-why">1.3 The order on an update, and why</a></li>
+<li><a href="#14-the-re-mint-rule">1.4 The re-mint rule</a></li>
+<li><a href="#15-cheat-sheet">1.5 Cheat sheet</a></li>
+<li><a href="#16-four-ways-to-get-it-wrong">1.6 Four ways to get it wrong</a></li>
+<li><a href="#17-what-tokens-are-not">1.7 What tokens are not</a></li>
+</ul>
+<hr />
+<h2 id="1-row-tokens-the-four-helpers">1. Row tokens — the four helpers</h2>
+<pre><code class="language-csharp">TryOpenRecord(token, out id)   // GET  — resolve only, survives refresh
+TryBeginWrite(token, out id)   // POST — resolve only, NOT yet spent
+TryConsume(token, out id)      // POST — single-use, records the nonce in session
+ProtectId(id)                  // mint a fresh token for the form
+</code></pre>
+<p>Source: <a href="../TflCbs.Framework/Infrastructure/RowToken.cs"><code>RowToken.cs</code></a> and
+<a href="../TflCbs.Framework/Infrastructure/CbsScreenController.cs"><code>CbsScreenController.cs</code></a>.</p>
+<h3 id="11-what-a-token-actually-is">1.1 What a token actually is</h3>
+<p>When the search modal lists denomination units, each row has to carry <em>which</em> row it is. The obvious way is
+the real database id:</p>
+<pre><code>/Bank/DenominationUnit?id=18
+</code></pre>
+<p>That is exactly what legacy did (<code>Request("id")</code>). The problem: anyone can type <code>?id=19</code> and open a record
+they were never shown, and nothing stops them replaying that URL tomorrow.</p>
+<p>So the server hands out a <strong>token</strong> instead — a scrambled string that stands in for the id:</p>
+<pre><code>/Bank/DenominationUnit?row=CfDJ8Hk...long...encrypted...string
+</code></pre>
+<p>Inside that string, encrypted so the browser can neither read nor fake it, are <strong>four</strong> things:</p>
+<pre><code>screen | sessionId | nonce | id
+  |          |         |      └── the real row id (18)
+  |          |         └───────── a random one-time serial number for THIS token
+  |          └─────────────────── which login session it was made for
+  └────────────────────────────── which screen it was made for
+</code></pre>
+<p>Encryption is <code>IDataProtector</code> (AES + tamper detection + managed key rotation). Change one character and it
+fails to decrypt. That is why all four fields can be trusted once it opens.</p>
+<p><strong>Reading a token = three checks:</strong> does it decrypt · was it made for <em>this</em> screen · was it made for <em>this</em>
+session. Any failure means invalid — and the user is told so, no exception is thrown.</p>
+<blockquote>
+<p>The id is placed <strong>last</strong> in the payload on purpose, so a string id may itself contain <code>|</code>. Screen, session
+and nonce never do.</p>
+</blockquote>
+<h3 id="12-the-four-methods">1.2 The four methods</h3>
+<p>All four are thin wrappers over the same reader. What differs is <strong>whether the token is used up</strong>, and
+<strong>which message the user sees on failure</strong>.</p>
+<h4 id="protectidid-make-a-token"><code>ProtectId(id)</code> — make a token</h4>
+<pre><code class="language-csharp">vm.Form.Row = ProtectId(unitId.ToString());
+</code></pre>
+<p>Takes a real id, returns a fresh token with a brand-new random nonce. Call it whenever you put an editable
+record on screen. Every call produces a <em>different</em> token, even for the same row.</p>
+<h4 id="tryopenrecordtoken-out-id-get-just-look"><code>TryOpenRecord(token, out id)</code> — GET, just look</h4>
+<pre><code class="language-csharp">if (!TryOpenRecord(row, out var idStr) || !int.TryParse(idStr, out var unitId))
+    return View(vm);
+</code></pre>
+<p>Checks the token, gives you the id, and <strong>leaves it usable</strong>.</p>
+<p>Why not spend it? Because reads repeat constantly: the user presses F5, hits Back, or the browser
+re-requests an <code>&lt;img&gt;</code>. If opening a record burned the token, a refresh would throw the user out with "this
+link expired" for doing nothing wrong.</p>
+<p>Failure message: <em>"That link is invalid or has expired. Please search again."</em></p>
+<h4 id="trybeginwritetoken-out-id-post-get-the-id-but-dont-spend-it-yet"><code>TryBeginWrite(token, out id)</code> — POST, get the id but don't spend it yet</h4>
+<pre><code class="language-csharp">if (!TryBeginWrite(form.Row, out var idStr) || !int.TryParse(idStr, out var unitId))
+    return Redirect(HostUrl);
+</code></pre>
+<p>Identical checking to <code>TryOpenRecord</code>; the only difference is the wording on failure (<em>"…Please reopen the
+record."</em> — on a POST the user did not arrive from a search).</p>
+<p>It exists for one reason: on an update you need the id <strong>before</strong> you know whether the form is valid. Spend
+the token here and a validation failure would cost the user the record.</p>
+<h4 id="tryconsumetoken-out-id-post-spend-it"><code>TryConsume(token, out id)</code> — POST, spend it</h4>
+<pre><code class="language-csharp">if (!TryConsume(form.Row, out _, MsgAlreadyDone))
+    return Redirect(HostUrl);
+</code></pre>
+<p>Same three checks <strong>plus</strong> one more step: the nonce is recorded in the session as used. A second attempt
+with the same token fails, even though the token is still cryptographically perfect.</p>
+<p>That single-use property is what stops:</p>
+<ul>
+<li><strong>double-click on Save</strong> — two requests arrive, the second is refused;</li>
+<li><strong>back button then re-submit</strong> — same token, already spent;</li>
+<li><strong>replay</strong> — someone re-sending a captured request.</li>
+</ul>
+<p>Failure message: <em>"This action was already submitted. Please reopen the record."</em></p>
+<h3 id="13-the-order-on-an-update-and-why">1.3 The order on an update, and why</h3>
+<pre><code class="language-csharp">// 1. resolve — I need the id, but don't spend the token yet
+if (!TryBeginWrite(form.Row, out var idStr) || !int.TryParse(idStr, out var unitId))
+    return Redirect(HostUrl);
+
+// 2. validate — if this fails, EditFailed re-renders with a NEW token
+if (!ModelState.IsValid)
+    return EditFailed(idStr, form, FirstError());
+
+// 3. consume — past the point of no return, spend it
+if (!TryConsume(form.Row, out _, MsgAlreadyDone))
+    return Redirect(HostUrl);
+
+// 4. the actual write
+var result = await svc.UpdateDenominationUnitAsync(unitId, ...);
+</code></pre>
+<p><strong>resolve → validate → consume.</strong> Swap steps 2 and 3 and the screen still works in testing — but the first
+user who mistypes a field loses the record and has to search for it again.</p>
+<p>Delete skips step 2 entirely and consumes immediately: there is nothing to validate.</p>
+<h3 id="14-the-re-mint-rule">1.4 The re-mint rule</h3>
+<p>A consumed token is dead. So <strong>any time you send the user back to a form after consuming, mint a new one</strong> —
+otherwise their retry fails for a reason they cannot see.</p>
+<pre><code class="language-csharp">var result = await holds.UpdateHoldAsync(...);
+if (!result.IsSuccess)
+{
+    this.NotifyError(result.ErrorString);
+    form.Row = ProtectId(holdId.ToString());  // ← prior token consumed; issue a fresh one
+    return View(nameof(Index), form);
+}
+</code></pre>
+<p><code>EditFailed(...)</code> and <code>RedirectToRecord(...)</code> already do this for you — that is their whole purpose. Reach
+for them instead of hand-rolling the re-render.</p>
+<h3 id="15-cheat-sheet">1.5 Cheat sheet</h3>
+<table>
+<thead>
+<tr>
+<th>Situation</th>
+<th>Call</th>
+<th>Spends the token?</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>GET, opening a record from a search</td>
+<td><code>TryOpenRecord</code></td>
+<td>no</td>
+</tr>
+<tr>
+<td>GET, serving a file or image by token</td>
+<td><code>TryOpenRecord</code></td>
+<td>no — the browser re-requests</td>
+</tr>
+<tr>
+<td>POST, need the id before validating</td>
+<td><code>TryBeginWrite</code></td>
+<td>no</td>
+</tr>
+<tr>
+<td>POST, about to write / authorize / delete</td>
+<td><code>TryConsume</code></td>
+<td><strong>yes</strong></td>
+</tr>
+<tr>
+<td>Rendering an editable form</td>
+<td><code>ProtectId</code></td>
+<td>n/a — creates one</td>
+</tr>
+<tr>
+<td>Re-rendering after a failed write</td>
+<td><code>ProtectId</code> (via <code>EditFailed</code>)</td>
+<td>n/a — creates one</td>
+</tr>
+</tbody>
+</table>
+<p>Every helper takes an optional <code>screen:</code> argument. It defaults to the controller's <code>Screen</code> property; pass
+it explicitly on any controller that hosts more than one screen key.</p>
+<p>The id is a <strong>string</strong> end-to-end, on purpose — primary keys differ per table. Parse it at the call site:
+<code>int</code> for Denomination Unit, <code>decimal</code> for User (<code>a_User.USERID</code> is numeric). Parsing a decimal key as <code>int</code>
+would silently narrow it.</p>
+<h3 id="16-four-ways-to-get-it-wrong">1.6 Four ways to get it wrong</h3>
+<ol>
+<li><strong>Consuming on a GET.</strong> Refresh breaks the page.</li>
+<li><strong>Consuming before validating.</strong> A typo costs the user the record.</li>
+<li><strong>Forgetting to re-mint after a failed write.</strong> The retry mysteriously fails.</li>
+<li><strong>Forgetting <code>screen:</code> on a multi-screen controller.</strong> On Holding Amount the default screen is Entry, so
+   an Authorize-screen token must say so on <strong>both</strong> sides:
+   <code>csharp
+   form.Row = ProtectId(holdId.ToString(), screen: AuthScreenKey);
+   TryConsume(form.Row, out var idStr, screen: AuthScreenKey);</code>
+   Miss it on one side and the screen check fails — every authorize post is refused.</li>
+</ol>
+<p>A related design point worth copying: Signature gives its image endpoint its <strong>own</strong> key
+(<code>RetailBanking/Signature/Image</code>) so an image token can never be spent as a record token. Different
+capability, different key.</p>
+<h3 id="17-what-tokens-are-not">1.7 What tokens are not</h3>
+<p>They are <strong>not</strong> permission. A token proves only "the server showed you this row, on this screen, in this
+session". Access is enforced separately:</p>
+<ul>
+<li><code>CbsAccessMiddleware</code> checks the menu right (fail-closed, derived from <code>a_UserRights</code>);</li>
+<li>the service re-checks branch scope (<code>LoadHoldAsync(id, OrgElementId)</code>) and maker/checker rules on every
+  call.</li>
+</ul>
+<p>Tokens secure the <strong>handoff</strong>. The guard and the service are the access control.</p>
+</div></div>
+<script>
+(function(){
+ function put(t){
+  if(navigator.clipboard&&navigator.clipboard.writeText)return navigator.clipboard.writeText(t);
+  return new Promise(function(res,rej){
+   var a=document.createElement('textarea');a.value=t;a.setAttribute('readonly','');
+   a.style.cssText='position:fixed;top:0;left:0;opacity:0';document.body.appendChild(a);
+   a.select();var ok=false;try{ok=document.execCommand('copy')}catch(e){}
+   document.body.removeChild(a);ok?res():rej()});
+ }
+ function flash(el,txt,ms){
+  var was=el.textContent;el.classList.add('done');if(txt)el.textContent=txt;
+  setTimeout(function(){el.classList.remove('done');if(txt)el.textContent=was},ms||1200);
+ }
+ function copy(text,el,okTxt){
+  put(text).then(function(){flash(el,okTxt)},function(){
+   if(okTxt){var w=el.textContent;el.textContent='Ctrl+C';setTimeout(function(){el.textContent=w},2000)}});
+ }
+ document.querySelectorAll('pre').forEach(function(pre){
+  if(pre.classList.contains('txtdoc'))return;
+  var b=document.createElement('button');
+  b.type='button';b.className='copy';b.textContent='Copy';
+  b.setAttribute('aria-label','Copy this code block to the clipboard');
+  b.addEventListener('click',function(){copy((pre.querySelector('code')||pre).innerText,b,'Copied')});
+  pre.appendChild(b);
+ });
+ document.querySelectorAll('td code').forEach(function(c){
+  if(!c.textContent.trim())return;
+  c.classList.add('cp');c.tabIndex=0;c.setAttribute('role','button');
+  c.title='Click to copy';
+  c.addEventListener('click',function(){copy(c.textContent,c)});
+  c.addEventListener('keydown',function(e){
+   if(e.key==='Enter'||e.key===' '){e.preventDefault();copy(c.textContent,c)}});
+ });
+})();
+</script>
+</body></html>

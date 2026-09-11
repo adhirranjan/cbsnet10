@@ -2,7 +2,7 @@
 
 The scale-out shape: the YARP **gateway is the one public origin**; behind it the default host and up to four thin per-module hosts each run as their own IIS site. All hosts share one identity via cross-host SSO.
 
-> Read [iis-single-host.md](iis-single-host.md) first — this doc only adds the multi-host specifics. See also [single-sign-on.txt](../single-sign-on.txt) and [port-map.md](../port-map.md).
+> Read [iis-single-host.md](iis-single-host.md) first — this doc only adds the multi-host specifics. See also [single-sign-on.md](../single-sign-on.md) and [port-map.md](../port-map.md).
 
 ## Deployment checklist (run in order)
 
@@ -200,5 +200,5 @@ Bind each site **HTTPS-only**; the HTTP column is reserved (unused).
 - [gateway-backend-scheme.md](gateway-backend-scheme.md) — why the gateway calls backends over HTTPS
 - [self-signed-cert.md](self-signed-cert.md) — the cert reused on every binding
 - [docker-multi-host.md](docker-multi-host.md) — same topology in containers
-- [single-sign-on.txt](../single-sign-on.txt) — the SSO mechanism in depth
+- [single-sign-on.md](../single-sign-on.md) — the SSO mechanism in depth
 - [port-map.md](../port-map.md) — ports & routing table (dev + deploy)

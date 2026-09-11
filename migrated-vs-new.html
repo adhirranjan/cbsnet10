@@ -604,8 +604,8 @@ ul{padding-left:1.4em}ol{padding-left:1.4em}
 </tr>
 <tr>
 <td>Idle policy</td>
-<td>ASP.NET session timeout only</td>
-<td><strong>Three clocks that must agree</strong> — client warn/logout (<code>Cbs:IdleWarnMinutes</code>/<code>IdleLogoutMinutes</code>) and server TTL (<code>Auth:SessionIdleMinutes</code>); <code>CbsSessionOptions.Resolve</code> <strong>refuses to start</strong> if the server TTL doesn't exceed the client logout</td>
+<td>ASP.NET session timeout only (InProc, 20 min — one server clock, no client timer)</td>
+<td><strong>Four clocks that must agree</strong> — client warn/logout (<code>Cbs:IdleWarnMinutes</code>/<code>IdleLogoutMinutes</code>), server TTL (<code>Auth:SessionIdleMinutes</code>) and the identity cookie (<code>Auth:Cookie:ExpireMinutes</code>, which defaults to the server TTL); <code>CbsSessionOptions.Resolve</code> <strong>refuses to start</strong> if the server TTL doesn't exceed the client logout, or if the cookie outlives the server TTL</td>
 <td><strong>New</strong></td>
 </tr>
 <tr>
@@ -919,7 +919,7 @@ ul{padding-left:1.4em}ol{padding-left:1.4em}
 </tr>
 </tbody>
 </table>
-<p>Repeatable-delivery assets that did not exist before: the <a href="guides/building-a-crud-screen.html">CRUD-screen tutorial</a>, the <a href="guides/starting-a-new-module.txt">new-module recipe</a>, the <a href="guides/search-and-rowtoken-flow.html">search/RowToken flow reference</a>, and three maintenance subagents (<code>cbs-sync-test-demo</code>, <code>component-demo</code>, <code>component-docs-sync</code>).</p>
+<p>Repeatable-delivery assets that did not exist before: the <a href="guides/building-a-crud-screen.html">CRUD-screen tutorial</a>, the <a href="guides/starting-a-new-module.html">new-module recipe</a>, the <a href="guides/search-and-rowtoken-flow.html">search/RowToken flow reference</a>, and three maintenance subagents (<code>cbs-sync-test-demo</code>, <code>component-demo</code>, <code>component-docs-sync</code>).</p>
 <hr />
 <h2 id="11-deliberately-not-carried-over-and-known-gaps">11. Deliberately not carried over, and known gaps</h2>
 <p>Stated plainly so nobody assumes parity where there is none.</p>
@@ -939,7 +939,7 @@ ul{padding-left:1.4em}ol{padding-left:1.4em}
 <li><strong>Reports</strong> — 399 of the 1,458 legacy screens. No reporting stack chosen yet; the legacy Excel/PDF/DOS-print DLL zoo has no counterpart.</li>
 <li><strong>The bulk of functional screens</strong> — 1,059 counted; roughly a dozen are live in the new host (State, District, Taluka, DiscipActionHistory, LockerType, AccHoldingAmount, Module, Role, Account, Clients, ReferenceCache, ConnectedUsers) plus the shell (Login, Modules, Home/menu, AccessDenied, Error).</li>
 <li><strong>Core engine procedures</strong> — interest, GL, day-end, clearing (~600 pd in the estimate).</li>
-<li><strong>Login extras</strong> — MFA (AD / QR / OTP), RC4 login path, <code>InitSession</code> (see <a href="TODO.txt">TODO.txt</a>).</li>
+<li><strong>Login extras</strong> — MFA (AD / QR / OTP), RC4 login path, <code>InitSession</code> (see <a href="TODO.html">TODO.md</a>).</li>
 <li><strong>Oracle gap in TflOmniDb</strong> and server-side uppercase normalisation (the current uppercase behaviour is a client convenience only).</li>
 <li><strong>Data migration + parallel-run tooling.</strong></li>
 </ul>
@@ -979,7 +979,7 @@ ul{padding-left:1.4em}ol{padding-left:1.4em}
 <td>The decision records behind §2</td>
 </tr>
 <tr>
-<td><a href="FEATURES-SHOWCASE.txt">FEATURES-SHOWCASE.txt</a></td>
+<td><a href="FEATURES-SHOWCASE.html">FEATURES-SHOWCASE.md</a></td>
 <td>Flat one-line-per-feature capability list (no migrated/new distinction)</td>
 </tr>
 <tr>

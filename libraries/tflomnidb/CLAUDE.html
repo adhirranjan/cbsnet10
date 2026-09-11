@@ -166,7 +166,8 @@ entity classes for SQL Server, Oracle, and PostgreSQL. <strong>All logic lives i
   connection string; nothing is persisted). App-level setting
   <strong><code>Scaffold:RequireTable</code></strong> (<code>appsettings.json</code>, default <code>true</code>) makes the
   table name mandatory — single-table generation by default; set it to <code>false</code>
-  to allow whole-schema generation. A single generated file downloads directly;
+  to allow whole-schema generation. <strong><code>Scaffold:ShowListTables</code></strong> (default
+  <code>false</code>) hides the "List tables…" button; set it to <code>true</code> to show it. A single generated file downloads directly;
   multiple files use per-file / <code>.zip</code> download.</p>
 <p>Two acquisition modes converge on one provider-neutral <code>SchemaModel</code>, so the
 generator is written once:

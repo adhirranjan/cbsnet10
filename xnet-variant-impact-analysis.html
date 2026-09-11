@@ -1,0 +1,874 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Switching the migration source to the xnet legacy variant — impact analysis</title>
+<style>
+:root{color-scheme:light dark}
+*{box-sizing:border-box}
+body{margin:0;background:#f6f8fa;color:#1f2328;font:16px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif}
+.wrap{max-width:900px;margin:0 auto;padding:32px 24px 96px}
+.card{background:#fff;border:1px solid #d0d7de;border-radius:10px;padding:40px 48px}
+h1,h2,h3{line-height:1.25;font-weight:600}
+h1{font-size:1.9rem;margin:0 0 .3em;padding-bottom:.3em;border-bottom:1px solid #d8dee4}
+h2{font-size:1.4rem;margin:1.8em 0 .6em;padding-bottom:.25em;border-bottom:1px solid #eaeef2}
+h3{font-size:1.12rem;margin:1.4em 0 .5em}
+p,li{margin:.5em 0}
+a{color:#0969da;text-decoration:none}
+a:hover{text-decoration:underline}
+code{font-family:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;font-size:.86em;background:#eff1f3;padding:.15em .4em;border-radius:6px}
+pre{background:#f6f8fa;border:1px solid #d8dee4;border-radius:8px;padding:14px 16px;overflow:auto}
+pre code{background:none;padding:0;font-size:.85em;line-height:1.45}
+blockquote{margin:1em 0;padding:.4em 1em;color:#3d444d;border-left:4px solid #d0d7de;background:#f6f8fa;border-radius:0 6px 6px 0}
+blockquote>:first-child{margin-top:0}blockquote>:last-child{margin-bottom:0}
+table{border-collapse:collapse;width:100%;margin:1em 0;display:block;overflow:auto}
+th,td{border:1px solid #d0d7de;padding:8px 12px;text-align:left;vertical-align:top}
+th{background:#f6f8fa;font-weight:600}
+tr:nth-child(2n) td{background:#f6f8fa}
+hr{border:0;border-top:1px solid #d8dee4;margin:2em 0}
+pre{position:relative}
+pre>button.copy{position:absolute;top:8px;right:8px;padding:5px 9px;cursor:pointer;
+  font:600 .68rem/1 ui-monospace,SFMono-Regular,Consolas,monospace;letter-spacing:.03em;
+  color:#636c76;background:#fff;border:1px solid #d0d7de;border-radius:6px;
+  opacity:0;transition:opacity .12s}
+pre:hover>button.copy,pre>button.copy:focus{opacity:1}
+pre>button.copy.done{color:#0a3622;background:#dafbe1;border-color:#4ac26b}
+@media(hover:none){pre>button.copy{opacity:1}}
+td code.cp{cursor:pointer}
+td code.cp:hover,td code.cp:focus{outline:1px solid #8c959f;outline-offset:1px}
+td code.cp.done{color:#0a3622;background:#dafbe1}
+.docnav{margin:0 0 20px;font-size:.85rem;color:#636c76}
+.docnav a{color:#636c76}
+ul{padding-left:1.4em}ol{padding-left:1.4em}
+@media(max-width:640px){.card{padding:24px 18px}.wrap{padding:16px 10px 64px}}
+@media(prefers-color-scheme:dark){
+ body{background:#0d1117;color:#e6edf3}
+ .card{background:#161b22;border-color:#30363d}
+ h1{border-color:#30363d}h2{border-color:#21262d}
+ code{background:#262c34}
+ pre{background:#0d1117;border-color:#30363d}
+ blockquote{background:#161b22;border-color:#30363d;color:#9198a1}
+ th,td{border-color:#30363d}th{background:#161b22}tr:nth-child(2n) td{background:#12171e}
+ a{color:#4493f8}.docnav,.docnav a{color:#9198a1}
+ hr{border-color:#30363d}
+ pre>button.copy{color:#9198a1;background:#161b22;border-color:#30363d}
+ pre>button.copy.done{color:#aff5b4;background:#1b4721;border-color:#2ea043}
+ td code.cp.done{color:#aff5b4;background:#1b4721}
+}
+</style></head>
+<body><div class="wrap"><div class="card">
+<h1 id="switching-the-migration-source-to-the-xnet-legacy-variant-impact-analysis">Switching the migration source to the xnet legacy variant — impact analysis</h1>
+<p><strong>Date:</strong> 2026-09-04
+<strong>Question:</strong> if we re-base the .NET 10 migration on the <strong>xnet</strong> legacy codebase instead of the existing one, what does it cost us at the level of the <strong>framework, shared UI components, architecture and reusable parts</strong> — what are we missing, and what have we built that is no longer required?</p>
+<p><strong>Scope:</strong> platform-level only. Individual screens are out of scope by design; the screen inventory is small today (24 controllers / 39 views) and is not what makes this decision.</p>
+<hr />
+<h2 id="1-executive-summary">1. Executive summary</h2>
+<p>The two legacy trees are <strong>sibling forks of one product, not two versions of it</strong>. They share the same four VB/WebForms projects, the same master page, the same theme set, the same user-control library and the same core administration schema — but only ~32% of source files are common by path, and of the stored procedures only ~23% share a name.</p>
+<p>For our .NET 10 platform that splits cleanly three ways:</p>
+<table>
+<thead>
+<tr>
+<th>Verdict</th>
+<th>Weight</th>
+<th>What it covers</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Carries over unchanged</strong></td>
+<td>~80% of the framework</td>
+<td>The whole architecture: framework⊥screens split, modular monolith, <code>TflCbs.Abstractions</code> ports, <code>Result&lt;T&gt;</code>, <code>ServiceQuery</code>/<code>DbErrors</code>, <code>RowToken</code>, arch tests, host composition, <code>Modules:Enabled</code> gating, thin hosts, gateway, Docker/IIS deploy, session model, route-cutover-in-<code>a_Menus</code>, record/search/date pickers, VAPT field encryption, notification model</td>
+</tr>
+<tr>
+<td><strong>Must be reworked</strong></td>
+<td>6 concrete framework items</td>
+<td>Menu authorization (role- not user-based), admin discriminator, bank-variable shape, broadcast source, account-identity model, multi-currency</td>
+</tr>
+<tr>
+<td><strong>No longer required</strong></td>
+<td>5 projects + ~2,650 entities</td>
+<td>The entire MFA stack, OTP/forgot-password, Lockers vertical, India payment-rail and statutory scaffolding, India-only org/user columns</td>
+</tr>
+</tbody>
+</table>
+<p><strong>The switch is cheap now and gets expensive fast.</strong> Almost all the cost is framework + entity regeneration, not screens — and the framework items are exactly the ones every future screen will build on. If the switch is going to happen, it should happen before the next wave of screens.</p>
+<p><strong>Recommendation:</strong> treat xnet as a <strong>second target of the same framework</strong>, not a replacement. Nothing in the architecture is invalidated by it; six framework seams need to become variant-aware, and one code generation step (entities) needs re-pointing. Hard-forking the solution would throw away work that both variants need.</p>
+<hr />
+<h2 id="2-method">2. Method</h2>
+<p>All findings below are reproducible.</p>
+<ul>
+<li><strong>Codebase:</strong> file-list <code>comm</code> diffs (case-insensitive, excluding <code>obj/</code>, <code>bin/</code>, binaries) and <code>stat</code>-size comparison of common files, over
+  <code>E:\adtemp\_del_now\20260606_cbs_source_code\</code> (existing) and <code>E:\adtemp\_del_now\20260904_cbs_source_code_xnet\</code> (xnet).</li>
+<li><strong>Database:</strong> live <code>sqlcmd</code> against <code>192.168.0.13\SQLSERVER_2024 / Trustbank_XNETT_ORCL</code> (credentials per <code>docs/xnet-legacy-codebase.txt</code>), read-only catalogue queries against <code>sys.tables</code> / <code>sys.columns</code> / <code>sys.procedures</code> plus <code>a_Menus</code> / <code>a_Module</code>.</li>
+<li><strong>Our side:</strong> <code>TableName = "…"</code> and <code>Repository&lt;T&gt;</code> extraction across <code>TflCbs.Entities</code>, <code>TflCbs.Modules.General</code>, <code>TflCbs.Core.Authentication</code>, <code>TflCbs.Framework</code>.</li>
+</ul>
+<blockquote>
+<p>One discrepancy worth recording: <code>docs/xnet-legacy-codebase.txt</code> names <code>Trustbank_XNETT_ORCL</code>, and that is the database the procedure dump and this analysis came from. The application's own <code>Web.Config</code> points at <strong><code>Trustbank_XNETT_DEV</code></strong> with different credentials. Confirm which is authoritative before anyone codes against it.</p>
+</blockquote>
+<hr />
+<h2 id="3-what-the-xnet-variant-is">3. What the xnet variant is</h2>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>20260606 (current source)</th>
+<th>20260904 xnet</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Market</td>
+<td>India</td>
+<td>Africa / international</td>
+</tr>
+<tr>
+<td>Regulator artefacts</td>
+<td>RBI returns, CKYC, AADHAAR</td>
+<td><strong>CBL</strong> (Central Bank of Lesotho) templates — daily/weekly/monthly/quarterly/semi-annual/annual/as-and-when</td>
+</tr>
+<tr>
+<td>Payment rails</td>
+<td>SFMS NEFT/RTGS, CTS, IFTAS, ATM, ECS/e-Mandate</td>
+<td><strong>PAPSS</strong>, <strong>SWIFT MT103</strong>, <strong>MTS</strong>, <strong>LRA ePay</strong>, <strong>Orange Money wallet</strong>, Inlaks account mapping</td>
+</tr>
+<tr>
+<td>Extra domains</td>
+<td>PACS, Customer360, ServiceBranch, EmployeeDemand, CCPC Clearing, AgriLoan</td>
+<td><strong>Treasury/FX</strong>, <strong>Trade Finance (LC + BG)</strong>, <strong>MultiCurrency</strong>, Internet Banking, TDBG</td>
+</tr>
+<tr>
+<td>Product model</td>
+<td>conventional</td>
+<td>conventional <strong>+ Islamic</strong> (93 source files; <code>ucEmiChart_Islamic.ascx</code>, <code>_x_LoanSettlement_Islamic_*</code>)</td>
+</tr>
+<tr>
+<td>Deployment fingerprint</td>
+<td><code>DBSRV1\TSSIPL2016</code>, <code>Trustbank_Urban_SingleDB</code></td>
+<td><code>192.168.0.13\SQLSERVER_2024</code>; <code>Web.Config.bak</code> also carries <code>Trustbank_Sudan_Master</code></td>
+</tr>
+</tbody>
+</table>
+<p>Both trees carry edits into September 2026. Neither is a snapshot of the other.</p>
+<hr />
+<h2 id="4-codebase-comparison">4. Codebase comparison</h2>
+<h3 id="41-volume">4.1 Volume</h3>
+<table>
+<thead>
+<tr>
+<th>Measure</th>
+<th style="text-align: right;">20260606</th>
+<th style="text-align: right;">xnet</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Files (all)</td>
+<td style="text-align: right;">15,033</td>
+<td style="text-align: right;">12,514</td>
+</tr>
+<tr>
+<td>Source files (excl. <code>obj</code>/<code>bin</code>/binaries)</td>
+<td style="text-align: right;">13,483</td>
+<td style="text-align: right;">10,935</td>
+</tr>
+<tr>
+<td>Common source paths (case-insensitive)</td>
+<td style="text-align: right;"><strong>4,278</strong> shared</td>
+<td style="text-align: right;"></td>
+</tr>
+<tr>
+<td>…of which <strong>content differs</strong></td>
+<td style="text-align: right;"><strong>892</strong></td>
+<td style="text-align: right;">489 <code>.vb</code>, 182 <code>.aspx</code>, 15 <code>.js</code>, 11 <code>.ascx</code></td>
+</tr>
+<tr>
+<td>Source only in that tree</td>
+<td style="text-align: right;">9,205</td>
+<td style="text-align: right;">6,657</td>
+</tr>
+<tr>
+<td><code>.rpt</code> (Crystal) only in that tree</td>
+<td style="text-align: right;">930</td>
+<td style="text-align: right;">166</td>
+</tr>
+</tbody>
+</table>
+<p>So roughly one third of files exist in both, and one fifth of <em>those</em> have diverged. This is a fork, and it has been diverging for years.</p>
+<h3 id="42-structure-what-is-identical">4.2 Structure — what is identical</h3>
+<p>These are the parts our platform was reverse-engineered from, and they survive the switch:</p>
+<ul>
+<li><strong><code>MasterPages/Base.master</code></strong> — same guard model (<code>IsLoginRequired</code>, <code>IsDayBeginRequired</code>, <code>IsModuleRequired</code>, <code>IsFinancialYearRequired</code>, <code>IsDayEndLogSubmissionCheckRequired</code>, <code>PageCaption</code>, <code>SearchBox*</code>, <code>ConnectionStringName</code>, <code>IsUseStoredProcedure</code>). This is the model <code>CbsAccessMiddleware</code> and <code>CbsScreenController</code> implement, and it is unchanged.</li>
+<li><strong><code>App_Themes</code></strong> — identical set (<code>Bank_Theme2</code>, <code>bank_theme1</code>).</li>
+<li><strong><code>App_Code</code></strong> — same shape, small delta (xnet adds <code>AutoRecovery.vb</code>, <code>ChargesTagConfiguration.vb</code>, <code>DailyAccureTheme.vb</code>; drops <code>IFTASFunctions.vb</code>, <code>ImpersonateUser.vb</code>, <code>Json.vb</code>, <code>Transaction.vb</code>).</li>
+<li><strong>User-control library</strong> — the reusable controls we ported all exist in xnet: <code>RecordSelector</code> / <code>TssiplRecordSelector</code> / <code>TssiplRecordSelectorV2</code>, <code>TssiplSearchBox</code>, <code>TssiplDatePicker</code>, <code>ActionButtons</code>, <code>AdTabControl</code>, <code>CollapsablePanel*</code>, <code>Alerts</code>, <code>MainMenu</code>, <code>PasswordPolicy</code>, <code>AdReportParameters</code>, <code>ucEmiChart</code>, <code>ClientAccountsInfo</code>, <code>DDPO</code>.</li>
+<li><strong>Login contract</strong> — xnet's <code>Login.aspx.vb</code> builds the same <code>&lt;loginInfo&gt;</code> XML blob from <code>Request.ServerVariables</code>, so the <code>&lt;REMOTE_HOST&gt;</code> element our <code>LoginInfo</code> parser depends on is present and unchanged.</li>
+</ul>
+<h3 id="43-structure-what-differs">4.3 Structure — what differs</h3>
+<p><strong>Reusable controls that exist only in xnet</strong> (i.e. gaps in our shared component set):</p>
+<table>
+<thead>
+<tr>
+<th>Control</th>
+<th>What it is</th>
+<th>Our counterpart</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>TssiplMoneyControl.ascx</code></td>
+<td>Currency-aware money input with spinner, disabled-state handling</td>
+<td><strong>none</strong></td>
+</tr>
+<tr>
+<td><code>AccountParamInfo.ascx</code></td>
+<td>Account identity header: Account No, <strong>Old A/c No.</strong>, <strong>NUBAN</strong>, <strong>Old NUBAN</strong></td>
+<td><strong>none</strong> (we render account no only)</td>
+</tr>
+<tr>
+<td><code>TransactionViewer.ascx</code></td>
+<td>Embeddable transaction viewer</td>
+<td><strong>none</strong></td>
+</tr>
+<tr>
+<td><code>SecurityInfo.ascx</code></td>
+<td>Loan security summary</td>
+<td><strong>none</strong></td>
+</tr>
+<tr>
+<td><code>ucEmiChart_Islamic.ascx</code></td>
+<td>Islamic profit schedule alongside conventional EMI</td>
+<td><strong>none</strong></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Base master extras in xnet:</strong> <code>IsSubHeadRequired</code>, <code>IsMenuStyleSwitcherRequired</code>, <code>IsModuleBreadcrumbRequired</code> — three shell features (per-user menu style, module breadcrumb, sub-header) with no equivalent in <code>_Layout.cshtml</code> / <code>_MenuOverlay.cshtml</code>. Backed by <code>a_User.MenuStyle</code> and <code>pr_a_UpdateMenuStyle</code>.</p>
+<p><strong>Base master properties that xnet drops:</strong> <code>AccountNumberLength</code>, <code>BranchCodeLength</code>, <code>BranchHeadCodeLength</code>, <code>HeadCodeLength</code>. This is significant — see §6.4.</p>
+<h3 id="44-binary-dependencies">4.4 Binary dependencies</h3>
+<table>
+<thead>
+<tr>
+<th>Only in 20260606 (35 assemblies)</th>
+<th>Only in xnet (12 assemblies)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>tssipl_mfa_otp</code>, <code>tssipl_mfa_ad_client</code>, <code>tssipl_mfa_qr_client</code></td>
+<td><code>tssipl_api_papss_client_lib</code>, <code>tssipl_api_swift_client_lib</code>, <code>tfl_api_ibll_swift_aeg_client</code></td>
+</tr>
+<tr>
+<td><code>Tssipl.PaymentAdapter.*</code> (11 assemblies: SFMS, NEFT, RTGS, Swift, ISO20022, PapssISO20022, MQManager)</td>
+<td><code>tssipl_api_mts_client_lib</code>, <code>tfl_api_lra_epay_client_lib</code>, <code>tssipl_api_omwallet_client_lib</code></td>
+</tr>
+<tr>
+<td><code>TrustBank.CTS.YBL</code>, <code>Tssipl.Bank.IFTASCaller</code>, <code>TssOds</code>, <code>XbrlSymmEncrypt</code></td>
+<td><code>tfl_api_ibll_acmap_inlaks_client_lib</code>, <code>tssipl_meta_tfs_lib</code></td>
+</tr>
+<tr>
+<td><code>EPPlus</code>, <code>ClosedXML</code>, <code>Spire.XLS</code>, <code>Spire.Pdf</code>, <code>PdfiumViewer</code>, <code>QRCoder</code>, <code>JWT</code></td>
+<td><code>Ad.Docx.Core</code>, <code>Ad.Docx.Template</code></td>
+</tr>
+<tr>
+<td><code>TssiplCBSHttpModule</code>, <code>TrustBank.ProcessManager.*</code></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<p>Two things to read out of this table:</p>
+<ol>
+<li><strong>xnet has no MFA at all.</strong> No <code>tssipl_mfa_*</code> assembly, zero source references to MFA/OTP/AD/QR (against 23 files in the current tree). Confirmed at the schema level too — see §5.3.</li>
+<li><strong>xnet's integrations are thin HTTP API clients, not an in-process message adapter.</strong> That is architecturally <em>closer</em> to where we are going, not further.</li>
+</ol>
+<hr />
+<h2 id="5-database-comparison">5. Database comparison</h2>
+<h3 id="51-headline">5.1 Headline</h3>
+<table>
+<thead>
+<tr>
+<th>Measure</th>
+<th style="text-align: right;"><code>Trustbank_XNETT_ORCL</code></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Tables (excl. <code>*_Backup</code> mirrors)</td>
+<td style="text-align: right;">2,059</td>
+</tr>
+<tr>
+<td>Stored procedures</td>
+<td style="text-align: right;">5,282</td>
+</tr>
+<tr>
+<td>Views / functions</td>
+<td style="text-align: right;">27 / 21</td>
+</tr>
+<tr>
+<td>Menus (<code>a_Menus</code>) — total / active / with URL</td>
+<td style="text-align: right;">1,103 / 813 / 736</td>
+</tr>
+<tr>
+<td>Roles / role-on-menu grants</td>
+<td style="text-align: right;">139 / 6,040</td>
+</tr>
+<tr>
+<td>Users</td>
+<td style="text-align: right;">588</td>
+</tr>
+</tbody>
+</table>
+<p>Every core table carries <code>msrepl_tran_version</code> → the schema comes from a <strong>replicated</strong> source. <em>(Correction, measured 2026-09-05: on this dev copy nothing is actually published — 0 tables with <code>is_published</code>, and <code>sys.databases.is_published = 0</code>. The columns are residue. Whether the </em><em>production</em><em> xnet database publishes these tables is still open.)</em> Nearly every table also carries <code>_OldId</code> / <code>_OldOrgId</code> → this database is itself the product of an earlier data migration whose lineage is still modelled in the schema. Neither fact is represented anywhere in our stack today.</p>
+<h3 id="52-stored-procedures">5.2 Stored procedures</h3>
+<p>Names normalised (lower-cased, <code>NNN_</code> prefixes stripped):</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th style="text-align: right;">20260606 dump</th>
+<th style="text-align: right;">xnet dump</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Scripted procedures</td>
+<td style="text-align: right;">5,282</td>
+<td style="text-align: right;">5,241</td>
+</tr>
+<tr>
+<td><strong>Common names</strong></td>
+<td style="text-align: right;"><strong>1,235</strong></td>
+<td style="text-align: right;">~23%</td>
+</tr>
+<tr>
+<td>Only in that tree</td>
+<td style="text-align: right;">4,047</td>
+<td style="text-align: right;">4,006</td>
+</tr>
+</tbody>
+</table>
+<p>469 of the xnet-only procedures are named for CBL / PAPSS / SWIFT / Treasury / FX / MultiCurrency / LRA / MTS. 20 procedures could not be scripted at all — they are <strong>encrypted</strong> in the source database (<code>_report.log</code>), including <code>pr_a_GetloadMenus</code> and <code>pr_a_ResponsibilityRightsToUserRights</code>, i.e. two of the menu/rights procedures. Those will have to be reconstructed from behaviour, exactly as was done for the current tree.</p>
+<p>Our "no stored procedures for new master CRUD" rule means this number is mostly informational — but it does size the <em>reverse-engineering</em> effort for anything not pure CRUD.</p>
+<h3 id="53-schema-vs-tflcbsentities">5.3 Schema vs <code>TflCbs.Entities</code></h3>
+<p><code>TflCbs.Entities</code> holds <strong>3,681 generated tables</strong> from the India database.</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th style="text-align: right;">Count</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Entity tables that <strong>exist</strong> in xnet</td>
+<td style="text-align: right;"><strong>1,022</strong></td>
+</tr>
+<tr>
+<td>Entity tables <strong>absent</strong> from xnet</td>
+<td style="text-align: right;"><strong>2,659</strong></td>
+</tr>
+<tr>
+<td>xnet tables with <strong>no entity</strong></td>
+<td style="text-align: right;"><strong>1,037</strong></td>
+</tr>
+</tbody>
+</table>
+<p>Entities must be regenerated against the xnet database. That is a code-generation run, not hand work — but ~2,659 generated classes become dead and ~1,037 new ones appear.</p>
+<h3 id="54-core-platform-tables-present-missing">5.4 Core platform tables — present / missing</h3>
+<p>Every table our <strong>core</strong> modules (<code>TflCbs.Modules.General</code>, <code>TflCbs.Core.Authentication</code>) actually read:</p>
+<table>
+<thead>
+<tr>
+<th>Table</th>
+<th style="text-align: center;">xnet</th>
+<th>Consumer</th>
+<th>Consequence</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>a_Menus</code></td>
+<td style="text-align: center;">✅</td>
+<td>MenuListService, route cutover</td>
+<td>fine — <code>NavigateURL</code> present, migration <code>0004</code> applies</td>
+</tr>
+<tr>
+<td><code>a_Module</code>, <code>a_UserInModule</code></td>
+<td style="text-align: center;">✅</td>
+<td>module chooser</td>
+<td>fine</td>
+</tr>
+<tr>
+<td><code>a_User</code></td>
+<td style="text-align: center;">✅</td>
+<td>everything</td>
+<td><strong>column drift</strong> — see §5.5</td>
+</tr>
+<tr>
+<td><code>a_UserRights</code></td>
+<td style="text-align: center;">✅</td>
+<td>rights</td>
+<td>fine (extra <code>ModuleId</code>)</td>
+</tr>
+<tr>
+<td><code>g_BankVariables</code>, <code>g_BranchVariables</code></td>
+<td style="text-align: center;">✅</td>
+<td>BankVars, ReferenceCache</td>
+<td><strong>column drift</strong> — see §5.5</td>
+</tr>
+<tr>
+<td><code>g_OrgElement</code></td>
+<td style="text-align: center;">✅</td>
+<td>branch list</td>
+<td>drift (India-only columns absent)</td>
+</tr>
+<tr>
+<td><code>b_WorkingDate</code>, <code>b_DayEndParamLog</code></td>
+<td style="text-align: center;">✅</td>
+<td>working date, day-end guard</td>
+<td>fine</td>
+</tr>
+<tr>
+<td><code>g_BlockedProcesses</code></td>
+<td style="text-align: center;">✅</td>
+<td><code>IProcessBlockCheck</code></td>
+<td>fine</td>
+</tr>
+<tr>
+<td><code>x_Scroll</code></td>
+<td style="text-align: center;">✅</td>
+<td>maker-checker <code>IScrollService</code></td>
+<td>fine (+2 slip-number columns)</td>
+</tr>
+<tr>
+<td><code>b_UserLogTime</code></td>
+<td style="text-align: center;">✅</td>
+<td>session, already-connected gate</td>
+<td>fine — <strong>all 12 of our columns present</strong></td>
+</tr>
+<tr>
+<td><code>b_Code</code>, <code>sys_config</code></td>
+<td style="text-align: center;">✅</td>
+<td>lookups</td>
+<td>fine</td>
+</tr>
+<tr>
+<td><code>al_Alerts</code>, <code>al_ProcessedAlerts</code>, <code>al_UserAlertMappings</code></td>
+<td style="text-align: center;">✅</td>
+<td>AlertService</td>
+<td>fine</td>
+</tr>
+<tr>
+<td><code>g_State</code>, <code>g_District</code>, <code>g_Taluka</code></td>
+<td style="text-align: center;">✅</td>
+<td><code>TflCbs.Modules.Reference</code></td>
+<td><strong>fine — the whole Reference core module survives</strong></td>
+</tr>
+<tr>
+<td><code>a_UserMenu</code></td>
+<td style="text-align: center;">❌</td>
+<td><strong>MenuListService (non-admin path)</strong></td>
+<td><strong>blocking — see §6.1</strong></td>
+</tr>
+<tr>
+<td><code>b_MarqueeAlert</code></td>
+<td style="text-align: center;">❌</td>
+<td><strong>BroadcastService / <code>IBroadcastSource</code></strong></td>
+<td><strong>blocking — see §6.3</strong></td>
+</tr>
+<tr>
+<td><code>a_BrLoginAccessTime</code></td>
+<td style="text-align: center;">❌</td>
+<td>GeneralService login-window check</td>
+<td>feature drops</td>
+</tr>
+<tr>
+<td><code>al_AlertsRights_</code></td>
+<td style="text-align: center;">❌</td>
+<td>AlertService</td>
+<td>renamed → <code>al_AlertsRights</code> (no trailing underscore)</td>
+</tr>
+<tr>
+<td><code>a_UserLoginType</code>, <code>mfa_otp</code></td>
+<td style="text-align: center;">❌</td>
+<td>MfaOtpService, MfaQrService</td>
+<td>MFA not applicable</td>
+</tr>
+<tr>
+<td><code>cbs_otp</code></td>
+<td style="text-align: center;">❌</td>
+<td>ForgotPasswordService</td>
+<td>OTP reset not applicable</td>
+</tr>
+<tr>
+<td><code>b_UserSwitchLogTime</code></td>
+<td style="text-align: center;">❌</td>
+<td>ShellSessionService user-switch</td>
+<td>feature drops</td>
+</tr>
+</tbody>
+</table>
+<h3 id="55-column-drift-on-tables-that-do-exist">5.5 Column drift on tables that do exist</h3>
+<table>
+<thead>
+<tr>
+<th>Table</th>
+<th style="text-align: right;">Ours</th>
+<th style="text-align: right;">xnet</th>
+<th>Columns we have that xnet lacks</th>
+<th>Notable xnet extras</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>a_User</code></td>
+<td style="text-align: right;">20</td>
+<td style="text-align: right;">25</td>
+<td><strong><code>USERLEVEL</code></strong>, <code>PASSEDBY</code>, <code>PASSEDON</code></td>
+<td><code>Level</code>, <code>MenuStyle</code>, <code>EnquiryLevelId</code>, <code>PostingLevelId</code>, <code>isAllowOtherBrApproval</code>, <code>id</code>, <code>_OldId</code>, <code>_OldOrgId</code></td>
+</tr>
+<tr>
+<td><code>g_BankVariables</code></td>
+<td style="text-align: right;">18</td>
+<td style="text-align: right;">11</td>
+<td><code>TAG</code>, <code>SUBTAG</code>, <code>INPUTTYPE</code>, <code>LENGTH</code>, <code>LENGTHTYPE</code>, <code>CRITERIA</code>, <code>DEFAULTVALUES</code>, <code>DEPENDENCY</code>, <code>EXAMPLE</code>, <code>NOTES</code></td>
+<td><code>_OldId</code>, <code>_OldOrgId</code></td>
+</tr>
+<tr>
+<td><code>g_OrgElement</code></td>
+<td style="text-align: right;">28</td>
+<td style="text-align: right;">23</td>
+<td><code>IFSCCODE</code>, <code>PAN</code>, <code>TAN</code>, <code>GSTN</code>, <code>GSTNSTATECODE</code>, <code>LBRCODE</code>, <code>BRANCHTYPE</code>, <code>ISCOMPUTERIZED</code></td>
+<td><code>_OldId</code>, <code>_OldOrgId</code></td>
+</tr>
+<tr>
+<td><code>a_UserRights</code></td>
+<td style="text-align: right;">11</td>
+<td style="text-align: right;">14</td>
+<td><code>ISREPORT</code>, <code>USERRIGHTSCONSID</code></td>
+<td><code>ModuleId</code>, <code>UserRightsPreAuthDetailsId</code></td>
+</tr>
+<tr>
+<td><code>a_Menus</code></td>
+<td style="text-align: right;">18</td>
+<td style="text-align: right;">19</td>
+<td><code>ISDLS</code></td>
+<td><code>IsAllowOtherBrMenu</code></td>
+</tr>
+<tr>
+<td><code>a_UserPolicy</code></td>
+<td style="text-align: right;">—</td>
+<td style="text-align: right;">7</td>
+<td>—</td>
+<td>no <code>PASSWORDVERSION</code> / salt columns → migration <code>0001</code> must run</td>
+</tr>
+<tr>
+<td><code>b_UserLogTime</code>, <code>b_WorkingDate</code>, <code>x_Scroll</code></td>
+<td style="text-align: right;">—</td>
+<td style="text-align: right;">—</td>
+<td><strong>none</strong></td>
+<td><code>_OldId</code>, <code>_OldOrgId</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="56-module-and-menu-shape">5.6 Module and menu shape</h3>
+<p><code>a_Module</code> rows with live menus in xnet:</p>
+<table>
+<thead>
+<tr>
+<th>Module</th>
+<th style="text-align: right;">Active menus</th>
+<th>Our module</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Retail and Corporate Operations</td>
+<td style="text-align: right;">539</td>
+<td><code>TflCbs.Modules.RetailBanking</code> ✅</td>
+</tr>
+<tr>
+<td><em>(ModuleId 0 — unassigned)</em></td>
+<td style="text-align: right;">298</td>
+<td>mostly Treasury / Trade Finance / Inventory / LOS screens</td>
+</tr>
+<tr>
+<td>Central Administration</td>
+<td style="text-align: right;">122</td>
+<td><code>Administration</code> + <code>HR</code> ✅ (HR menus live here, as in the current tree)</td>
+</tr>
+<tr>
+<td><strong>Trade Finance</strong></td>
+<td style="text-align: right;">70</td>
+<td><strong>none</strong></td>
+</tr>
+<tr>
+<td>Reconciliation</td>
+<td style="text-align: right;">24</td>
+<td>none</td>
+</tr>
+<tr>
+<td>Inventory</td>
+<td style="text-align: right;">22</td>
+<td>none</td>
+</tr>
+<tr>
+<td>Internet Banking</td>
+<td style="text-align: right;">17</td>
+<td>none</td>
+</tr>
+<tr>
+<td><strong>Treasury</strong></td>
+<td style="text-align: right;">10</td>
+<td><strong>none</strong></td>
+</tr>
+<tr>
+<td>Loan Origination System</td>
+<td style="text-align: right;">1</td>
+<td>none</td>
+</tr>
+<tr>
+<td><strong>Lockers</strong> <em>(module 11, inactive)</em></td>
+<td style="text-align: right;"><strong>0</strong></td>
+<td><code>TflCbs.Modules.Lockers</code> ⚠️</td>
+</tr>
+</tbody>
+</table>
+<p>Menu authorization is <strong>role-based</strong>: <code>a_Role</code> (139) → <code>a_RoleOnMenu</code> (6,040 grants) → <code>a_Menus</code>. There is no <code>a_UserMenu</code> image table and no procedure that builds one; the menu procedures are <code>pr_a_getRoleOnMenuPopulateMenus</code>, <code>pr_a_getUserRightsPopulateMenus</code>, <code>pr_a_GetModulesWiseRolesOnMenu</code>, <code>pr_a_getResponsibilityMenus</code>.</p>
+<p>Cross-check against the screens we have already migrated (<code>DbMigrator</code> <code>0004</code>/<code>0008</code>): <strong>7 of 11 have a live menu in xnet</strong>; <code>config/b_MarqueeAlert.aspx</code>, <code>config/updateBlockedUser.aspx</code>, <code>HO/bank/g_Taluka.aspx</code> and <code>Lockers/k_LockerType.aspx</code> do not.</p>
+<hr />
+<h2 id="6-what-we-are-missing">6. What we are missing</h2>
+<p>Six framework-level gaps. Nothing here breaks the architecture; each is a seam that has to stop assuming the India shape.</p>
+<h3 id="61-menu-authorization-is-role-based-not-user-based-blocking">6.1 Menu authorization is role-based, not user-based — <em>blocking</em></h3>
+<p><code>MenuListService</code> reads the precomputed <code>A_USERMENU</code> image table for non-admin users. <strong>That table does not exist in xnet.</strong> Authorization there is <code>a_Role</code> → <code>a_RoleOnMenu</code> (6,040 grants across 139 roles).</p>
+<p>This is not cosmetic: <code>CbsAccessMiddleware</code> is our fail-closed guard, and its allow-list comes from this query. Until it is reworked, <strong>every non-admin user sees an empty menu and is denied every route</strong>.</p>
+<p><em>Shape of the fix:</em> <code>IMenuSource</code> (in <code>TflCbs.Abstractions</code>) is already the right seam — it returns <code>MenuListRow</code>. Add a second implementation behind it that resolves via <code>a_RoleOnMenu</code>, selected by configuration. No caller changes.</p>
+<h3 id="62-the-admin-discriminator-moved-blocking">6.2 The admin discriminator moved — <em>blocking</em></h3>
+<p><code>MenuListService</code> branches on <code>a_User.USERLEVEL == 126</code>. xnet's <code>a_User</code> has <strong><code>Level</code></strong>, not <code>USERLEVEL</code> (the India database carries both; the migration deliberately chose the non-reserved spelling to stay Oracle-safe). Ships with §6.1.</p>
+<h3 id="63-broadcast-has-no-source-table">6.3 Broadcast has no source table</h3>
+<p><code>BroadcastService</code> (behind <code>IBroadcastSource</code>) reads <code>b_MarqueeAlert</code>; xnet has no such table and zero <code>MarqueeAlert</code> references in source. The port already degrades to <code>FrameworkPortDefaults</code>, so this <strong>fails soft</strong> — but the marquee silently disappears. Either map it onto <code>al_Alerts</code>/<code>al_AlertLog</code> or accept the no-op.</p>
+<h3 id="64-account-identity-3-segment-is-an-india-assumption">6.4 Account identity: 3-segment is an India assumption</h3>
+<p><code>AccountPickerModel</code> hardcodes <code>BranchLen = 4</code>, <code>HeadLen = 5</code>, <code>AccountLen = 8</code>, and <code>_AccountPicker</code> renders three typed segment boxes — a direct port of the legacy composite driven by <code>Base.master</code>'s <code>AccountNumberLength</code> / <code>BranchCodeLength</code> / <code>HeadCodeLength</code>.</p>
+<p><strong>xnet has zero references to any of those three properties</strong> (the current tree has 141). Instead it carries multiple identifiers per account — Account Number, <strong>Old A/c No.</strong>, <strong>NUBAN</strong>, <strong>Old NUBAN</strong> — surfaced by <code>AccountParamInfo.ascx</code>, and 100 source files touch IBAN/BBAN/NUBAN/BIC (against 9 in the current tree).</p>
+<p><em>Shape of the fix:</em> add an identity mode to <code>AccountPickerModel</code> (segmented vs single-key-plus-aliases) and keep the segment lengths configuration-driven rather than defaulted constants. <strong>Additive with safe defaults</strong> — the existing India behaviour stays the default, per our reusable-component rule.</p>
+<h3 id="65-multi-currency-is-absent-from-the-entire-framework">6.5 Multi-currency is absent from the entire framework</h3>
+<p><code>grep -ri currency</code> over <code>TflCbs.Framework</code> + <code>TflCbs.Web.Shared</code> returns <strong>nothing relevant</strong>. xnet has 364 source files touching currency/exchange-rate, a Currency Master, Currency GL Mapping, LC Currency GL Mapping, a <code>HO/MultiCurrency</code> area, Treasury/FX, and a dedicated <code>TssiplMoneyControl.ascx</code>.</p>
+<p>This is the largest single gap, and it is genuinely framework-level, not screen-level: every amount field, every total, every posting line needs a currency and most need a base-currency counterpart. Retro-fitting it after another twenty screens are written costs several times what it costs now.</p>
+<p><em>Shape of the fix:</em> a <code>MoneyModel</code> + <code>_MoneyInput</code> reusable component (the <code>TssiplMoneyControl</code> counterpart) and a currency-resolution service on the framework side, plus a currency dimension on the account picker's result. Design it now even if it ships later.</p>
+<h3 id="66-smaller-gaps">6.6 Smaller gaps</h3>
+<table>
+<thead>
+<tr>
+<th>Gap</th>
+<th>Impact</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Shell: menu-style switcher, module breadcrumb, sub-header (<code>a_User.MenuStyle</code>, <code>pr_a_UpdateMenuStyle</code>)</td>
+<td>three shell features absent from <code>_Layout</code> / <code>_MenuOverlay</code></td>
+</tr>
+<tr>
+<td>Islamic profit model (93 source files, <code>ucEmiChart_Islamic</code>)</td>
+<td>any shared amortisation/EMI component needs a second mode</td>
+</tr>
+<tr>
+<td>Reusable controls <code>TransactionViewer</code>, <code>SecurityInfo</code>, <code>AccountParamInfo</code></td>
+<td>three shared components with no counterpart</td>
+</tr>
+<tr>
+<td><code>msrepl_tran_version</code> on core tables</td>
+<td>Residue on the dev copy (nothing published there), but <code>Repository&lt;T&gt;</code> writes and TflOmniDb's row-version handling must still be verified against the <strong>production</strong> publisher before any write goes near it</td>
+</tr>
+<tr>
+<td><code>a_BrLoginAccessTime</code> absent</td>
+<td>branch login-time-window check drops</td>
+</tr>
+<tr>
+<td><code>al_AlertsRights_</code> → <code>al_AlertsRights</code></td>
+<td>one entity rename</td>
+</tr>
+<tr>
+<td>Trade Finance (70 menus), Treasury (10), Internet Banking (17), Reconciliation (24), Inventory (22)</td>
+<td>five domains with no module in the modular monolith — see §8</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="7-what-we-no-longer-need">7. What we no longer need</h2>
+<h3 id="71-the-whole-mfa-stack-5-projects">7.1 The whole MFA stack — 5 projects</h3>
+<p><code>libs/tssipl_mfa_otp_net</code>, <code>tssipl_mfa_ad_client_net</code>, <code>tssipl_mfa_ad_api_net</code>, <code>tssipl_mfa_qr_client_net</code>, <code>tssipl_mfa_qr_api_net</code>, plus <code>tssipl_mfa_{ad,qr}_tests_net</code>.</p>
+<p>xnet has <strong>no MFA assemblies, no MFA source references, and no <code>a_UserLoginType</code> / <code>mfa_otp</code> tables</strong>. Downstream, this also retires:</p>
+<ul>
+<li><code>MfaOtpService</code>, <code>MfaQrService</code> (<code>TflCbs.Core.Authentication</code>)</li>
+<li><code>cbs-qr-login.js</code>, the QR login view</li>
+<li><code>DbMigrator</code> migrations <code>0006_mfa_otp</code>, <code>0007_mfa_qr</code></li>
+<li>the <code>net10.0-windows</code> Active Directory API deployable and its Linux-container isolation rationale</li>
+<li>the client/server wire-contract tests that "fail every login" if they drift</li>
+</ul>
+<p>That is a meaningful maintenance burden gone — and it is the single biggest item in <code>BACKLOG-legacy-app-wide.md</code> §1.10.</p>
+<p><strong>Do not delete it.</strong> xnet's login is the <em>original, simpler</em> one (5.5 KB against 31 KB); MFA is a feature the India deployment gained. If xnet ever needs it, it is ours and it works. Park it, don't remove it.</p>
+<h3 id="72-otp-based-forgot-password">7.2 OTP-based forgot-password</h3>
+<p><code>ForgotPasswordService</code> depends on <code>cbs_otp</code> — absent. <code>sms_buffer</code> / <code>sms_template</code> do exist, so an SMS path remains possible; the OTP table would have to be created.</p>
+<h3 id="73-the-lockers-vertical">7.3 The Lockers vertical</h3>
+<p>xnet ships 4 locker pages (against 15) and <code>a_Module</code> row 11 "Lockers" is <strong>inactive with zero menus</strong>. <code>TflCbs.Modules.Lockers</code>, <code>TflCbs.Modules.Lockers.Web</code> and <code>TflCbs.Host.Lockers</code> have no reachable screens.</p>
+<p>Its architectural value survives the switch — it is the Phase-B promotion template and the proof that a fully isolated vertical slice works — but as shipped functionality it is dead weight. Keep the projects as the reference implementation; drop <code>Lockers</code> from <code>Modules:Enabled</code> and from the deployed host set.</p>
+<h3 id="74-india-payment-rails-and-statutory-scaffolding">7.4 India payment rails and statutory scaffolding</h3>
+<p>The <code>Tssipl.PaymentAdapter.*</code> SFMS/NEFT/RTGS/ISO20022 stack, CTS/YBL, IFTAS, ATM, AADHAAR/CKYC, ECS e-Mandate and the RBI report family have no counterpart in xnet. We have not migrated these screens, so the cost is confined to:</p>
+<ul>
+<li><strong>2,659 of 3,681 generated entities</strong> become dead on regeneration</li>
+<li><code>TflCbs.Modules.Clearing</code> no longer exists (deleted 2026-09-10, uncalled CTS/CCPC sample) — xnet's inward/outward clearing starts from a fresh module</li>
+<li><code>TflCbs.Modules.Accounts</code> needs re-verifying against a schema where only ~28% of tables carried over</li>
+</ul>
+<h3 id="75-india-only-columns-to-drop-from-entities">7.5 India-only columns to drop from entities</h3>
+<p><code>g_OrgElement</code>: <code>IFSCCODE</code>, <code>PAN</code>, <code>TAN</code>, <code>GSTN</code>, <code>GSTNSTATECODE</code>, <code>LBRCODE</code>, <code>BRANCHTYPE</code>, <code>ISCOMPUTERIZED</code>.
+<code>a_User</code>: <code>PASSEDBY</code>, <code>PASSEDON</code>. <code>a_UserRights</code>: <code>ISREPORT</code>, <code>USERRIGHTSCONSID</code>. <code>a_Menus</code>: <code>ISDLS</code>.</p>
+<p>These fall out of entity regeneration automatically; they are listed so that any service or view referencing them is found before the build breaks.</p>
+<h3 id="76-four-route-cutover-entries">7.6 Four route-cutover entries</h3>
+<p><code>config/b_MarqueeAlert.aspx</code>, <code>config/updateBlockedUser.aspx</code>, <code>HO/bank/g_Taluka.aspx</code>, <code>Lockers/k_LockerType.aspx</code> have no menu row in xnet — migrations <code>0004</code>/<code>0008</code> would update zero rows for them.</p>
+<hr />
+<h2 id="8-what-is-untouched-and-why-that-matters-most">8. What is untouched — and why that matters most</h2>
+<p>Nothing in the following list changes, and it is the great majority of what has been built:</p>
+<ul>
+<li><strong>Architecture.</strong> The horizontal framework⊥screens split and the vertical modular monolith both hold. <code>TflCbs.Abstractions</code> and its four ports (<code>IBroadcastSource</code>, <code>IBankVariableSource</code>, <code>IMenuSource</code>, <code>ISessionValidator</code>) are exactly the seams that absorb §6.1–6.3 — which is the strongest evidence available that the boundary was drawn in the right place. The arch tests, namespace discipline and <code>ArchBoundaries.PromotedModules</code> all still apply.</li>
+<li><strong>Composition and hosting.</strong> <code>AddCbsModules</code>, the deployed-assembly cross-check, <code>Modules:Enabled</code> gating, thin hosts, the gateway, IIS and Docker single/multi shapes.</li>
+<li><strong>Data/business conventions.</strong> <code>Result</code> / <code>Result&lt;T&gt;</code>, <code>Repository&lt;T&gt;</code> + <code>DataAccess.QueryAsync</code>, <code>ServiceQuery</code>, <code>DbErrors</code>, no-raw-SQL-for-new-CRUD.</li>
+<li><strong>Session and access.</strong> <code>b_UserLogTime</code> carries all 12 columns we use; the <code>&lt;REMOTE_HOST&gt;</code> <code>LoginInfo</code> contract is byte-identical; the four-clock idle policy, <code>CbsSessionStore</code>, <code>CbsSessionOptions.Resolve</code>, <code>CbsAuthCookie</code> and <code>CbsAccessMiddleware</code>'s fail-closed model all stand. Only the <em>source</em> of the allow-list changes (§6.1).</li>
+<li><strong>Route cutover in the database.</strong> <code>a_Menus.NavigateURL</code> exists; migration <code>0004</code>'s mechanism is unchanged.</li>
+<li><strong>Reusable components.</strong> <code>_RecordPicker</code> / <code>RecordPickerModel</code> / <code>cbs-search.js</code> / <code>SearchDescriptor</code>, <code>_SearchModal</code>, <code>_DatePicker</code> / <code>cbs-datepicker.js</code>, <code>RowToken</code>, <code>_ActionBar</code>, <code>_Notification</code> (blocking-ack vs toast), <code>_CommandPalette</code>, <code>_ShortcutHelp</code>, <code>cbs-form-guard</code>, <code>cbs-uppercase</code>, <code>cbs-secure-post</code>, <code>cbs-idle</code>, <code>cbs-theme</code> — every legacy control they were ported from exists in xnet, with the same contract.</li>
+<li><strong>Field encryption.</strong> xnet's <code>Web.Config</code> carries <code>vapt_donot_encrypt_record_selector_query_in_url</code>, so the VAPT URL/field-encryption concept is native there too — <code>_FieldEncryption</code> and <code>FieldEncryptionKeyStore</code> stand.</li>
+<li><strong>Reference core module.</strong> <code>g_State</code> / <code>g_District</code> / <code>g_Taluka</code> all present. The admission rule (no domain behaviour + ≥2 consumers) is unaffected.</li>
+<li><strong>Observability, caching, health checks, data protection.</strong> <code>IReferenceCache</code>, <code>DatabaseHealthCheck</code>, <code>TflOmniDbXmlRepository</code>, <code>RequestLoggingMiddleware</code>, OTel wiring — all schema-independent (<code>DataProtectionKeys</code> is created by us, not inherited).</li>
+</ul>
+<hr />
+<h2 id="9-effort-and-risk">9. Effort and risk</h2>
+<table>
+<thead>
+<tr>
+<th>Work item</th>
+<th>Size</th>
+<th>Risk</th>
+<th>Note</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Regenerate <code>TflCbs.Entities</code> against xnet</td>
+<td>S</td>
+<td>Low</td>
+<td>code-gen run; 2,659 classes drop, 1,037 appear</td>
+</tr>
+<tr>
+<td>Rework menu authorization to <code>a_RoleOnMenu</code> (§6.1, §6.2)</td>
+<td><strong>M</strong></td>
+<td><strong>High</strong></td>
+<td>blocking; two encrypted procs to reverse-engineer</td>
+</tr>
+<tr>
+<td>Bank-variable service against the 11-column shape (§5.5)</td>
+<td>S</td>
+<td>Med</td>
+<td>our extra 10 columns disappear; simplification, but touches <code>ReferenceCache</code></td>
+</tr>
+<tr>
+<td>Broadcast: map or no-op (§6.3)</td>
+<td>S</td>
+<td>Low</td>
+<td>port already degrades safely</td>
+</tr>
+<tr>
+<td>Account identity mode on <code>_AccountPicker</code> (§6.4)</td>
+<td>M</td>
+<td>Med</td>
+<td>must stay additive with safe defaults</td>
+</tr>
+<tr>
+<td><strong>Multi-currency foundation (§6.5)</strong></td>
+<td><strong>L</strong></td>
+<td><strong>High</strong></td>
+<td>cheapest now, compounding later</td>
+</tr>
+<tr>
+<td>Shell extras: menu style, breadcrumb, sub-header (§6.6)</td>
+<td>S</td>
+<td>Low</td>
+<td></td>
+</tr>
+<tr>
+<td>Verify writes under transactional replication (§5.1)</td>
+<td>S</td>
+<td><strong>High</strong></td>
+<td>must be settled before production writes</td>
+</tr>
+<tr>
+<td>Re-scope <code>Clearing</code> / <code>Accounts</code> to xnet schema</td>
+<td>M</td>
+<td>Med</td>
+<td></td>
+</tr>
+<tr>
+<td>Retire MFA / OTP / Lockers from the enabled set</td>
+<td>S</td>
+<td>Low</td>
+<td>park, don't delete</td>
+</tr>
+<tr>
+<td>Confirm <code>_ORCL</code> vs <code>_DEV</code> database authority</td>
+<td>XS</td>
+<td>—</td>
+<td>do this first</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Screens are not on this list</strong>, and that is the point: 24 controllers / 39 views is a week, not a quarter. The decision is about the framework, and the framework's cost is front-loaded.</p>
+<hr />
+<h2 id="10-options">10. Options</h2>
+<p><strong>A. Re-base on xnet (single target).</strong> Point entities and all module services at the xnet schema; park MFA, OTP, Lockers and the India rails. Cleanest codebase; abandons the India variant, which is the tree with the larger active screen inventory.</p>
+<p><strong>B. Keep the India target, treat xnet as a second deployment of the same framework. — <em>recommended</em>.</strong> Make the six seams in §6 variant-aware behind the existing <code>TflCbs.Abstractions</code> ports; select the implementation by configuration. The ports already exist for exactly this. Cost is roughly A plus the configuration switching, and it keeps both markets on one platform — which is what a modular monolith is for.</p>
+<p><strong>C. Fork the solution.</strong> Rejected: 80% of the framework is common, and every future framework fix would need doing twice.</p>
+<p>Under B, the sequence is: confirm the database → regenerate entities → menu authorization → account identity + multi-currency foundation → everything else.</p>
+<hr />
+<h2 id="11-open-questions">11. Open questions</h2>
+<ol>
+<li><code>Trustbank_XNETT_ORCL</code> or <code>Trustbank_XNETT_DEV</code> — which is authoritative? (<code>docs/xnet-legacy-codebase.txt</code> says one, <code>Web.Config</code> says the other.)</li>
+<li>Is xnet a <em>replacement</em> target or an <em>additional</em> one? Option B assumes additional.</li>
+<li>Is transactional replication also present in the target production database, or only in this dev copy?</li>
+<li>Are Treasury, Trade Finance, Internet Banking, Reconciliation and Inventory in migration scope? Together that is ~143 active menus and five new modules.</li>
+<li>Do the 20 encrypted procedures exist in unencrypted form anywhere — particularly <code>pr_a_GetloadMenus</code> and <code>pr_a_ResponsibilityRightsToUserRights</code>?</li>
+<li>Is Islamic product support in scope, or conventional-only for the first release?</li>
+</ol>
+</div></div>
+<script>
+(function(){
+ function put(t){
+  if(navigator.clipboard&&navigator.clipboard.writeText)return navigator.clipboard.writeText(t);
+  return new Promise(function(res,rej){
+   var a=document.createElement('textarea');a.value=t;a.setAttribute('readonly','');
+   a.style.cssText='position:fixed;top:0;left:0;opacity:0';document.body.appendChild(a);
+   a.select();var ok=false;try{ok=document.execCommand('copy')}catch(e){}
+   document.body.removeChild(a);ok?res():rej()});
+ }
+ function flash(el,txt,ms){
+  var was=el.textContent;el.classList.add('done');if(txt)el.textContent=txt;
+  setTimeout(function(){el.classList.remove('done');if(txt)el.textContent=was},ms||1200);
+ }
+ function copy(text,el,okTxt){
+  put(text).then(function(){flash(el,okTxt)},function(){
+   if(okTxt){var w=el.textContent;el.textContent='Ctrl+C';setTimeout(function(){el.textContent=w},2000)}});
+ }
+ document.querySelectorAll('pre').forEach(function(pre){
+  if(pre.classList.contains('txtdoc'))return;
+  var b=document.createElement('button');
+  b.type='button';b.className='copy';b.textContent='Copy';
+  b.setAttribute('aria-label','Copy this code block to the clipboard');
+  b.addEventListener('click',function(){copy((pre.querySelector('code')||pre).innerText,b,'Copied')});
+  pre.appendChild(b);
+ });
+ document.querySelectorAll('td code').forEach(function(c){
+  if(!c.textContent.trim())return;
+  c.classList.add('cp');c.tabIndex=0;c.setAttribute('role','button');
+  c.title='Click to copy';
+  c.addEventListener('click',function(){copy(c.textContent,c)});
+  c.addEventListener('keydown',function(e){
+   if(e.key==='Enter'||e.key===' '){e.preventDefault();copy(c.textContent,c)}});
+ });
+})();
+</script>
+</body></html>

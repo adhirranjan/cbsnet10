@@ -118,11 +118,6 @@ horizontal assembly — so this is mostly about formalizing boundaries and compo
 </tr>
 <tr>
 <td></td>
-<td><code>TflCbs.Modules.Clearing</code></td>
-<td><code>InwardClearingService</code></td>
-</tr>
-<tr>
-<td></td>
 <td><code>TflCbs.Modules.Administration</code></td>
 <td><code>ModuleService</code>, <code>RoleService</code></td>
 </tr>
@@ -475,7 +470,7 @@ is now the single registry, and every sibling rule is <code>Enforcement.Referenc
   to contain exactly one domain module, which is the evidence that the boundaries are real. The
   platform therefore runs in four deployment shapes from one codebase (IIS single, IIS multi-host,
   Docker single, Docker multi-host); see <a href="../port-map.html"><code>../port-map.md</code></a> and
-  <a href="../single-sign-on.txt"><code>../single-sign-on.txt</code></a>.</li>
+  <a href="../single-sign-on.html"><code>../single-sign-on.md</code></a>.</li>
 </ul>
 <p><strong>Promotion triggers (folder → own assembly):</strong> module must run/deploy on its own ✅ · a team needs hard
 ownership + internal hiding ✅ · monolith build time hurts · module ships as a package · cross-module

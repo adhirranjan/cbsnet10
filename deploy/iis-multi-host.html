@@ -59,7 +59,7 @@ ul{padding-left:1.4em}ol{padding-left:1.4em}
 <h1 id="deploy-to-iis-multi-host-gateway-default-host-thin-hosts">Deploy to IIS — Multi Host (gateway + default host + thin hosts)</h1>
 <p>The scale-out shape: the YARP <strong>gateway is the one public origin</strong>; behind it the default host and up to four thin per-module hosts each run as their own IIS site. All hosts share one identity via cross-host SSO.</p>
 <blockquote>
-<p>Read <a href="iis-single-host.html">iis-single-host.md</a> first — this doc only adds the multi-host specifics. See also <a href="../single-sign-on.txt">single-sign-on.txt</a> and <a href="../port-map.html">port-map.md</a>.</p>
+<p>Read <a href="iis-single-host.html">iis-single-host.md</a> first — this doc only adds the multi-host specifics. See also <a href="../single-sign-on.html">single-sign-on.md</a> and <a href="../port-map.html">port-map.md</a>.</p>
 </blockquote>
 <h2 id="deployment-checklist-run-in-order">Deployment checklist (run in order)</h2>
 <ol>
@@ -370,7 +370,7 @@ dotnet publish TflCbs.Host.Administration -c Release -o D:\publish\multi\admin
 <li><a href="gateway-backend-scheme.html">gateway-backend-scheme.md</a> — why the gateway calls backends over HTTPS</li>
 <li><a href="self-signed-cert.html">self-signed-cert.md</a> — the cert reused on every binding</li>
 <li><a href="docker-multi-host.html">docker-multi-host.md</a> — same topology in containers</li>
-<li><a href="../single-sign-on.txt">single-sign-on.txt</a> — the SSO mechanism in depth</li>
+<li><a href="../single-sign-on.html">single-sign-on.md</a> — the SSO mechanism in depth</li>
 <li><a href="../port-map.html">port-map.md</a> — ports &amp; routing table (dev + deploy)</li>
 </ul>
 </div></div>
