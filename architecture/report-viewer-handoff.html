@@ -1,0 +1,513 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Report viewer handoff: .NET 10 → TflCbs.ReportViewer</title>
+<style>
+:root{color-scheme:light dark}
+*{box-sizing:border-box}
+body{margin:0;background:#f6f8fa;color:#1f2328;font:16px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif}
+.wrap{max-width:900px;margin:0 auto;padding:32px 24px 96px}
+.card{background:#fff;border:1px solid #d0d7de;border-radius:10px;padding:40px 48px}
+h1,h2,h3{line-height:1.25;font-weight:600}
+h1{font-size:1.9rem;margin:0 0 .3em;padding-bottom:.3em;border-bottom:1px solid #d8dee4}
+h2{font-size:1.4rem;margin:1.8em 0 .6em;padding-bottom:.25em;border-bottom:1px solid #eaeef2}
+h3{font-size:1.12rem;margin:1.4em 0 .5em}
+p,li{margin:.5em 0}
+a{color:#0969da;text-decoration:none}
+a:hover{text-decoration:underline}
+code{font-family:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;font-size:.86em;background:#eff1f3;padding:.15em .4em;border-radius:6px}
+pre{background:#f6f8fa;border:1px solid #d8dee4;border-radius:8px;padding:14px 16px;overflow:auto}
+pre code{background:none;padding:0;font-size:.85em;line-height:1.45}
+pre>code:not([class]){line-height:1.25}
+blockquote{margin:1em 0;padding:.4em 1em;color:#3d444d;border-left:4px solid #d0d7de;background:#f6f8fa;border-radius:0 6px 6px 0}
+blockquote>:first-child{margin-top:0}blockquote>:last-child{margin-bottom:0}
+table{border-collapse:collapse;width:100%;margin:1em 0;display:block;overflow:auto}
+th,td{border:1px solid #d0d7de;padding:8px 12px;text-align:left;vertical-align:top}
+th{background:#f6f8fa;font-weight:600}
+tr:nth-child(2n) td{background:#f6f8fa}
+hr{border:0;border-top:1px solid #d8dee4;margin:2em 0}
+pre{position:relative}
+pre>button.copy{position:absolute;top:8px;right:8px;padding:5px 9px;cursor:pointer;
+  font:600 .68rem/1 ui-monospace,SFMono-Regular,Consolas,monospace;letter-spacing:.03em;
+  color:#636c76;background:#fff;border:1px solid #d0d7de;border-radius:6px;
+  opacity:0;transition:opacity .12s}
+pre:hover>button.copy,pre>button.copy:focus{opacity:1}
+pre>button.copy.done{color:#0a3622;background:#dafbe1;border-color:#4ac26b}
+@media(hover:none){pre>button.copy{opacity:1}}
+td code.cp{cursor:pointer}
+td code.cp:hover,td code.cp:focus{outline:1px solid #8c959f;outline-offset:1px}
+td code.cp.done{color:#0a3622;background:#dafbe1}
+.docnav{margin:0 0 20px;font-size:.85rem;color:#636c76}
+.docnav a{color:#636c76}
+ul{padding-left:1.4em}ol{padding-left:1.4em}
+img{max-width:100%;height:auto;border:1px solid #d0d7de;border-radius:6px;vertical-align:top}
+a img{cursor:zoom-in}
+figure.clip{margin:1em 0}
+video{display:block;width:100%;height:auto;border:1px solid #d0d7de;border-radius:6px;background:#111}
+tr:has(:target) td{background:#fff8c5!important}
+h2>input.lab,h3>input.lab{width:1em;height:1em;margin:0 .45em 0 0;vertical-align:-.08em;cursor:pointer;accent-color:#1a7f37}
+h2.labdone,h3.labdone,a.labdone{color:#1a7f37}
+a.labdone::after{content:" \2713";font-weight:700}
+.labbadge{position:fixed;right:14px;bottom:14px;z-index:5;background:#fff;border:1px solid #d0d7de;border-radius:999px;
+  padding:6px 12px;font-size:.8rem;color:#3d444d;box-shadow:0 2px 8px rgba(0,0,0,.08)}
+@media(max-width:640px){.card{padding:24px 18px}.wrap{padding:16px 10px 64px}}
+@media print{body{background:#fff;color:#000}.wrap{max-width:none;padding:0}.card{border:0;padding:0}
+ pre>button.copy,.labbadge,.docnav,input.lab{display:none}a{color:inherit}
+ pre,table,blockquote,img,figure{break-inside:avoid}h1,h2,h3{break-after:avoid}}
+@media(prefers-color-scheme:dark){
+ body{background:#0d1117;color:#e6edf3}
+ .card{background:#161b22;border-color:#30363d}
+ h1{border-color:#30363d}h2{border-color:#21262d}
+ code{background:#262c34}
+ pre{background:#0d1117;border-color:#30363d}
+ blockquote{background:#161b22;border-color:#30363d;color:#9198a1}
+ th,td{border-color:#30363d}th{background:#161b22}tr:nth-child(2n) td{background:#12171e}
+ a{color:#4493f8}.docnav,.docnav a{color:#9198a1}
+ hr{border-color:#30363d}
+ pre>button.copy{color:#9198a1;background:#161b22;border-color:#30363d}
+ pre>button.copy.done{color:#aff5b4;background:#1b4721;border-color:#2ea043}
+ td code.cp.done{color:#aff5b4;background:#1b4721}
+ tr:has(:target) td{background:#3b2f00!important}
+ h2.labdone,h3.labdone,a.labdone{color:#3fb950}
+ .labbadge{background:#161b22;border-color:#30363d;color:#9198a1}
+ video{border-color:#30363d}
+}
+</style></head>
+<body><div class="wrap"><div class="card">
+<h1 id="report-viewer-handoff-net-10-tflcbsreportviewer">Report viewer handoff: .NET 10 → <code>TflCbs.ReportViewer</code></h1>
+<p><strong>Status:</strong> contract v1, agreed 2026-09-24 (Phase 1.1 of <a href="../../BACKLOG-legacy-app-wide.html">BACKLOG-legacy-app-wide §4.3</a>).
+<strong>Scope:</strong> how a .NET 10 screen hands a report to the Crystal viewer app and sends the browser there.
+It covers the payload, wire format, endpoints, ticket, security and configuration. The viewer's internals
+(Phase 1.2–1.4) and the .NET 10 client (1.5) implement this document; if it changes, bump <code>version</code>.</p>
+<h2 id="1-the-two-parties">1. The two parties</h2>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>.NET 10 CBS (<code>TflCbs.Host.*</code>)</th>
+<th><code>TflCbs.ReportViewer</code></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Runtime</td>
+<td>.NET 10, Linux or Windows</td>
+<td>.NET Framework 4.8 WebForms web site (no project file; IIS compiles it) + Crystal Reports for VS 13.0.x runtime, 64-bit, Windows/IIS only</td>
+</tr>
+<tr>
+<td>Owns</td>
+<td>Access (<code>CbsAccessMiddleware</code>), parameter screens, running the proc, the standard header values, <strong>every database read and write</strong></td>
+<td>Loading the <code>.rpt</code>, binding the data, the legacy <code>CrystalViewer.aspx</code> experience (paging, zoom, print, export formats, page range, paper size)</td>
+</tr>
+<tr>
+<td>Database</td>
+<td>Yes</td>
+<td><strong>None.</strong> No connection string, no credentials (option <strong>b</strong>)</td>
+</tr>
+<tr>
+<td>In the repo</td>
+<td>the solution (<code>TflCbsNet10Sol.slnx</code>)</td>
+<td><code>TflCbs.ReportViewer/</code> at the repo root, <strong>outside</strong> the <code>.slnx</code> and the arch tests (it is not a .NET 10 assembly)</td>
+</tr>
+</tbody>
+</table>
+<h2 id="2-flow">2. Flow</h2>
+<pre><code>Browser            .NET 10 CBS                                  TflCbs.ReportViewer
+  │ submit params ──▶ CbsAccessMiddleware (menu route)
+  │                   service: run proc → DataSet  (Result&lt;T&gt;)
+  │                   build handoff document
+  │                   POST {HandoffUrl}/handoff.ashx ────────────▶ check shared key
+  │                     gzip XML, streamed                          spool to {SpoolDir}/{ticket}.xml.gz
+  │                   ◀──────────────────────────── 200 {&quot;ticket&quot;:…,&quot;expiresInSeconds&quot;:60}
+  │ ◀── 302 {PublicUrl}/open.aspx?t={ticket}
+  │ GET open.aspx?t= ────────────────────────────────────────────▶ redeem: take + delete ticket (single use)
+  │                                                                 ReadXml spool → session ReportAttributes
+  │                                                                 delete spool file
+  │ ◀──────────────────────────────────────────── 302 CrystalViewer.aspx   (ticket leaves the URL)
+  │ GET CrystalViewer.aspx ──────────────────────────────────────▶ legacy viewer, unchanged
+</code></pre>
+<ul>
+<li>Handoff is <strong>server-to-server only</strong>; report data never passes through the browser.</li>
+<li><code>HandoffUrl</code> (internal address) and <code>PublicUrl</code> (the browser-facing address, normally through the
+  gateway) are separate settings.</li>
+<li>After redeeming, <code>open.aspx</code> redirects straight away, so the ticket stays out of the address bar and
+  history. Every viewer response sends <code>Referrer-Policy: no-referrer</code>.</li>
+</ul>
+<h2 id="3-payload-the-handoff-document">3. Payload: the handoff document</h2>
+<p>One XML document, UTF-8, gzip-compressed, sent as the request body. The .NET 10 side writes it with an
+<code>XmlWriter</code> over a <code>GZipStream</code> over the request stream: <strong>streamed, never held whole in memory</strong>.
+The viewer decompresses straight to the spool file.</p>
+<pre><code class="language-xml">&lt;reportHandoff version=&quot;1&quot;&gt;
+  &lt;user id=&quot;42&quot; loginName=&quot;ratnesh&quot; orgElementId=&quot;7&quot; /&gt;
+  &lt;layout path=&quot;Reports/RetailBanking/SeedReports/AccountOpenedReport.rpt&quot; binding=&quot;firstTable&quot; draftMode=&quot;false&quot; /&gt;
+  &lt;options paperSize=&quot;0&quot; paperOrientation=&quot;0&quot; showBackButton=&quot;true&quot;
+           backUrl=&quot;https://cbs.example/RetailBanking/AccountRegister?Source=AccountRegisterOpen&quot; /&gt;
+  &lt;parameters&gt;
+    &lt;!-- standard header values: always sent, computed by .NET 10 (§4) --&gt;
+    &lt;p name=&quot;BankName&quot;&gt;Trust Bank Ltd&lt;/p&gt;
+    &lt;p name=&quot;Branch&quot;&gt;(001) Head Office&lt;/p&gt;
+    &lt;p name=&quot;ReportNo&quot;&gt;&lt;/p&gt;
+    &lt;p name=&quot;ReportTitle&quot;&gt;Account Opened Report&lt;/p&gt;
+    &lt;p name=&quot;PrintingDetails&quot;&gt;Printed by 'ratnesh' on 24-Sep-2026 at 14:7&lt;/p&gt;
+    &lt;!-- report parameters --&gt;
+    &lt;p name=&quot;FromDate&quot;&gt;01/09/2026&lt;/p&gt;
+    &lt;p name=&quot;ToDate&quot;&gt;24/09/2026&lt;/p&gt;
+    &lt;p name=&quot;AccountCategory&quot;&gt;&lt;/p&gt;
+    &lt;!-- binding=&quot;dataSet&quot; reports may also send typed / sub-report parameters: --&gt;
+    &lt;!-- &lt;p name=&quot;prmDate&quot; type=&quot;date&quot; subreport=&quot;Header.rpt&quot;&gt;2026-09-24&lt;/p&gt; --&gt;
+  &lt;/parameters&gt;
+  &lt;data target=&quot;main&quot;&gt;
+    &lt;!-- DataSet.WriteXml(writer, XmlWriteMode.WriteSchema): inline xs:schema + rows --&gt;
+  &lt;/data&gt;
+  &lt;!-- binding=&quot;dataSet&quot; only, one per sub-report that gets its own data: --&gt;
+  &lt;!-- &lt;data target=&quot;subreport&quot; name=&quot;Guarantors.rpt&quot;&gt; … &lt;/data&gt; --&gt;
+&lt;/reportHandoff&gt;
+</code></pre>
+<h3 id="31-elements">3.1 Elements</h3>
+<table>
+<thead>
+<tr>
+<th>Element / attribute</th>
+<th>Legacy source (<code>ReportAttributes</code>)</th>
+<th>Rule</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>@version</code></td>
+<td>none</td>
+<td><code>1</code>. The viewer rejects versions it does not know with <strong>400</strong></td>
+</tr>
+<tr>
+<td><code>user@id</code>, <code>@loginName</code>, <code>@orgElementId</code></td>
+<td><code>SessionHelper.User</code></td>
+<td>Audit and logging only. <strong>Not</strong> an authorisation input: .NET 10 authorised before handing off</td>
+</tr>
+<tr>
+<td><code>layout@path</code></td>
+<td><code>ReportPath</code> / <code>ReportSource.FilePath</code>, minus <code>App_Path</code></td>
+<td>The legacy <strong>app-relative</strong> path (<code>Reports/…</code>, but also <code>HO/…</code> and <code>Inventory/…</code>), relative to the viewer's <code>LayoutRoot</code>, forward slashes, must end <code>.rpt</code>. The viewer resolves it and <strong>rejects anything that lands outside <code>LayoutRoot</code></strong> (<code>..</code>, rooted paths, other extensions)</td>
+</tr>
+<tr>
+<td><code>layout@binding</code></td>
+<td>which legacy branch set it</td>
+<td><code>firstTable</code>: legacy mode A (<code>ReportPath</code> + <code>DataSet.Tables(0)</code>). <code>dataSet</code>: legacy mode B (<code>ReportSource</code>: whole DataSet + sub-report sources + typed parameters). The viewer replays the matching branch exactly</td>
+</tr>
+<tr>
+<td><code>layout@draftMode</code></td>
+<td><code>DraftMode</code></td>
+<td><code>true</code> → <code>PrintMode.ActiveX</code> (IE-only, Phase 4); <code>false</code> → <code>PrintMode.Pdf</code></td>
+</tr>
+<tr>
+<td><code>options@paperSize</code>, <code>@paperOrientation</code></td>
+<td><code>ReportSource.PrintOptions</code></td>
+<td>The integer values of <code>CrystalDecisions.Shared.PaperSize</code> / <code>PaperOrientation</code>. <code>0</code> = default, meaning "take it from the layout", as legacy does</td>
+</tr>
+<tr>
+<td><code>options@showBackButton</code>, <code>@backUrl</code></td>
+<td><code>ShowBackButton</code>; legacy Back went to <code>ReportSelector.aspx</code></td>
+<td>Back returns to the .NET 10 parameter screen. <code>backUrl</code> must start with one of the viewer's <code>AllowedBackUrlPrefixes</code>, otherwise the button is hidden (no open redirect)</td>
+</tr>
+<tr>
+<td><code>parameters/p</code></td>
+<td><code>ReportParameter</code> (Hashtable, string values) and <code>ReportSource.ReportParameterList</code></td>
+<td><code>@name</code> is required. <code>@type</code> is <code>string</code> (default), <code>number</code> (invariant culture), <code>date</code> (<code>yyyy-MM-dd</code>) or <code>bool</code>. <code>@subreport</code> only with <code>binding="dataSet"</code>. Mode A values are strings, exactly as legacy passed them (<code>uxFromDt.Text</code>)</td>
+</tr>
+<tr>
+<td><em>parameter routing (1.4)</em></td>
+<td>CrystalViewer applies <code>ReportSource.ReportParameterList</code> first, then <code>ReportParameter</code></td>
+<td><code>firstTable</code>: every <code>&lt;p&gt;</code> becomes a string in <code>ReportParameter</code>, as legacy mode A screens did. <code>dataSet</code>: the 5 standard header names (§4) go to <code>ReportParameter</code>, which legacy's viewer set last; every other <code>&lt;p&gt;</code> becomes a typed entry in <code>ReportParameterList</code>, with its sub-report</td>
+</tr>
+<tr>
+<td><code>data[@target='main']</code></td>
+<td><code>DataSet</code> / <code>ReportSource.DataSource</code></td>
+<td>A DataSet written <strong>with its schema</strong>. May be empty (3 layouts take no data)</td>
+</tr>
+<tr>
+<td><code>data[@target='subreport']@name</code></td>
+<td><code>ReportSource.SubReports</code></td>
+<td>The embedded sub-report name as Crystal reports it (<code>Guarantors.rpt</code>). Mode B only</td>
+</tr>
+<tr>
+<td><em>deferred to Phase 3</em></td>
+<td><code>AllowSavingStatutoryReport</code>, <code>Statutory*</code>, <code>MergeReportData</code></td>
+<td>Not in v1. The pilot report does not use them. They arrive with the callback design and bump the version</td>
+</tr>
+</tbody>
+</table>
+<h3 id="32-dataset-rules">3.2 DataSet rules</h3>
+<ul>
+<li><strong>Always <code>XmlWriteMode.WriteSchema</code>.</strong> Crystal binds fields by name <em>and</em> type, so a schema-less
+  DataSet read back as all-string columns breaks numeric and date formatting.</li>
+<li><strong>DateTime columns are set to <code>DataSetDateTime.Unspecified</code> before writing.</strong> The default
+  (<code>UnspecifiedLocal</code>) writes the sending server's UTC offset, and a viewer host in another time zone
+  would shift every date. Legacy never crossed a process boundary, so it never had this problem.</li>
+<li>No <code>BinaryFormatter</code> / <code>RemotingFormat.Binary</code>: it is gone from .NET 9+, and XML plus gzip compresses about 10×.</li>
+<li>Column names come from the proc as-is: the layout's field list (<code>rpt-layout-check.tsv</code>) is the contract.</li>
+</ul>
+<h2 id="4-standard-header-values">4. Standard header values</h2>
+<p>On every render, legacy <code>CrystalViewer.SetReportOptions</code> sets five parameters from the database and the
+session. Under option (b) the viewer has no database, so <strong>.NET 10 computes them</strong> and sends them as ordinary
+<code>&lt;p&gt;</code> elements, with the same values and fallbacks:</p>
+<table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Legacy logic</th>
+<th>.NET 10 source</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>BankName</code></td>
+<td><code>g_BankVariables</code> <code>NAME='BANK_NAME'</code>; on any failure <code>"[Bank Name not configured]"</code></td>
+<td><code>IBankVariableSource.GetBankVariablesAsync()["BANK_NAME"]</code>, same fallback text</td>
+</tr>
+<tr>
+<td><code>Branch</code></td>
+<td><code>ReportBranchName</code> if set, else <code>"(" &amp; OrgElementCode &amp; ") " &amp; OrgElementName</code> of the user</td>
+<td>caller override, else the session <code>BussinessUser</code></td>
+</tr>
+<tr>
+<td><code>ReportNo</code></td>
+<td><code>ReportTitle</code> empty and menu found: <code>A_MENUS.BANKREPORTNO</code>, else <code>TRUSTBANKREPORTNO</code>; otherwise <code>""</code></td>
+<td><code>A_MENUS</code> row by menu id</td>
+</tr>
+<tr>
+<td><code>ReportTitle</code></td>
+<td><code>ReportTitle</code> if set, else <code>A_MENUS.HEADING</code></td>
+<td>caller override, else <code>A_MENUS.HEADING</code></td>
+</tr>
+<tr>
+<td><code>PrintingDetails</code></td>
+<td><code>"Printed by '" &amp; LoginName &amp; "' on " &amp; Now.ToString("dd-MMM-yyyy") &amp; " at " &amp; Hour &amp; ":" &amp; Minute</code></td>
+<td>same format. Minutes are <strong>not</strong> zero-padded (<code>14:7</code>); that is legacy output, kept as-is</td>
+</tr>
+</tbody>
+</table>
+<p><code>g_ReportSettings</code> (<code>reportsettings.LoadReportSettings()</code>) is also loaded by legacy but never read.
+It is not carried over.</p>
+<h2 id="5-endpoints">5. Endpoints</h2>
+<h3 id="51-post-handoffurlhandoffashx">5.1 <code>POST {HandoffUrl}/handoff.ashx</code></h3>
+<table>
+<thead>
+<tr>
+<th></th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Headers</td>
+<td><code>X-Cbs-Viewer-Key: &lt;shared key&gt;</code> · <code>Content-Type: application/xml</code> · <code>Content-Encoding: gzip</code></td>
+</tr>
+<tr>
+<td>Body</td>
+<td>the handoff document (§3), gzip, streamed</td>
+</tr>
+<tr>
+<td>200</td>
+<td><code>{"ticket":"&lt;43 chars base64url&gt;","expiresInSeconds":60}</code></td>
+</tr>
+<tr>
+<td>400</td>
+<td>unknown <code>version</code>, malformed XML, bad <code>layout@path</code>, layout file missing</td>
+</tr>
+<tr>
+<td>401</td>
+<td>missing or wrong key. Comparison is constant-time</td>
+</tr>
+<tr>
+<td>413</td>
+<td>body over the request limit (limits are raised to effectively unbounded; §8)</td>
+</tr>
+<tr>
+<td>500</td>
+<td>anything else. The body carries a correlation id only, never data</td>
+</tr>
+</tbody>
+</table>
+<p>The viewer validates the document <strong>after</strong> spooling (parse and check <code>version</code>, <code>layout</code>, element shape)
+and before issuing the ticket, so a bad handoff fails on the server-to-server call, where .NET 10 can
+turn it into a <code>Result</code> failure, rather than in the user's browser.</p>
+<h3 id="52-get-publicurlopenaspxtticket">5.2 <code>GET {PublicUrl}/open.aspx?t={ticket}</code></h3>
+<ol>
+<li>Look up the ticket and <strong>remove it in the same step</strong> (single use). Unknown, used or expired → a
+   plain "This report link has expired — run the report again" page. That page has no back link,
+   because the ticket that carried <code>backUrl</code> is gone.</li>
+<li><code>ReadXml</code> the spool file into a new <code>ReportAttributes</code> in the session. This keeps legacy's
+   one-report-per-session rule (<code>GlobalReportAttributes</code>), so a new report replaces the previous
+   DataSet. Then delete the spool file.</li>
+<li><code>302 CrystalViewer.aspx</code>.</li>
+</ol>
+<h2 id="6-ticket">6. Ticket</h2>
+<ul>
+<li><strong>32 random bytes</strong> from a cryptographic RNG, base64url (43 characters). The ticket is a key into the viewer's store, not a signed token.</li>
+<li>The store is in-memory, <code>{ticket → spool path, user id, login name, created}</code>.
+  <em>ponytail: in-memory store = single viewer instance (or sticky sessions); a shared store if it ever scales out.</em></li>
+<li><strong>Single use:</strong> removed on redeem, whatever the outcome.</li>
+<li><strong>Expiry: 60 s</strong> from issue (<code>TicketSeconds</code>). A sweep deletes expired tickets and orphaned spool files
+  (on each handoff, plus a timer).</li>
+<li><strong>Not tied to the client IP</strong> (decision 2026-09-24). Single use, 60 s and 256 bits of randomness are the protection.</li>
+</ul>
+<h2 id="7-security">7. Security</h2>
+<ul>
+<li><strong>Access stays fail-closed in .NET 10.</strong> Only a request that passed <code>CbsAccessMiddleware</code> for the report's
+  menu route can cause a handoff. The viewer trusts the handoff <strong>only</strong> through the shared key, and a browser
+  <strong>only</strong> through a ticket.</li>
+<li><strong>Shared key:</strong> kept in configuration (decision 2026-09-24): the viewer's <code>web.config</code>
+  (<code>ReportViewer.SharedKey</code>) and the .NET 10 <code>ReportViewer:SharedKey</code>, with the same value on both sides.
+  <code>CBS_REPORTVIEWER_KEY</code>, if set, overrides either one. Never logged.</li>
+<li><code>web.config</code> is committed, so the repo value is a <strong>dev key known to everyone with repo access</strong>. Each
+    environment must set its own value in its deployed <code>web.config</code> and CBS config.</li>
+<li>TLS is required outside dev. The handoff endpoint should also be IP-restricted in IIS to the CBS hosts.</li>
+<li><strong>Layout path traversal:</strong> <code>layout@path</code> must resolve inside <code>LayoutRoot</code> (§3.1).</li>
+<li><strong>Open redirect:</strong> <code>backUrl</code> is used only if it matches <code>AllowedBackUrlPrefixes</code> (§3.1).</li>
+<li><strong>Viewer session:</strong> its own ASP.NET session cookie (<code>HttpOnly</code>, <code>Secure</code>, <code>SameSite=Lax</code>), InProc, a
+  <strong>20-minute</strong> timeout (legacy's value, and under CBS's 25-minute server TTL).
+  <strong>Known gap:</strong> a CBS logout does not end the viewer session; the report stays visible in that tab until the
+  viewer session times out. Revisit in Phase 3 (a logout call into the viewer).</li>
+<li><strong>Logging:</strong> ticket hash (never the ticket), user id, layout, compressed bytes, row count, and spool / redeem /
+  render times. <strong>Never</strong> data values or the key.</li>
+</ul>
+<h2 id="8-configuration">8. Configuration</h2>
+<table>
+<thead>
+<tr>
+<th>.NET 10 (<code>ReportViewer</code> section)</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>HandoffUrl</code></td>
+<td>internal base URL for <code>handoff.ashx</code></td>
+</tr>
+<tr>
+<td><code>PublicUrl</code></td>
+<td>browser-facing base URL for <code>open.aspx</code> (through the gateway)</td>
+</tr>
+<tr>
+<td><code>SharedKey</code></td>
+<td>the handoff key; must equal the viewer's <code>ReportViewer.SharedKey</code> (<code>CBS_REPORTVIEWER_KEY</code> overrides)</td>
+</tr>
+<tr>
+<td><code>TimeoutSeconds</code></td>
+<td>the <code>HttpClient</code> timeout for the handoff (large reports)</td>
+</tr>
+</tbody>
+</table>
+<table>
+<thead>
+<tr>
+<th>Viewer (<code>web.config</code> <code>appSettings</code>)</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>ReportViewer.LayoutRoot</code></td>
+<td>folder holding the <code>Reports/</code> layout tree</td>
+</tr>
+<tr>
+<td><code>ReportViewer.SpoolDir</code></td>
+<td>temp folder, writable only by the app pool identity</td>
+</tr>
+<tr>
+<td><code>ReportViewer.TicketSeconds</code></td>
+<td>default <code>60</code></td>
+</tr>
+<tr>
+<td><code>ReportViewer.AllowedBackUrlPrefixes</code></td>
+<td><code>;</code>-separated list of CBS origins and paths</td>
+</tr>
+<tr>
+<td><code>ReportViewer.SharedKey</code></td>
+<td>the handoff key (the repo holds the dev value; each environment sets its own). <code>CBS_REPORTVIEWER_KEY</code> overrides it if set</td>
+</tr>
+<tr>
+<td><code>httpRuntime maxRequestLength</code> / <code>requestLimits maxAllowedContentLength</code> / <code>executionTimeout</code></td>
+<td>raised to effectively unbounded. <strong>No size cap</strong> (legacy had none, §4.3 item 0.6)</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Deployment note:</strong> the viewer's <code>web.config</code> is part of the site's files, so a redeploy that copies the repo's
+<code>web.config</code> also resets the key to the dev value. Each environment must re-apply its own key after a redeploy, or
+set <code>CBS_REPORTVIEWER_KEY</code> on the app pool so the key survives redeploys.</p>
+<h2 id="9-what-the-net-10-side-returns-to-the-screen">9. What the .NET 10 side returns to the screen</h2>
+<p><strong>Implementation (1.5):</strong> <code>TflCbs.Framework.Reports.ReportViewer.OpenAsync(ReportRequest)</code>. The screen sets the layout, binding, data, its own parameters, <code>ReportId</code> (the report's menu id, legacy <code>Request("reportid")</code>) and <code>BackUrl</code>; the client adds the §4 header values (through the <code>IReportMenuSource</code> port for the menu row) and the user. <code>ReportViewerTransport</code> is the wire half.</p>
+<p>The handoff client returns <code>Result&lt;string&gt;</code>: the browser URL <code>{PublicUrl}/open.aspx?t=…</code>. The controller
+answers with a <code>302</code> to it. The browser navigates in the <strong>same window</strong>, as legacy's
+<code>Response.Redirect("..\CrystalViewer.aspx")</code> did, and Back (§3.1) returns to the parameter screen.
+Failures come back as <code>Result</code> errors and are shown with the usual CRUD acknowledgement modal:
+- an empty result (legacy: <code>DbRecordNotExists</code>, "no records")
+- viewer unreachable
+- 4xx or 5xx from the viewer</p>
+<h2 id="10-deliberately-not-in-v1">10. Deliberately not in v1</h2>
+<ul>
+<li>Statutory save, e-statement, merged report and submit for consolidation: Phase 3, as callbacks into .NET 10.</li>
+<li>Legacy's <code>IsStatement=1</code> (e-statement layout: controls hidden, Send E-Statement shown) and <code>IsHeadRequired=1</code>
+  (header, footer, export and Back hidden) viewer modes. Legacy set them through the viewer URL. They will need
+  <code>&lt;options&gt;</code> attributes when their screens migrate (Phase 3).</li>
+<li>Ending the viewer session on CBS logout: Phase 3 (§7).</li>
+<li>Streaming rows straight from the data reader into the XML, so .NET 10 never holds the whole DataSet: only if logged sizes ever call for it.</li>
+<li>A shared ticket store for more than one viewer instance.</li>
+</ul>
+</div></div>
+<script>
+(function(){
+ function put(t){
+  if(navigator.clipboard&&navigator.clipboard.writeText)return navigator.clipboard.writeText(t);
+  return new Promise(function(res,rej){
+   var a=document.createElement('textarea');a.value=t;a.setAttribute('readonly','');
+   a.style.cssText='position:fixed;top:0;left:0;opacity:0';document.body.appendChild(a);
+   a.select();var ok=false;try{ok=document.execCommand('copy')}catch(e){}
+   document.body.removeChild(a);ok?res():rej()});
+ }
+ function flash(el,txt,ms){
+  var was=el.textContent;el.classList.add('done');if(txt)el.textContent=txt;
+  setTimeout(function(){el.classList.remove('done');if(txt)el.textContent=was},ms||1200);
+ }
+ function copy(text,el,okTxt){
+  put(text).then(function(){flash(el,okTxt)},function(){
+   if(okTxt){var w=el.textContent;el.textContent='Ctrl+C';setTimeout(function(){el.textContent=w},2000)}});
+ }
+ document.querySelectorAll('pre').forEach(function(pre){
+  if(pre.classList.contains('txtdoc'))return;
+  var b=document.createElement('button');
+  b.type='button';b.className='copy';b.textContent='Copy';
+  b.setAttribute('aria-label','Copy this code block to the clipboard');
+  b.addEventListener('click',function(){copy((pre.querySelector('code')||pre).innerText,b,'Copied')});
+  pre.appendChild(b);
+ });
+ document.querySelectorAll('td code').forEach(function(c){
+  if(!c.textContent.trim())return;
+  c.classList.add('cp');c.tabIndex=0;c.setAttribute('role','button');
+  c.title='Click to copy';
+  c.addEventListener('click',function(){copy(c.textContent,c)});
+  c.addEventListener('keydown',function(e){
+   if(e.key==='Enter'||e.key===' '){e.preventDefault();copy(c.textContent,c)}});
+ });
+ // Lab tick-boxes: any heading whose id starts "lab-" gets a checkbox, remembered in this
+ // browser only. Storage can be missing (private window, blocked site data) - the page
+ // still works, the ticks just do not persist.
+ function sget(k){try{return localStorage.getItem(k)}catch(e){return null}}
+ function sset(k,on){try{on?localStorage.setItem(k,'1'):localStorage.removeItem(k)}catch(e){}}
+ var labs=[].slice.call(document.querySelectorAll('h2[id^="lab-"],h3[id^="lab-"]'));
+ if(labs.length){
+  var badge=document.createElement('div');badge.className='labbadge';document.body.appendChild(badge);
+  var count=function(){badge.textContent='Labs done: '+labs.filter(function(h){return sget('labdone:'+h.id)}).length+' of '+labs.length};
+  labs.forEach(function(h){
+   var cb=document.createElement('input');cb.type='checkbox';cb.className='lab';
+   cb.title='Tick when you have finished this lab (remembered in this browser)';cb.setAttribute('aria-label','Lab done');
+   cb.checked=!!sget('labdone:'+h.id);h.classList.toggle('labdone',cb.checked);
+   cb.addEventListener('change',function(){sset('labdone:'+h.id,cb.checked);h.classList.toggle('labdone',cb.checked);count()});
+   h.insertBefore(cb,h.firstChild);
+  });
+  count();
+ }
+ document.querySelectorAll('li>a[href*="#lab-"]').forEach(function(a){
+  if(sget('labdone:'+a.getAttribute('href').split('#')[1]))a.classList.add('labdone')});
+})();
+</script>
+</body></html>

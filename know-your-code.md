@@ -17,6 +17,12 @@ with a *Cheat sheet* and a *Ways to get it wrong* list — those two are what pe
   - [1.5 Cheat sheet](#15-cheat-sheet)
   - [1.6 Four ways to get it wrong](#16-four-ways-to-get-it-wrong)
   - [1.7 What tokens are not](#17-what-tokens-are-not)
+- [2. Portable column types — the two banned SQL Server types](#2-portable-column-types--the-two-banned-sql-server-types)
+  - [2.1 The rule](#21-the-rule)
+  - [2.2 Why, and how both were found](#22-why-and-how-both-were-found)
+  - [2.3 Where the translation happens now](#23-where-the-translation-happens-now)
+  - [2.4 Cheat sheet](#24-cheat-sheet)
+  - [2.5 Five ways to get it wrong](#25-five-ways-to-get-it-wrong)
 
 ---
 
@@ -216,3 +222,101 @@ session". Access is enforced separately:
   call.
 
 Tokens secure the **handoff**. The guard and the service are the access control.
+
+---
+
+## 2. Portable column types — the two banned SQL Server types
+
+```
+flag  →  INT holding 0/1        never BIT, NUMBER(1), BOOLEAN
+GUID  →  CHAR(36) UPPERCASE     never UNIQUEIDENTIFIER, RAW(16), UUID
+```
+
+SQL Server, Oracle and PostgreSQL are all production targets. A column type only one of them can bind is a
+defect — and, as below, a defect the read path hides.
+
+Sources: [`ParameterValue.cs`](../libs/TflOmniDb/TflOmniDb/Repository/ParameterValue.cs), the migration
+scripts `scripts/bit-to-int.sqlserver.sql` and `scripts/guid-to-char36.{sqlserver.sql,oracle-verify.sql}`,
+and the full rationale in [`xnet-scripts-sqlserver.sql`](xnet-scripts-sqlserver.sql).
+
+### 2.1 The rule
+
+| | SQL Server | Oracle | PostgreSQL | Entity property | `CoreDataType` |
+|---|---|---|---|---|---|
+| flag | `INT` | `NUMBER(10,0)` | `INTEGER` | `int?` | `Int32` |
+| GUID | `CHAR(36)` | `CHAR(36 CHAR)` | `CHAR(36)` | `string?` | `AnsiStringFixed` |
+
+In code:
+
+```csharp
+if (user.ALLOWOTHERBRANCHAPPROVAL == 1)                  // not == true, not ?? false
+    …
+
+row.GUID = Guid.NewGuid().ToString().ToUpperInvariant();  // never .ToString() alone
+```
+
+This applies to **new** tables too, not only conversions. Declare the portable type from the start; in SQL
+Server a GUID default is `DEFAULT (CONVERT(char(36), newid()))`.
+
+> The TflOmniDb datatype-mapping docs map `BIT` → `Boolean` → `NUMBER(1,0)` → `BOOLEAN`. That is the
+> **library default**, not this project's convention. `INT` wins here.
+
+### 2.2 Why, and how both were found
+
+Oracle's managed provider cannot bind either CLR type:
+
+- a CLR `bool` parameter → **ORA-00932**, inconsistent datatypes;
+- a CLR `Guid` parameter → `DbType.Guid` → **`ArgumentException`**.
+
+Both were invisible for months because **the read path coerces**. `ColumnDescriptor.SetValue` and
+`PocoMaterializer` run `Convert.ChangeType` and `Guid.Parse`, so `NUMBER(10,0)` reads back into a `bool?`
+and `CHAR(36)` into a `Guid?` quite happily. Every read test passed. Every *write* of those columns had
+been failing on Oracle since the port, and nothing said so.
+
+That is the general lesson, not a footnote: **a read-only test suite proves nothing about the write path on
+a second provider.** Screen coverage in this repo is therefore round-trip — create, search, update, search,
+delete — see [screens-code-guide-xnet-7.md → Cross-provider verification](screens-code-guide-xnet-7.md#cross-provider-verification).
+
+### 2.3 Where the translation happens now
+
+Nowhere, for flags and GUIDs — that is the point. What the code holds is what the column holds, on all three
+providers, so there is no conversion left to get wrong.
+
+The DAL keeps two narrow adjustments, both in `ParameterValue`, and both exist for cases the convention does
+**not** cover:
+
+```csharp
+Normalize(provider, value)          // a stray CLR bool → 1/0 on Oracle; null → DBNull
+TypeForNull(provider, value, col)   // SQL Server only: a null parameter is typed from its
+                                    // ColumnDescriptor, because ADO.NET infers nvarchar from
+                                    // DBNull and SQL Server refuses nvarchar → binary (Msg 257)
+```
+
+`TypeForNull` is deliberately SQL-Server-only: declaring the mapped `DbType` on Oracle breaks every insert,
+because ODP.NET rejects `DbType.Guid` and `DbType.DateTime2` outright. Covered by `ParameterTypingTests`
+(no database needed).
+
+### 2.4 Cheat sheet
+
+| You are… | Do this |
+|---|---|
+| adding a flag column | `INT` (`NUMBER(10,0)` / `INTEGER`); entity `int?` |
+| adding a GUID column | `CHAR(36)`; entity `string?`; SQL Server default `CONVERT(char(36), newid())` |
+| reading a flag | `x.ISACTIVE == 1` |
+| writing a flag | `1` / `0` |
+| writing a GUID | `Guid.NewGuid().ToString().ToUpperInvariant()` |
+| binding a checkbox | `bool` lives in the Razor view model only — convert in the controller |
+| converting an existing column | run the script, regenerate the entity, then fix the call sites (the build finds them) |
+
+### 2.5 Five ways to get it wrong
+
+1. **`.ToString()` without `.ToUpperInvariant()`.** It writes lowercase; every `CHAR(36)` comparison against
+   an existing row then fails to match. Nothing throws — the row is simply never found.
+2. **`== true` or `?? false` on a flag.** Does not compile against `int?`, which is the good case; what does
+   compile is a sloppy `!= 0`, which quietly accepts 2.
+3. **Declaring `bool` on a new service DTO.** It works on SQL Server and dies on Oracle at the first write.
+   Keep `bool` in the view model, `int` from the controller inwards.
+4. **Trusting a green test run.** A provider whose connection string is empty is *skipped*, not failed, and
+   a read-only test passes on a write path that has never worked.
+5. **Assuming `INT` enforces 0/1.** `BIT` did; `INT` does not, on any provider. No `CHECK (col IN (0,1))`
+   exists on these columns yet — still open.

@@ -1,6 +1,6 @@
 # Observability — a plain-language primer
 
-*What "observability" means, the pieces involved, and the dev setup we use to see it — written for someone new to it. This covers the **backend** (where telemetry is collected and viewed). Wiring the app to emit telemetry is a separate step (Phase 2).*
+*What "observability" means, the pieces involved, and the dev setup we use to see it — written for someone new to it. This covers the **backend** (where telemetry is collected and viewed). Wiring the app to emit telemetry was Phase 2 (done). For what the app emits and how to switch it on, see [telemetry.md](telemetry.md).*
 
 ---
 

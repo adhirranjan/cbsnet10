@@ -1,10 +1,21 @@
-- xnet - update only selected column; do not fetch complete row and then update
-- Remove comments from Code before delivery
-- screen <-> module map as in legacy xnet (no adventure)
-- PrepareWidthsAsync 
-- HoldingAmountService uow.Repository<T>(), not data.Repository<T>(). 
-- see query before executing
+************************************************************
+**********Remove comments from Code before delivery**********
+************************************************************
+- Redis
+- Queuing (ServiceBroker)
+- Grafana
+- Crystal Reports (viewer and other stuffs)
 
+- service broker - where else we can use - let AI study xnet legacy codebase
+- redis cache - where else we can use - let AI study xnet legacy codebase
+
+
+- screen <-> module map as in legacy xnet (no adventure)
+//DONE- PrepareWidthsAsync 
+- HoldingAmountService uow.Repository<T>(), not data.Repository<T>(). 
+//DONE- see query before executing
+
+//DONE - xnet - update only selected column; do not fetch complete row and then update
 //DONE - XNET - Alter viewer on module selection 
 
 //- Avoid paging or less than 100 rows (configurable) 

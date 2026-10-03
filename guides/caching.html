@@ -1,0 +1,869 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Caching in TrustBank CBS</title>
+<style>
+:root{color-scheme:light dark}
+*{box-sizing:border-box}
+body{margin:0;background:#f6f8fa;color:#1f2328;font:16px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif}
+.wrap{max-width:900px;margin:0 auto;padding:32px 24px 96px}
+.card{background:#fff;border:1px solid #d0d7de;border-radius:10px;padding:40px 48px}
+h1,h2,h3{line-height:1.25;font-weight:600}
+h1{font-size:1.9rem;margin:0 0 .3em;padding-bottom:.3em;border-bottom:1px solid #d8dee4}
+h2{font-size:1.4rem;margin:1.8em 0 .6em;padding-bottom:.25em;border-bottom:1px solid #eaeef2}
+h3{font-size:1.12rem;margin:1.4em 0 .5em}
+p,li{margin:.5em 0}
+a{color:#0969da;text-decoration:none}
+a:hover{text-decoration:underline}
+code{font-family:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;font-size:.86em;background:#eff1f3;padding:.15em .4em;border-radius:6px}
+pre{background:#f6f8fa;border:1px solid #d8dee4;border-radius:8px;padding:14px 16px;overflow:auto}
+pre code{background:none;padding:0;font-size:.85em;line-height:1.45}
+pre>code:not([class]){line-height:1.25}
+blockquote{margin:1em 0;padding:.4em 1em;color:#3d444d;border-left:4px solid #d0d7de;background:#f6f8fa;border-radius:0 6px 6px 0}
+blockquote>:first-child{margin-top:0}blockquote>:last-child{margin-bottom:0}
+table{border-collapse:collapse;width:100%;margin:1em 0;display:block;overflow:auto}
+th,td{border:1px solid #d0d7de;padding:8px 12px;text-align:left;vertical-align:top}
+th{background:#f6f8fa;font-weight:600}
+tr:nth-child(2n) td{background:#f6f8fa}
+hr{border:0;border-top:1px solid #d8dee4;margin:2em 0}
+pre{position:relative}
+pre>button.copy{position:absolute;top:8px;right:8px;padding:5px 9px;cursor:pointer;
+  font:600 .68rem/1 ui-monospace,SFMono-Regular,Consolas,monospace;letter-spacing:.03em;
+  color:#636c76;background:#fff;border:1px solid #d0d7de;border-radius:6px;
+  opacity:0;transition:opacity .12s}
+pre:hover>button.copy,pre>button.copy:focus{opacity:1}
+pre>button.copy.done{color:#0a3622;background:#dafbe1;border-color:#4ac26b}
+@media(hover:none){pre>button.copy{opacity:1}}
+td code.cp{cursor:pointer}
+td code.cp:hover,td code.cp:focus{outline:1px solid #8c959f;outline-offset:1px}
+td code.cp.done{color:#0a3622;background:#dafbe1}
+.docnav{margin:0 0 20px;font-size:.85rem;color:#636c76}
+.docnav a{color:#636c76}
+ul{padding-left:1.4em}ol{padding-left:1.4em}
+img{max-width:100%;height:auto;border:1px solid #d0d7de;border-radius:6px;vertical-align:top}
+a img{cursor:zoom-in}
+figure.clip{margin:1em 0}
+video{display:block;width:100%;height:auto;border:1px solid #d0d7de;border-radius:6px;background:#111}
+tr:has(:target) td{background:#fff8c5!important}
+h2>input.lab,h3>input.lab{width:1em;height:1em;margin:0 .45em 0 0;vertical-align:-.08em;cursor:pointer;accent-color:#1a7f37}
+h2.labdone,h3.labdone,a.labdone{color:#1a7f37}
+a.labdone::after{content:" \2713";font-weight:700}
+.labbadge{position:fixed;right:14px;bottom:14px;z-index:5;background:#fff;border:1px solid #d0d7de;border-radius:999px;
+  padding:6px 12px;font-size:.8rem;color:#3d444d;box-shadow:0 2px 8px rgba(0,0,0,.08)}
+@media(max-width:640px){.card{padding:24px 18px}.wrap{padding:16px 10px 64px}}
+@media print{body{background:#fff;color:#000}.wrap{max-width:none;padding:0}.card{border:0;padding:0}
+ pre>button.copy,.labbadge,.docnav,input.lab{display:none}a{color:inherit}
+ pre,table,blockquote,img,figure{break-inside:avoid}h1,h2,h3{break-after:avoid}}
+@media(prefers-color-scheme:dark){
+ body{background:#0d1117;color:#e6edf3}
+ .card{background:#161b22;border-color:#30363d}
+ h1{border-color:#30363d}h2{border-color:#21262d}
+ code{background:#262c34}
+ pre{background:#0d1117;border-color:#30363d}
+ blockquote{background:#161b22;border-color:#30363d;color:#9198a1}
+ th,td{border-color:#30363d}th{background:#161b22}tr:nth-child(2n) td{background:#12171e}
+ a{color:#4493f8}.docnav,.docnav a{color:#9198a1}
+ hr{border-color:#30363d}
+ pre>button.copy{color:#9198a1;background:#161b22;border-color:#30363d}
+ pre>button.copy.done{color:#aff5b4;background:#1b4721;border-color:#2ea043}
+ td code.cp.done{color:#aff5b4;background:#1b4721}
+ tr:has(:target) td{background:#3b2f00!important}
+ h2.labdone,h3.labdone,a.labdone{color:#3fb950}
+ .labbadge{background:#161b22;border-color:#30363d;color:#9198a1}
+ video{border-color:#30363d}
+}
+</style></head>
+<body><div class="wrap"><div class="card">
+<h1 id="caching-in-trustbank-cbs">Caching in TrustBank CBS</h1>
+<p>Every cache in the codebase, what it holds, how long, and how it is invalidated. Diagrams are
+<a href="https://mermaid.js.org/">Mermaid</a> — they render in VS Code (Markdown Preview) and on GitHub.</p>
+<p>Source of truth:
+- Reference cache: <a href="../../TflCbs.Framework/Caching/"><code>TflCbs.Framework/Caching/</code></a> — <code>IReferenceCache</code>, <code>ReferenceCache</code>, <code>ReferenceCatalog</code>, <code>ReferenceCacheRegistration</code>
+- Read-through accessor: <a href="../../TflCbs.Framework/Services/BankVars.cs"><code>BankVars.cs</code></a>
+- Admin screen: <a href="../../TflCbs.Modules.Bank.Web/Areas/Bank/Controllers/ReferenceCacheController.cs"><code>ReferenceCacheController.cs</code></a> → <code>/Bank/ReferenceCache</code>
+- Tests: <a href="../../TflCbs.ArchTests/ReferenceCacheTests.cs"><code>ReferenceCacheTests.cs</code></a>, <a href="../../TflCbs.ArchTests/AccountWidthsCacheTests.cs"><code>AccountWidthsCacheTests.cs</code></a>, <a href="../../TflCbs.IntegrationTests/SessionCheckCacheTests.cs"><code>SessionCheckCacheTests.cs</code></a></p>
+<hr />
+<h2 id="1-the-map-five-kinds-of-cache">1. The map — five kinds of cache</h2>
+<pre><code class="language-mermaid">flowchart TB
+    subgraph B[&quot;Browser&quot;]
+        B1[&quot;localStorage&lt;br/&gt;menu hash · idle clock · theme&quot;]
+        B2[&quot;cbs-search.js&lt;br/&gt;client-paged row set&quot;]
+        B3[&quot;asp-append-version&lt;br/&gt;asset fingerprints&quot;]
+    end
+    subgraph P[&quot;One host process&quot;]
+        M1[&quot;IMemoryCache&lt;br/&gt;session · session-check · revocation&lt;br/&gt;form keys · broadcast&quot;]
+        M2[&quot;static ConcurrentDictionary&lt;br/&gt;TflOmniDb metadata + SQL&quot;]
+    end
+    subgraph D[&quot;IDistributedCache — Memory / Redis / SQL Server&quot;]
+        R[&quot;IReferenceCache&lt;br/&gt;bankvars · branchvars · accountformat&quot;]
+    end
+    DB[(&quot;Database&quot;)]
+
+    B1 &amp; B2 &amp; B3 --&gt; P
+    M1 --&gt; D
+    R -- &quot;miss / fail-open&quot; --&gt; DB
+    M2 -. &quot;reflection + SQL strings only&lt;br/&gt;never data&quot; .-&gt; DB
+</code></pre>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Kind</th>
+<th>Scope</th>
+<th>Survives restart?</th>
+<th>Shared across hosts?</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td><code>IReferenceCache</code> (distributed)</td>
+<td>app</td>
+<td>with Redis/SqlServer</td>
+<td>with Redis/SqlServer</td>
+</tr>
+<tr>
+<td>2</td>
+<td><code>IMemoryCache</code></td>
+<td>process</td>
+<td>no</td>
+<td>no</td>
+</tr>
+<tr>
+<td>3</td>
+<td><code>static ConcurrentDictionary</code> (TflOmniDb)</td>
+<td>process</td>
+<td>no</td>
+<td>no</td>
+</tr>
+<tr>
+<td>4</td>
+<td><code>HttpContext.Items</code> memo</td>
+<td>one request</td>
+<td>—</td>
+<td>—</td>
+</tr>
+<tr>
+<td>5</td>
+<td>Browser (<code>localStorage</code>, JS state)</td>
+<td>one browser</td>
+<td>yes</td>
+<td>—</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="2-the-reference-cache-the-one-that-matters">2. The reference cache — the one that matters</h2>
+<p>Slow-changing master data behind one interface, <a href="../../TflCbs.Framework/Caching/IReferenceCache.cs"><code>IReferenceCache</code></a>:</p>
+<pre><code class="language-csharp">Task&lt;T&gt;    GetOrCreateAsync&lt;T&gt;(string category, string? id, Func&lt;CancellationToken, Task&lt;T&gt;&gt; load,
+                               TimeSpan? ttl = null, CancellationToken ct = default);
+Task&lt;bool&gt; RemoveAsync(string category, string? id = null, CancellationToken ct = default);
+Task&lt;bool&gt; RemoveAllAsync(CancellationToken ct = default);
+Task&lt;IReadOnlyList&lt;CacheEntryInfo&gt;&gt; DescribeAsync(CancellationToken ct = default);
+</code></pre>
+<p><strong>Reads fail open; invalidation does not.</strong> The two <code>Remove*</code> methods return <code>bool</code> because there is no
+safe way to fail open on a flush: an unreachable cache means the stale values are <em>still being served</em>,
+so they report <code>false</code> rather than let a caller announce a flush that did not happen. They still never
+throw.</p>
+<p>Keyed by <strong><code>(category, id)</code></strong> — <code>id</code> is <code>null</code> for a whole-category blob (bank variables) or a
+discriminator for sliced data (branch variables, per branch).</p>
+<h3 id="two-hard-rules">Two hard rules</h3>
+<table>
+<thead>
+<tr>
+<th>Rule</th>
+<th>What it means</th>
+<th>Where it lives</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>R-CACHE-01</strong> — the provider is OPTIONAL</td>
+<td>The app must start and run fully with <strong>no</strong> cache configured. Absent/unknown <code>Cache:Provider</code> ⇒ in-memory. Redis is never a hard dependency.</td>
+<td><a href="../../TflCbs.Framework/Caching/ReferenceCacheRegistration.cs"><code>ReferenceCacheRegistration.cs</code></a> · test <code>ReferenceCache_Resolves_WithNoCacheConfig_FallsBackToInMemory</code></td>
+</tr>
+<tr>
+<td><strong>R-CACHE-02</strong> — failures are fail-open</td>
+<td>A runtime cache error falls back to the DB loader transparently. Log it; never throw to the caller; never show a user-facing error.</td>
+<td>every <code>try/catch</code> in <a href="../../TflCbs.Framework/Caching/ReferenceCache.cs"><code>ReferenceCache.cs</code></a></td>
+</tr>
+</tbody>
+</table>
+<h3 id="key-shape">Key shape</h3>
+<pre><code>cbs:ref:{generation}:{category}:{id ?? &quot;_&quot;}      e.g.  cbs:ref:3:branchvars:12
+cbs:ref:gen                                       the generation counter
+cbs:ref:index                                     JSON map of live entries, for the inspector UI
+</code></pre>
+<p>With Redis, <code>Cache:Redis:InstanceName</code> (<code>cbs:</code>) prefixes all of it again — hence <code>cbs:cbs:ref:gen</code>
+in a <code>redis-cli KEYS *</code>.</p>
+<h3 id="read-through-with-a-stampede-guard">Read-through, with a stampede guard</h3>
+<pre><code class="language-mermaid">sequenceDiagram
+    autonumber
+    participant C as Caller
+    participant RC as ReferenceCache
+    participant G as per-key gate&lt;br/&gt;(SemaphoreSlim)
+    participant D as IDistributedCache
+    participant L as loader (DB)
+
+    C-&gt;&gt;RC: GetOrCreateAsync(&quot;bankvars&quot;, null, load)
+    RC-&gt;&gt;RC: GenAsync — generation, memoized 5s
+    RC-&gt;&gt;D: GetStringAsync(cbs:ref:{gen}:bankvars:_)
+    alt hit
+        D--&gt;&gt;RC: JSON
+        RC--&gt;&gt;C: Deserialize&lt;T&gt;
+    else read threw (Redis down)
+        RC-&gt;&gt;L: load(ct)
+        Note over RC: log warning, serve uncached — R-CACHE-02
+        RC--&gt;&gt;C: value
+    else miss
+        RC-&gt;&gt;G: WaitAsync(key)
+        RC-&gt;&gt;D: GetStringAsync — double-check
+        Note over RC,D: a queued caller finds the value the winner just wrote
+        RC-&gt;&gt;L: load(ct)
+        RC-&gt;&gt;D: SetStringAsync(json, AbsoluteExpirationRelativeToNow = TTL)
+        RC-&gt;&gt;D: TrackAsync → update cbs:ref:index
+        RC-&gt;&gt;G: Release
+        RC--&gt;&gt;C: value
+    end
+</code></pre>
+<p>The gate is <strong>per key and per process</strong> — one host repopulates a cold key once. It does not
+coordinate across hosts; on a multi-host farm each host may load once. That is the intended
+ceiling, not an oversight.</p>
+<h3 id="invalidation-two-shapes">Invalidation — two shapes</h3>
+<ul>
+<li><strong><code>RemoveAsync(category, id?)</code></strong> — reads <code>cbs:ref:index</code>, deletes the matching keys, prunes the
+  index. If an <code>id</code> was given and it isn't indexed yet, the key is computed and deleted anyway.</li>
+<li><strong><code>RemoveAllAsync()</code></strong> — <strong>O(1) generation bump</strong>. <code>cbs:ref:gen</code> goes <code>3 → 4</code>, so every existing
+  <code>cbs:ref:3:*</code> key becomes unreachable and TTL-expires on its own. No <code>KEYS</code>/<code>SCAN</code>, no provider-
+  specific "clear" call — that's what makes it provider-agnostic. Under a race the bump can only
+  ever <strong>over</strong>-invalidate, which is safe.</li>
+</ul>
+<blockquote>
+<p>The generation is memoized in-process for <strong>5 seconds</strong> (<a href="../../TflCbs.Framework/Caching/ReferenceCache.cs#L41-L46"><code>ReferenceCache.cs:41-46</code></a>).
+So on a farm, a flush on host A reaches host B within ~5s. Single host: immediate.</p>
+</blockquote>
+<h3 id="registered-categories">Registered categories</h3>
+<p><a href="../../TflCbs.Framework/Caching/ReferenceCatalog.cs"><code>ReferenceCatalog.cs</code></a>:</p>
+<table>
+<thead>
+<tr>
+<th>Category</th>
+<th>Holds</th>
+<th>Default TTL</th>
+<th>Loader</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>bankvars</code></td>
+<td>all bank-wide variables, one blob</td>
+<td>12h</td>
+<td><code>IBankVariableSource.GetBankVariablesAsync</code> (General)</td>
+</tr>
+<tr>
+<td><code>branchvars</code></td>
+<td>one branch's variables, <code>id</code> = <code>OrgElementId</code></td>
+<td>12h</td>
+<td><code>IBankVariableSource.GetBranchVariablesAsync</code></td>
+</tr>
+<tr>
+<td><code>accountformat</code></td>
+<td>the three account-number segment widths</td>
+<td>12h</td>
+<td><code>AccountService</code> → <code>b_AccountNumberFormat</code></td>
+</tr>
+</tbody>
+</table>
+<p>TTL is the <strong>backstop</strong>, not the mechanism — it exists so a missed invalidation self-heals within
+half a day. Override per category with <code>Cache:Ttl:&lt;name&gt;</code>.</p>
+<h3 id="admission-test-what-may-go-in">Admission test — what may go in</h3>
+<p>A master belongs in the reference cache only when it is <strong>slow-changing, small, and
+non-transactional</strong>. Never balances, never transactions, never anything a teller's next keystroke
+changes. If a stale read for the TTL window would be a defect, it does not belong here.</p>
+<hr />
+<h2 id="3-how-ibankvars-uses-it-the-worked-example">3. How <code>IBankVars</code> uses it — the worked example</h2>
+<p><a href="../../TflCbs.Framework/Services/BankVars.cs"><code>BankVars.cs</code></a> is the read-through accessor screens
+use. Three layers per lookup:</p>
+<pre><code class="language-mermaid">flowchart LR
+    A[&quot;GetBankVarAsync(&amp;quot;BANK_NAME&amp;quot;)&quot;] --&gt; B{&quot;HttpContext.Items&lt;br/&gt;cbs.bankvars?&quot;}
+    B -- hit --&gt; Z[&quot;TryGetValue on the bag&quot;]
+    B -- miss --&gt; C{&quot;IReferenceCache&lt;br/&gt;bankvars?&quot;}
+    C -- hit --&gt; D[&quot;JSON → Dictionary&lt;br/&gt;re-impose OrdinalIgnoreCase&quot;]
+    C -- miss --&gt; E[&quot;IBankVariableSource&lt;br/&gt;(DB, General module)&quot;]
+    E --&gt; F[&quot;ToDict — Hashtable → Dictionary&quot;]
+    F --&gt; C
+    D --&gt; G[&quot;memoize in HttpContext.Items&quot;]
+    G --&gt; Z
+</code></pre>
+<p>Four things worth knowing:</p>
+<ol>
+<li><strong>One entry holds the whole bag.</strong> Ten variable reads in a request = one cache read, then
+   dictionary lookups.</li>
+<li><strong>The comparer does not survive JSON.</strong> <code>StringComparer.OrdinalIgnoreCase</code> is lost on
+   deserialize, so a fresh <code>Dictionary(raw, OrdinalIgnoreCase)</code> is built on every cache read
+   (<a href="../../TflCbs.Framework/Services/BankVars.cs#L74"><code>BankVars.cs:74</code></a>). The <code>HttpContext.Items</code>
+   memo exists to make that rebuild happen <strong>once per request</strong>, not once per lookup.</li>
+<li><strong>Branch variables are sliced by <code>OrgElementId</code></strong>, read off <code>CbsSessionStore.Current.User</code>. No
+   branch on the session ⇒ <code>null</code>, never an exception. Memo key is <code>cbs.branchvars:{orgId}</code>, so a
+   branch switch can't serve the previous branch's bag.</li>
+<li><strong><code>IsBankVarOnAsync</code> is string truthiness</strong> — <code>"1"</code> / <code>"true"</code> / <code>"yes"</code>. That is the no-<code>BIT</code>
+   convention surfacing at the read side: flags are <code>INT</code> 0/1 or text in the DB, never a CLR <code>bool</code>.</li>
+</ol>
+<h3 id="why-this-replaced-the-session-snapshot">Why this replaced the session snapshot</h3>
+<p>The old design copied bank variables into <code>SessionHelper.BankVariables</code> at login, so changing a
+variable meant every logged-in user had to log in again. Nothing is snapshotted now: an admin flush
+reaches every logged-in user on their <strong>next request</strong>. <code>SessionHelper.BankVariables</code> /
+<code>BranchVariables</code> / <code>GetBankVar</code> / <code>IsBankVarOn</code> were removed — do not reintroduce them.</p>
+<h3 id="branch-variables-are-warmed-at-login-not-read-by-anything-yet">Branch variables are warmed at login, not read by anything yet</h3>
+<p><code>branchvars</code> has <strong>no reader in the migrated app</strong>. Every legacy consumer of a branch variable is on
+an unmigrated screen — 69 call sites across 23 files: the transaction family (<code>x_Transaction</code>,
+<code>x_TransactionV2</code>, <code>x_TransferV2</code>, BranchToBranch, ManyToMany, Batch), loan and deposit account
+opening, Reports, DayEnd and Client KYC. A read-through cache with no reader stays empty, which is
+why the inspector listed nothing for the category even though it is registered.</p>
+<p>So <a href="../../TflCbs.Core.Authentication.Web/Controllers/AccountController.cs"><code>CompleteSignInAsync</code></a>
+warms it, the way legacy did:</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>legacy <code>Login.aspx.vb:60-63</code></th>
+<th>now</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>When</td>
+<td>at authentication</td>
+<td><code>CompleteSignInAsync</code> — the single point an authenticated identity comes into existence, so the direct and second-factor paths both get it</td>
+</tr>
+<tr>
+<td>Guard</td>
+<td><code>If User.OrgElementId.HasValue</code></td>
+<td><code>orgId &gt; 0</code></td>
+</tr>
+<tr>
+<td>Lands in</td>
+<td><code>SessionHelper.BranchVariables</code>, <strong>per user</strong></td>
+<td>the shared <code>branchvars:{orgId}</code> entry, <strong>per branch</strong></td>
+</tr>
+<tr>
+<td>If it fails</td>
+<td>cleared the session, failed authentication</td>
+<td>logged, sign-in proceeds</td>
+</tr>
+</tbody>
+</table>
+<p><strong>This is not the session snapshot returning</strong> (§10). Legacy copied the bag into each user's session,
+so a changed variable needed a re-login. The warm writes the same shared entry an ordinary read would
+write — one read serves every user of that branch for the TTL, and an admin flush still reaches
+everyone on their next request. It changes only <em>when</em> the first read happens.</p>
+<p>The try/catch is the one deliberate difference from legacy. The identity already exists by that line,
+so a failing warm must never turn a successful sign-in into a failed one; the first real read would
+load the bag anyway. Legacy's equivalent sat inside a catch that cleared the session and refused the
+login.</p>
+<p>It goes through <code>IBankVars.WarmBranchVarsAsync(orgElementId)</code> rather than <code>GetBranchVarAsync</code> because
+the latter resolves the branch off <code>CbsSessionStore.Current</code>, and at login the session is stashed but
+<strong>not yet adopted</strong> — the session-derived path would find no branch and cache nothing.</p>
+<p>Legacy also had a second path worth knowing about when those screens migrate: the snapshot was barely
+used (4 references), while the real consumers called <code>g_BranchVariablesBllc.GetValueOfBranchVariable</code>
+— a <strong>DB round trip per variable, per use</strong>. <code>GetBranchVarAsync</code> replaces that one, and gets a cached
+bag instead.</p>
+<h3 id="consumers">Consumers</h3>
+<table>
+<thead>
+<tr>
+<th>Caller</th>
+<th>Variable</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a href="../../TflCbs.Web.Shared/Views/Shared/_SessionInfoBar.cshtml"><code>_SessionInfoBar.cshtml</code></a></td>
+<td><code>BANK_NAME</code> — every page render, the hottest path</td>
+</tr>
+<tr>
+<td><a href="../../TflCbs.Core.Authentication.Web/Controllers/AccountController.cs"><code>AccountController.cs</code></a> <code>CompleteSignInAsync</code></td>
+<td>none — <strong>warms</strong> the <code>branchvars</code> bag for the user's branch</td>
+</tr>
+<tr>
+<td><a href="../../TflCbs.Modules.RetailBanking.Web/Areas/RetailBanking/Controllers/SignatureController.cs"><code>SignatureController.cs</code></a></td>
+<td><code>SIGNATURE_IMAGE_SIZE</code>, <code>MAX_ACTIVE_SIGN_COUNT</code></td>
+</tr>
+<tr>
+<td><a href="../../TflCbs.Core.Shell.Web/Controllers/ModulesController.cs"><code>ModulesController.cs</code></a>, <a href="../../TflCbs.Core.Shell.Web/Controllers/SystemNotificationController.cs"><code>SystemNotificationController.cs</code></a></td>
+<td><code>SERVICE_BRANCH</code></td>
+</tr>
+<tr>
+<td><a href="../../TflCbs.Modules.RetailBanking.Web/AccountWidths.cs"><code>AccountWidths.cs</code></a> (via <code>IReferenceCache</code> directly)</td>
+<td>account-number segment widths</td>
+</tr>
+</tbody>
+</table>
+<p><code>AccountWidthsCache</code> is a second worth-copying pattern: it is a record, <strong>not a ValueTuple</strong>,
+because <code>System.Text.Json</code> ignores fields — a tuple caches as <code>{}</code> and reads back as <code>0/0/0</code>. And a
+failed read <strong>throws inside the loader</strong> so the bad value never enters the cache; the next render
+retries and the caller gets <code>Fallback</code> (3/4/10).</p>
+<hr />
+<h2 id="4-configuration">4. Configuration</h2>
+<pre><code class="language-jsonc">&quot;Cache&quot;: {
+  &quot;Provider&quot;: &quot;Memory&quot;,                                  // Memory | Redis | SqlServer | (absent ⇒ Memory)
+  &quot;Redis&quot;:     { &quot;Configuration&quot;: &quot;&quot;, &quot;InstanceName&quot;: &quot;cbs:&quot; },
+  &quot;SqlServer&quot;: { &quot;ConnectionString&quot;: &quot;&quot;, &quot;SchemaName&quot;: &quot;dbo&quot;, &quot;TableName&quot;: &quot;AppCache&quot; },
+  &quot;Ttl&quot;:       { &quot;bankvars&quot;: &quot;12:00:00&quot;, &quot;branchvars&quot;: &quot;12:00:00&quot; }
+}
+</code></pre>
+<p>Base <code>appsettings.json</code> stays on <strong>Memory</strong> for every host, so any environment is fail-open out of
+the box — IIS, Docker and prod all run in-memory today. The only override is
+<code>TflCbs.Host.Main/appsettings.Development.json</code> (gitignored, so local-only). No compose file defines
+a Redis service, and no deployment sets a <code>Cache__*</code> environment variable.</p>
+<p>Pin the timeouts on any real endpoint — the shape that is in use:</p>
+<pre><code>192.168.0.55:6379,password=&lt;pwd&gt;,abortConnect=False,connectTimeout=5000,syncTimeout=1000
+</code></pre>
+<blockquote>
+<p>On a multi-host farm the Memory default is per <strong>process</strong> despite the name — each host keeps its
+own copy for the full 12h TTL, so a flush on one host never reaches the others. That is the case a
+shared Redis exists to fix.</p>
+</blockquote>
+<h3 id="when-redis-is-configured-but-unreachable">When Redis is configured but unreachable</h3>
+<p>Two different behaviours, because two things share the provider.</p>
+<p><strong>The reference cache is fail-open and values stay correct.</strong> Every call is wrapped; on error it logs
+<code>Reference cache: … failed</code> and runs the DB loader. Nothing is lost, because Redis only ever held a
+copy of what the database already knows. Pinned by <code>CacheFailure_FallsBackToLoader_DoesNotThrow</code>.</p>
+<p><strong>The ASP.NET session is on the same <code>IDistributedCache</code>.</strong> Its reads and writes fail and are
+swallowed by <code>SessionMiddleware</code> (<code>Session cache read exception</code>, <code>Error closing the session</code>), so the
+session never persists — a fresh session id every request. R-CACHE-01/02 cover the reference cache,
+not this.</p>
+<p>Measured on the login page, host pointed at a dead endpoint:</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>healthy</th>
+<th>unreachable, <code>syncTimeout</code> 5s (default)</th>
+<th>unreachable, <code>syncTimeout</code> 1s</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Page</td>
+<td>200 in <strong>0.05s</strong></td>
+<td>200 in <strong>~11s</strong></td>
+<td>200 in <strong>~3s</strong></td>
+</tr>
+<tr>
+<td>Values</td>
+<td>from Redis</td>
+<td>correct, from DB</td>
+<td>correct, from DB</td>
+</tr>
+</tbody>
+</table>
+<p>Three things that measurement made obvious:</p>
+<ul>
+<li><strong>Request-duration telemetry stays green through the outage.</strong> The app logged
+  <code>responded 200 in 46 ms</code> while the client waited 11s — the wait sits in session load/commit,
+  outside the timed pipeline. Alert on the <code>Session cache read exception</code> log line instead.</li>
+<li><strong><code>syncTimeout</code> is the knob</strong>, not <code>connectTimeout</code>. It is the per-operation wait paid before the
+  fallback runs, on every cache call, for the whole outage — there is no circuit breaker.</li>
+<li><strong>Do not lower <code>connectTimeout</code>.</strong> It covers the initial handshake; at <code>1000</code> a perfectly healthy
+  local Redis failed to connect at all (<code>UnableToConnect … state: Connecting</code>). Leave it at <code>5000</code>.</li>
+</ul>
+<h3 id="bare-minimum-redis-cli">Bare-minimum <code>redis-cli</code></h3>
+<p>Everything below runs from <code>cmd</code>. Commands without <code>-h</code> default to <code>127.0.0.1:6379</code>.</p>
+<table>
+<thead>
+<tr>
+<th>Need</th>
+<th>Command</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Connect — local, no password</td>
+<td><code>redis-cli</code></td>
+</tr>
+<tr>
+<td>Connect — remote, with password</td>
+<td><code>redis-cli -h &lt;host&gt; -p 6379 -a "&lt;pwd&gt;" --no-auth-warning</code></td>
+</tr>
+<tr>
+<td>Health check, one-shot</td>
+<td><code>redis-cli PING</code> → <code>PONG</code></td>
+</tr>
+<tr>
+<td>Is the Windows service running?</td>
+<td><code>sc query Redis</code> · start it with <code>net start Redis</code> (elevated)</td>
+</tr>
+<tr>
+<td>List every key</td>
+<td><code>KEYS *</code></td>
+</tr>
+<tr>
+<td>Key count</td>
+<td><code>DBSIZE</code></td>
+</tr>
+<tr>
+<td>What type is a key</td>
+<td><code>TYPE &lt;key&gt;</code></td>
+</tr>
+<tr>
+<td>Seconds until an entry expires</td>
+<td><code>TTL cbs:cbs:ref:1:bankvars:_</code></td>
+</tr>
+<tr>
+<td><strong>The cached value itself</strong></td>
+<td><code>HGET cbs:cbs:ref:1:bankvars:_ data</code></td>
+</tr>
+<tr>
+<td>One entry's size, without dumping it</td>
+<td><code>HSTRLEN cbs:cbs:ref:1:bankvars:_ data</code></td>
+</tr>
+<tr>
+<td>Which fields an entry has</td>
+<td><code>HKEYS cbs:cbs:ref:1:bankvars:_</code> → <code>sldexp</code> <code>absexp</code> <code>data</code></td>
+</tr>
+<tr>
+<td>The live-entry catalog (§2)</td>
+<td><code>HGET cbs:cbs:ref:index data</code></td>
+</tr>
+<tr>
+<td>The generation counter (§2)</td>
+<td><code>HGETALL cbs:cbs:ref:gen</code></td>
+</tr>
+<tr>
+<td>Drop one cached entry</td>
+<td><code>DEL cbs:cbs:ref:1:bankvars:_</code></td>
+</tr>
+<tr>
+<td>Wipe the whole database ⚠</td>
+<td><code>FLUSHDB</code></td>
+</tr>
+<tr>
+<td>Version · uptime · mode</td>
+<td><code>INFO server</code></td>
+</tr>
+<tr>
+<td>Key count per database</td>
+<td><code>INFO keyspace</code></td>
+</tr>
+<tr>
+<td>Is auth enforced?</td>
+<td><code>CONFIG GET requirepass</code></td>
+</tr>
+<tr>
+<td>Which interfaces it listens on</td>
+<td><code>CONFIG GET bind</code></td>
+</tr>
+<tr>
+<td>Eviction policy — cache sanity</td>
+<td><code>CONFIG GET maxmemory-policy</code></td>
+</tr>
+<tr>
+<td>Leave the prompt</td>
+<td><code>exit</code></td>
+</tr>
+</tbody>
+</table>
+<p>Five things that bite:</p>
+<ul>
+<li><strong>Every entry is a Redis hash, not a string.</strong> <code>GET cbs:cbs:ref:1:bankvars:_</code> returns an error, not
+  the value: ASP.NET's Redis cache splits each entry into <code>absexp</code> / <code>sldexp</code> / <code>data</code>, so the payload
+  is always <code>HGET &lt;key&gt; data</code>. Same for the catalog and the session keys.</li>
+<li><strong>Never type a generation number from this table.</strong> <code>cbs:ref:{gen}</code> bumps on every <code>flushall</code>, so
+  <code>cbs:ref:1:…</code> is stale the moment someone flushes. Read the real key out of <code>KEYS *</code> first.</li>
+<li><strong><code>FLUSHDB</code> logs everyone out.</strong> Sessions live in the same keyspace as <code>cbs:{guid}</code> (§6), not just
+  reference data. To clear reference data alone use <code>/Bank/ReferenceCache</code> → <code>flushall</code>, which is the
+  O(1) generation bump (§2) and leaves sessions alone.</li>
+<li><strong><code>KEYS *</code> blocks the server</strong> while it scans every key. Harmless against a dev database of ten
+  keys; never do it against a production instance under load.</li>
+<li><strong><code>--scan --pattern "cbs:*"</code> silently returns nothing</strong> on the Redis 5.0.14 Windows build
+  (<code>C:\Program Files\Redis</code>) even when the keys exist — it prints no error, just an empty result.
+  Use <code>KEYS *</code> there.</li>
+</ul>
+<p>A failed connection tells you <em>where</em> it failed, and the three cases are worth telling apart:
+<code>actively refused</code> means nothing is listening (usually <code>bind</code> is loopback-only); a ~20s hang then a
+failure means a firewall is dropping packets; <code>WRONGPASS</code> or <code>NOAUTH</code> means you reached Redis and the
+password is the problem.</p>
+<h3 id="the-provider-selection-trap-fixed-2026-06-29-do-not-regress">The provider-selection trap (fixed 2026-06-29 — do not regress)</h3>
+<p><code>AddControllersWithViews()</code> registers a default <code>MemoryDistributedCache</code> (for the cache tag helpers)
+<strong>before</strong> <code>AddCbsFramework()</code> → <code>AddCbsReferenceCache()</code> runs. So an <code>IDistributedCache</code> almost
+always already exists, and the old "respect any existing registration" guard silently ignored
+<code>Cache:Provider=Redis</code> on every startup — the cache always ran in-memory while the config said Redis.</p>
+<p>The rule now:</p>
+<ol>
+<li>An explicitly configured <strong>external</strong> provider (<code>Redis</code> / <code>SqlServer</code>) is <strong>authoritative</strong> — the
+   prior registration is <em>removed</em>, the configured provider wins.</li>
+<li>No external provider (<code>Memory</code> / absent / unknown) ⇒ respect an existing <code>IDistributedCache</code>
+   (true bring-your-own: NCache, Garnet, Memcached), and only add in-memory if none exists.</li>
+</ol>
+<p>Never reintroduce the unconditional <code>services.All(d =&gt; d.ServiceType != typeof(IDistributedCache))</code>
+guard. Two regression tests pin this: <code>ExplicitRedisProvider_Wins_OverPreRegisteredInMemoryCache</code>
+and <code>NoExplicitProvider_RespectsPreRegisteredCache</code>.</p>
+<hr />
+<h2 id="5-the-admin-screen-bankreferencecache">5. The admin screen — <code>/Bank/ReferenceCache</code></h2>
+<p><a href="../../TflCbs.Modules.Bank.Web/Areas/Bank/Controllers/ReferenceCacheController.cs"><code>ReferenceCacheController</code></a>
+in <code>TflCbs.Modules.Bank.Web</code>. Access-guarded and audited like any screen.</p>
+<ul>
+<li><strong>GET</strong> — <code>DescribeAsync()</code> renders the live entries: category, id, key, <strong>size in bytes</strong>, stored-at,
+  expires-at. Sizes only, <strong>never values</strong> — bank variables can carry operational configuration.</li>
+<li><strong>POST <code>command=flush</code></strong> with a <code>category</code> → <code>RemoveAsync(category)</code>; <strong><code>command=flushAll</code></strong> →
+  <code>RemoveAllAsync()</code> (the generation bump). Note the camelCase <code>flushAll</code>.</li>
+</ul>
+<h3 id="flushing-from-the-ui">Flushing from the UI</h3>
+<table>
+<thead>
+<tr>
+<th>Goal</th>
+<th>What you click</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>One category</strong></td>
+<td>The <strong>Flush</strong> button on that category's row. Each registered category (§2) gets its own row; the button is <strong>disabled when that category has no live entries</strong>, so a greyed-out button means nothing is cached, not that flushing is blocked.</td>
+</tr>
+<tr>
+<td><strong>Everything</strong></td>
+<td>The red <strong>Flush all</strong> button in the header. It asks for confirmation first — <em>"Flush ALL reference caches? Values reload from the database on next use."</em></td>
+</tr>
+</tbody>
+</table>
+<p>Both post to the same URL (command dispatch), so the menu guard authorizes the inspector and the
+flush identically, and both are audited: <code>Reference cache flushed: {Category} by {User}</code>.</p>
+<p>After a flush you land back on the screen via PRG, so a refresh cannot re-flush. The outcome is
+reported honestly — a flush that could not reach the cache shows
+<em>"The cache could not be reached — nothing was invalidated. Cached values are still being served."</em>
+rather than a success message, and logs a warning. That is the <code>bool</code> from §2 surfacing in the UI.</p>
+<p>Flushing evicts; it does not reload. Values come back from the database on the <strong>next request</strong> that
+needs them.</p>
+<h3 id="reaching-the-screen">Reaching the screen</h3>
+<ul>
+<li><strong>In Development</strong> — just browse to <code>/Bank/ReferenceCache</code>. <code>[CbsAllowAnonymousInDevelopment]</code> on
+  the controller means no login and no menu row are needed.</li>
+<li><strong>Anywhere else</strong> — the attribute is inert and the fail-closed guard applies, so an <code>a_Menus</code> row
+  with NavigateUrl <code>/Bank/ReferenceCache</code> must be seeded or admins get a <strong>403, not a 404</strong>.</li>
+</ul>
+<hr />
+<h2 id="6-the-in-process-caches-imemorycache">6. The in-process caches (<code>IMemoryCache</code>)</h2>
+<p>Five, all per host, all gone on restart.</p>
+<table>
+<thead>
+<tr>
+<th>Where</th>
+<th>Holds</th>
+<th>TTL</th>
+<th>Invalidation</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a href="../../TflCbs.Framework/Services/CbsSessionStore.cs"><code>CbsSessionStore.cs</code></a></td>
+<td>the <code>SessionHelper</code> (user, branch, menu, access set) under <code>cbs:{guid}</code> — the cookie carries only the GUID</td>
+<td>sliding, <code>Auth:SessionIdleMinutes</code> (25)</td>
+<td>logout, or <code>CbsAccessMiddleware</code> rebuilding from the cookie after eviction</td>
+</tr>
+<tr>
+<td><a href="../../TflCbs.Framework/Infrastructure/CbsAccessMiddleware.cs#L135-L163"><code>CbsAccessMiddleware.cs</code></a></td>
+<td>a <strong>positive</strong> "session still open" verdict</td>
+<td><code>Auth:SessionCheckCacheSeconds</code> (30, clamped 0–300)</td>
+<td>TTL only</td>
+</tr>
+<tr>
+<td><a href="../../TflCbs.Framework/Auth/SessionRevocation.cs"><code>SessionRevocation.cs</code></a></td>
+<td>per-session-id revocation verdict</td>
+<td>30s</td>
+<td>write-through on revoke (this host), TTL elsewhere</td>
+</tr>
+<tr>
+<td><a href="../../TflCbs.Framework/Security/FieldEncryptionKeyStore.cs"><code>FieldEncryptionKeyStore.cs</code></a></td>
+<td>the RSA private key for one rendered form</td>
+<td>30 min absolute</td>
+<td>removed on use (single-use)</td>
+</tr>
+<tr>
+<td><a href="../../TflCbs.Framework/Services/BroadcastService.cs"><code>BroadcastService.cs</code></a></td>
+<td>the marquee text — identical for every user</td>
+<td>2 min</td>
+<td><code>Invalidate()</code> from the notifications screen</td>
+</tr>
+</tbody>
+</table>
+<h3 id="the-session-check-cache-precisely">The session-check cache, precisely</h3>
+<p>Opt-in per endpoint with <code>[CbsCacheSessionCheck]</code>, and only honoured on <strong>GET</strong> — the picker and
+search routes, which fire several times per screen. What it is allowed to skip is narrow:</p>
+<ul>
+<li>Only a <strong>definitive positive</strong> is cached. A negative signs the user out, and a <em>failed</em> lookup is
+  never cached.</li>
+<li>The <strong>revocation check stays live</strong> on every request.</li>
+<li>The only thing it delays is noticing a session superseded by a fresh login elsewhere — bounded by
+  the TTL.</li>
+<li><code>0</code> turns the <strong>cache</strong> off, never the check.</li>
+</ul>
+<h3 id="the-two-ponytail-ceilings">The two <code>ponytail:</code> ceilings</h3>
+<p>Marked in source, deliberate, with a named upgrade path:</p>
+<ul>
+<li><code>FieldEncryptionKeyStore</code> — in-process. Safe only because both halves of the exchange hit the same
+  host. <strong>Adding a second host without sticky sessions breaks form decryption</strong>; the key store moves
+  to the distributed cache at that point.</li>
+<li><code>BroadcastService.Invalidate()</code> — clears only the host that served the POST. Other hosts catch up
+  within 2 minutes. Move the key to the distributed cache if two minutes ever matters.</li>
+</ul>
+<hr />
+<h2 id="7-tflomnidbs-static-caches">7. TflOmniDb's static caches</h2>
+<p>Process-lifetime <code>ConcurrentDictionary</code>, never invalidated, because the content is derived from
+types and cannot change at runtime. <strong>No row data is ever cached here.</strong></p>
+<table>
+<thead>
+<tr>
+<th>File</th>
+<th>Key → value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a href="../../libs/TflOmniDb/TflOmniDb/Metadata/MetadataReader.cs"><code>MetadataReader.cs</code></a></td>
+<td><code>Type</code> → <code>EntityDescriptor</code> (the <code>[DbTable]</code>/<code>[DbColumn]</code> reflection, done once)</td>
+</tr>
+<tr>
+<td><a href="../../libs/TflOmniDb/TflOmniDb/Sql/SqlGenerator.cs"><code>SqlGenerator.cs</code></a></td>
+<td><code>EntityDescriptor</code> → <code>StatementSet</code> (generated SQL; a separate dictionary for the dirty-read variants, so a hot loop doesn't rebuild strings)</td>
+</tr>
+<tr>
+<td><a href="../../libs/TflOmniDb/TflOmniDb/Repository/PocoMaterializer.cs"><code>PocoMaterializer.cs</code></a></td>
+<td><code>Type</code> → column-name → <code>PropertyInfo</code> map</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="8-browser-side">8. Browser-side</h2>
+<table>
+<thead>
+<tr>
+<th>Where</th>
+<th>What</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a href="../../TflCbs.Web.Shared/wwwroot/js/site.js#L158-L169"><code>site.js</code></a></td>
+<td>Compares the server-rendered <strong>menu hash</strong> with <code>localStorage</code>; on change drops every <code>cbs.menu.*</code> key. That is how a rights change or logout invalidates a client-cached menu.</td>
+</tr>
+<tr>
+<td><a href="../../TflCbs.Web.Shared/wwwroot/js/cbs-search.js#L351-L373"><code>cbs-search.js</code></a></td>
+<td><strong>Client paging</strong>: when the result set is small enough it is fetched once and paged in the browser — no request, no spinner. Capped by <code>ClientPagingMaxRows</code> (100 by default, hard cap 500) because each cached row of a tokenized grid mints a row token.</td>
+</tr>
+<tr>
+<td><a href="../../TflCbs.Web.Shared/wwwroot/js/cbs-idle.js"><code>cbs-idle.js</code></a></td>
+<td>The idle clock in <code>localStorage</code>, so every tab on the origin shares one countdown. Written at most every 5s.</td>
+</tr>
+<tr>
+<td><a href="../../TflCbs.Web.Shared/wwwroot/js/cbs-theme.js"><code>cbs-theme.js</code></a></td>
+<td>Theme choice. Both wrap every access in <code>try/catch</code> — private windows throw.</td>
+</tr>
+<tr>
+<td><code>_Layout.cshtml</code>, all script/link tags</td>
+<td><code>asp-append-version="true"</code> — content-hash query string. Cache-<strong>busting</strong>, not caching.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="http-caching-there-is-none-on-purpose">HTTP caching: there is none, on purpose</h3>
+<p>Authenticated responses get no-store/no-cache headers from <code>ApplyNoCache</code>
+(<a href="../../TflCbs.Framework/Infrastructure/CbsAccessMiddleware.cs#L244"><code>CbsAccessMiddleware.cs:228</code></a>),
+matching the legacy app. Image and blob endpoints set <code>Cache-Control: no-store</code> explicitly. There is
+no <code>[ResponseCache]</code> and no <code>UseOutputCache</code> anywhere in the solution — don't add one to an
+authenticated route.</p>
+<hr />
+<h2 id="9-adding-a-new-cached-master-the-checklist">9. Adding a new cached master — the checklist</h2>
+<ol>
+<li><strong>Apply the admission test</strong> (§2). Slow-changing, small, non-transactional, and a stale read for
+   the TTL window must be harmless.</li>
+<li><strong>One line in <a href="../../TflCbs.Framework/Caching/ReferenceCatalog.cs"><code>ReferenceCatalog.cs</code></a></strong>:
+   <code>new ReferenceCategory("mymaster", "My Master", Ttl("mymaster", twelveHours))</code>. The inspector and
+   the flush UI pick it up automatically — no UI work.</li>
+<li><strong>Call <code>GetOrCreateAsync("mymaster", id, loader)</code></strong> from a read-through accessor, not from the
+   screen. Add <code>Cache:Ttl:mymaster</code> to <code>appsettings.json</code> if the default doesn't fit.</li>
+<li><strong>Make the cached shape JSON-safe</strong> — a record or a class with <strong>properties</strong>. No tuples, no
+   fields, no custom comparers expected to survive (re-impose them after the read, as <code>BankVars</code> does).</li>
+<li><strong>Throw inside the loader on a bad read</strong> so the bad value never enters the cache.</li>
+<li><strong>Invalidate where the master is written</strong> — <code>RemoveAsync("mymaster", id)</code> in the service that
+   updates it. A TTL backstop is not an invalidation strategy.</li>
+<li><strong>Test it</strong> in <code>TflCbs.ArchTests</code> against the in-memory <code>IDistributedCache</code> — no Redis needed.</li>
+</ol>
+<h2 id="10-things-never-to-do">10. Things never to do</h2>
+<ul>
+<li><strong>Never make Redis a hard dependency</strong> (R-CACHE-01). The app runs with nothing configured.</li>
+<li><strong>Never throw a cache error to the caller</strong> (R-CACHE-02). Log, fall back to the loader.</li>
+<li><strong>Never cache balances, transactions, or anything a teller changes.</strong></li>
+<li><strong>Never cache a negative or a failed lookup</strong> in the session-check path.</li>
+<li><strong>Never show cached <em>values</em> in the inspector</strong> — sizes and timings only.</li>
+<li><strong>Never reintroduce a session snapshot of bank variables.</strong> Warming a <em>shared</em> cache entry at login
+  (§3, <code>branchvars</code>) is not a snapshot — the test is whether a flush reaches logged-in users without
+  a re-login. Copying a bag into <code>SessionHelper</code> fails that test; filling the shared entry early does not.</li>
+<li><strong>Never add <code>[ResponseCache]</code> / <code>UseOutputCache</code></strong> to an authenticated route.</li>
+</ul>
+<hr />
+<h2 id="related">Related</h2>
+<ul>
+<li><a href="../../.claude/memory/reference-cache.html"><code>.claude/memory/reference-cache.md</code></a> — the standing rules, in memory form</li>
+<li><a href="../../BACKLOG.html"><code>BACKLOG.md</code></a> §Cache-adjacent — feature flags on the cache, hit/miss metrics, generalizing to more masters</li>
+<li><a href="../architecture/reusable-boundary.html"><code>docs/architecture/reusable-boundary.md</code></a> — why <code>IReferenceCache</code> sits in the framework, not a module</li>
+<li><a href="../architecture/search-paging.html"><code>docs/architecture/search-paging.md</code></a> — the client-paging row cache in detail</li>
+</ul>
+</div></div>
+<script>
+(function(){
+ function put(t){
+  if(navigator.clipboard&&navigator.clipboard.writeText)return navigator.clipboard.writeText(t);
+  return new Promise(function(res,rej){
+   var a=document.createElement('textarea');a.value=t;a.setAttribute('readonly','');
+   a.style.cssText='position:fixed;top:0;left:0;opacity:0';document.body.appendChild(a);
+   a.select();var ok=false;try{ok=document.execCommand('copy')}catch(e){}
+   document.body.removeChild(a);ok?res():rej()});
+ }
+ function flash(el,txt,ms){
+  var was=el.textContent;el.classList.add('done');if(txt)el.textContent=txt;
+  setTimeout(function(){el.classList.remove('done');if(txt)el.textContent=was},ms||1200);
+ }
+ function copy(text,el,okTxt){
+  put(text).then(function(){flash(el,okTxt)},function(){
+   if(okTxt){var w=el.textContent;el.textContent='Ctrl+C';setTimeout(function(){el.textContent=w},2000)}});
+ }
+ document.querySelectorAll('pre').forEach(function(pre){
+  if(pre.classList.contains('txtdoc'))return;
+  var b=document.createElement('button');
+  b.type='button';b.className='copy';b.textContent='Copy';
+  b.setAttribute('aria-label','Copy this code block to the clipboard');
+  b.addEventListener('click',function(){copy((pre.querySelector('code')||pre).innerText,b,'Copied')});
+  pre.appendChild(b);
+ });
+ document.querySelectorAll('td code').forEach(function(c){
+  if(!c.textContent.trim())return;
+  c.classList.add('cp');c.tabIndex=0;c.setAttribute('role','button');
+  c.title='Click to copy';
+  c.addEventListener('click',function(){copy(c.textContent,c)});
+  c.addEventListener('keydown',function(e){
+   if(e.key==='Enter'||e.key===' '){e.preventDefault();copy(c.textContent,c)}});
+ });
+ // Lab tick-boxes: any heading whose id starts "lab-" gets a checkbox, remembered in this
+ // browser only. Storage can be missing (private window, blocked site data) - the page
+ // still works, the ticks just do not persist.
+ function sget(k){try{return localStorage.getItem(k)}catch(e){return null}}
+ function sset(k,on){try{on?localStorage.setItem(k,'1'):localStorage.removeItem(k)}catch(e){}}
+ var labs=[].slice.call(document.querySelectorAll('h2[id^="lab-"],h3[id^="lab-"]'));
+ if(labs.length){
+  var badge=document.createElement('div');badge.className='labbadge';document.body.appendChild(badge);
+  var count=function(){badge.textContent='Labs done: '+labs.filter(function(h){return sget('labdone:'+h.id)}).length+' of '+labs.length};
+  labs.forEach(function(h){
+   var cb=document.createElement('input');cb.type='checkbox';cb.className='lab';
+   cb.title='Tick when you have finished this lab (remembered in this browser)';cb.setAttribute('aria-label','Lab done');
+   cb.checked=!!sget('labdone:'+h.id);h.classList.toggle('labdone',cb.checked);
+   cb.addEventListener('change',function(){sset('labdone:'+h.id,cb.checked);h.classList.toggle('labdone',cb.checked);count()});
+   h.insertBefore(cb,h.firstChild);
+  });
+  count();
+ }
+ document.querySelectorAll('li>a[href*="#lab-"]').forEach(function(a){
+  if(sget('labdone:'+a.getAttribute('href').split('#')[1]))a.classList.add('labdone')});
+})();
+</script>
+</body></html>

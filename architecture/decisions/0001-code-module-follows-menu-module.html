@@ -1,0 +1,193 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>0001 — A screen&#x27;s code lives in the module that owns its data; the legacy menu module is the default owner</title>
+<style>
+:root{color-scheme:light dark}
+*{box-sizing:border-box}
+body{margin:0;background:#f6f8fa;color:#1f2328;font:16px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif}
+.wrap{max-width:900px;margin:0 auto;padding:32px 24px 96px}
+.card{background:#fff;border:1px solid #d0d7de;border-radius:10px;padding:40px 48px}
+h1,h2,h3{line-height:1.25;font-weight:600}
+h1{font-size:1.9rem;margin:0 0 .3em;padding-bottom:.3em;border-bottom:1px solid #d8dee4}
+h2{font-size:1.4rem;margin:1.8em 0 .6em;padding-bottom:.25em;border-bottom:1px solid #eaeef2}
+h3{font-size:1.12rem;margin:1.4em 0 .5em}
+p,li{margin:.5em 0}
+a{color:#0969da;text-decoration:none}
+a:hover{text-decoration:underline}
+code{font-family:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;font-size:.86em;background:#eff1f3;padding:.15em .4em;border-radius:6px}
+pre{background:#f6f8fa;border:1px solid #d8dee4;border-radius:8px;padding:14px 16px;overflow:auto}
+pre code{background:none;padding:0;font-size:.85em;line-height:1.45}
+pre>code:not([class]){line-height:1.25}
+blockquote{margin:1em 0;padding:.4em 1em;color:#3d444d;border-left:4px solid #d0d7de;background:#f6f8fa;border-radius:0 6px 6px 0}
+blockquote>:first-child{margin-top:0}blockquote>:last-child{margin-bottom:0}
+table{border-collapse:collapse;width:100%;margin:1em 0;display:block;overflow:auto}
+th,td{border:1px solid #d0d7de;padding:8px 12px;text-align:left;vertical-align:top}
+th{background:#f6f8fa;font-weight:600}
+tr:nth-child(2n) td{background:#f6f8fa}
+hr{border:0;border-top:1px solid #d8dee4;margin:2em 0}
+pre{position:relative}
+pre>button.copy{position:absolute;top:8px;right:8px;padding:5px 9px;cursor:pointer;
+  font:600 .68rem/1 ui-monospace,SFMono-Regular,Consolas,monospace;letter-spacing:.03em;
+  color:#636c76;background:#fff;border:1px solid #d0d7de;border-radius:6px;
+  opacity:0;transition:opacity .12s}
+pre:hover>button.copy,pre>button.copy:focus{opacity:1}
+pre>button.copy.done{color:#0a3622;background:#dafbe1;border-color:#4ac26b}
+@media(hover:none){pre>button.copy{opacity:1}}
+td code.cp{cursor:pointer}
+td code.cp:hover,td code.cp:focus{outline:1px solid #8c959f;outline-offset:1px}
+td code.cp.done{color:#0a3622;background:#dafbe1}
+.docnav{margin:0 0 20px;font-size:.85rem;color:#636c76}
+.docnav a{color:#636c76}
+ul{padding-left:1.4em}ol{padding-left:1.4em}
+img{max-width:100%;height:auto;border:1px solid #d0d7de;border-radius:6px;vertical-align:top}
+a img{cursor:zoom-in}
+figure.clip{margin:1em 0}
+video{display:block;width:100%;height:auto;border:1px solid #d0d7de;border-radius:6px;background:#111}
+tr:has(:target) td{background:#fff8c5!important}
+h2>input.lab,h3>input.lab{width:1em;height:1em;margin:0 .45em 0 0;vertical-align:-.08em;cursor:pointer;accent-color:#1a7f37}
+h2.labdone,h3.labdone,a.labdone{color:#1a7f37}
+a.labdone::after{content:" \2713";font-weight:700}
+.labbadge{position:fixed;right:14px;bottom:14px;z-index:5;background:#fff;border:1px solid #d0d7de;border-radius:999px;
+  padding:6px 12px;font-size:.8rem;color:#3d444d;box-shadow:0 2px 8px rgba(0,0,0,.08)}
+@media(max-width:640px){.card{padding:24px 18px}.wrap{padding:16px 10px 64px}}
+@media print{body{background:#fff;color:#000}.wrap{max-width:none;padding:0}.card{border:0;padding:0}
+ pre>button.copy,.labbadge,.docnav,input.lab{display:none}a{color:inherit}
+ pre,table,blockquote,img,figure{break-inside:avoid}h1,h2,h3{break-after:avoid}}
+@media(prefers-color-scheme:dark){
+ body{background:#0d1117;color:#e6edf3}
+ .card{background:#161b22;border-color:#30363d}
+ h1{border-color:#30363d}h2{border-color:#21262d}
+ code{background:#262c34}
+ pre{background:#0d1117;border-color:#30363d}
+ blockquote{background:#161b22;border-color:#30363d;color:#9198a1}
+ th,td{border-color:#30363d}th{background:#161b22}tr:nth-child(2n) td{background:#12171e}
+ a{color:#4493f8}.docnav,.docnav a{color:#9198a1}
+ hr{border-color:#30363d}
+ pre>button.copy{color:#9198a1;background:#161b22;border-color:#30363d}
+ pre>button.copy.done{color:#aff5b4;background:#1b4721;border-color:#2ea043}
+ td code.cp.done{color:#aff5b4;background:#1b4721}
+ tr:has(:target) td{background:#3b2f00!important}
+ h2.labdone,h3.labdone,a.labdone{color:#3fb950}
+ .labbadge{background:#161b22;border-color:#30363d;color:#9198a1}
+ video{border-color:#30363d}
+}
+</style></head>
+<body><div class="wrap"><div class="card">
+<h1 id="0001-a-screens-code-lives-in-the-module-that-owns-its-data-the-legacy-menu-module-is-the-default-owner">0001 — A screen's code lives in the module that owns its data; the legacy menu module is the default owner</h1>
+<ul>
+<li><strong>Status:</strong> Accepted, 2026-09-24</li>
+<li><strong>Replaces:</strong> the earlier rule "keep legacy menu placement, but don't realign code modules to menu modules"
+  (State under the HR menu with Reference code; denominations under Central Administration with Bank.Web +
+  Reference code).</li>
+<li><strong>First applied to:</strong> Denomination Unit (menu 893) and Denominations (menu 890).</li>
+</ul>
+<h2 id="decision">Decision</h2>
+<p><strong>The code module is the business area that owns the screen's data. The legacy menu module the screen hangs
+under (<code>a_ModuleMenuMap</code>) is the default answer.</strong> A Central Administration screen goes in
+<code>TflCbs.Modules.Administration</code> (+ <code>.Web</code>); a Retail and Corporate Operations screen goes in
+<code>TflCbs.Modules.RetailBanking</code> (+ <code>.Web</code>).</p>
+<p>Other modules that need the data <strong>read it through <code>TflCbs.Modules.&lt;Owner&gt;.Contracts</code></strong> — read methods only.
+Creating, changing and deleting stays inside the owner.</p>
+<h2 id="the-three-exceptions">The three exceptions</h2>
+<ol>
+<li><strong>Platform and security data stays in core.</strong> Passwords, sessions, login, menus, the maker-checker scroll
+   and bank variables stay in <code>TflCbs.Core.Authentication</code> / <code>TflCbs.Modules.General</code>, whatever the menu.
+   User Creation: screen in Administration.Web, service in Core.Authentication.</li>
+<li><strong>Ownerless shared masters stay in <code>TflCbs.Modules.Reference</code>.</strong> No owning domain <em>and</em> read by many
+   domains — Currency, State/District/Taluka. The test against <code>.Contracts</code>: one clear owner read by a few
+   others → <code>Owner.Contracts</code> (denominations); no owner, read everywhere → <code>Reference</code>.</li>
+<li><strong>A screen mapped to more than one menu module gets one named owner</strong>, chosen and written down case by case.</li>
+</ol>
+<h2 id="guardrails">Guardrails</h2>
+<ul>
+<li><strong>Legacy URLs stay.</strong> Controllers keep their <code>[Route("…")]</code> (e.g. <code>/Bank/Denomination</code> now served by
+  Administration.Web), so <code>A_MENUS.NavigateURL</code> and the menu-access guard need no migration.</li>
+<li><strong>Add a <code>.Contracts</code> assembly only when a second module actually reads the data</strong> — not in advance.</li>
+<li><strong>A contract has no implementation of its own.</strong> A host that runs a consumer must also enable the owner
+  module (services only — it need not serve the owner's screens). Enforced by
+  <code>ModuleConfigTests.A_host_that_enables_a_contract_consumer_also_enables_the_contract_owner</code>, which derives
+  the consumer→owner edges from the reference graph and checks every appsettings and compose service.</li>
+<li><strong>No two domains read each other's contracts.</strong> That compiles, but it tangles the domains. Review it at the
+  second contract.</li>
+<li>The sibling-domain arch rules exempt a module's <code>.Contracts</code> namespace (<code>ArchBoundaries.IsContractsOf</code>,
+  <code>SiblingServiceTypesFor</code>) — everything else in a sibling stays forbidden.</li>
+</ul>
+<h2 id="why">Why</h2>
+<ul>
+<li>Module boundaries follow business areas, and the legacy CBS modules approximate them well — the standard
+  split for a modular monolith, and where a developer who knows legacy looks first.</li>
+<li>One owner per piece of data; reads cross modules through a published surface; writes never do.</li>
+<li>The menu is the <em>default</em>, not the definition — it is a navigation decision and sometimes arbitrary (State
+  sits under HR), hence the exceptions.</li>
+</ul>
+<h2 id="consequences">Consequences</h2>
+<ul>
+<li><code>TflCbs.Modules.Administration.Contracts</code> (new): <code>IDenominationReader.GetByCurrencyAsync</code>, implemented by
+  <code>DenominationService</code>, registered by <code>AdministrationModule</code>.</li>
+<li><code>DenominationUnitService</code> / <code>DenominationService</code> moved Reference → Administration; the two screens moved
+  Bank.Web → Administration.Web (<code>wwwroot/js/denomination.js</code>). Bank.Web keeps only ReferenceCache.</li>
+<li>RetailBanking.Web (Dormant Re Activation) reads denominations via <code>IDenominationReader</code> and no longer
+  references Reference. <code>TflCbs.Host.RetailBanking</code> and its compose service enable <code>Administration</code> (services
+  only).</li>
+<li>Earlier placements (State/District/Taluka in Reference under the HR menu) are <strong>not</strong> moved by this record;
+  they fall under exception 2.</li>
+</ul>
+</div></div>
+<script>
+(function(){
+ function put(t){
+  if(navigator.clipboard&&navigator.clipboard.writeText)return navigator.clipboard.writeText(t);
+  return new Promise(function(res,rej){
+   var a=document.createElement('textarea');a.value=t;a.setAttribute('readonly','');
+   a.style.cssText='position:fixed;top:0;left:0;opacity:0';document.body.appendChild(a);
+   a.select();var ok=false;try{ok=document.execCommand('copy')}catch(e){}
+   document.body.removeChild(a);ok?res():rej()});
+ }
+ function flash(el,txt,ms){
+  var was=el.textContent;el.classList.add('done');if(txt)el.textContent=txt;
+  setTimeout(function(){el.classList.remove('done');if(txt)el.textContent=was},ms||1200);
+ }
+ function copy(text,el,okTxt){
+  put(text).then(function(){flash(el,okTxt)},function(){
+   if(okTxt){var w=el.textContent;el.textContent='Ctrl+C';setTimeout(function(){el.textContent=w},2000)}});
+ }
+ document.querySelectorAll('pre').forEach(function(pre){
+  if(pre.classList.contains('txtdoc'))return;
+  var b=document.createElement('button');
+  b.type='button';b.className='copy';b.textContent='Copy';
+  b.setAttribute('aria-label','Copy this code block to the clipboard');
+  b.addEventListener('click',function(){copy((pre.querySelector('code')||pre).innerText,b,'Copied')});
+  pre.appendChild(b);
+ });
+ document.querySelectorAll('td code').forEach(function(c){
+  if(!c.textContent.trim())return;
+  c.classList.add('cp');c.tabIndex=0;c.setAttribute('role','button');
+  c.title='Click to copy';
+  c.addEventListener('click',function(){copy(c.textContent,c)});
+  c.addEventListener('keydown',function(e){
+   if(e.key==='Enter'||e.key===' '){e.preventDefault();copy(c.textContent,c)}});
+ });
+ // Lab tick-boxes: any heading whose id starts "lab-" gets a checkbox, remembered in this
+ // browser only. Storage can be missing (private window, blocked site data) - the page
+ // still works, the ticks just do not persist.
+ function sget(k){try{return localStorage.getItem(k)}catch(e){return null}}
+ function sset(k,on){try{on?localStorage.setItem(k,'1'):localStorage.removeItem(k)}catch(e){}}
+ var labs=[].slice.call(document.querySelectorAll('h2[id^="lab-"],h3[id^="lab-"]'));
+ if(labs.length){
+  var badge=document.createElement('div');badge.className='labbadge';document.body.appendChild(badge);
+  var count=function(){badge.textContent='Labs done: '+labs.filter(function(h){return sget('labdone:'+h.id)}).length+' of '+labs.length};
+  labs.forEach(function(h){
+   var cb=document.createElement('input');cb.type='checkbox';cb.className='lab';
+   cb.title='Tick when you have finished this lab (remembered in this browser)';cb.setAttribute('aria-label','Lab done');
+   cb.checked=!!sget('labdone:'+h.id);h.classList.toggle('labdone',cb.checked);
+   cb.addEventListener('change',function(){sset('labdone:'+h.id,cb.checked);h.classList.toggle('labdone',cb.checked);count()});
+   h.insertBefore(cb,h.firstChild);
+  });
+  count();
+ }
+ document.querySelectorAll('li>a[href*="#lab-"]').forEach(function(a){
+  if(sget('labdone:'+a.getAttribute('href').split('#')[1]))a.classList.add('labdone')});
+})();
+</script>
+</body></html>

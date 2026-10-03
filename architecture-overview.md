@@ -4,7 +4,7 @@ Every project in the solution, why it exists, what it does, how they depend on e
 request flows through them.
 
 - **Solution root:** `E:\Adhir\AdWork\TrustBank.Code\TflCbsNet10Sol\`
-- **Solution file:** `TflCbsNet10Sol.slnx` — **45 projects**.
+- **Solution file:** `TflCbsNet10Sol.slnx` — **55 projects**.
 - **Almost all projects target `net10.0`** (set centrally in `Directory.Build.props`), with Central Package
   Management (versions in `Directory.Packages.props`). Two exceptions, both under `libs/`: the MFA-AD
   server projects target **`net10.0-windows`** (§3), and everything under `libs/` opts out of Central
@@ -14,12 +14,31 @@ request flows through them.
 (the proc-conversion lab — experimental, API-drifted) and `TflCbs.Tools.PerfProbe` (a measurement
 tool run directly with `dotnet run`). Plus two **vendored in-house library trees** with their own
 solutions — `libs/TflOmniDb/` and `libs/TflSecurityCrypto/` (§3) — the `TflCbs.E2E` Playwright
-suite (a Node project, not a .NET one), and the gitignored `codebase_shared/` handover tree (§4).
+suite (a Node project, not a .NET one), the gitignored `codebase_shared/` handover tree (§4), and
+`TflCbs.ReportViewer`, the .NET Framework 4.8 site that renders the Crystal reports (§4).
 
 > **Last reviewed:** 2026-09-03. The modular-monolith split completed on 2026-07-29 (`TflCbsServices`
 > dissolved); the in-house libraries were vendored into the repo on 2026-08-19; the canonical config
 > files moved to solution-level `config/` on 2026-08-21; the MFA vendor stack was replaced with our own
-> .NET 10 rewrite on 2026-09-03 (§3.1).
+> .NET 10 rewrite on 2026-09-03 (§3.1). Reports: the Crystal report viewer app and the first two report screens
+> were added on 2026-09-28 (§4, Not in the solution build).
+
+## Contents
+
+1. [The big picture (why this shape)](#1-the-big-picture-why-this-shape)
+2. [Layers at a glance](#2-layers-at-a-glance-dependency-direction-is-strictly-inward)
+3. [External / vendored dependencies](#3-external-vendored-dependencies)
+   - [3.1 The MFA stack](#31-the-mfa-stack-libstssipl_mfa__net)
+4. [Every project, by layer](#4-every-project-by-layer)
+   - [At a glance](#at-a-glance)
+   - [Foundation](#layer-foundation-dependency-free) · [Entities](#layer-entities) · [Logging](#layer-logging-reusable-aspnet-free) · [Service modules](#layer-service-modules-per-domain-zero-aspnet)
+   - [Framework](#layer-framework-web-plumbing) · [Shared web RCL](#layer-shared-web-rcl) · [Core web modules](#layer-core-web-modules-rcls-always-on) · [Domain web modules](#layer-domain-web-modules-rcls-gated-by-modulesenabled)
+   - [Hosts](#layer-hosts-composition-roots) · [Tests](#layer-tests) · [Tools & demos](#layer-tools-demos) · [Not in the solution build](#not-in-the-solution-build)
+5. [How they work together (composition)](#5-how-they-work-together-composition)
+6. [Flow among the projects](#6-flow-among-the-projects-a-request-end-to-end)
+7. [Why each layer is separate](#7-why-each-layer-is-separate-the-reasoning)
+8. [Build order & conventions](#8-build-order-conventions-that-fall-out-of-this)
+9. [Related docs](#9-related-docs)
 
 ---
 
@@ -148,6 +167,47 @@ drift between them fails no build — it fails every login. `tssipl_mfa_ad_tests
 
 ## 4. Every project, by layer
 
+### At a glance
+
+| Group | Project | Purpose |
+|---|---|---|
+| Foundation | `TflCbs.Abstractions` | Shared base with no dependencies: `Result`, module interfaces, the four ports, DTOs, `ServiceQuery`/`DbErrors` |
+| | `TflCbs.Framework` | Web plumbing, access middleware, reusable services; references only Abstractions |
+| | `TflCbs.Entities` | Auto-generated database entities |
+| | `TflOmniLog` (+ `.Demo`, `.Tests`) | In-house logging library, its demo and tests |
+| Core | `TflCbs.Modules.General` | Menu, bank variables, broadcast, alerts, maker-checker scroll, process-block check |
+| | `TflCbs.Modules.General.Contracts` | General's public surface for other modules (`IScrollService`, `IProcessBlockCheck`) |
+| | `TflCbs.Modules.Administration.Contracts` | Administration's read-only surface for other modules (`IDenominationReader`) |
+| | `TflCbs.Modules.Reference` | Shared master data (State/District/Taluka) |
+| | `TflCbs.Core.Authentication` | Login, sessions, user log time |
+| | `TflCbs.Core.Authentication.Web` | Login/account screens, `/Account/Ping` |
+| | `TflCbs.Core.Shell.Web` | App shell (home, module chooser) |
+| | `TflCbs.Web.Shared` | Shared layout, partials, pickers, static assets |
+| Domains | `Accounts` | Service only, no screens |
+| | `Administration` + `.Web` | Administration service and screens |
+| | `HR` + `Hr.Web` | HR service and screens (screens also use Reference) |
+| | `Lockers` + `.Web` | Lockers service and screens |
+| | `RetailBanking` + `.Web` | Retail banking service and screens |
+| | `Bank.Web` | Screens only, no service assembly of its own |
+| | `Inventory`, `TradeFinance`, `InternetBanking`, `Reconciliation`, `LoanOrigination` (each + `.Web`) | Pilot master screens for the xnet domains |
+| Hosts | `TflCbs.Host.Main` | Main composition root; all modules run here |
+| | `TflCbs.Host.{Administration, Hr, Inventory, Lockers, RetailBanking}` | Thin per-domain hosts |
+| | `TflCbs.Gateway` | Reverse proxy (YARP) in front of the thin hosts |
+| Tools | `TflCbs.Tools.DbMigrator` | Numbered database migrations |
+| | `TflCbs.Tools.PasswordReset` | One-off tool that migrates passwords to PBKDF2 |
+| Tests | `TflCbs.Tests` | xUnit service tests across all three database providers |
+| | `TflCbs.ArchTests` | Architecture boundary and namespace rules |
+| | `TflCbs.IntegrationTests` | Runs the real pipeline in-process |
+| | `TflCbs.Demo` | One demo per service method |
+| MFA (`libs/`) | `tssipl_mfa_otp_net` | OTP |
+| | `tssipl_mfa_ad_{client, lib, api}_net` | Active Directory MFA; the API is Windows-only |
+| | `tssipl_mfa_qr_{client, lib, api}_net` | QR MFA; the API is SQL Server only and is the one phones call |
+| | `tssipl_mfa_{ad, qr}_tests_net` | Pin the wire contract between each client and its server |
+| Not in solution | `TflCbs.Lab`, `TflCbs.Lab.Demo`, `TflCbs.E2E`, `TflCbs.Tools.PerfProbe` | Lab is proc-conversion sample code; E2E is a Node Playwright suite; PerfProbe is run directly |
+| | `TflCbs.ReportViewer` | .NET Framework 4.8 WebForms site that only renders Crystal reports; .NET 10 sends it the data |
+
+Domain rows abbreviate `TflCbs.Modules.<X>`. Details per layer follow.
+
 ### Layer: foundation (dependency-free)
 
 **`TflCbs.Abstractions`** — class library, ns `TflCbs.Abstractions`
@@ -220,7 +280,7 @@ called out per project.
 | `TflCbs.Modules.HR` | `DiscipActionHistoryService` | Module name is **`HR`** (UPPERCASE) everywhere — module class, `Modules:Enabled` in every host, and `compose.multi.yaml`. The web RCL stays `TflCbs.Modules.Hr.Web` and routes stay `/Hr/…`; assembly and URL identifiers are a separate axis from the module name. |
 | `TflCbs.Modules.Lockers` | `LockerTypeService` | The Phase-B template and the first fully isolated vertical slice. |
 | `TflCbs.Modules.Accounts` | `BusinessAssessmentService` (+ models) | |
-| `TflCbs.Modules.Administration` | `ModuleService`, `RoleService` | |
+| `TflCbs.Modules.Administration` | `MenuService`, `ModuleService`, `RoleService`, `DenominationUnitService`, `DenominationService` | + its own `.Contracts` (implements `IDenominationReader`) |
 | `TflCbs.Modules.RetailBanking` | `AccountService`, `HoldingAmountService` | + `General.Contracts` (for `IScrollService`) |
 
 ### Layer: framework / web plumbing
@@ -234,7 +294,9 @@ called out per project.
   (Redis-optional, fail-open), health checks, security response headers, forwarded headers, global
   antiforgery, the `cbs-login` rate-limit policy (so every host throttles credential POSTs, not just
   the gateway), OpenTelemetry (`AddCbsObservability`), and SSO (CbsAuth cookie + shared
-  DataProtection key ring + revocation). Owns ADO.NET driver wiring.
+  DataProtection key ring + revocation). Owns ADO.NET driver wiring. `TflCbs.Framework.Reports`
+  (`ReportViewer`, `ReportViewerTransport`): hands a report screen's data to the Crystal report viewer app
+  and returns the one-time link to open it.
 - **Refs.** `TflCbs.Abstractions`, `TflOmniLog`; bare-DLL `TflOmniDb`; `FrameworkReference
   Microsoft.AspNetCore.App`. Packages: SqlClient, Oracle, Npgsql, Redis + SqlServer caching,
   OpenTelemetry (hosting, OTLP exporter, ASP.NET Core / HTTP / runtime instrumentation).
@@ -273,7 +335,7 @@ module reference it**, so a thin host no longer ships other domains' code.
 | `TflCbs.Modules.Hr.Web` | `Hr` | The geographic masters State/District/Taluka + DiscipActionHistory. | `Modules.Reference`, `Modules.HR` |
 | `TflCbs.Modules.Lockers.Web` | `Lockers` | Locker screens + own `locker-type.js`. | `Modules.Lockers` |
 | `TflCbs.Modules.RetailBanking.Web` | `RetailBanking` | Account / Clients / AccHoldingAmount + `acc-holding-amount.js`. | `Modules.RetailBanking` |
-| `TflCbs.Modules.Administration.Web` | `Administration` | Module + Role masters and ConnectedUsers (`/Administration/Module`, `/Role`, `/ConnectedUsers`). | `Modules.Administration`, `Core.Authentication` |
+| `TflCbs.Modules.Administration.Web` | `Administration` | Menu, Module, Role, User, Connected/Blocked users (`/Administration/…`) and the denomination masters, kept at their legacy URLs `/Bank/DenominationUnit`, `/Bank/Denomination` ([decision 0001](architecture/decisions/0001-code-module-follows-menu-module.md)). | `Modules.Administration`, `Core.Authentication`, `Modules.Reference` (currency picker) |
 
 ### Layer: hosts / composition roots
 
@@ -347,7 +409,8 @@ entry in the list. They run in shared-SSO mode (`DataProtection:KeyRing=TflOmniD
 | `TflCbs.Tools.PerfProbe` | Measurement tool for the "DB-side filter/sort/page" workstream; run directly via `dotnet run`. |
 | `libs/TflOmniDb/`, `libs/TflSecurityCrypto/` | The vendored in-house libraries (§3), each with its own solution, tests, demo and tooling. Built separately; consumed here as DLLs. |
 | `TflCbs.E2E` | The Playwright suite — a Node project. |
-| `codebase_shared/` | A **gitignored staging copy**: a self-contained tree for handing the Administration thin client to an outside team — the 3 projects they edit (`TflCbs.Modules.Administration{,.Web}`, `TflCbs.Host.Administration`) plus `TflCbs.Entities` and `TflCbs.Web.Shared` as source, and 9 platform assemblies as prebuilt DLLs in `refs/` (each with `.pdb` and `.xml`). This is why nine assemblies now set `GenerateDocumentationFile` — when an assembly ships as a DLL, IntelliSense is the only place its API semantics can travel. Repo-walking guards exclude it (`RepoFiles.Find`) so they don't see two of everything. |
+| `TflCbs.ReportViewer` | The Crystal report viewer: a render-only .NET Framework 4.8 WebForms site (Crystal Reports runs only on .NET Framework), run under IIS / IIS Express (`scripts/run-report-viewer.ps1`, dev `https://localhost:44390`). A .NET 10 report screen runs the query in C#, posts the rows to its `handoff.ashx` (gzip XML, shared key), gets a single-use 60-second ticket, and redirects the browser to `open.aspx?t=…`, which opens `CrystalViewer.aspx` (legacy's viewer: paper size, orientation, export, Back). It has no database access and no business logic. Contract: [`architecture/report-viewer-handoff.md`](architecture/report-viewer-handoff.md). Tests: `TflCbs.IntegrationTests` `ReportViewer*` (skip when the viewer is not running). |
+| `codebase_shared/` | **Gitignored staging copies**, one self-contained subfolder per module handed to a team: `administration/` and `retailbanking/` (since 2026-09-24). Each holds the module's projects as source (Web RCL, service module, thin host) plus `TflCbs.Entities` and `TflCbs.Web.Shared` as source, and every other platform assembly as a prebuilt DLL in its own `refs/` (with `.pdb` and `.xml`) — which is why those assemblies set `GenerateDocumentationFile`. RetailBanking's `refs/` also carries `TflCbs.Modules.Administration(.Contracts)`: that host runs Administration's services for `IDenominationReader`. Synced from main by plain copy. Repo-walking guards exclude the whole folder (`RepoFiles.Find`). |
 
 ---
 
@@ -544,6 +607,7 @@ shared revocation table. Details: [`single-sign-on.md`](single-sign-on.md); port
 | [`guides/screen-definition-of-done.md`](guides/screen-definition-of-done.md) | The review gate for a migrated screen |
 | [`guides/starting-a-new-module.md`](guides/starting-a-new-module.md) | How to add a whole new domain module |
 | [`guides/search-and-rowtoken-flow.md`](guides/search-and-rowtoken-flow.md) | The search + RowToken round trip |
+| [`architecture/report-viewer-handoff.md`](architecture/report-viewer-handoff.md) | Reports: the .NET 10 → Crystal viewer handoff contract |
 | [`port-map.md`](port-map.md) | Every project's dev + deployed ports |
 | [`single-sign-on.md`](single-sign-on.md) | Cross-host SSO |
 | [`deploy/db-migrations.md`](deploy/db-migrations.md) | Versioned DDL and the migration runner |

@@ -6,7 +6,7 @@ Every UI surface in the legacy WebForms application (692 screens), counted **mod
 
 > **Generated:** 2026-09-05 by [scripts/legacy-screen-inventory.py](../../scripts/legacy-screen-inventory.py) — re-run it to refresh; do not hand-edit.  
 > **Source scanned:** `E:\adtemp\_del_now\20260904_cbs_source_code_xnet\Trust.Bank.Publish` (analysis only, never edited).  
-> **Companion docs:** [state-like-screens.md](state-like-screens.md) (the 78 single-entity masters shaped like `/Hr/State` — the copy-and-swap backlog) · [migration-estimate/00-SUMMARY.md](../migration-estimate/00-SUMMARY.md) (commercial ROM estimate) · [migrated-vs-new.md](../migrated-vs-new.md) (cross-cutting ported/rebuilt/new ledger).  
+> **Companion docs:** [state-like-screens.md](state-like-screens.md) (the 78 single-entity masters shaped like `/Hr/State` — the copy-and-swap backlog) · [migration-estimate/00-SUMMARY.md](../migration-estimate/00-SUMMARY.md) (commercial ROM estimate) · [migrated-vs-new.md](../migrated-vs-new.md) (cross-cutting ported/rebuilt/new ledger) · [reports.md](reports.md) (per-report .rpt → proc → menu inventory).  
 > **Machine-readable:** `menus.tsv` · `screens.tsv` · `procs-by-screen.tsv` · `shared-procs.tsv` · [`TrustBank-Legacy-Inventory.html`](TrustBank-Legacy-Inventory.html) (filter + sort in the browser) · `TrustBank-Legacy-Inventory.xlsx`.
 
 ## 1. At a glance

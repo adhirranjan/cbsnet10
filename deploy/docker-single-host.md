@@ -100,7 +100,7 @@ Modules__Enabled=*
 
 **Data Protection — the container-critical point:** the default `KeyRing=FileSystem` writes to `App_Data/DataProtection-Keys` **inside** the container, which is ephemeral — every redeploy/restart mints a new key and invalidates all `CbsAuth` cookies + row tokens. Fix by **either**:
 
-- (a) `KeyRing=TflOmniDb` — keys in the **`CBS_DATAPROTECTIONKEYS`** table. **Create it once** first (DDL in `TflCbs.Framework/Infrastructure/DataProtectionKeyEntity.cs`); no volume needed, but it does need the DB. Pick this if you already run multi-host or want DB-managed keys.
+- (a) `KeyRing=TflOmniDb` — keys in the **`CBS_DATAPROTECTIONKEYS`** table. **Create it once** first (DbMigrator `0020_sso_shared_tables`; DDL also in `TflCbs.Framework/Infrastructure/DataProtectionKeyEntity.cs`); no volume needed, but it does need the DB. Pick this if you already run multi-host or want DB-managed keys.
 - (b) `KeyRing=FileSystem` + a persistent **volume / bind mount** at `DataProtection__KeyRingPath`. **This is what the committed `compose.yaml` uses:** `KeyRing=FileSystem`, `KeyRingPath=/keys`, and a **bind mount** `./docker-data/dpkeys:/keys` (host folder ↔ container path) — so the keys live on the host and survive `docker compose down`/redeploy, with no DB dependency for keys.
 
 **Connection strings:** never the checked-in dev `sa/sql@2019`. Inject at runtime. The DB must be reachable from the container network (a container DB, a host DB via `host.docker.internal`, or a real server).

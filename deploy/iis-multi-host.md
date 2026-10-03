@@ -6,7 +6,7 @@ The scale-out shape: the YARP **gateway is the one public origin**; behind it th
 
 ## Deployment checklist (run in order)
 
-1. ☐ **Prerequisites** — the single-host prereqs (§ that doc) on the box (IIS + Hosting Bundle + cert); **create the two shared SSO tables once** — `CBS_DATAPROTECTIONKEYS`, `CBS_SESSIONREVOCATIONS` (§2).
+1. ☐ **Prerequisites** — the single-host prereqs (§ that doc) on the box (IIS + Hosting Bundle + cert); **create the two shared SSO tables once** (DbMigrator `0020_sso_shared_tables`) — `CBS_DATAPROTECTIONKEYS`, `CBS_SESSIONREVOCATIONS` (§2).
 2. ☐ **Publish** each host you'll run (gateway + default + thin hosts) to its own folder (§3).
 3. ☐ **Per-host config** (§3) — **default** = login authority (relative `LoginUrl`) + `KeyRing=TflOmniDb` + `SessionRevocation=TflOmniDb` + trimmed `Modules:Enabled`; **thin hosts** = absolute `LoginUrl`→gateway + `Misc`/`Accounts` in `Modules:Enabled`; **all** = `Cookie:SecurePolicy=Always`, `ForwardedHeaders:Enabled`.
 4. ☐ **Gateway config** (§4) — cluster Destinations → the backends' **HTTPS** ports (not http — [gateway-backend-scheme.md](gateway-backend-scheme.md)); gateway trusts the cert via `LocalMachine\Root`.

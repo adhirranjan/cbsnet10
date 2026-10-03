@@ -156,6 +156,14 @@ The short version:
   present, so its ORA-00955 guard fired and no duplicate index was created — the guard mechanism
   proven on a live instance.
 
+**xnet dev databases adopted (2026-09-24)** — SQL Server `Trustbank_XNETT_ORCL` and Oracle schema `XNETTN`
+(the dev targets since the move to xnet; `Trustbank_MDCC_TEST` and `TFLCBS` above are retired). Neither had a
+journal. Each script's effect was probed first: the four genuinely missing ones were applied directly
+(SQL Server `0005`, `0007`; Oracle `0003`, `0005`), then `baseline` recorded the rest — SQL Server 19 scripts,
+Oracle 17, `status` up to date on both. `0004`/`0008` count as done there: the routes they miss belong to
+legacy menus the xnet schema does not have (Taluka, LockerType, marquee alert, blocked users), so there is
+nothing to cut over. From here on, plain `upgrade` is safe on both.
+
 **PostgreSQL is still unverified** — no PostgreSQL connection string is configured for this
 environment. Those two scripts keep the lowercase-folding caveat in their headers; check the real
 casing before a first apply.

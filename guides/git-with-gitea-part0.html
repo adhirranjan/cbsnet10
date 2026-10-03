@@ -1,0 +1,896 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Part 0 — Common ground</title>
+<style>
+:root{color-scheme:light dark}
+*{box-sizing:border-box}
+body{margin:0;background:#f6f8fa;color:#1f2328;font:16px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif}
+.wrap{max-width:900px;margin:0 auto;padding:32px 24px 96px}
+.card{background:#fff;border:1px solid #d0d7de;border-radius:10px;padding:40px 48px}
+h1,h2,h3{line-height:1.25;font-weight:600}
+h1{font-size:1.9rem;margin:0 0 .3em;padding-bottom:.3em;border-bottom:1px solid #d8dee4}
+h2{font-size:1.4rem;margin:1.8em 0 .6em;padding-bottom:.25em;border-bottom:1px solid #eaeef2}
+h3{font-size:1.12rem;margin:1.4em 0 .5em}
+p,li{margin:.5em 0}
+a{color:#0969da;text-decoration:none}
+a:hover{text-decoration:underline}
+code{font-family:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;font-size:.86em;background:#eff1f3;padding:.15em .4em;border-radius:6px}
+pre{background:#f6f8fa;border:1px solid #d8dee4;border-radius:8px;padding:14px 16px;overflow:auto}
+pre code{background:none;padding:0;font-size:.85em;line-height:1.45}
+pre>code:not([class]){line-height:1.25}
+blockquote{margin:1em 0;padding:.4em 1em;color:#3d444d;border-left:4px solid #d0d7de;background:#f6f8fa;border-radius:0 6px 6px 0}
+blockquote>:first-child{margin-top:0}blockquote>:last-child{margin-bottom:0}
+table{border-collapse:collapse;width:100%;margin:1em 0;display:block;overflow:auto}
+th,td{border:1px solid #d0d7de;padding:8px 12px;text-align:left;vertical-align:top}
+th{background:#f6f8fa;font-weight:600}
+tr:nth-child(2n) td{background:#f6f8fa}
+hr{border:0;border-top:1px solid #d8dee4;margin:2em 0}
+pre{position:relative}
+pre>button.copy{position:absolute;top:8px;right:8px;padding:5px 9px;cursor:pointer;
+  font:600 .68rem/1 ui-monospace,SFMono-Regular,Consolas,monospace;letter-spacing:.03em;
+  color:#636c76;background:#fff;border:1px solid #d0d7de;border-radius:6px;
+  opacity:0;transition:opacity .12s}
+pre:hover>button.copy,pre>button.copy:focus{opacity:1}
+pre>button.copy.done{color:#0a3622;background:#dafbe1;border-color:#4ac26b}
+@media(hover:none){pre>button.copy{opacity:1}}
+td code.cp{cursor:pointer}
+td code.cp:hover,td code.cp:focus{outline:1px solid #8c959f;outline-offset:1px}
+td code.cp.done{color:#0a3622;background:#dafbe1}
+.docnav{margin:0 0 20px;font-size:.85rem;color:#636c76}
+.docnav a{color:#636c76}
+ul{padding-left:1.4em}ol{padding-left:1.4em}
+img{max-width:100%;height:auto;border:1px solid #d0d7de;border-radius:6px;vertical-align:top}
+a img{cursor:zoom-in}
+figure.clip{margin:1em 0}
+video{display:block;width:100%;height:auto;border:1px solid #d0d7de;border-radius:6px;background:#111}
+tr:has(:target) td{background:#fff8c5!important}
+h2>input.lab,h3>input.lab{width:1em;height:1em;margin:0 .45em 0 0;vertical-align:-.08em;cursor:pointer;accent-color:#1a7f37}
+h2.labdone,h3.labdone,a.labdone{color:#1a7f37}
+a.labdone::after{content:" \2713";font-weight:700}
+.labbadge{position:fixed;right:14px;bottom:14px;z-index:5;background:#fff;border:1px solid #d0d7de;border-radius:999px;
+  padding:6px 12px;font-size:.8rem;color:#3d444d;box-shadow:0 2px 8px rgba(0,0,0,.08)}
+@media(max-width:640px){.card{padding:24px 18px}.wrap{padding:16px 10px 64px}}
+@media print{body{background:#fff;color:#000}.wrap{max-width:none;padding:0}.card{border:0;padding:0}
+ pre>button.copy,.labbadge,.docnav,input.lab{display:none}a{color:inherit}
+ pre,table,blockquote,img,figure{break-inside:avoid}h1,h2,h3{break-after:avoid}}
+@media(prefers-color-scheme:dark){
+ body{background:#0d1117;color:#e6edf3}
+ .card{background:#161b22;border-color:#30363d}
+ h1{border-color:#30363d}h2{border-color:#21262d}
+ code{background:#262c34}
+ pre{background:#0d1117;border-color:#30363d}
+ blockquote{background:#161b22;border-color:#30363d;color:#9198a1}
+ th,td{border-color:#30363d}th{background:#161b22}tr:nth-child(2n) td{background:#12171e}
+ a{color:#4493f8}.docnav,.docnav a{color:#9198a1}
+ hr{border-color:#30363d}
+ pre>button.copy{color:#9198a1;background:#161b22;border-color:#30363d}
+ pre>button.copy.done{color:#aff5b4;background:#1b4721;border-color:#2ea043}
+ td code.cp.done{color:#aff5b4;background:#1b4721}
+ tr:has(:target) td{background:#3b2f00!important}
+ h2.labdone,h3.labdone,a.labdone{color:#3fb950}
+ .labbadge{background:#161b22;border-color:#30363d;color:#9198a1}
+ video{border-color:#30363d}
+}
+</style></head>
+<body><div class="wrap"><div class="card">
+<p><a href="git-with-gitea.html">Git with Gitea — start page</a> · <a href="git-with-gitea-part1.html">Part 1 · Visual Studio →</a> · <a href="git-with-gitea-cheat-sheet.html">Cheat sheet</a></p>
+<h1 id="part-0-common-ground">Part 0 — Common ground</h1>
+<p>Five short sections and one sample project. Everything here applies to both halves, and the labs
+in Part 1 and Part 2 both assume you have read it.</p>
+<p><strong>On this page</strong></p>
+<ul>
+<li><a href="#01-before-you-start">0.1 Before you start</a></li>
+<li><a href="#02-the-model-in-five-minutes">0.2 The model, in five minutes</a></li>
+<li><a href="#03-the-sample-project-every-file-printed-here">0.3 The sample project — every file, printed here</a><ul>
+<li><a href="#031-create-the-folder-and-project">0.3.1 Create the folder and project</a></li>
+<li><a href="#032-the-six-files">0.3.2 The six files</a></li>
+<li><a href="#033-prove-it-works-before-you-commit-anything">0.3.3 Prove it works before you commit anything</a></li>
+</ul>
+</li>
+<li><a href="#04-your-gitea-account-repo-and-token">0.4 Your Gitea account, repo, and token</a><ul>
+<li><a href="#the-token-never-your-password">The token — never your password</a></li>
+<li><a href="#the-practice-repo">The practice repo</a></li>
+</ul>
+</li>
+<li><a href="#05-pull-requests-the-part-that-is-not-git">0.5 Pull requests — the part that is not git</a><ul>
+<li><a href="#opening-one">Opening one</a></li>
+<li><a href="#the-pr-page-tab-by-tab">The PR page, tab by tab</a></li>
+<li><a href="#when-you-are-the-reviewer">When you are the reviewer</a></li>
+<li><a href="#pr-troubleshooting">PR troubleshooting</a></li>
+</ul>
+</li>
+<li><a href="#06-commit-messages-and-branch-names">0.6 Commit messages and branch names</a><ul>
+<li><a href="#messages">Messages</a></li>
+<li><a href="#branch-names">Branch names</a></li>
+</ul>
+</li>
+</ul>
+<hr />
+<h2 id="01-before-you-start">0.1 Before you start</h2>
+<p>Check git is there. <strong>Visual Studio ships with git</strong>, so if you have VS you have git — but open a
+terminal (<strong>View → Terminal</strong> inside VS, <code>Ctrl+`</code>) and confirm:</p>
+<pre><code class="language-bash">git --version        # 2.54.0 on this machine — anything 2.30+ is fine
+</code></pre>
+<p><strong>Set your identity. Do this first, before anything else.</strong> Git stamps every commit with a
+name and email; it refuses to commit without them, and commits made under the wrong name
+cannot be relabelled later without rewriting history.</p>
+<pre><code class="language-bash">git config --global user.name  &quot;Adhir Ranjan&quot;
+git config --global user.email &quot;adhirranjan@softtrust.com&quot;
+
+# Use the SAME email as your Gitea account, or Gitea won't link commits to your profile.
+git config --global --list      # verify
+</code></pre>
+<blockquote>
+<p><strong>The Visual Studio way, if you prefer:</strong> <strong>Git → Settings → Git Global Config</strong> — name and
+email are the first two boxes. It writes the same <code>C:\Users\&lt;you&gt;\.gitconfig</code> that the commands
+above do. There is no separate "Visual Studio identity"; it is one setting with two front doors.</p>
+</blockquote>
+<p>Three settings that will save you real pain. Set them now — Visual Studio exposes some of these
+under <strong>Git → Settings</strong>, but not reliably across versions, so do them once at the terminal and be
+certain:</p>
+<pre><code class="language-bash"># Windows checks out CRLF line endings and commits LF. Without this, whole files
+# show as &quot;changed&quot; when nobody touched them.
+git config --global core.autocrlf true
+
+# When your commits and the server's have DIVERGED, `git pull` can reconcile them two
+# ways — merge or rebase — and since git 2.34 it refuses to guess: &quot;fatal: Need to
+# specify how to reconcile divergent branches.&quot; (A plain fast-forward pull, where you
+# have no local commits, works fine unconfigured — which is why you can meet this for
+# the first time weeks in.) &quot;merge&quot; is the beginner-safe answer: it adds a merge commit
+# and never rewrites your commits, whereas rebase replays them with new SHAs — painful
+# if you had already pushed them. See §11.5.
+git config --global pull.rebase false
+
+# Name the first branch `main` instead of the older `master`. Gitea defaults to main.
+git config --global init.defaultBranch main
+</code></pre>
+<hr />
+<h2 id="02-the-model-in-five-minutes">0.2 The model, in five minutes</h2>
+<p>Almost every git confusion comes from not knowing <strong>which of four places</strong> your file is in. This is
+just as true in Visual Studio as at the terminal — the IDE shows you the same four places, it just
+names them differently.</p>
+<pre><code>   ┌──────────────┐  git add   ┌──────────────┐  git commit  ┌──────────────┐  git push  ┌──────────────┐
+   │ Working tree │ ─────────► │   Staging    │ ───────────► │ Local repo   │ ─────────► │    Gitea     │
+   │ (your files, │            │    area      │              │  (.git dir,  │            │  (the server,│
+   │  as edited)  │ ◄───────── │  (&quot;index&quot;)   │ ◄─────────── │ your history)│ ◄───────── │  shared)     │
+   └──────────────┘ git restore└──────────────┘  git reset   └──────────────┘  git pull  └──────────────┘
+</code></pre>
+<table>
+<thead>
+<tr>
+<th>Place</th>
+<th>What it is</th>
+<th>Where it is in Visual Studio</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Working tree</strong></td>
+<td>The actual files on disk. Edit freely; git doesn't care yet</td>
+<td>The <strong>Changes</strong> list in <strong>Git Changes</strong></td>
+</tr>
+<tr>
+<td><strong>Staging area</strong></td>
+<td>The shortlist of changes going into the <em>next</em> commit. The step people find strange — it exists so you can commit <em>some</em> of your edits and not others</td>
+<td>The <strong>Staged Changes</strong> list, right below it</td>
+</tr>
+<tr>
+<td><strong>Local repo</strong></td>
+<td>The <code>.git</code> folder. Your full history. Everything works offline</td>
+<td>The graph in <strong>Git Repository</strong></td>
+</tr>
+<tr>
+<td><strong>Gitea</strong></td>
+<td>The shared copy. Nothing you do reaches your colleagues until you push</td>
+<td>The <strong>↑</strong> arrow, and the <em>Outgoing</em> list</td>
+</tr>
+</tbody>
+</table>
+<p><strong><code>git status</code> tells you where everything is.</strong> Run it constantly. It is not a stupid question;
+experienced developers run it more often than beginners do. In Visual Studio the <strong>Git Changes</strong>
+window <em>is</em> <code>git status</code>, permanently on screen — which is the single best argument for the IDE.</p>
+<p>A <strong>commit</strong> is a snapshot of the whole project plus a message, an author and a parent commit.
+A <strong>branch</strong> is a sticky note pointing at one commit — that's genuinely all it is, which is why
+creating and deleting branches is instant and cheap.</p>
+<pre><code>   A ◄──── B ◄──── C ◄──── D ◄──── E          each commit points back at its parent
+                   ▲               ▲
+                 main          feature/x ◄── HEAD   (HEAD = the branch you are on)
+
+   git commit on feature/x  →  a new commit F, and ONLY the feature/x note moves
+
+   A ◄──── B ◄──── C ◄──── D ◄──── E ◄──── F
+                   ▲                       ▲
+                 main                  feature/x ◄── HEAD
+</code></pre>
+<p><strong>There are three copies of <code>main</code>, not two.</strong> Your branch, the server's branch — and between
+them <code>origin/main</code>, your machine's <em>cached</em> copy of the server's <code>main</code>, refreshed only when you
+fetch. It is what the <strong>↑↓</strong> counts compare against, which is why they can be out of date.</p>
+<pre><code>            YOUR MACHINE                                        GITEA
+  ┌──────────────────────────────────┐                  ┌──────────────────┐
+  │                                  │     git push     │                  │
+  │  main  (your branch)  ───────────┼────────────────► │  main            │
+  │    ▲                             │                  │  (the shared     │
+  │    │ merge                       │                  │   one)           │
+  │    │                             │     git fetch    │                  │
+  │  origin/main  ◄──────────────────┼──────────────────│                  │
+  │  (a CACHED copy of Gitea's main, │                  │                  │
+  │   as of your last fetch)         │                  │                  │
+  └──────────────────────────────────┘                  └──────────────────┘
+
+  git pull   =  git fetch  +  merge origin/main into main
+  ↑↓ 2 / 1   =  2 commits you have that origin/main lacks  /  1 it has that you lack
+</code></pre>
+<p><strong>Why a push gets rejected</strong>, which Part 1 and Part 2 both walk you into (Labs V10 and C9). Time
+runs left to right:</p>
+<pre><code>  Gitea main:   A ── B ── C ── X            X = a colleague's commit, already pushed
+  your main:    A ── B ── C ── Y            Y = yours, not pushed yet
+
+  git push  →  REJECTED. Accepting it would make Gitea's main  …C ── Y  and lose X.
+
+  git pull  →  fetches X, then merges it with Y into a new merge commit M:
+
+                              ┌── Y ──┐
+  your main:    A ── B ── C ──┤       ├── M
+                              └── X ──┘
+
+  git push  →  accepted: everything Gitea had (…C ── X) is inside your main now.
+</code></pre>
+<hr />
+<h2 id="03-the-sample-project-every-file-printed-here">0.3 The sample project — every file, printed here</h2>
+<p>Both halves of this guide work on one tiny C# console app called <strong>GitPractice</strong>. It is six files
+and about sixty lines, and every one of them is printed below. <strong>There is nothing to clone and
+nothing to download</strong> — you create it once, copy-paste the contents out of this page, and then
+spend the labs committing it, branching it, breaking it and recovering it.</p>
+<p>It is deliberately a <em>real project that builds and runs</em>, not a folder of text files, because three
+of the labs depend on that: <code>bin/</code> and <code>obj/</code> have to actually appear for the <code>.gitignore</code> lab to
+have a point, and a conflict you resolve has to be something you can <strong>run</strong> to discover you
+resolved it wrongly.</p>
+<p>Why these particular files:</p>
+<table>
+<thead>
+<tr>
+<th>File</th>
+<th>The job it does in the labs</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>Ledger.cs</code></td>
+<td>Holds a single <code>Version</code> line. Two branches will fight over exactly that line — this is the conflict</td>
+</tr>
+<tr>
+<td><code>Account.cs</code></td>
+<td>A second class, so there is a file to <em>forget</em> in one commit and amend into it</td>
+</tr>
+<tr>
+<td><code>Program.cs</code></td>
+<td>Prints the version, so you can <strong>run</strong> the app and see which side of a conflict you kept</td>
+</tr>
+<tr>
+<td><code>README.md</code></td>
+<td>Prose, edited constantly — the "unrelated second change" in the staging labs</td>
+</tr>
+<tr>
+<td><code>.gitignore</code></td>
+<td>Keeps <code>bin/</code> and <code>obj/</code> out. One lab breaks it on purpose</td>
+</tr>
+<tr>
+<td><code>&lt;folder&gt;.csproj</code></td>
+<td>Makes it a real project, so <code>dotnet build</code> produces the build output the ignore lab needs</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h3 id="031-create-the-folder-and-project">0.3.1 Create the folder and project</h3>
+<p>Do this <strong>once per half</strong> you intend to work through. The two halves use different folders and
+different Gitea repos on purpose, so you can do either one first, redo one without disturbing the
+other, and delete either without a thought.</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>Part 1 (Visual Studio)</th>
+<th>Part 2 (command line)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Folder</td>
+<td><code>E:\adtemp\hands_on\git\GitSandbox-vs\</code></td>
+<td><code>E:\adtemp\hands_on\git\GitSandbox\</code></td>
+</tr>
+<tr>
+<td>Gitea repo</td>
+<td><code>git-practice-vs</code></td>
+<td><code>git-practice</code></td>
+</tr>
+</tbody>
+</table>
+<p><strong>In Visual Studio:</strong></p>
+<ol>
+<li><strong>File → New → Project…</strong> → <strong>Console App</strong> (C#) → <strong>Next</strong>.</li>
+<li><strong>Project name:</strong> <code>GitSandbox-vs</code>  <strong>Location:</strong> <code>E:\adtemp\hands_on\git</code></li>
+<li>Tick <strong>Place solution and project in the same directory</strong>. You want one flat folder, because
+   that folder is about to become the repository.</li>
+<li><strong>Next</strong> → <strong>Framework: .NET 10.0</strong> → <strong>Create</strong>.</li>
+<li><strong>Do not tick "Add to source control" / do not let it create a git repo yet.</strong> Lab V1 does that
+   deliberately, and watching an untracked folder become a repository is half the lesson.</li>
+</ol>
+<p><strong>At the command line:</strong></p>
+<pre><code class="language-bash">mkdir -p E:/adtemp/hands_on/git       # first time only — the parent folder may not exist yet
+cd E:/adtemp/hands_on/git
+dotnet new console -o GitSandbox      # creates the folder, GitSandbox.csproj and Program.cs
+cd GitSandbox
+</code></pre>
+<p>Either way you now have a folder with a <code>.csproj</code> and a <code>Program.cs</code> in it. Replace the contents
+with the six listings below.</p>
+<blockquote>
+<p><strong>A note on the <code>.csproj</code> filename.</strong> The template names it after your folder —
+<code>GitSandbox-vs.csproj</code> or <code>GitSandbox.csproj</code>. That is fine and you should leave it alone; the
+listing below sets <code>RootNamespace</code> and <code>AssemblyName</code> explicitly so the <em>code</em> is identical in
+both halves regardless of what the project file is called.</p>
+</blockquote>
+<hr />
+<h3 id="032-the-six-files">0.3.2 The six files</h3>
+<p>Copy each block into the file named above it. In Visual Studio, add a new class with
+<strong>right-click the project → Add → Class…</strong>, and a plain file with <strong>Add → New Item… → Text File</strong>.</p>
+<p><strong><code>GitSandbox.csproj</code></strong> <em>(or <code>GitSandbox-vs.csproj</code> — replace the whole file)</em></p>
+<pre><code class="language-xml">&lt;Project Sdk=&quot;Microsoft.NET.Sdk&quot;&gt;
+
+  &lt;PropertyGroup&gt;
+    &lt;OutputType&gt;Exe&lt;/OutputType&gt;
+    &lt;TargetFramework&gt;net10.0&lt;/TargetFramework&gt;
+    &lt;ImplicitUsings&gt;enable&lt;/ImplicitUsings&gt;
+    &lt;Nullable&gt;enable&lt;/Nullable&gt;
+    &lt;RootNamespace&gt;GitPractice&lt;/RootNamespace&gt;
+    &lt;AssemblyName&gt;GitPractice&lt;/AssemblyName&gt;
+  &lt;/PropertyGroup&gt;
+
+&lt;/Project&gt;
+</code></pre>
+<p><strong><code>Program.cs</code></strong> <em>(replace whatever the template generated)</em></p>
+<pre><code class="language-csharp">// Program.cs — the entry point.
+// It prints the ledger version, which is how you find out, by running the app,
+// which side of a merge conflict you actually kept.
+namespace GitPractice;
+
+public static class Program
+{
+    public static void Main()
+    {
+        Console.WriteLine($&quot;ledger v{Ledger.Version}&quot;);
+
+        var account = new Account(&quot;SB-0001&quot;, &quot;A. Ranjan&quot;, 1000m);
+        account.Deposit(250m);
+        Console.WriteLine(account.Describe());
+    }
+}
+</code></pre>
+<p><strong><code>Ledger.cs</code></strong> <em>(new file)</em></p>
+<pre><code class="language-csharp">// Ledger.cs — Version is the one line that two branches will fight over.
+// Keep it on a line of its own; the conflict labs depend on that.
+namespace GitPractice;
+
+public static class Ledger
+{
+    public const string Version = &quot;1.0&quot;;
+
+    public static decimal Round(decimal amount) =&gt;
+        Math.Round(amount, 2, MidpointRounding.AwayFromZero);
+}
+</code></pre>
+<p><strong><code>Account.cs</code></strong> <em>(new file)</em></p>
+<pre><code class="language-csharp">// Account.cs — a second class, so the labs have a file to forget and then remember.
+namespace GitPractice;
+
+public sealed class Account(string number, string holder, decimal balance)
+{
+    public string Number { get; } = number;
+    public string Holder { get; } = holder;
+    public decimal Balance { get; private set; } = balance;
+
+    public void Deposit(decimal amount) =&gt; Balance = Ledger.Round(Balance + amount);
+
+    public string Describe() =&gt; $&quot;{Number} {Holder}: {Balance:0.00}&quot;;
+}
+</code></pre>
+<p><strong><code>README.md</code></strong> <em>(new file)</em></p>
+<pre><code class="language-markdown"># GitPractice
+
+A throwaway console app that exists only to be committed, branched, broken and recovered
+while working through `docs/guides/git-with-gitea.md`.
+
+Nothing in here is real. Delete the whole folder when you are done.
+
+    dotnet run
+    # ledger v1.0
+    # SB-0001 A. Ranjan: 1250.00
+</code></pre>
+<p><strong><code>.gitignore</code></strong> <em>(new file — note the leading dot, and no extension)</em></p>
+<pre><code class="language-gitignore"># Build output. Regenerated by every build, so it must never be committed.
+bin/
+obj/
+
+# Visual Studio's own scratch files.
+.vs/
+*.user
+</code></pre>
+<blockquote>
+<p><strong>Creating a file called <code>.gitignore</code> in Visual Studio:</strong> <strong>Add → New Item… → Text File</strong>, and
+type the name <code>.gitignore</code> including the leading dot. Windows Explorer refuses names that start
+with a dot; the VS dialog and the terminal both accept them fine.</p>
+</blockquote>
+<hr />
+<h3 id="033-prove-it-works-before-you-commit-anything">0.3.3 Prove it works before you commit anything</h3>
+<pre><code class="language-bash">dotnet run
+</code></pre>
+<p>Expected output, exactly:</p>
+<pre><code>ledger v1.0
+SB-0001 A. Ranjan: 1250.00
+</code></pre>
+<p>In Visual Studio: <strong>Ctrl+F5</strong> (Start Without Debugging) gives the same two lines.</p>
+<p><strong>Do not go further until you see those two lines.</strong> Several labs verify themselves by running the
+app — Lab V6 and Lab C5 both check that the number printed is the one you chose when resolving a
+conflict — and that check is worthless if the app was already broken.</p>
+<blockquote>
+<p><strong>Starting over.</strong> If a lab goes so wrong you want a clean slate: delete the whole sandbox
+folder, delete the practice repo in Gitea (<strong>Settings → Delete This Repository</strong>), and redo
+§0.3.1. It costs two minutes and nothing of value is lost. That is the entire reason the labs
+use a throwaway app instead of the real solution.</p>
+</blockquote>
+<hr />
+<h2 id="04-your-gitea-account-repo-and-token">0.4 Your Gitea account, repo, and token</h2>
+<p>Both halves push to the real Gitea server, so both need this once.</p>
+<h3 id="the-token-never-your-password">The token — never your password</h3>
+<p>Gitea will prompt for a username and password on your first <code>push</code>, whether that push comes from
+the terminal or from Visual Studio's <strong>↑</strong> button. <strong>Do not type your account password</strong> —
+generate a Personal Access Token (PAT) instead. A token can be scoped and revoked without
+changing your login, and it is what Gitea expects.</p>
+<ol>
+<li>Gitea → click your avatar → <strong>Settings</strong> → <strong>Applications</strong> → <em>Manage Access Tokens</em></li>
+<li><strong>Token Name</strong> — name it after the machine (<code>work-laptop</code>)</li>
+<li><strong>Select permissions</strong> — modern Gitea has no single <code>repo</code> checkbox; it lists permission
+   <em>groups</em> (repository, issue, user, organization, package, …), each a dropdown of
+   <em>No Access / Read / Write</em>. Set <strong>repository → Read and Write</strong> and leave the rest at
+   <em>No Access</em>. That covers clone, push, and PRs. Add <strong>issue → Read and Write</strong> only if you will
+   file issues from <code>tea</code> (<a href="git-with-gitea-part3.html#146-tea-giteas-official-cli-optional">§14.6</a>).</li>
+<li><strong>Generate Token</strong>, then <strong>copy it now</strong>. Gitea shows it exactly once.</li>
+</ol>
+<p><a href="img/git-with-gitea/g-token-new.png" target="_blank" rel="noopener"><img alt="Gitea Generate New Token form" src="img/git-with-gitea/g-token-new.png" /></a></p>
+<p><em>Settings → Applications → </em><em>Generate New Token</em><em>. Every permission group starts at No Access —
+change only </em><em>repository</em><em> to </em><em>Read and Write</em><em>, then </em><em>Generate Token</em><em>.</em></p>
+<p>Then store it so you are not asked every time:</p>
+<pre><code class="language-bash"># Windows: uses the built-in Windows Credential Manager (encrypted, per-user)
+git config --global credential.helper manager
+
+# Next push prompts once: username = Adhir, password = PASTE THE TOKEN.
+# It is saved from then on — Visual Studio uses the same store, so you do this once for both halves.
+</code></pre>
+<p>To replace a token later: Windows <strong>Credential Manager</strong> → <em>Windows Credentials</em> → find the
+<code>git:http://192.168.0.22:3000</code> entry → edit or remove it. (Lab V13 makes you do exactly that.)</p>
+<p><strong>Never</strong> put the token in the remote URL (<code>http://user:token@host/...</code>) — it lands in
+<code>.git/config</code> in clear text and leaks into any log that echoes the remote.</p>
+<blockquote>
+<p><strong>This server is plain HTTP, not HTTPS.</strong> <code>http://192.168.0.22:3000</code> sends your token, and every
+byte you push and pull, unencrypted across the LAN. That is normally acceptable for an internal
+server on a trusted network, and it is what we have today — but be aware of it, and treat the
+token as LAN-visible: give it the narrowest permissions that work, never reuse it elsewhere, and revoke it (Gitea →
+Settings → Applications) the moment a machine is retired. <strong><a href="git-with-gitea-part3.html#142-ssh-instead-optional-nicer-once-set-up">§14.2</a> (SSH) avoids this entirely</strong>
+and is the better option if the server has SSH enabled — the traffic is encrypted even though
+the web UI is not. Worth raising with whoever administers the server: a TLS certificate on
+Gitea would close this properly.</p>
+</blockquote>
+<h3 id="the-practice-repo">The practice repo</h3>
+<p>In the Gitea web UI: <strong>+</strong> (top right) → <strong>New Repository</strong>.</p>
+<ul>
+<li><strong>Name:</strong> <code>git-practice-vs</code> for Part 1, or <code>git-practice</code> for Part 2</li>
+<li><strong>Visibility:</strong> Private</li>
+<li><strong>Leave "Initialize repository" UNCHECKED.</strong> You want a genuinely empty repo — your first push
+  puts <em>your</em> history into it, and an initialised repo (with its own README commit) would collide
+  with that on the very first push.</li>
+</ul>
+<p><a href="img/git-with-gitea/g-new-repo.png" target="_blank" rel="noopener"><img alt="Gitea New Repository form" src="img/git-with-gitea/g-new-repo.png" /></a></p>
+<p><em>The two boxes that matter: </em><em>Make repository private</em><em> ticked, </em><em>Initialize Repository</em><em> left
+empty. Everything in between can stay as it is.</em></p>
+<p><a href="img/git-with-gitea/g-empty-repo.png" target="_blank" rel="noopener"><img alt="A new, empty Gitea repository" src="img/git-with-gitea/g-empty-repo.png" /></a></p>
+<p><em>What you should see right after </em><em>Create Repository</em><em>: an empty repo with a Quick Guide. The
+last block, </em><em>Pushing an existing repository from the command line</em><em>, is exactly what Part 2's Lab
+C2 types. (This screenshot is of a throwaway repo, <code>git-guide-demo</code>; yours will say
+<code>git-practice-vs</code> or <code>git-practice</code>.)</em></p>
+<hr />
+<h2 id="05-pull-requests-the-part-that-is-not-git">0.5 Pull requests — the part that is not git</h2>
+<p><strong>A pull request is not a git feature.</strong> Git — the program on your machine — knows about commits,
+branches and remotes, and has no idea what a PR is. <code>git help -a</code> will never list one. Pull
+requests were invented by the web platforms (GitHub first, then Gitea, GitLab, Azure DevOps) and
+live entirely on the <strong>server</strong>.</p>
+<p>This matters for both halves of this guide, and it is the reason <strong>neither</strong> half can finish a
+workflow without a browser tab:</p>
+<ul>
+<li>There is <strong>no git command</strong> that opens a pull request. <code>git</code> does not speak Gitea's API.</li>
+<li>There is <strong>no Visual Studio button</strong> that opens one either. VS's PR tooling binds to GitHub and
+  Azure DevOps only; to Visual Studio our server is just a generic HTTP remote.</li>
+</ul>
+<p>A PR is a page on Gitea that says <em>"please merge my branch into <code>main</code>"</em>, wrapped around three
+things:</p>
+<ol>
+<li><strong>A diff</strong> — Gitea has both branches, so it computes exactly what changes if the merge happens.</li>
+<li><strong>A conversation</strong> — comments on the change as a whole, and on individual lines of code.</li>
+<li><strong>A merge button</strong> — which performs the merge <em>on the server</em>. In Gitea it is labelled for the
+   style it will use, <strong>Create merge commit</strong> (<a href="git-with-gitea-part3.html#144-merge-styles-gitea-offers-on-a-pr">§14.4</a>).</li>
+</ol>
+<p>That is the entire concept: a branch, a computed diff, a comment thread, and a button.</p>
+<p><strong>Why it exists.</strong> Without a PR, "merging your work" means running a merge locally and pushing to
+<code>main</code>. Nobody saw it, nobody could object, and there is no record of why. The PR inserts a
+deliberate pause between <em>"I have finished"</em> and <em>"it is in main"</em> — a place for a second pair of
+eyes, for automated checks to run, and for a written reason that outlives everyone's memory.</p>
+<p><strong>The name is backwards, and it confuses everybody.</strong> You are not pulling anything. <em>You</em> are
+asking <em>the maintainer</em> to pull from your branch — the name survives from the original email-based
+workflow. GitLab calls it a <strong>Merge Request</strong>, which is what it actually is. Read "PR" as "merge
+request" and it stops being strange.</p>
+<p>Where the work lives at each step — identical whichever half you are in:</p>
+<pre><code>create a branch             LOCAL ONLY   Gitea knows nothing about this yet
+    ...commits...           LOCAL ONLY   still nothing
+push the branch             ON GITEA     your branch now exists, beside main.
+                                         main is UNCHANGED.
+open a PR in the browser    ON GITEA     &quot;compare these two branches for me&quot;
+    review, discussion
+    more commits pushed     ON GITEA     the PR updates itself, automatically
+click Merge                 ON GITEA     the server merges; main moves
+switch to main and pull     LOCAL        you bring the result back down
+</code></pre>
+<p>The same journey as a picture — your machine on the left, the server on the right, time running
+down the page (<code>o</code> is a commit):</p>
+<pre><code>      YOUR MACHINE                               GITEA  (192.168.0.22:3000)
+      ════════════                               ══════════════════════════
+  1   main  o                                    main  o
+            │
+  2         └── o ── o   feature/x               (Gitea has never heard of it)
+                     │
+  3                  └──── git push ───────────► feature/x  o ── o     beside main;
+                                                                        main unchanged
+  4                                              Pull Request:
+                                                 &quot;merge feature/x into main&quot;
+                                                   · Files Changed = the diff
+                                                   · comments on single lines
+  5   feature/x  o ── o ── o   fix after review
+                           └── git push ───────► the PR shows the new commit by itself
+  6                                              Create merge commit:
+                                                 main  o ─────────────── M
+  7   main  o ─────────── M  ◄──── git pull ─────────────────────────────┘
+      then delete feature/x, here and on Gitea
+</code></pre>
+<p><strong>Do them even when you are the only developer.</strong> Solo, a PR costs thirty seconds and still gives
+you one readable view of everything you are about to make permanent in <code>main</code>. That is how you
+catch the committed password.</p>
+<h3 id="opening-one">Opening one</h3>
+<ol>
+<li>Go to <code>http://192.168.0.22:3000/Adhir/&lt;your-practice-repo&gt;</code></li>
+<li><strong>Pull Requests</strong> tab → <strong>New Pull Request</strong> button → pick the two branches in the compare bar.
+   (Shortcut: right after a push, the repo page shows a green <em>"You pushed on branch <code>feature/x</code>"</em>
+   banner with its own <strong>New Pull Request</strong> button — it disappears after a while, and Gitea has no
+   <em>"Compare &amp; Pull Request"</em> button, that is GitHub's wording.)</li>
+<li><strong>Check the direction: base <code>main</code> ← compare <code>your-branch</code>.</strong> Gitea labels the two boxes
+   <strong>merge into:</strong> (the base, left) and <strong>pull from:</strong> (your branch, right), with an arrow pointing
+   left. Getting these backwards is the single most common PR mistake, and it produces a confusing
+   empty or enormous diff.</li>
+<li><strong>Title</strong> — the same rules as a commit subject (<a href="#06-commit-messages-and-branch-names">§0.6</a>):
+   short, imperative, specific. <em>"Fix penal-interest label on locker type screen"</em>, not <em>"changes"</em>.</li>
+<li><strong>Description</strong> — what changed, <strong>why</strong>, and how you know it works. If it touches a screen, say
+   which. If it fixes an issue, write <code>Fixes #12</code> and Gitea closes issue 12 automatically when the
+   PR merges.</li>
+<li>Right-hand sidebar → <strong>Reviewers</strong> → pick someone. A PR nobody is assigned to is a PR nobody
+   reads. <em>On your solo practice repo the list is empty — Gitea only offers collaborators, and you
+   cannot request review from yourself. Skip it there; use it on real repos.</em></li>
+<li><strong>Create Pull Request</strong>.</li>
+</ol>
+<p><strong>Watch it once before you read the details</strong> — the whole flow, start to merge, on our Gitea:</p>
+<figure class="clip"><video controls preload="none" poster="img/git-with-gitea/rec-pr-poster.png" src="img/git-with-gitea/rec-pr.webm"></video></figure>
+
+<p><em>82 seconds, recorded on our Gitea 1.27 in a throwaway repo: the push banner, the direction check, title and description, Create Pull Request, a comment on one line in Files Changed, then </em><em>Create merge commit</em><em> with </em><em>Delete Branch</em><em> ticked. The screens below are the same steps, one at a time.</em></p>
+<p><a href="img/git-with-gitea/g-recent-push.png" target="_blank" rel="noopener"><img alt="The &quot;You pushed on branch&quot; banner" src="img/git-with-gitea/g-recent-push.png" /></a></p>
+<p><em>Step 2's shortcut: the banner Gitea shows on the repo page right after you push a branch.</em></p>
+<p><a href="img/git-with-gitea/g-compare.png" target="_blank" rel="noopener"><img alt="Comparing changes: merge into main, pull from the feature branch" src="img/git-with-gitea/g-compare.png" /></a></p>
+<p><em>Step 3: </em><em>merge into:</em><em> <code>main</code> ← </em><em>pull from:</em><em> your branch. Below the bar Gitea lists the commits
+that would be merged — two here. If that list is empty or huge, stop and check the direction.</em></p>
+<p><a href="img/git-with-gitea/g-pr-new.png" target="_blank" rel="noopener"><img alt="The new pull request form" src="img/git-with-gitea/g-pr-new.png" /></a></p>
+<p><em>Steps 4–7: a specific title, a description that says what, why and how it was tested, and
+</em><em>Create Pull Request</em><em>. Note the hint under the title about <code>WIP:</code>.</em></p>
+<p><strong>Not ready for review yet?</strong> Start the title with <code>WIP:</code> (or <code>[WIP]</code>) — Gitea greys out the merge
+box until you drop the prefix. On an open PR the same switch is the <strong>Still in progress? Add WIP:
+prefix</strong> link in the right-hand sidebar.</p>
+<h3 id="the-pr-page-tab-by-tab">The PR page, tab by tab</h3>
+<table>
+<thead>
+<tr>
+<th>Tab</th>
+<th>What it holds</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Conversation</strong></td>
+<td>The description, all comments, and the merge button. The narrative record</td>
+</tr>
+<tr>
+<td><strong>Commits</strong></td>
+<td>Your commits in order. This is why messages matter — a reviewer reads this list first</td>
+</tr>
+<tr>
+<td><strong>Files Changed</strong></td>
+<td>The diff. Where line-by-line review happens</td>
+</tr>
+</tbody>
+</table>
+<p><a href="img/git-with-gitea/g-pr-conversation.png" target="_blank" rel="noopener"><img alt="An open pull request, Conversation tab" src="img/git-with-gitea/g-pr-conversation.png" /></a></p>
+<p><em>The top of an open PR: status (</em><em>Open</em><em>), "wants to merge 2 commits from <code>feature/vs-staging</code> into
+<code>main</code>", the three tabs with their counts, and the description as the first comment.</em></p>
+<p><a href="img/git-with-gitea/g-pr-commits.png" target="_blank" rel="noopener"><img alt="Commits tab" src="img/git-with-gitea/g-pr-commits.png" /></a></p>
+<p><em>The </em><em>Commits</em><em> tab — the list a reviewer reads first, which is why commit messages matter.</em></p>
+<p>In <strong>Files Changed</strong>, hover any line and click the <strong>+</strong> to comment on exactly that line. That is
+the whole mechanism of code review: specific comments attached to specific lines, which stay
+attached as the code changes.</p>
+<p><a href="img/git-with-gitea/g-pr-line-comment.png" target="_blank" rel="noopener"><img alt="Commenting on one line in Files Changed" src="img/git-with-gitea/g-pr-line-comment.png" /></a></p>
+<p><em>The blue </em><em>+</em><em> beside line 7 opened a comment box for that line only. </em><em>Add single comment</em><em> posts
+it now; </em><em>Start review</em><em> holds it as pending until you submit the review with the </em><em>Review</em><em>
+button (top right).</em></p>
+<p><strong>Responding to review is just more commits.</strong> Make the changes on the same branch, commit, push.
+Refresh the PR — the new commit is in it. <strong>Never close a PR and open a new one</strong> to incorporate
+feedback; you would throw away the entire discussion. The PR tracks the <em>branch</em>, so anything you
+push to that branch is in the PR automatically.</p>
+<h3 id="when-you-are-the-reviewer">When you are the reviewer</h3>
+<p>You will be on this side too, so know what is expected:</p>
+<ul>
+<li>Read the <strong>description</strong> first, then <strong>Commits</strong>, then <strong>Files Changed</strong>. In that order — you
+  need the intent before the diff means anything.</li>
+<li>Comment on lines, not on people. <em>"This throws if the list is empty"</em> — not <em>"you forgot"</em>.</li>
+<li>Distinguish blocking from optional. Prefix nits: <em>"nit: spelling"</em> — the author then knows what
+  must change and what is taste.</li>
+<li>The verdict lives behind the <strong>Review</strong> button at the top right of <strong>Files Changed</strong> — write a
+  summary, then pick <strong>Comment</strong>, <strong>Approve</strong>, or <strong>Request changes</strong>. Line comments you leave
+  first are held as <em>pending</em> until you submit that review, which is how you post ten remarks as
+  one notification instead of ten. Choosing "Comment" when you mean "Request changes" leaves the
+  author guessing. <strong>Approve</strong> is greyed out on your own PR — Gitea does not let authors approve
+  themselves, which is why the practice repos never show it enabled.</li>
+</ul>
+<p><a href="img/git-with-gitea/g-pr-review.png" target="_blank" rel="noopener"><img alt="The Submit review box" src="img/git-with-gitea/g-pr-review.png" /></a></p>
+<p><em>The </em><em>Review</em><em> button opens this box. Here it is the author's own PR, so </em><em>Approve</em><em> is disabled.</em></p>
+<ul>
+<li>Pull the branch down and <strong>run it</strong> when the change is non-trivial. A diff that reads correctly
+  and a program that behaves correctly are different claims.</li>
+</ul>
+<h3 id="pr-troubleshooting">PR troubleshooting</h3>
+<table>
+<thead>
+<tr>
+<th>Symptom</th>
+<th>Cause and fix</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><span id="pr-empty"></span>The diff is empty</td>
+<td>Base and compare are the same branch, or you never pushed. Push and re-check the direction</td>
+</tr>
+<tr>
+<td><span id="pr-enormous"></span>The diff is enormous and full of files you never touched</td>
+<td>Base and compare are backwards, or you branched off the wrong branch. Re-open with the right base</td>
+</tr>
+<tr>
+<td><span id="pr-no-diff"></span>"There are no differences to show. There is no need to create a pull request."</td>
+<td>Your commits are still local, or both boxes name the same branch. Push, then re-pick <strong>pull from:</strong></td>
+</tr>
+<tr>
+<td><span id="pr-no-branch"></span>Your branch is not in the dropdown</td>
+<td>Not pushed yet, or pushed to a different remote</td>
+</tr>
+<tr>
+<td><span id="pr-not-yours"></span>The PR shows commits that are not yours</td>
+<td>You branched off someone else's branch instead of <code>main</code></td>
+</tr>
+<tr>
+<td><span id="pr-conflicts"></span>"This branch has conflicts that must be resolved"</td>
+<td><code>main</code> moved under you. Merge <code>main</code> into your branch locally, resolve, push — the PR re-checks itself and goes green</td>
+</tr>
+<tr>
+<td><span id="pr-no-merge"></span>Cannot merge, no button</td>
+<td>The <strong>Create merge commit</strong> button is at the <em>bottom</em> of <strong>Conversation</strong>, under every comment — scroll. Genuinely absent means branch protection, unmet approvals, or a <code>WIP:</code> title (<a href="git-with-gitea-part3.html#145-branch-protection-expect-main-to-reject-you">§14.5</a>)</td>
+</tr>
+<tr>
+<td><span id="pr-closed"></span>You closed the PR by accident</td>
+<td>Reopen it on the same page — the branch and discussion are intact</td>
+</tr>
+<tr>
+<td><span id="pr-force-pushed"></span>You force-pushed and the review comments now point at nothing</td>
+<td>Comments on rewritten commits become "outdated". Avoid force-pushing a branch that is under review</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="06-commit-messages-and-branch-names">0.6 Commit messages and branch names</h2>
+<h3 id="messages">Messages</h3>
+<p>First line ≤ 72 characters, imperative mood ("Add taluka lookup", not "Added" or "Adding"),
+explaining <strong>why</strong> if it isn't obvious. Start it with one of this repo's <code>CHANGELOG.md</code> type words:</p>
+<pre><code>fix: reference cache ignored Cache:Provider
+
+AddControllersWithViews registers a default MemoryDistributedCache before
+AddCbsFramework runs, so the provider switch short-circuited on every startup.
+</code></pre>
+<p><code>feat</code> / <code>fix</code> / <code>docs</code> / <code>refactor</code> / <code>test</code> are <strong>Conventional Commits</strong> — a convention, not a
+git feature. Git will happily accept any message; this is a habit the team keeps because
+<a href="../../CHANGELOG.html"><code>CHANGELOG.md</code></a> already uses these words across hundreds of entries. Match them
+and your commit message and your changelog line become the same sentence, written once.</p>
+<table>
+<thead>
+<tr>
+<th>Prefix</th>
+<th>Means</th>
+<th>The question it answers</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>feat</code></td>
+<td>A new capability that did not exist</td>
+<td>Can someone now do something they could not before?</td>
+</tr>
+<tr>
+<td><code>fix</code></td>
+<td>Something was broken; now it is not</td>
+<td>Was there a defect? Would you write "the bug where…"?</td>
+</tr>
+<tr>
+<td><code>docs</code></td>
+<td>Documentation only</td>
+<td>Did any shipping code change? If no → <code>docs</code></td>
+</tr>
+<tr>
+<td><code>refactor</code></td>
+<td>Code changed, behaviour did not</td>
+<td>Would a user notice? If no → <code>refactor</code></td>
+</tr>
+<tr>
+<td><code>test</code></td>
+<td>Tests added or changed</td>
+<td>Only test projects touched</td>
+</tr>
+<tr>
+<td><code>chore</code></td>
+<td>Housekeeping that is none of the above</td>
+<td>Deleting a stale file, bumping a package. The honest bucket — not a way to avoid choosing</td>
+</tr>
+</tbody>
+</table>
+<p>Real examples from this repo's changelog:</p>
+<pre><code>feat:     `_DatePicker` gains a calendar
+fix:      `_DatePicker` with HideDay now renders the hidden ISO value with day = 1
+docs:     corrected an over-broad claim in git-with-gitea.md §0
+refactor: routecutover.json retired — a_Menus.NavigateURL is now the single source of truth
+test:     Playwright E2E suite TflCbs.E2E
+chore:    deleted the stale TflCbs.Host.Main/TflCbs.Host.Main.slnx
+</code></pre>
+<p><strong>The two that get confused:</strong></p>
+<ul>
+<li><strong><code>fix</code> vs <code>refactor</code></strong> — did behaviour change? <code>refactor</code> means the code looks different and does
+  <em>exactly</em> the same thing. The moment output changes it is <code>fix</code> or <code>feat</code>.</li>
+<li><strong><code>feat</code> vs <code>fix</code></strong> — was it ever supposed to work? A screen that never had a calendar getting one
+  is <code>feat</code>. A calendar that renders the wrong date is <code>fix</code>.</li>
+</ul>
+<p><strong>The optional part in brackets is a scope</strong> — which area of the system:</p>
+<pre><code>feat(security):         ...
+fix(docker-multi):      ...
+refactor(core-modules): ...
+</code></pre>
+<p>About a fifth of this repo's entries carry one, always where the area is not obvious from the
+sentence. Add a scope when it helps someone scanning; skip it when the summary already says where.
+Do not force one onto every commit.</p>
+<p><strong>Why bother</strong>, in the order it will actually matter to you:</p>
+<ol>
+<li><strong>It is greppable.</strong> <code>git log --oneline --grep "^fix"</code> gives you every bug fix; release notes
+   write themselves.</li>
+<li><strong>It forces a decision.</strong> If you cannot tell whether your commit is <code>feat</code> or <code>refactor</code>, it is
+   usually <em>both</em> — which means it should have been two commits. The prefix catches unfocused work
+   before a reviewer has to.</li>
+<li><strong>Commits and changelog stop drifting</strong>, because you write the sentence once.</li>
+</ol>
+<p>Standard types this repo does not use — <code>perf</code>, <code>style</code>, <code>build</code>, <code>ci</code> — and the breaking-change
+markers <code>feat!:</code> / a <code>BREAKING CHANGE:</code> footer are all noise until you need them. Six words is
+plenty.</p>
+<h3 id="branch-names">Branch names</h3>
+<p>Pick a convention and stick to it:</p>
+<table>
+<thead>
+<tr>
+<th>Prefix</th>
+<th>For</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>feature/</code></td>
+<td>new functionality</td>
+</tr>
+<tr>
+<td><code>fix/</code></td>
+<td>bug fixes</td>
+</tr>
+<tr>
+<td><code>refactor/</code></td>
+<td>no behaviour change</td>
+</tr>
+<tr>
+<td><code>docs/</code></td>
+<td>documentation only</td>
+</tr>
+<tr>
+<td><code>spike/</code></td>
+<td>throwaway experiments</td>
+</tr>
+</tbody>
+</table>
+<p>One branch, one purpose. A branch that fixes a bug <em>and</em> renames a folder <em>and</em> adds a feature is
+a PR nobody can review properly.</p>
+<p><strong>Never commit directly to <code>main</code>.</strong> Branch, push, open a PR, get it reviewed, merge. That is the
+whole workflow, and it is the same on every team you will ever join — and the same in both halves
+of this guide.</p>
+<hr />
+<p><strong>Next:</strong> <a href="git-with-gitea-part1.html">Part 1 — Git in Visual Studio →</a></p>
+<p><a href="git-with-gitea.html">Git with Gitea — start page</a> · <a href="git-with-gitea-part1.html">Part 1 · Visual Studio →</a> · <a href="git-with-gitea-cheat-sheet.html">Cheat sheet</a></p>
+</div></div>
+<script>
+(function(){
+ function put(t){
+  if(navigator.clipboard&&navigator.clipboard.writeText)return navigator.clipboard.writeText(t);
+  return new Promise(function(res,rej){
+   var a=document.createElement('textarea');a.value=t;a.setAttribute('readonly','');
+   a.style.cssText='position:fixed;top:0;left:0;opacity:0';document.body.appendChild(a);
+   a.select();var ok=false;try{ok=document.execCommand('copy')}catch(e){}
+   document.body.removeChild(a);ok?res():rej()});
+ }
+ function flash(el,txt,ms){
+  var was=el.textContent;el.classList.add('done');if(txt)el.textContent=txt;
+  setTimeout(function(){el.classList.remove('done');if(txt)el.textContent=was},ms||1200);
+ }
+ function copy(text,el,okTxt){
+  put(text).then(function(){flash(el,okTxt)},function(){
+   if(okTxt){var w=el.textContent;el.textContent='Ctrl+C';setTimeout(function(){el.textContent=w},2000)}});
+ }
+ document.querySelectorAll('pre').forEach(function(pre){
+  if(pre.classList.contains('txtdoc'))return;
+  var b=document.createElement('button');
+  b.type='button';b.className='copy';b.textContent='Copy';
+  b.setAttribute('aria-label','Copy this code block to the clipboard');
+  b.addEventListener('click',function(){copy((pre.querySelector('code')||pre).innerText,b,'Copied')});
+  pre.appendChild(b);
+ });
+ document.querySelectorAll('td code').forEach(function(c){
+  if(!c.textContent.trim())return;
+  c.classList.add('cp');c.tabIndex=0;c.setAttribute('role','button');
+  c.title='Click to copy';
+  c.addEventListener('click',function(){copy(c.textContent,c)});
+  c.addEventListener('keydown',function(e){
+   if(e.key==='Enter'||e.key===' '){e.preventDefault();copy(c.textContent,c)}});
+ });
+ // Lab tick-boxes: any heading whose id starts "lab-" gets a checkbox, remembered in this
+ // browser only. Storage can be missing (private window, blocked site data) - the page
+ // still works, the ticks just do not persist.
+ function sget(k){try{return localStorage.getItem(k)}catch(e){return null}}
+ function sset(k,on){try{on?localStorage.setItem(k,'1'):localStorage.removeItem(k)}catch(e){}}
+ var labs=[].slice.call(document.querySelectorAll('h2[id^="lab-"],h3[id^="lab-"]'));
+ if(labs.length){
+  var badge=document.createElement('div');badge.className='labbadge';document.body.appendChild(badge);
+  var count=function(){badge.textContent='Labs done: '+labs.filter(function(h){return sget('labdone:'+h.id)}).length+' of '+labs.length};
+  labs.forEach(function(h){
+   var cb=document.createElement('input');cb.type='checkbox';cb.className='lab';
+   cb.title='Tick when you have finished this lab (remembered in this browser)';cb.setAttribute('aria-label','Lab done');
+   cb.checked=!!sget('labdone:'+h.id);h.classList.toggle('labdone',cb.checked);
+   cb.addEventListener('change',function(){sset('labdone:'+h.id,cb.checked);h.classList.toggle('labdone',cb.checked);count()});
+   h.insertBefore(cb,h.firstChild);
+  });
+  count();
+ }
+ document.querySelectorAll('li>a[href*="#lab-"]').forEach(function(a){
+  if(sget('labdone:'+a.getAttribute('href').split('#')[1]))a.classList.add('labdone')});
+})();
+</script>
+</body></html>

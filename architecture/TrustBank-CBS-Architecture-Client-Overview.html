@@ -1,0 +1,839 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>TrustBank CBS Architecture</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..100,400..800&family=IBM+Plex+Mono:wght@400;500&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&display=swap">
+<style>
+:root{
+  --bg:#F4F7F5; --surface:#FFFFFF; --ink:#16211E; --muted:#56655F; --rule:#D3DDD8; --rule-strong:#93A69F;
+  --fill2:#EAF0ED; --accent:#0D6A5E; --accent-soft:#DDEFEA; --amber:#9C5F0E; --amber-soft:#F7EAD6;
+  --deny:#B0352A; --deny-soft:#F7E1DD;
+  --f-display:"Archivo","Helvetica Neue",Arial,sans-serif;
+  --f-body:"Source Serif 4",Georgia,"Times New Roman",serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme:dark;
+    --bg:#0E1513; --surface:#15201D; --ink:#E2EBE7; --muted:#98A9A3; --rule:#283631; --rule-strong:#52665F;
+    --fill2:#1A2723; --accent:#52C4B0; --accent-soft:#14322C; --amber:#E2A64B; --amber-soft:#382A16;
+    --deny:#EE7D71; --deny-soft:#3A1F1B;
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --bg:#0E1513; --surface:#15201D; --ink:#E2EBE7; --muted:#98A9A3; --rule:#283631; --rule-strong:#52665F;
+  --fill2:#1A2723; --accent:#52C4B0; --accent-soft:#14322C; --amber:#E2A64B; --amber-soft:#382A16;
+  --deny:#EE7D71; --deny-soft:#3A1F1B;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:17px/1.62 var(--f-body);padding-inline:20px}
+main{max-width:800px;margin:0 auto;padding-block:56px 96px}
+h1,h2,h3{font-family:var(--f-display);text-wrap:balance;line-height:1.15;margin:0}
+h1{font-size:clamp(2.4rem,6vw,3.6rem);font-weight:800;font-stretch:80%;letter-spacing:-.01em}
+h2{font-size:1.6rem;font-weight:700;font-stretch:88%}
+h3{font-size:1.05rem;font-weight:650}
+p{margin:0;max-width:66ch}
+a{color:var(--accent)}
+a:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.eyebrow{font:500 .76rem/1.4 var(--f-mono);letter-spacing:.09em;text-transform:uppercase;color:var(--muted)}
+header.hero{display:grid;gap:18px;padding-bottom:36px;border-bottom:1px solid var(--rule)}
+.lede{font-size:1.22rem;line-height:1.5;max-width:58ch}
+.facts{display:flex;flex-wrap:wrap;gap:10px 28px;margin:6px 0 0;padding:0}
+.facts div{display:flex;align-items:baseline;gap:8px}
+.facts dt{font:700 1.5rem/1 var(--f-display);font-stretch:85%;color:var(--accent);font-variant-numeric:tabular-nums}
+.facts dd{margin:0;font:500 .82rem/1.3 var(--f-mono);color:var(--muted)}
+nav.toc{padding-block:28px;border-bottom:1px solid var(--rule)}
+nav.toc ol{margin:12px 0 0;padding:0;list-style:none;columns:2 15rem;column-gap:32px}
+nav.toc li{font:500 .95rem/1.9 var(--f-display);counter-increment:toc;break-inside:avoid}
+nav.toc li::before{content:counter(toc,decimal-leading-zero);font:400 .75rem var(--f-mono);color:var(--muted);margin-right:10px}
+nav.toc a{color:var(--ink);text-decoration:none}
+nav.toc a:hover{color:var(--accent);text-decoration:underline}
+section{display:grid;gap:16px;padding-block:44px 8px;scroll-margin-top:16px}
+.sec-head{display:grid;gap:6px}
+ul.points{margin:0;padding-left:1.1em;display:grid;gap:6px;max-width:66ch}
+ul.points li::marker{color:var(--accent)}
+strong{font-weight:600}
+figure{margin:6px 0 0;display:grid;gap:10px}
+.fig-scroll{overflow-x:auto;background:var(--surface);border:1px solid var(--rule);border-radius:6px;padding:18px}
+.fig-scroll svg{display:block;width:100%;min-width:640px;height:auto}
+figcaption{font-size:.92rem;line-height:1.5;color:var(--muted);max-width:70ch}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(15rem,1fr));gap:4px 28px;margin:0}
+.grid2 div{padding-block:8px;border-top:1px solid var(--rule)}
+.grid2 dt{font:600 .98rem/1.3 var(--f-display)}
+.grid2 dd{margin:2px 0 0;font-size:.93rem;color:var(--muted)}
+.table-wrap{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:.95rem}
+th,td{text-align:left;vertical-align:top;padding:9px 12px 9px 0;border-top:1px solid var(--rule)}
+th{font:600 .95rem/1.35 var(--f-display);white-space:nowrap}
+tbody th{white-space:normal;min-width:9rem;max-width:18rem}
+td:last-child{color:var(--muted)}
+footer{margin-top:56px;padding-top:20px;border-top:1px solid var(--rule);font:400 .8rem/1.6 var(--f-mono);color:var(--muted)}
+
+/* diagram vocabulary */
+.d text{font-family:var(--f-display);font-size:13px;fill:var(--ink)}
+.d .t{font-weight:650;font-size:13.5px}
+.d .s{font-size:11.5px;fill:var(--muted)}
+.d .m{font-family:var(--f-mono);font-size:10.5px;letter-spacing:.06em;fill:var(--muted)}
+.d .ta{fill:var(--accent)} .d .td{fill:var(--deny)} .d .tb{fill:var(--amber)}
+.d .box{fill:var(--surface);stroke:var(--rule-strong);stroke-width:1.2}
+.d .soft{fill:var(--fill2);stroke:var(--rule);stroke-width:1}
+.d .zone{fill:var(--fill2);stroke:none}
+.d .acc{fill:var(--accent-soft);stroke:var(--accent);stroke-width:1.4}
+.d .amb{fill:var(--amber-soft);stroke:var(--amber);stroke-width:1.4}
+.d .den{fill:var(--deny-soft);stroke:var(--deny);stroke-width:1.2}
+.d .dash{stroke-dasharray:5 4}
+.d .ln{fill:none;stroke:var(--rule-strong);stroke-width:1.4}
+.d .la{fill:none;stroke:var(--accent);stroke-width:1.6}
+.d .ld{fill:none;stroke:var(--deny);stroke-width:1.4;stroke-dasharray:5 4}
+.d .ah{fill:var(--rule-strong)} .d .aa{fill:var(--accent)} .d .ad{fill:var(--deny)}
+.d .bar{fill:var(--accent)}
+.d .btn{fill:var(--accent)} .d .btnt{fill:var(--surface);font-weight:600;font-size:12px}
+@media (prefers-reduced-motion: reduce){*{scroll-behavior:auto}}
+@media (max-width:480px){body{font-size:16px}.fig-scroll{padding:12px}}
+</style>
+
+</head>
+<body>
+<main>
+<header class="hero">
+  <p class="eyebrow">Platform architecture · October 2026</p>
+  <h1>TrustBank CBS</h1>
+  <p class="lede">A core banking platform on Microsoft .NET 10. It is secure by default, runs one codebase on the database you already own, and is modular enough to grow without a rewrite.</p>
+  <dl class="facts">
+    <div><dt>13</dt><dd>business modules</dd></div>
+    <div><dt>3</dt><dd>supported databases</dd></div>
+    <div><dt>4</dt><dd>deployment shapes</dd></div>
+    <div><dt>1</dt><dd>codebase for all of them</dd></div>
+  </dl>
+  <p class="eyebrow" style="text-transform:none;letter-spacing:.02em">For banks, and their architecture, security and operations teams, evaluating TrustBank CBS.</p>
+</header>
+
+<nav class="toc" aria-label="Contents">
+  <p class="eyebrow">Contents</p>
+  <ol>
+    <li><a href="#benefits">What this architecture gives a bank</a></li>
+    <li><a href="#glance">Architecture at a glance</a></li>
+    <li><a href="#tiers">Layers and tiers</a></li>
+    <li><a href="#request">What happens on every request</a></li>
+    <li><a href="#modules">Business modules</a></li>
+    <li><a href="#boundaries">Boundaries the build enforces</a></li>
+    <li><a href="#growth">Growing without a rewrite</a></li>
+    <li><a href="#microservices">Why not microservices</a></li>
+    <li><a href="#security">Security in depth</a></li>
+    <li><a href="#makerchecker">Maker-checker control</a></li>
+    <li><a href="#data">Data and databases</a></li>
+    <li><a href="#zones">Network zones</a></li>
+    <li><a href="#shapes">Deployment shapes</a></li>
+    <li><a href="#reports">Reports</a></li>
+    <li><a href="#operations">Operations and monitoring</a></li>
+    <li><a href="#experience">Operator experience</a></li>
+    <li><a href="#quality">Quality engineering</a></li>
+    <li><a href="#technology">Technology summary</a></li>
+  </ol>
+</nav>
+
+<!-- benefits -->
+<section id="benefits">
+  <div class="sec-head"><p class="eyebrow">01</p><h2>What this architecture gives a bank</h2></div>
+  <p>Every benefit below comes from a specific part of the design, named under each one and explained in the sections that follow. They are grouped by who in the bank feels them most.</p>
+  <figure>
+    <div class="fig-scroll">
+    <svg class="d" viewBox="0 0 720 300" role="img" aria-label="Benefits by audience. Business: correct balances, your own database, start small and add modules, lower cost of change. Risk and security: denied unless granted, four eyes on money, one audit trail, passes zoning reviews. IT operations: one thing to run, Windows or Linux, scale per module, plugs into existing monitoring.">
+      <text x="116" y="16" class="m" text-anchor="middle">FOR THE BUSINESS</text>
+      <text x="360" y="16" class="m" text-anchor="middle">FOR RISK AND SECURITY</text>
+      <text x="604" y="16" class="m" text-anchor="middle">FOR IT OPERATIONS</text>
+      <g>
+        <rect x="0" y="28" width="232" height="58" rx="4" class="acc"/><text x="14" y="52" class="t">Balances are always right</text><text x="14" y="72" class="m ta">ONE DATABASE TRANSACTION</text>
+        <rect x="0" y="96" width="232" height="58" rx="4" class="acc"/><text x="14" y="120" class="t">Runs on your database</text><text x="14" y="140" class="m ta">SQL SERVER · ORACLE · POSTGRESQL</text>
+        <rect x="0" y="164" width="232" height="58" rx="4" class="acc"/><text x="14" y="188" class="t">Start small, add modules</text><text x="14" y="208" class="m ta">MODULES SWITCHED BY CONFIG</text>
+        <rect x="0" y="232" width="232" height="58" rx="4" class="acc"/><text x="14" y="256" class="t">Lower cost of change</text><text x="14" y="276" class="m ta">ENFORCED BOUNDARIES · TOOLKIT</text>
+      </g>
+      <g>
+        <rect x="244" y="28" width="232" height="58" rx="4" class="amb"/><text x="258" y="52" class="t">Denied unless granted</text><text x="258" y="72" class="m tb">FAIL-CLOSED ACCESS GATE</text>
+        <rect x="244" y="96" width="232" height="58" rx="4" class="amb"/><text x="258" y="120" class="t">Four eyes on every entry</text><text x="258" y="140" class="m tb">MAKER-CHECKER QUEUE</text>
+        <rect x="244" y="164" width="232" height="58" rx="4" class="amb"/><text x="258" y="188" class="t">One audit trail to follow</text><text x="258" y="208" class="m tb">ONE LEDGER · CORRELATED LOGS</text>
+        <rect x="244" y="232" width="232" height="58" rx="4" class="amb"/><text x="258" y="256" class="t">Passes network-zone reviews</text><text x="258" y="276" class="m tb">GATEWAY IN THE DMZ</text>
+      </g>
+      <g>
+        <rect x="488" y="28" width="232" height="58" rx="4" class="box"/><text x="502" y="52" class="t">One thing to run</text><text x="502" y="72" class="m">MODULAR MONOLITH</text>
+        <rect x="488" y="96" width="232" height="58" rx="4" class="box"/><text x="502" y="120" class="t">Windows or Linux</text><text x="502" y="140" class="m">FOUR SHAPES, ONE BUILD</text>
+        <rect x="488" y="164" width="232" height="58" rx="4" class="box"/><text x="502" y="188" class="t">Scale only what is busy</text><text x="502" y="208" class="m">PER-MODULE HOSTS</text>
+        <rect x="488" y="232" width="232" height="58" rx="4" class="box"/><text x="502" y="256" class="t">Fits existing monitoring</text><text x="502" y="276" class="m">OPENTELEMETRY · OTLP</text>
+      </g>
+    </svg>
+    </div>
+    <figcaption>The large text in each box is the benefit; the small capitals name the part of the architecture that delivers it.</figcaption>
+  </figure>
+  <dl class="grid2">
+    <div><dt>Correctness first</dt><dd>A posting that spans several areas commits as one unit or not at all. No reversal entries cleaning up half-finished work. <a href="#microservices">Why not microservices</a></dd></div>
+    <div><dt>No database lock-in</dt><dd>One codebase on SQL Server, Oracle or PostgreSQL, so you keep the database you already license, staff and back up. <a href="#data">Data and databases</a></dd></div>
+    <div><dt>Phased roll-out</dt><dd>Enable the modules you need now and add more later on the same platform. <a href="#modules">Business modules</a></dd></div>
+    <div><dt>Durable quality</dt><dd>Module boundaries are checked on every build, so the system stays maintainable as it grows. <a href="#boundaries">Boundaries</a></dd></div>
+    <div><dt>Security by default</dt><dd>Every request passes a fail-closed gate; security is in the structure, not bolted on. <a href="#security">Security in depth</a></dd></div>
+    <div><dt>Simple to operate, ready to scale</dt><dd>One application today, and a configuration change to split by module when volume needs it. <a href="#growth">Growing without a rewrite</a></dd></div>
+  </dl>
+</section>
+
+<!-- 1 -->
+<section id="glance">
+  <div class="sec-head"><p class="eyebrow">02</p><h2>Architecture at a glance</h2></div>
+  <p>Staff use TrustBank CBS from a web browser. Every request passes down the same stack of layers, and each layer has one job. Screens never touch the database directly, and business rules never depend on how a screen is drawn.</p>
+  <figure>
+    <div class="fig-scroll">
+    <svg class="d" viewBox="0 0 640 440" role="img" aria-label="Layered architecture: browser, optional gateway, security gate, screens, business modules, data access, and SQL Server, Oracle or PostgreSQL.">
+      <defs><marker id="k1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" class="ah"/></marker></defs>
+      <line x1="40" y1="14" x2="40" y2="426" class="ln" marker-end="url(#k1)"/>
+      <text class="m" transform="translate(28 220) rotate(-90)" text-anchor="middle">EVERY REQUEST, TOP TO BOTTOM</text>
+      <rect x="80" y="4" width="540" height="46" rx="4" class="soft"/>
+      <text x="98" y="32" class="t">Operator's browser</text><text x="602" y="32" class="s" text-anchor="end">HTTPS · strict content policy</text>
+      <line x1="350" y1="50" x2="350" y2="62" class="ln" marker-end="url(#k1)"/>
+      <rect x="80" y="64" width="540" height="46" rx="4" class="box dash"/>
+      <text x="98" y="92" class="t">Gateway</text><text x="168" y="92" class="s">(multi-host shape)</text><text x="602" y="92" class="s" text-anchor="end">TLS · rate limiting · routing · no database access</text>
+      <line x1="350" y1="110" x2="350" y2="122" class="ln" marker-end="url(#k1)"/>
+      <rect x="80" y="124" width="540" height="46" rx="4" class="acc"/>
+      <text x="98" y="152" class="t">Security gate</text><text x="602" y="152" class="s ta" text-anchor="end">fail-closed · signed in · module · screen right</text>
+      <line x1="350" y1="170" x2="350" y2="182" class="ln" marker-end="url(#k1)"/>
+      <rect x="80" y="184" width="540" height="46" rx="4" class="box"/>
+      <text x="98" y="212" class="t">Screens</text><text x="602" y="212" class="s" text-anchor="end">one screen library per module · shared component toolkit</text>
+      <line x1="350" y1="230" x2="350" y2="242" class="ln" marker-end="url(#k1)"/>
+      <rect x="80" y="244" width="540" height="46" rx="4" class="box"/>
+      <text x="98" y="272" class="t">Business modules</text><text x="602" y="272" class="s" text-anchor="end">banking rules · explicit success or failure</text>
+      <line x1="350" y1="290" x2="350" y2="302" class="ln" marker-end="url(#k1)"/>
+      <rect x="80" y="304" width="540" height="46" rx="4" class="box"/>
+      <text x="98" y="332" class="t">Data access</text><text x="602" y="332" class="s" text-anchor="end">parameterized · transactional · database-aware</text>
+      <line x1="350" y1="350" x2="168" y2="376" class="ln" marker-end="url(#k1)"/>
+      <line x1="350" y1="350" x2="350" y2="376" class="ln" marker-end="url(#k1)"/>
+      <line x1="350" y1="350" x2="532" y2="376" class="ln" marker-end="url(#k1)"/>
+      <rect x="80" y="380" width="170" height="46" rx="4" class="soft"/><text x="165" y="408" class="t" text-anchor="middle">SQL Server</text>
+      <rect x="265" y="380" width="170" height="46" rx="4" class="soft"/><text x="350" y="408" class="t" text-anchor="middle">Oracle</text>
+      <rect x="450" y="380" width="170" height="46" rx="4" class="soft"/><text x="535" y="408" class="t" text-anchor="middle">PostgreSQL</text>
+    </svg>
+    </div>
+    <figcaption>Each layer calls only the one below it. The gateway is part of the multi-host deployment; in a single-host deployment your existing reverse proxy takes its place. The database is the bank's choice of the three.</figcaption>
+  </figure>
+</section>
+
+<!-- tiers -->
+<section id="tiers">
+  <div class="sec-head"><p class="eyebrow">03</p><h2>Layers and tiers</h2></div>
+  <p>Banks often ask whether TrustBank CBS is a three-tier application. The question has two meanings. <strong>Layers</strong> are how the code is divided. <strong>Tiers</strong> are how many separate servers it runs on. TrustBank CBS is strictly layered, and runs on two or three server tiers depending on the deployment shape.</p>
+  <figure>
+    <div class="fig-scroll">
+    <svg class="d" viewBox="0 0 760 330" role="img" aria-label="Six code layers on the left. In the single-host shape they map to two server tiers, application and database. In the multi-host shape a gateway adds a web edge tier, giving three server tiers.">
+      <text x="110" y="14" class="m" text-anchor="middle">LAYERS · IN THE CODE</text>
+      <text x="420" y="14" class="m" text-anchor="middle">SINGLE HOST · 2 SERVER TIERS</text>
+      <text x="645" y="14" class="m" text-anchor="middle">MULTI-HOST · 3 SERVER TIERS</text>
+      <rect x="0" y="28" width="220" height="36" rx="4" class="soft"/><text x="14" y="51" class="t">Browser</text><text x="206" y="51" class="s" text-anchor="end">client</text>
+      <rect x="0" y="80" width="220" height="36" rx="4" class="box"/><text x="14" y="103" class="t">Screens</text><text x="206" y="103" class="s" text-anchor="end">presentation</text>
+      <rect x="0" y="124" width="220" height="36" rx="4" class="acc"/><text x="14" y="147" class="t">Security gate, session</text><text x="206" y="147" class="s ta" text-anchor="end">framework</text>
+      <rect x="0" y="168" width="220" height="36" rx="4" class="box"/><text x="14" y="191" class="t">Business modules</text><text x="206" y="191" class="s" text-anchor="end">business</text>
+      <rect x="0" y="212" width="220" height="36" rx="4" class="box"/><text x="14" y="235" class="t">Data access</text><text x="206" y="235" class="s" text-anchor="end">data</text>
+      <rect x="0" y="272" width="220" height="36" rx="4" class="soft"/><text x="14" y="295" class="t">Database</text><text x="206" y="295" class="s" text-anchor="end">storage</text>
+      <!-- single host -->
+      <rect x="320" y="28" width="200" height="36" rx="4" class="soft"/><text x="420" y="51" class="t" text-anchor="middle">Branch PCs</text>
+      <rect x="320" y="80" width="200" height="168" rx="5" class="acc"/>
+      <text x="420" y="152" class="t" text-anchor="middle">Application server</text>
+      <text x="420" y="172" class="s" text-anchor="middle">CBS host · one process</text>
+      <text x="420" y="232" class="m ta" text-anchor="middle">SERVER TIER 1</text>
+      <rect x="320" y="272" width="200" height="36" rx="4" class="soft"/><text x="420" y="295" class="t" text-anchor="middle">Database server</text>
+      <text x="420" y="324" class="m" text-anchor="middle">SERVER TIER 2</text>
+      <!-- multi host -->
+      <rect x="545" y="28" width="200" height="36" rx="4" class="soft"/><text x="645" y="51" class="t" text-anchor="middle">Branch PCs</text>
+      <rect x="545" y="72" width="200" height="34" rx="4" class="box dash"/><text x="645" y="94" class="t" text-anchor="middle">Gateway (web) · tier 1</text>
+      <rect x="545" y="114" width="200" height="134" rx="5" class="acc"/>
+      <text x="645" y="166" class="t" text-anchor="middle">CBS hosts</text>
+      <text x="645" y="186" class="s" text-anchor="middle">one per module, or one for all</text>
+      <text x="645" y="232" class="m ta" text-anchor="middle">SERVER TIER 2</text>
+      <rect x="545" y="272" width="200" height="36" rx="4" class="soft"/><text x="645" y="295" class="t" text-anchor="middle">Database server</text>
+      <text x="645" y="324" class="m" text-anchor="middle">SERVER TIER 3</text>
+      <line x1="220" y1="98" x2="318" y2="98" class="ln dash"/>
+      <line x1="220" y1="230" x2="318" y2="230" class="ln dash"/>
+      <line x1="220" y1="290" x2="318" y2="290" class="ln dash"/>
+      <text x="270" y="166" class="s" text-anchor="middle">in-process</text><text x="270" y="181" class="s" text-anchor="middle">calls</text>
+    </svg>
+    </div>
+    <figcaption>The gateway is tier 1 of the multi-host shape. Screens, the security gate, business rules and data access always run together in the application tier; only the database call crosses the network. There is no separate application-server tier, by design.</figcaption>
+  </figure>
+  <ul class="points">
+    <li><strong>The layers are real.</strong> Business modules contain no web code at all and run without a web server; our tests and tools call them directly. Any code that crosses a layer fails the build.</li>
+    <li><strong>No separate application server, on purpose.</strong> That split dates from platforms where the web server could not host business components. .NET 10 hosts both in one process. Adding the split back would put a network hop on every business call and add new timeouts and partial failures, without adding any capability.</li>
+  </ul>
+  <div class="table-wrap">
+  <table>
+    <thead><tr><th scope="col">Why banks ask for an application tier</th><th scope="col">How TrustBank CBS meets it</th></tr></thead>
+    <tbody>
+      <tr><th scope="row">Keep the internet-facing server off the internal network</th><td>The gateway is the only component exposed, and it has no database access (<a href="#zones">Network zones</a>).</td></tr>
+      <tr><th scope="row">No database credentials on a user-facing server</th><td>Use the multi-host shape: credentials live only on the hosts behind the gateway.</td></tr>
+      <tr><th scope="row">Scale business processing on its own</th><td>Run busy modules on their own hosts behind the gateway (<a href="#growth">Growing without a rewrite</a>).</td></tr>
+      <tr><th scope="row">Reuse business logic outside the web</th><td>Business modules have no web dependency, so batch jobs and tools can call them directly.</td></tr>
+    </tbody>
+  </table>
+  </div>
+</section>
+
+<!-- 2 -->
+<section id="request">
+  <div class="sec-head"><p class="eyebrow">04</p><h2>What happens on every request</h2></div>
+  <p>Before any business code runs, a central gate makes four checks. If any one fails, the request is refused and the refusal is logged. Nothing is reachable unless it has been explicitly granted, so a missing or unknown permission means denial, never exposure.</p>
+  <figure>
+    <div class="fig-scroll">
+    <svg class="d" viewBox="0 0 748 236" role="img" aria-label="Request flow: signed in, module set, screen allowed and genuine form checks each refuse on failure; only then do business rules run and an outcome is committed or rolled back.">
+      <defs>
+        <marker id="k2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" class="ah"/></marker>
+        <marker id="k2d" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" class="ad"/></marker>
+      </defs>
+      <path d="M2 34 V26 H490 V34" class="ln"/>
+      <text x="246" y="18" class="m" text-anchor="middle">SECURITY GATE · CHECKED ON EVERY REQUEST</text>
+      <rect x="2" y="44" width="104" height="64" rx="4" class="box"/><text x="54" y="72" class="t" text-anchor="middle">Signed in?</text><text x="54" y="91" class="s" text-anchor="middle">live session</text>
+      <rect x="130" y="44" width="104" height="64" rx="4" class="box"/><text x="182" y="72" class="t" text-anchor="middle">Module set?</text><text x="182" y="91" class="s" text-anchor="middle">working module</text>
+      <rect x="258" y="44" width="104" height="64" rx="4" class="box"/><text x="310" y="72" class="t" text-anchor="middle">Screen allowed?</text><text x="310" y="91" class="s" text-anchor="middle">user's menu rights</text>
+      <rect x="386" y="44" width="104" height="64" rx="4" class="box"/><text x="438" y="72" class="t" text-anchor="middle">Genuine form?</text><text x="438" y="91" class="s" text-anchor="middle">anti-forgery token</text>
+      <rect x="514" y="44" width="104" height="64" rx="4" class="box"/><text x="566" y="72" class="t" text-anchor="middle">Run rules</text><text x="566" y="91" class="s" text-anchor="middle">validate · decide</text>
+      <rect x="642" y="44" width="104" height="64" rx="4" class="acc"/><text x="694" y="72" class="t" text-anchor="middle">Outcome</text><text x="694" y="91" class="s" text-anchor="middle">commit or roll back</text>
+      <line x1="106" y1="76" x2="128" y2="76" class="ln" marker-end="url(#k2)"/><text x="117" y="68" class="s" text-anchor="middle">yes</text>
+      <line x1="234" y1="76" x2="256" y2="76" class="ln" marker-end="url(#k2)"/><text x="245" y="68" class="s" text-anchor="middle">yes</text>
+      <line x1="362" y1="76" x2="384" y2="76" class="ln" marker-end="url(#k2)"/><text x="373" y="68" class="s" text-anchor="middle">yes</text>
+      <line x1="490" y1="76" x2="512" y2="76" class="ln" marker-end="url(#k2)"/><text x="501" y="68" class="s" text-anchor="middle">yes</text>
+      <line x1="618" y1="76" x2="640" y2="76" class="ln" marker-end="url(#k2)"/>
+      <line x1="54" y1="108" x2="54" y2="172" class="ld" marker-end="url(#k2d)"/><text x="62" y="144" class="s td">no</text>
+      <line x1="182" y1="108" x2="182" y2="172" class="ld" marker-end="url(#k2d)"/><text x="190" y="144" class="s td">no</text>
+      <line x1="310" y1="108" x2="310" y2="172" class="ld" marker-end="url(#k2d)"/><text x="318" y="144" class="s td">no</text>
+      <line x1="438" y1="108" x2="438" y2="172" class="ld" marker-end="url(#k2d)"/><text x="446" y="144" class="s td">no</text>
+      <rect x="2" y="174" width="488" height="44" rx="4" class="den"/>
+      <text x="246" y="201" class="t td" text-anchor="middle">Refused before any business code runs, and logged</text>
+      <text x="694" y="134" class="s" text-anchor="middle">clear confirmation,</text>
+      <text x="694" y="150" class="s" text-anchor="middle">or a specific error</text>
+    </svg>
+    </div>
+    <figcaption>Authorization is decided on the server from the user's assigned menu rights. The browser cannot grant itself access, and the platform refuses to start if the gate is ever ordered after the code it protects.</figcaption>
+  </figure>
+</section>
+
+<!-- 3 -->
+<section id="modules">
+  <div class="sec-head"><p class="eyebrow">05</p><h2>Business modules</h2></div>
+  <p>The platform is divided into business modules. Each module owns its rules and its data, ships as its own component, and is switched on or off by configuration. Three core modules are present in every deployment.</p>
+  <figure>
+    <div class="fig-scroll">
+    <svg class="d" viewBox="0 0 720 320" role="img" aria-label="Ten business domain modules sit above a layer of published contracts, which sits above three core platform modules present in every deployment.">
+      <defs><marker id="k3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" class="ah"/></marker></defs>
+      <text x="0" y="12" class="m">BUSINESS DOMAINS · ENABLED PER DEPLOYMENT</text>
+      <g>
+        <rect x="0" y="22" width="132" height="50" rx="4" class="box"/><text x="66" y="52" class="t" text-anchor="middle">Accounts</text>
+        <rect x="147" y="22" width="132" height="50" rx="4" class="box"/><text x="213" y="43" class="t" text-anchor="middle">Retail &amp; Corporate</text><text x="213" y="60" class="t" text-anchor="middle">Operations</text>
+        <rect x="294" y="22" width="132" height="50" rx="4" class="box"/><text x="360" y="52" class="t" text-anchor="middle">Administration</text>
+        <rect x="441" y="22" width="132" height="50" rx="4" class="box"/><text x="507" y="52" class="t" text-anchor="middle">Lockers</text>
+        <rect x="588" y="22" width="132" height="50" rx="4" class="box"/><text x="654" y="52" class="t" text-anchor="middle">Human Resources</text>
+        <rect x="0" y="84" width="132" height="50" rx="4" class="box"/><text x="66" y="114" class="t" text-anchor="middle">Trade Finance</text>
+        <rect x="147" y="84" width="132" height="50" rx="4" class="box"/><text x="213" y="114" class="t" text-anchor="middle">Internet Banking</text>
+        <rect x="294" y="84" width="132" height="50" rx="4" class="box"/><text x="360" y="114" class="t" text-anchor="middle">Reconciliation</text>
+        <rect x="441" y="84" width="132" height="50" rx="4" class="box"/><text x="507" y="114" class="t" text-anchor="middle">Loan Origination</text>
+        <rect x="588" y="84" width="132" height="50" rx="4" class="box"/><text x="654" y="114" class="t" text-anchor="middle">Inventory</text>
+      </g>
+      <line x1="66" y1="134" x2="66" y2="162" class="ln" marker-end="url(#k3)"/>
+      <line x1="213" y1="134" x2="213" y2="162" class="ln" marker-end="url(#k3)"/>
+      <line x1="360" y1="134" x2="360" y2="162" class="ln" marker-end="url(#k3)"/>
+      <line x1="507" y1="134" x2="507" y2="162" class="ln" marker-end="url(#k3)"/>
+      <line x1="654" y1="134" x2="654" y2="162" class="ln" marker-end="url(#k3)"/>
+      <rect x="0" y="164" width="720" height="38" rx="4" class="soft dash"/>
+      <text x="360" y="188" class="t" text-anchor="middle">Published contracts · the only way one module reads another</text>
+      <line x1="360" y1="202" x2="360" y2="232" class="ln" marker-end="url(#k3)"/><text x="370" y="222" class="s">uses</text>
+      <text x="0" y="230" class="m">CORE PLATFORM · ALWAYS PRESENT</text>
+      <rect x="0" y="240" width="230" height="62" rx="4" class="acc"/><text x="115" y="266" class="t" text-anchor="middle">Core banking services</text><text x="115" y="285" class="s" text-anchor="middle">menus · alerts · maker-checker</text>
+      <rect x="245" y="240" width="230" height="62" rx="4" class="acc"/><text x="360" y="266" class="t" text-anchor="middle">Authentication</text><text x="360" y="285" class="s" text-anchor="middle">login · MFA · sessions</text>
+      <rect x="490" y="240" width="230" height="62" rx="4" class="acc"/><text x="605" y="266" class="t" text-anchor="middle">Reference data</text><text x="605" y="285" class="s" text-anchor="middle">geography · currencies · denominations</text>
+    </svg>
+    </div>
+    <figcaption>A bank can deploy the full set or a focused subset. Core services that every module needs, such as menus, alerts, the maker-checker queue and sign-in, are always present.</figcaption>
+  </figure>
+  <dl class="grid2">
+    <div><dt>Core banking services</dt><dd>Menus and navigation, bank parameters, broadcasts and alerts, the maker-checker authorization queue.</dd></div>
+    <div><dt>Authentication</dt><dd>Sign-in, multi-factor authentication, password policy, session control.</dd></div>
+    <div><dt>Reference data</dt><dd>Shared masters with no business behaviour of their own: geography, currencies, denominations.</dd></div>
+    <div><dt>Administration</dt><dd>Users, roles, module rights, connected and blocked users.</dd></div>
+    <div><dt>Accounts · Retail &amp; Corporate Operations</dt><dd>Account servicing, holds, direct credits, dormant re-activation, signatures, account reports.</dd></div>
+    <div><dt>Lockers · Human Resources · Inventory</dt><dd>Safe-deposit lockers, staff administration, stores and consumables.</dd></div>
+    <div><dt>Trade Finance · Internet Banking</dt><dd>Commission rates, currency ledger mapping, customer login policy and content.</dd></div>
+    <div><dt>Reconciliation · Loan Origination</dt><dd>Reconciliation outputs, employer and origination masters.</dd></div>
+  </dl>
+</section>
+
+<!-- 4 -->
+<section id="boundaries">
+  <div class="sec-head"><p class="eyebrow">06</p><h2>Boundaries the build enforces</h2></div>
+  <p>A module reaches another only through that module's published, read-only contract. These rules are checked automatically: <strong>152 architecture checks</strong> fail the build if code crosses a boundary. The structure therefore holds as the team and the codebase grow, rather than eroding the way conventional monoliths do.</p>
+  <figure>
+    <div class="fig-scroll">
+    <svg class="d" viewBox="0 0 720 250" role="img" aria-label="Allowed: Retail reads Administration through its contract. Forbidden and build-failing: Retail referencing Administration internals directly, and the framework referencing any business module.">
+      <defs>
+        <marker id="k4" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" class="ah"/></marker>
+        <marker id="k4a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" class="aa"/></marker>
+        <marker id="k4d" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" class="ad"/></marker>
+      </defs>
+      <rect x="10" y="26" width="190" height="56" rx="4" class="box"/><text x="105" y="50" class="t" text-anchor="middle">Retail module</text><text x="105" y="68" class="s" text-anchor="middle">needs denominations</text>
+      <rect x="265" y="26" width="190" height="56" rx="4" class="soft dash"/><text x="360" y="50" class="t" text-anchor="middle">Administration contract</text><text x="360" y="68" class="s" text-anchor="middle">read-only interface</text>
+      <rect x="520" y="26" width="190" height="56" rx="4" class="box"/><text x="615" y="50" class="t" text-anchor="middle">Administration module</text><text x="615" y="68" class="s" text-anchor="middle">owns the data</text>
+      <line x1="200" y1="54" x2="263" y2="54" class="la" marker-end="url(#k4a)"/><text x="231" y="46" class="s ta" text-anchor="middle">reads</text>
+      <line x1="520" y1="54" x2="457" y2="54" class="ln dash" marker-end="url(#k4)"/><text x="488" y="46" class="s" text-anchor="middle">fulfils</text>
+      <path d="M105 82 C105 132 615 132 615 84" class="ld" marker-end="url(#k4d)"/>
+      <path d="M352 112 l16 16 m0 -16 l-16 16" stroke="var(--deny)" stroke-width="2.2" fill="none"/>
+      <text x="360" y="150" class="s td" text-anchor="middle">direct reference to another module's internals · build fails</text>
+      <rect x="10" y="176" width="190" height="56" rx="4" class="acc"/><text x="105" y="200" class="t" text-anchor="middle">Framework</text><text x="105" y="218" class="s" text-anchor="middle">security, session, toolkit</text>
+      <rect x="520" y="176" width="190" height="56" rx="4" class="box"/><text x="615" y="208" class="t" text-anchor="middle">Any business module</text>
+      <line x1="200" y1="204" x2="518" y2="204" class="ld" marker-end="url(#k4d)"/>
+      <path d="M352 196 l16 16 m0 -16 l-16 16" stroke="var(--deny)" stroke-width="2.2" fill="none"/>
+      <text x="360" y="232" class="s td" text-anchor="middle">framework never depends on a module · build fails</text>
+    </svg>
+    </div>
+    <figcaption>Green is the only permitted path between modules. Red paths are caught automatically on every build, and a further check confirms that each rule can still fail, so no rule can pass simply by being impossible to break.</figcaption>
+  </figure>
+</section>
+
+<!-- 5 -->
+<section id="growth">
+  <div class="sec-head"><p class="eyebrow">07</p><h2>Growing without a rewrite</h2></div>
+  <p>Today the platform runs as <strong>one application on one database</strong>, a design called a modular monolith. That keeps every money movement inside a real database transaction and keeps operations simple: one thing to deploy, monitor and back up. Because the module boundaries are enforced, any module can later run as its own host behind the gateway. That move is a configuration change on the same code, and it already runs in our test deployments.</p>
+  <figure>
+    <div class="fig-scroll">
+    <svg class="d" viewBox="0 0 760 236" role="img" aria-label="Today one host runs all modules; when volume justifies it, the same modules run as separate hosts behind a gateway, by configuration only.">
+      <defs><marker id="k5" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" class="ah"/></marker>
+      <marker id="k5a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" class="aa"/></marker></defs>
+      <text x="0" y="14" class="m">TODAY · ONE HOST</text>
+      <rect x="0" y="26" width="320" height="196" rx="5" class="box"/>
+      <text x="16" y="50" class="t">CBS application</text>
+      <rect x="16" y="64" width="90" height="34" rx="3" class="soft"/><text x="61" y="86" class="s" text-anchor="middle">Retail</text>
+      <rect x="115" y="64" width="90" height="34" rx="3" class="soft"/><text x="160" y="86" class="s" text-anchor="middle">Accounts</text>
+      <rect x="214" y="64" width="90" height="34" rx="3" class="soft"/><text x="259" y="86" class="s" text-anchor="middle">Administration</text>
+      <rect x="16" y="106" width="90" height="34" rx="3" class="soft"/><text x="61" y="128" class="s" text-anchor="middle">Lockers</text>
+      <rect x="115" y="106" width="90" height="34" rx="3" class="soft"/><text x="160" y="128" class="s" text-anchor="middle">HR</text>
+      <rect x="214" y="106" width="90" height="34" rx="3" class="soft"/><text x="259" y="128" class="s" text-anchor="middle">Trade Finance</text>
+      <rect x="16" y="148" width="288" height="30" rx="3" class="acc"/><text x="160" y="168" class="s ta" text-anchor="middle">core platform</text>
+      <text x="160" y="206" class="s" text-anchor="middle">one process · one database transaction</text>
+      <line x1="334" y1="124" x2="400" y2="124" class="la" marker-end="url(#k5a)"/>
+      <text x="367" y="112" class="s ta" text-anchor="middle">config</text><text x="367" y="142" class="s ta" text-anchor="middle">only</text>
+      <text x="412" y="14" class="m">WHEN VOLUME JUSTIFIES IT · SPLIT BY MODULE</text>
+      <rect x="412" y="102" width="92" height="44" rx="4" class="box dash"/><text x="458" y="129" class="t" text-anchor="middle">Gateway</text>
+      <rect x="560" y="36" width="200" height="40" rx="4" class="box"/><text x="576" y="61" class="t">Retail host</text><text x="744" y="61" class="s" text-anchor="end">same code</text>
+      <rect x="560" y="104" width="200" height="40" rx="4" class="box"/><text x="576" y="129" class="t">Administration host</text><text x="744" y="129" class="s" text-anchor="end">same code</text>
+      <rect x="560" y="172" width="200" height="40" rx="4" class="box"/><text x="576" y="197" class="t">HR host</text><text x="744" y="197" class="s" text-anchor="end">same code</text>
+      <line x1="504" y1="116" x2="558" y2="58" class="ln" marker-end="url(#k5)"/>
+      <line x1="504" y1="124" x2="558" y2="124" class="ln" marker-end="url(#k5)"/>
+      <line x1="504" y1="132" x2="558" y2="190" class="ln" marker-end="url(#k5)"/>
+    </svg>
+    </div>
+    <figcaption>Signing in once works across all hosts. We recommend a separate host per module only when transaction volume or independent release cycles call for it. Running distributed services before then adds failure modes and buys nothing.</figcaption>
+  </figure>
+</section>
+
+<!-- microservices -->
+<section id="microservices">
+  <div class="sec-head"><p class="eyebrow">08</p><h2>Why not microservices</h2></div>
+  <p>Microservices split a system into separately deployed services, each with its own database. They buy independent deployment and scaling, and the price is the single database transaction across services. In most business software that trade is acceptable. In core banking it is backwards: a posting that touches the account, the ledger and the authorization queue is exactly the operation that must be all-or-nothing, and one bank's volumes do not need the scaling microservices are bought for.</p>
+  <figure>
+    <div class="fig-scroll">
+    <svg class="d" viewBox="0 0 760 300" role="img" aria-label="Left: in TrustBank CBS one posting touches account, ledger and authorization inside one database transaction, so all entries commit or none do. Right: with microservices the same posting crosses the network to three services with their own databases; if the third step fails, the first two must be undone with visible reversal entries, and the books are briefly out of balance.">
+      <defs>
+        <marker id="k20" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" class="ah"/></marker>
+        <marker id="k20d" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" class="ad"/></marker>
+      </defs>
+      <text x="175" y="14" class="m" text-anchor="middle">TRUSTBANK CBS · ONE TRANSACTION</text>
+      <text x="585" y="14" class="m" text-anchor="middle">MICROSERVICES · A CHAIN OF STEPS</text>
+      <!-- left -->
+      <rect x="10" y="26" width="330" height="190" rx="6" class="la dash" style="fill:none"/>
+      <text x="175" y="46" class="m ta" text-anchor="middle">ONE DATABASE TRANSACTION</text>
+      <rect x="24" y="62" width="96" height="40" rx="4" class="box"/><text x="72" y="87" class="t" text-anchor="middle">Account</text>
+      <rect x="127" y="62" width="96" height="40" rx="4" class="box"/><text x="175" y="87" class="t" text-anchor="middle">Ledger</text>
+      <rect x="230" y="62" width="96" height="40" rx="4" class="box"/><text x="278" y="87" class="t" text-anchor="middle">Authorization</text>
+      <line x1="72" y1="102" x2="150" y2="156" class="ln" marker-end="url(#k20)"/>
+      <line x1="175" y1="102" x2="175" y2="156" class="ln" marker-end="url(#k20)"/>
+      <line x1="278" y1="102" x2="200" y2="156" class="ln" marker-end="url(#k20)"/>
+      <rect x="110" y="158" width="130" height="40" rx="4" class="soft"/><text x="175" y="183" class="t" text-anchor="middle">One database</text>
+      <text x="40" y="132" class="s">in-process calls</text>
+      <rect x="10" y="236" width="330" height="54" rx="4" class="acc"/>
+      <text x="175" y="259" class="t ta" text-anchor="middle">All entries commit, or none do</text>
+      <text x="175" y="277" class="s" text-anchor="middle">a failure leaves no trace</text>
+      <!-- right -->
+      <rect x="420" y="62" width="100" height="40" rx="4" class="box"/><text x="470" y="87" class="t" text-anchor="middle">Account svc</text>
+      <rect x="540" y="62" width="100" height="40" rx="4" class="box"/><text x="590" y="87" class="t" text-anchor="middle">Ledger svc</text>
+      <rect x="660" y="62" width="100" height="40" rx="4" class="den"/><text x="710" y="87" class="t td" text-anchor="middle">Auth svc</text>
+      <line x1="520" y1="82" x2="538" y2="82" class="ln" marker-end="url(#k20)"/>
+      <line x1="640" y1="82" x2="658" y2="82" class="ln" marker-end="url(#k20)"/>
+      <text x="590" y="122" class="s" text-anchor="middle">each arrow is a network call</text>
+      <rect x="430" y="158" width="80" height="34" rx="4" class="soft"/><text x="470" y="180" class="s" text-anchor="middle">own DB</text>
+      <rect x="550" y="158" width="80" height="34" rx="4" class="soft"/><text x="590" y="180" class="s" text-anchor="middle">own DB</text>
+      <rect x="670" y="158" width="80" height="34" rx="4" class="soft"/><text x="710" y="180" class="s" text-anchor="middle">own DB</text>
+      <line x1="470" y1="102" x2="470" y2="156" class="ln" marker-end="url(#k20)"/>
+      <line x1="590" y1="102" x2="590" y2="156" class="ln" marker-end="url(#k20)"/>
+      <line x1="710" y1="102" x2="710" y2="156" class="ln" marker-end="url(#k20)"/>
+      <path d="M702 128 l16 16 m0 -16 l-16 16" stroke="var(--deny)" stroke-width="2.2" fill="none"/>
+      <path d="M690 62 C690 34 480 34 476 60" class="ld" marker-end="url(#k20d)"/>
+      <text x="585" y="40" class="s td" text-anchor="middle">step 3 fails · undo steps 1 and 2</text>
+      <rect x="420" y="236" width="340" height="54" rx="4" class="den"/>
+      <text x="590" y="259" class="t td" text-anchor="middle">Reversal entries on the statement</text>
+      <text x="590" y="277" class="s" text-anchor="middle">books out of balance until the undo completes</text>
+    </svg>
+    </div>
+    <figcaption>The same posting under both designs. A database rollback leaves nothing behind. A microservice "undo" is a second, visible posting, and between the failure and the undo the books do not balance.</figcaption>
+  </figure>
+  <div class="table-wrap">
+  <table>
+    <thead><tr><th scope="col">For a core banking system</th><th scope="col">Microservices</th><th scope="col">TrustBank CBS</th></tr></thead>
+    <tbody>
+      <tr><th scope="row">Posting across areas</th><td>Chain of steps with compensating reversals</td><td>One atomic transaction</td></tr>
+      <tr><th scope="row">Balances</th><td>Eventually consistent</td><td>Always consistent</td></tr>
+      <tr><th scope="row">Boundaries between areas</th><td>Network and separate code</td><td>Enforced by the build, 152 checks</td></tr>
+      <tr><th scope="row">Independent deployment</th><td>Built in</td><td>Available by configuration</td></tr>
+      <tr><th scope="row">Failure modes</th><td>Timeouts, partial writes, network splits</td><td>In-process only</td></tr>
+      <tr><th scope="row">Operating effort</th><td>Many services, pipelines and dashboards</td><td>One application</td></tr>
+      <tr><th scope="row">Answering an auditor</th><td>Correlate many services' event logs</td><td>One ledger, one log trail</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <ul class="points">
+    <li><strong>We kept what microservices are good for.</strong> Most of their value comes from hard boundaries between areas, and TrustBank CBS has those, enforced on every build. Independent deployment is there too, as per-module hosts behind the gateway.</li>
+    <li><strong>The door stays open.</strong> Because the boundaries are enforced, moving one module out later is a planned refactor with a known cost, not a rewrite. Valid triggers: a module outgrows one process, independent teams need separate release cycles, or a regulation requires one domain's data to be held separately.</li>
+  </ul>
+</section>
+
+<!-- 6 -->
+<section id="security">
+  <div class="sec-head"><p class="eyebrow">09</p><h2>Security in depth</h2></div>
+  <p>Security is part of the structure, not an add-on. Controls are layered from the network inward, so getting past one layer does not get an attacker past the next.</p>
+  <figure>
+    <div class="fig-scroll">
+    <svg class="d" viewBox="0 0 720 326" role="img" aria-label="Six security layers from outside in: in transit, at login, session, every request, every record, at rest.">
+      <g>
+        <rect x="0" y="0" width="150" height="44" rx="4" class="acc"/><text x="16" y="27" class="t">In transit</text>
+        <rect x="160" y="0" width="560" height="44" rx="4" class="box"/><text x="176" y="27">HTTPS / TLS  ·  password field encrypted in the browser before it is sent</text>
+        <rect x="0" y="56" width="150" height="44" rx="4" class="acc"/><text x="16" y="83" class="t">At login</text>
+        <rect x="160" y="56" width="560" height="44" rx="4" class="box"/><text x="176" y="83">MFA: one-time code, directory or QR  ·  rate limit per client  ·  lockout policy</text>
+        <rect x="0" y="112" width="150" height="44" rx="4" class="acc"/><text x="16" y="139" class="t">Session</text>
+        <rect x="160" y="112" width="560" height="44" rx="4" class="box"/><text x="176" y="139">held on the server  ·  idle timeout  ·  one active session per user</text>
+        <rect x="0" y="168" width="150" height="44" rx="4" class="acc"/><text x="16" y="195" class="t">Every request</text>
+        <rect x="160" y="168" width="560" height="44" rx="4" class="box"/><text x="176" y="195">fail-closed access gate  ·  anti-forgery token  ·  strict content security policy</text>
+        <rect x="0" y="224" width="150" height="44" rx="4" class="acc"/><text x="16" y="251" class="t">Every record</text>
+        <rect x="160" y="224" width="560" height="44" rx="4" class="box"/><text x="176" y="251">encrypted, single-use record tokens instead of raw ids in the page</text>
+        <rect x="0" y="280" width="150" height="44" rx="4" class="acc"/><text x="16" y="307" class="t">At rest</text>
+        <rect x="160" y="280" width="560" height="44" rx="4" class="box"/><text x="176" y="307">salted PBKDF2 password hashes  ·  card and ID numbers masked in logs</text>
+      </g>
+    </svg>
+    </div>
+    <figcaption>Ordered from the outside of the system to the inside. The access gate, anti-forgery, content policy, record tokens and log masking are always on; multi-factor methods are chosen to suit bank policy.</figcaption>
+  </figure>
+  <ul class="points">
+    <li><strong>Server-side authorization.</strong> What a user can open comes from their assigned rights, checked on the server for every request.</li>
+    <li><strong>Tamper-proof record handling.</strong> When a list opens a record, the page carries an encrypted token bound to that user's session and that screen, never the record's database id. A token works once, so it cannot be replayed or edited to reach another record.</li>
+    <li><strong>No secrets in code.</strong> Connection strings and keys come from protected configuration and are never written to logs.</li>
+    <li><strong>Passwords cannot be recovered.</strong> Passwords are stored as salted one-way hashes, so the platform cannot read them back.</li>
+  </ul>
+</section>
+
+<!-- 7 -->
+<section id="makerchecker">
+  <div class="sec-head"><p class="eyebrow">10</p><h2>Maker-checker control</h2></div>
+  <p>Financial entries follow the four-eyes principle. The person who enters a record cannot authorize it, and nothing takes effect until a second user does. Where a screen carries authorization limits, the checker's limit for that currency is enforced too.</p>
+  <figure>
+    <div class="fig-scroll">
+    <svg class="d" viewBox="0 0 744 236" role="img" aria-label="Maker enters, record is held for authorization, a different checker within limit approves and it is applied in one transaction, or rejects and it is recorded. The maker approving their own entry is refused.">
+      <defs>
+        <marker id="k7" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" class="ah"/></marker>
+        <marker id="k7d" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" class="ad"/></marker>
+      </defs>
+      <path d="M85 80 C85 22 465 22 465 78" class="ld" marker-end="url(#k7d)"/>
+      <path d="M267 31 l14 14 m0 -14 l-14 14" stroke="var(--deny)" stroke-width="2.2" fill="none"/>
+      <text x="275" y="20" class="s td" text-anchor="middle">maker approves own entry · refused</text>
+      <rect x="0" y="80" width="170" height="64" rx="4" class="box"/><text x="85" y="107" class="t" text-anchor="middle">Maker enters</text><text x="85" y="126" class="s" text-anchor="middle">user A saves the entry</text>
+      <rect x="190" y="80" width="170" height="64" rx="4" class="amb"/><text x="275" y="107" class="t" text-anchor="middle">Held for authorization</text><text x="275" y="126" class="s tb" text-anchor="middle">nothing applied yet</text>
+      <rect x="380" y="80" width="170" height="64" rx="4" class="box"/><text x="465" y="107" class="t" text-anchor="middle">Checker decides</text><text x="465" y="126" class="s" text-anchor="middle">user B, within limit</text>
+      <rect x="570" y="80" width="170" height="64" rx="4" class="acc"/><text x="655" y="107" class="t" text-anchor="middle">Applied</text><text x="655" y="126" class="s ta" text-anchor="middle">in one transaction</text>
+      <line x1="170" y1="112" x2="188" y2="112" class="ln" marker-end="url(#k7)"/>
+      <line x1="360" y1="112" x2="378" y2="112" class="ln" marker-end="url(#k7)"/>
+      <line x1="550" y1="112" x2="568" y2="112" class="ln" marker-end="url(#k7)"/>
+      <text x="559" y="160" class="s" text-anchor="middle">approve</text>
+      <line x1="465" y1="144" x2="465" y2="178" class="ln" marker-end="url(#k7)"/><text x="473" y="166" class="s">reject</text>
+      <rect x="380" y="180" width="170" height="46" rx="4" class="den"/><text x="465" y="208" class="t td" text-anchor="middle">Rejected · recorded</text>
+    </svg>
+    </div>
+    <figcaption>Every step is stamped with who did it and when. Checkers see only the entries they are entitled to see, scoped to their branch in the same way the original system scoped them.</figcaption>
+  </figure>
+</section>
+
+<!-- 8 -->
+<section id="data">
+  <div class="sec-head"><p class="eyebrow">11</p><h2>Data and databases</h2></div>
+  <p>One codebase runs on <strong>Microsoft SQL Server, Oracle or PostgreSQL</strong>, so the platform fits the database investment a bank already has. New business logic is written in C# rather than in database stored procedures, which means it behaves the same on every database. Every query is parameterized, which removes SQL injection as a class of attack.</p>
+  <figure>
+    <div class="fig-scroll">
+    <svg class="d" viewBox="0 0 760 256" role="img" aria-label="Screen sends a request to a business module, which returns a success or failure result; the module reads and writes through the data access layer inside one transaction; the data layer speaks to SQL Server, Oracle or PostgreSQL; a migration runner applies versioned schema changes.">
+      <defs>
+        <marker id="k8" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" class="ah"/></marker>
+        <marker id="k8a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" class="aa"/></marker>
+      </defs>
+      <rect x="186" y="22" width="406" height="132" rx="6" class="la dash" style="fill:none"/>
+      <text x="389" y="42" class="m ta" text-anchor="middle">ONE TRANSACTION · ALL OR NOTHING</text>
+      <rect x="0" y="60" width="120" height="64" rx="4" class="soft"/><text x="60" y="97" class="t" text-anchor="middle">Screen</text>
+      <rect x="200" y="60" width="170" height="64" rx="4" class="box"/><text x="285" y="88" class="t" text-anchor="middle">Business module</text><text x="285" y="106" class="s" text-anchor="middle">banking rules</text>
+      <rect x="408" y="60" width="170" height="64" rx="4" class="box"/><text x="493" y="88" class="t" text-anchor="middle">Data access</text><text x="493" y="106" class="s" text-anchor="middle">typed · parameterized</text>
+      <line x1="120" y1="78" x2="198" y2="78" class="ln" marker-end="url(#k8)"/><text x="159" y="70" class="s" text-anchor="middle">request</text>
+      <line x1="200" y1="108" x2="122" y2="108" class="la" marker-end="url(#k8a)"/><text x="161" y="140" class="s ta" text-anchor="middle">result:</text><text x="161" y="154" class="s ta" text-anchor="middle">success or reason</text>
+      <line x1="370" y1="92" x2="406" y2="92" class="ln" marker-end="url(#k8)"/>
+      <rect x="630" y="22" width="130" height="40" rx="4" class="soft"/><text x="695" y="47" class="t" text-anchor="middle">SQL Server</text>
+      <rect x="630" y="72" width="130" height="40" rx="4" class="soft"/><text x="695" y="97" class="t" text-anchor="middle">Oracle</text>
+      <rect x="630" y="122" width="130" height="40" rx="4" class="soft"/><text x="695" y="147" class="t" text-anchor="middle">PostgreSQL</text>
+      <line x1="578" y1="88" x2="628" y2="44" class="ln" marker-end="url(#k8)"/>
+      <line x1="578" y1="92" x2="628" y2="92" class="ln" marker-end="url(#k8)"/>
+      <line x1="578" y1="96" x2="628" y2="140" class="ln" marker-end="url(#k8)"/>
+      <rect x="408" y="196" width="170" height="48" rx="4" class="box dash"/><text x="493" y="217" class="t" text-anchor="middle">Migration runner</text><text x="493" y="234" class="s" text-anchor="middle">versioned schema changes</text>
+      <path d="M578 220 H695 V164" class="ln" marker-end="url(#k8)"/><text x="604" y="212" class="s">each applied once, logged</text>
+    </svg>
+    </div>
+    <figcaption>Every business operation reports an explicit success or failure with a reason. Nothing fails silently. Multi-step changes commit together or roll back together, so a partial posting cannot exist.</figcaption>
+  </figure>
+  <ul class="points">
+    <li><strong>Portable column types.</strong> Flags and identifiers use types that bind identically on all three databases, and screen reviews enforce this.</li>
+    <li><strong>Change control.</strong> The migration runner has a read-only status check, so a change-advisory board can see exactly what will be applied before it runs.</li>
+  </ul>
+</section>
+
+<!-- 9 -->
+<section id="zones">
+  <div class="sec-head"><p class="eyebrow">12</p><h2>Network zones</h2></div>
+  <p>Infrastructure reviews usually ask what runs on the web tier and what runs on the application tier. In the multi-host shape, the gateway is the only component that faces users, and it holds no database credentials. The application hosts and the database sit behind it in their own zones.</p>
+  <figure>
+    <div class="fig-scroll">
+    <svg class="d" viewBox="0 0 800 300" role="img" aria-label="Branch browsers connect over HTTPS to the gateway in the DMZ, which forwards to the CBS application hosts in the trusted zone, which alone connect to the database in the restricted zone. Optional Redis and the report viewer also sit in the trusted zone.">
+      <defs><marker id="k9" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" class="ah"/></marker></defs>
+      <rect x="110" y="0" width="180" height="300" rx="6" class="zone"/>
+      <rect x="310" y="0" width="300" height="300" rx="6" class="zone"/>
+      <rect x="630" y="0" width="170" height="300" rx="6" class="zone"/>
+      <text x="200" y="24" class="m" text-anchor="middle">DMZ</text>
+      <text x="460" y="24" class="m" text-anchor="middle">TRUSTED ZONE</text>
+      <text x="715" y="24" class="m" text-anchor="middle">RESTRICTED ZONE</text>
+      <rect x="0" y="110" width="90" height="60" rx="4" class="soft"/><text x="45" y="136" class="t" text-anchor="middle">Branch</text><text x="45" y="154" class="t" text-anchor="middle">browsers</text>
+      <rect x="128" y="86" width="144" height="108" rx="4" class="box"/>
+      <text x="200" y="110" class="t" text-anchor="middle">Gateway</text>
+      <text x="200" y="130" class="s" text-anchor="middle">TLS termination</text>
+      <text x="200" y="146" class="s" text-anchor="middle">rate limiting · routing</text>
+      <text x="200" y="174" class="s td" text-anchor="middle">no DB credentials</text>
+      <rect x="330" y="50" width="260" height="120" rx="4" class="acc"/>
+      <text x="460" y="76" class="t" text-anchor="middle">CBS application hosts</text>
+      <text x="460" y="98" class="s" text-anchor="middle">screens · business rules</text>
+      <text x="460" y="116" class="s" text-anchor="middle">one host, or one per module</text>
+      <text x="460" y="150" class="s ta" text-anchor="middle">the only database credentials</text>
+      <rect x="330" y="214" width="120" height="56" rx="4" class="box dash"/><text x="390" y="238" class="t" text-anchor="middle">Redis</text><text x="390" y="256" class="s" text-anchor="middle">optional, shared</text>
+      <rect x="470" y="214" width="120" height="56" rx="4" class="box"/><text x="530" y="238" class="t" text-anchor="middle">Report viewer</text><text x="530" y="256" class="s" text-anchor="middle">renders only</text>
+      <rect x="650" y="86" width="130" height="108" rx="4" class="box"/>
+      <text x="715" y="110" class="t" text-anchor="middle">Database</text>
+      <text x="715" y="134" class="s" text-anchor="middle">SQL Server</text>
+      <text x="715" y="152" class="s" text-anchor="middle">Oracle</text>
+      <text x="715" y="170" class="s" text-anchor="middle">PostgreSQL</text>
+      <line x1="90" y1="140" x2="126" y2="140" class="ln" marker-end="url(#k9)"/><text x="108" y="132" class="s" text-anchor="middle">HTTPS</text>
+      <line x1="272" y1="120" x2="328" y2="120" class="ln" marker-end="url(#k9)"/><text x="300" y="112" class="s" text-anchor="middle">HTTPS</text>
+      <line x1="590" y1="120" x2="648" y2="120" class="ln" marker-end="url(#k9)"/><text x="619" y="112" class="s" text-anchor="middle">SQL</text>
+      <line x1="390" y1="170" x2="390" y2="212" class="ln" marker-end="url(#k9)"/>
+      <line x1="530" y1="170" x2="530" y2="212" class="ln" marker-end="url(#k9)"/><text x="538" y="196" class="s">signed handoff</text>
+    </svg>
+    </div>
+    <figcaption>A compromised internet-facing server does not yield database credentials. In a single-host deployment the application sits in the trusted zone behind the bank's existing reverse proxy or web application firewall.</figcaption>
+  </figure>
+</section>
+
+<!-- 10 -->
+<section id="shapes">
+  <div class="sec-head"><p class="eyebrow">13</p><h2>Deployment shapes</h2></div>
+  <p>The same build deploys four ways. Banks choose by infrastructure standard (Windows/IIS or containers) and by scale (one host, or a gateway in front of per-module hosts). Changing shape later needs no code change.</p>
+  <figure>
+    <div class="fig-scroll">
+    <svg class="d" viewBox="0 0 720 330" role="img" aria-label="Two by two grid: single host and multi-host, each on IIS on Windows Server or on Docker Linux containers.">
+      <defs><marker id="k10" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" class="ah"/></marker></defs>
+      <text x="272" y="18" class="m" text-anchor="middle">IIS ON WINDOWS SERVER</text>
+      <text x="572" y="18" class="m" text-anchor="middle">DOCKER · LINUX CONTAINERS</text>
+      <text x="0" y="100" class="t">Single host</text><text x="0" y="118" class="s">simplest to run</text>
+      <text x="0" y="250" class="t">Multi-host</text><text x="0" y="268" class="s">scale per module</text>
+      <rect x="130" y="30" width="285" height="140" rx="5" class="soft"/>
+      <rect x="430" y="30" width="285" height="140" rx="5" class="soft"/>
+      <rect x="130" y="180" width="285" height="140" rx="5" class="soft"/>
+      <rect x="430" y="180" width="285" height="140" rx="5" class="soft"/>
+      <!-- single / IIS -->
+      <rect x="182" y="66" width="180" height="44" rx="4" class="acc"/><text x="272" y="93" class="t" text-anchor="middle">CBS · all modules</text>
+      <text x="272" y="148" class="s" text-anchor="middle">one IIS site</text>
+      <!-- single / Docker -->
+      <rect x="482" y="66" width="180" height="44" rx="4" class="acc"/><text x="572" y="93" class="t" text-anchor="middle">CBS · all modules</text>
+      <text x="572" y="148" class="s" text-anchor="middle">one container</text>
+      <!-- multi / IIS -->
+      <rect x="146" y="226" width="76" height="40" rx="4" class="box dash"/><text x="184" y="251" class="s" text-anchor="middle">Gateway</text>
+      <rect x="262" y="196" width="136" height="28" rx="3" class="acc"/><text x="330" y="215" class="s" text-anchor="middle">Retail site</text>
+      <rect x="262" y="232" width="136" height="28" rx="3" class="acc"/><text x="330" y="251" class="s" text-anchor="middle">Administration site</text>
+      <rect x="262" y="268" width="136" height="28" rx="3" class="acc"/><text x="330" y="287" class="s" text-anchor="middle">HR site …</text>
+      <line x1="222" y1="240" x2="260" y2="210" class="ln" marker-end="url(#k10)"/>
+      <line x1="222" y1="246" x2="260" y2="246" class="ln" marker-end="url(#k10)"/>
+      <line x1="222" y1="252" x2="260" y2="282" class="ln" marker-end="url(#k10)"/>
+      <text x="272" y="313" class="s" text-anchor="middle">IIS sites behind the gateway</text>
+      <!-- multi / Docker -->
+      <rect x="446" y="226" width="76" height="40" rx="4" class="box dash"/><text x="484" y="251" class="s" text-anchor="middle">Gateway</text>
+      <rect x="562" y="196" width="136" height="28" rx="3" class="acc"/><text x="630" y="215" class="s" text-anchor="middle">Retail container</text>
+      <rect x="562" y="232" width="136" height="28" rx="3" class="acc"/><text x="630" y="251" class="s" text-anchor="middle">Admin container</text>
+      <rect x="562" y="268" width="136" height="28" rx="3" class="acc"/><text x="630" y="287" class="s" text-anchor="middle">HR container …</text>
+      <line x1="522" y1="240" x2="560" y2="210" class="ln" marker-end="url(#k10)"/>
+      <line x1="522" y1="246" x2="560" y2="246" class="ln" marker-end="url(#k10)"/>
+      <line x1="522" y1="252" x2="560" y2="282" class="ln" marker-end="url(#k10)"/>
+      <text x="572" y="313" class="s" text-anchor="middle">only the gateway is exposed</text>
+    </svg>
+    </div>
+    <figcaption>All four shapes are scripted and have been deployed. The report viewer runs on Windows Server whichever shape is chosen, because the Crystal Reports runtime it hosts needs Windows.</figcaption>
+  </figure>
+</section>
+
+<!-- 11 -->
+<section id="reports">
+  <div class="sec-head"><p class="eyebrow">14</p><h2>Reports</h2></div>
+  <p>Existing Crystal Reports layouts carry over unchanged. CBS checks the user's access and gathers the data. A separate viewer renders the layout and never connects to the database: it receives the data through a signed, single-use handoff.</p>
+  <figure>
+    <div class="fig-scroll">
+    <svg class="d" viewBox="0 0 760 236" role="img" aria-label="Report screen in CBS checks access and reads the database, sends data through a signed single-use handoff to the report viewer, which renders the layout for the operator to view, print or export. The viewer has no database access.">
+      <defs>
+        <marker id="k11" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" class="ah"/></marker>
+        <marker id="k11d" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" class="ad"/></marker>
+      </defs>
+      <rect x="0" y="40" width="180" height="80" rx="4" class="box"/><text x="90" y="68" class="t" text-anchor="middle">Report screen in CBS</text><text x="90" y="88" class="s" text-anchor="middle">checks access</text><text x="90" y="104" class="s" text-anchor="middle">gathers the data</text>
+      <rect x="226" y="40" width="160" height="80" rx="4" class="amb"/><text x="306" y="68" class="t" text-anchor="middle">Signed handoff</text><text x="306" y="88" class="s" text-anchor="middle">single-use ticket</text><text x="306" y="104" class="s" text-anchor="middle">expires in 60 seconds</text>
+      <rect x="432" y="40" width="160" height="80" rx="4" class="box"/><text x="512" y="68" class="t" text-anchor="middle">Report viewer</text><text x="512" y="88" class="s" text-anchor="middle">Crystal layout</text><text x="512" y="104" class="s" text-anchor="middle">renders only</text>
+      <rect x="630" y="40" width="130" height="80" rx="4" class="acc"/><text x="695" y="68" class="t" text-anchor="middle">Operator</text><text x="695" y="88" class="s" text-anchor="middle">view · print</text><text x="695" y="104" class="s" text-anchor="middle">PDF and more</text>
+      <line x1="180" y1="80" x2="224" y2="80" class="ln" marker-end="url(#k11)"/>
+      <line x1="386" y1="80" x2="430" y2="80" class="ln" marker-end="url(#k11)"/>
+      <line x1="592" y1="80" x2="628" y2="80" class="ln" marker-end="url(#k11)"/>
+      <rect x="30" y="182" width="120" height="40" rx="4" class="soft"/><text x="90" y="207" class="t" text-anchor="middle">Database</text>
+      <line x1="90" y1="182" x2="90" y2="122" class="ln" marker-end="url(#k11)"/><text x="98" y="156" class="s">reads</text>
+      <path d="M512 120 V202 H152" class="ld" marker-end="url(#k11d)"/>
+      <path d="M318 194 l16 16 m0 -16 l-16 16" stroke="var(--deny)" stroke-width="2.2" fill="none"/>
+      <text x="326" y="186" class="s td" text-anchor="middle">viewer has no database access</text>
+    </svg>
+    </div>
+    <figcaption>Measured with 100,000 rows: about one second to hand off, and under a second to the first page. Operators keep the paging, printing and export formats they already use. A report moves to a newer engine only when that report is being changed anyway.</figcaption>
+  </figure>
+</section>
+
+<!-- 12 -->
+<section id="operations">
+  <div class="sec-head"><p class="eyebrow">15</p><h2>Operations and monitoring</h2></div>
+  <p>The platform writes structured logs out of the box and can emit traces and metrics in the open OpenTelemetry format. That format plugs into the monitoring stack a bank already runs, with no proprietary agent to install.</p>
+  <figure>
+    <div class="fig-scroll">
+    <svg class="d" viewBox="0 0 760 226" role="img" aria-label="CBS hosts write masked structured logs to daily files for the bank's log tooling, and optionally emit OpenTelemetry traces and metrics over OTLP to the bank's monitoring stack; both carry the same correlation reference.">
+      <defs><marker id="k12" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" class="ah"/></marker></defs>
+      <rect x="0" y="72" width="150" height="80" rx="4" class="acc"/><text x="75" y="108" class="t" text-anchor="middle">CBS hosts</text><text x="75" y="126" class="s ta" text-anchor="middle">and gateway</text>
+      <rect x="226" y="10" width="210" height="64" rx="4" class="box"/><text x="331" y="37" class="t" text-anchor="middle">Structured logs</text><text x="331" y="56" class="s" text-anchor="middle">PII masked · daily files</text>
+      <rect x="226" y="150" width="210" height="64" rx="4" class="box"/><text x="331" y="177" class="t" text-anchor="middle">Traces and metrics</text><text x="331" y="196" class="s" text-anchor="middle">OpenTelemetry · switched on by config</text>
+      <rect x="510" y="10" width="250" height="64" rx="4" class="soft"/><text x="635" y="37" class="t" text-anchor="middle">Your log tooling</text><text x="635" y="56" class="s" text-anchor="middle">search, audit, retention</text>
+      <rect x="510" y="150" width="250" height="64" rx="4" class="soft"/><text x="635" y="177" class="t" text-anchor="middle">Your monitoring stack</text><text x="635" y="196" class="s" text-anchor="middle">dashboards and alerts, via OTLP</text>
+      <path d="M150 100 C190 100 190 42 224 42" class="ln" marker-end="url(#k12)"/>
+      <path d="M150 124 C190 124 190 182 224 182" class="ln" marker-end="url(#k12)"/>
+      <line x1="436" y1="42" x2="508" y2="42" class="ln" marker-end="url(#k12)"/>
+      <line x1="436" y1="182" x2="508" y2="182" class="ln" marker-end="url(#k12)"/>
+      <line x1="331" y1="74" x2="331" y2="150" class="ln dash"/>
+      <text x="341" y="108" class="s">same correlation</text><text x="341" y="124" class="s">reference</text>
+    </svg>
+    </div>
+    <figcaption>Any log line can be traced to the request that produced it. Card and national ID numbers are masked before they reach a log file, on every host.</figcaption>
+  </figure>
+</section>
+
+<!-- 13 -->
+<section id="experience">
+  <div class="sec-head"><p class="eyebrow">16</p><h2>Operator experience</h2></div>
+  <p>Every screen is built from the same component toolkit, so staff learn the system once and the same control behaves the same way everywhere. That cuts training time and keying errors.</p>
+  <figure>
+    <div class="fig-scroll">
+    <svg class="d" viewBox="0 0 720 300" role="img" aria-label="Sketch of a CBS screen showing the account picker, date picker, record picker, action bar and acknowledgement dialog.">
+      <rect x="0" y="0" width="720" height="300" rx="6" class="box"/>
+      <rect x="0" y="0" width="720" height="36" rx="6" class="acc"/>
+      <text x="16" y="23" class="s ta">Branch 004 · Retail &amp; Corporate Operations · user B</text>
+      <text x="704" y="23" class="s ta" text-anchor="end">Menu  ·  Alerts  ·  Sign out</text>
+      <text x="24" y="76" class="s">Account</text>
+      <rect x="110" y="58" width="56" height="28" rx="3" class="soft"/><text x="138" y="77" class="s" text-anchor="middle">004</text>
+      <rect x="172" y="58" width="72" height="28" rx="3" class="soft"/><text x="208" y="77" class="s" text-anchor="middle">1101</text>
+      <rect x="250" y="58" width="104" height="28" rx="3" class="soft"/><text x="302" y="77" class="s" text-anchor="middle">0000021457</text>
+      <rect x="360" y="58" width="40" height="28" rx="3" class="btn"/><text x="380" y="77" class="btnt" text-anchor="middle">Go</text>
+      <text x="410" y="77" class="m">ACCOUNT PICKER</text>
+      <text x="24" y="124" class="s">Value date</text>
+      <rect x="110" y="106" width="52" height="28" rx="3" class="soft"/><text x="136" y="125" class="s" text-anchor="middle">03 ▾</text>
+      <rect x="168" y="106" width="62" height="28" rx="3" class="soft"/><text x="199" y="125" class="s" text-anchor="middle">Oct ▾</text>
+      <rect x="236" y="106" width="70" height="28" rx="3" class="soft"/><text x="271" y="125" class="s" text-anchor="middle">2026 ▾</text>
+      <text x="316" y="125" class="m">DATE PICKER · NO CALENDAR</text>
+      <text x="24" y="172" class="s">Currency</text>
+      <rect x="110" y="154" width="160" height="28" rx="3" class="soft"/><text x="122" y="173" class="s">USD · US Dollar</text>
+      <rect x="276" y="154" width="44" height="28" rx="3" class="box"/><text x="298" y="173" class="s" text-anchor="middle">Pick</text>
+      <text x="330" y="173" class="m">RECORD PICKER + SEARCH</text>
+      <line x1="16" y1="222" x2="704" y2="222" style="stroke:var(--rule)"/>
+      <rect x="24" y="238" width="72" height="32" rx="3" class="btn"/><text x="60" y="259" class="btnt" text-anchor="middle">Save</text>
+      <rect x="104" y="238" width="72" height="32" rx="3" class="box"/><text x="140" y="259" class="s" text-anchor="middle">Update</text>
+      <rect x="184" y="238" width="72" height="32" rx="3" class="box"/><text x="220" y="259" class="s" text-anchor="middle">Delete</text>
+      <rect x="264" y="238" width="72" height="32" rx="3" class="box"/><text x="300" y="259" class="s" text-anchor="middle">Cancel</text>
+      <text x="348" y="259" class="m">ACTION BAR</text>
+      <rect x="474" y="96" width="222" height="112" rx="6" class="box" style="stroke:var(--accent);stroke-width:1.6"/>
+      <text x="492" y="124" class="t ta">Saved</text>
+      <text x="492" y="146" class="s">Entry held for authorization.</text>
+      <text x="492" y="162" class="s">Reference 2214-000318</text>
+      <rect x="628" y="172" width="52" height="26" rx="3" class="btn"/><text x="654" y="190" class="btnt" text-anchor="middle">OK</text>
+      <text x="585" y="88" class="m" text-anchor="middle">ACKNOWLEDGEMENT</text>
+    </svg>
+    </div>
+    <figcaption>A sketch of a typical entry screen, with example values. The account number keeps the bank's familiar three-part branch, ledger and number format. Outcomes from the server need an explicit acknowledgement, while simple keying slips get a brief notice on the spot.</figcaption>
+  </figure>
+</section>
+
+<!-- 14 -->
+<section id="quality">
+  <div class="sec-head"><p class="eyebrow">17</p><h2>Quality engineering</h2></div>
+  <p>The guarantees in this document are checked by automated tests, in four independent tiers, each catching what the others cannot. Logic migrated from the original system is also compared with it row for row by automated parity tests.</p>
+  <figure>
+    <div class="fig-scroll">
+    <svg class="d" viewBox="0 0 720 210" role="img" aria-label="Automated tests by tier, bars to scale: 152 architecture checks, 618 business tests on SQL Server and Oracle, 244 pipeline tests, about 100 browser tests.">
+      <line x1="220" y1="6" x2="220" y2="204" class="ln"/>
+      <text x="0" y="24" class="t">Architecture checks</text><text x="0" y="40" class="s">boundaries, every build</text>
+      <rect x="220" y="14" width="108" height="30" class="bar"/><text x="336" y="34" class="t">152</text>
+      <text x="0" y="74" class="t">Business tests</text><text x="0" y="90" class="s">on SQL Server and Oracle</text>
+      <rect x="220" y="64" width="440" height="30" class="bar"/><text x="668" y="84" class="t">618</text>
+      <text x="0" y="124" class="t">Pipeline tests</text><text x="0" y="140" class="s">the real app, in process</text>
+      <rect x="220" y="114" width="174" height="30" class="bar"/><text x="402" y="134" class="t">244</text>
+      <text x="0" y="174" class="t">Browser tests</text><text x="0" y="190" class="s">a real browser, end to end</text>
+      <rect x="220" y="164" width="71" height="30" class="bar"/><text x="299" y="184" class="t">~100</text>
+    </svg>
+    </div>
+    <figcaption>Counts as of October 2026, bars drawn to scale. Pipeline tests start the real application to prove the security gate and anti-forgery checks run in their true order. Browser tests confirm that the strict content policy really is enforced and that every shared component works.</figcaption>
+  </figure>
+</section>
+
+<!-- 15 -->
+<section id="technology">
+  <div class="sec-head"><p class="eyebrow">18</p><h2>Technology summary</h2></div>
+  <p>The platform is built on mainstream Microsoft technology. That means a wide talent pool, a long support horizon, and no dependence on niche frameworks.</p>
+  <div class="table-wrap">
+  <table>
+    <thead><tr><th scope="col">Area</th><th scope="col">Choice</th><th scope="col">Why it matters</th></tr></thead>
+    <tbody>
+      <tr><th scope="row">Platform</th><td>.NET 10 (long-term support)</td><td>Current, supported, fast, with a long maintenance window.</td></tr>
+      <tr><th scope="row">Application</th><td>ASP.NET Core MVC, server-rendered</td><td>Mature web model; no business logic sits in the browser.</td></tr>
+      <tr><th scope="row">Databases</th><td>SQL Server · Oracle · PostgreSQL</td><td>Use the database you already license and operate.</td></tr>
+      <tr><th scope="row">Hosting</th><td>IIS on Windows Server, or Docker on Linux</td><td>Fits either infrastructure standard; four shapes from one build.</td></tr>
+      <tr><th scope="row">Gateway</th><td>YARP reverse proxy</td><td>TLS, rate limiting and routing at the edge, with no database access.</td></tr>
+      <tr><th scope="row">Shared state</th><td>Redis (optional)</td><td>Shares sessions and reference data across hosts; not needed for a single host.</td></tr>
+      <tr><th scope="row">Sign-in</th><td>Multi-factor: one-time code, Active Directory, QR</td><td>Strong authentication options to suit bank policy.</td></tr>
+      <tr><th scope="row">Reports</th><td>Crystal Reports in a separate viewer</td><td>Existing layouts keep working; the viewer never touches the database.</td></tr>
+      <tr><th scope="row">Logging</th><td>Structured, daily files, PII masked</td><td>Audit-friendly records with personal data redacted.</td></tr>
+      <tr><th scope="row">Monitoring</th><td>OpenTelemetry over OTLP</td><td>Works with the bank's existing monitoring tools.</td></tr>
+      <tr><th scope="row">Schema changes</th><td>Versioned, journalled migrations</td><td>Each change applied once, in order, with a status check before it runs.</td></tr>
+    </tbody>
+  </table>
+  </div>
+</section>
+
+<footer>TrustBank CBS · Platform architecture · Reviewed against the platform as built, 3 October 2026.</footer>
+</main>
+</body>
+</html>

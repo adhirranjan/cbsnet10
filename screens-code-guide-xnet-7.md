@@ -19,7 +19,7 @@ Paths are relative to the solution root.
   - [1.1 Files](#11-files)
   - [1.2 Why the code sits where it does](#12-why-the-code-sits-where-it-does)
   - [1.3 The controller](#13-the-controller)
-  - [1.4 The view — every idea in 97 lines](#14-the-view-every-idea-in-97-lines)
+  - [1.4 The view — every idea in 96 lines](#14-the-view-every-idea-in-96-lines)
   - [1.5 Flows](#15-flows)
   - [1.6 The service](#16-the-service)
   - [1.7 Rules](#17-rules)
@@ -53,7 +53,7 @@ Paths are relative to the solution root.
   - [4.4 The draft invariant — the guard to copy](#44-the-draft-invariant-the-guard-to-copy)
   - [4.5 The controller](#45-the-controller)
   - [4.6 The views](#46-the-views)
-  - [4.7 The JavaScript — 229 lines](#47-the-javascript-229-lines)
+  - [4.7 The JavaScript — 223 lines](#47-the-javascript-223-lines)
   - [4.8 Flows](#48-flows)
   - [4.9 The service](#49-the-service)
   - [4.10 Gotchas](#410-gotchas)
@@ -88,6 +88,9 @@ Paths are relative to the solution root.
   - [7.7 The service](#77-the-service)
   - [7.8 The placeholder (menu 2788)](#78-the-placeholder-menu-2788)
   - [7.9 Gotchas](#79-gotchas)
+- [Legacy-parity strip (2026-09-22)](#legacy-parity-strip-2026-09-22) — nine fields removed; don't restore them
+- [Cross-provider verification](#cross-provider-verification) — what SQL Server and Oracle have
+  actually been proven to do
 - [Still open](#still-open)
 
 ### All 13 menu rows
@@ -110,8 +113,9 @@ Paths are relative to the solution root.
 
 **CBS module** is the bank-facing module the row hangs under (`a_Module.ModuleName` via `a_ModuleMenuMap`) —
 what the user picks in the module chooser. It is a separate axis from the code module the service lives in:
-the denomination screens sit under Central Administration but are `TflCbs.Modules.Reference`-backed and
-served from `TflCbs.Modules.Bank.Web`, and User Creation's service is in `TflCbs.Core.Authentication`.
+since 2026-09-24 the default is that the code module follows it ([decision 0001](architecture/decisions/0001-code-module-follows-menu-module.md)):
+the denomination screens are Central Administration and live in `TflCbs.Modules.Administration(.Web)`. User
+Creation is the platform/security exception — its service stays in `TflCbs.Core.Authentication`.
 
 ### Study order
 
@@ -163,6 +167,22 @@ Five pieces do most of the work. Know these and a master screen is ~150 lines of
 | `SearchEndpoint` | [TflCbs.Framework/Services/SearchEndpoint.cs](../TflCbs.Framework/Services/SearchEndpoint.cs) | Takes a fetch delegate, tokenizes the `Id` column, decides client vs server paging |
 | `CbsAccessMiddleware` | [TflCbs.Framework/Infrastructure/CbsAccessMiddleware.cs](../TflCbs.Framework/Infrastructure/CbsAccessMiddleware.cs) | Global fail-closed guard. Not a filter — you cannot forget it |
 | `EditViewModel<TForm>` | [TflCbs.Framework/Models/Shared/EditViewModel.cs](../TflCbs.Framework/Models/Shared/EditViewModel.cs) | `{ Form, IsEditMode }`. Don't write per-screen view models |
+
+Three more the screens below all touch but never construct plumbing for:
+
+| Piece | Where | What it gives you |
+|---|---|---|
+| `SearchDescriptor` | [TflCbs.Framework/Models/Search/SearchDescriptor.cs](../TflCbs.Framework/Models/Search/SearchDescriptor.cs) | The JSON a view emits instead of writing JavaScript (99 lines) |
+| `CbsSessionStore` | [TflCbs.Framework/Services/CbsSessionStore.cs](../TflCbs.Framework/Services/CbsSessionStore.cs) | `Current` — user, branch, working date, `AllowedUrls` (186 lines) |
+| `FileUploads` | [TflCbs.Framework/Services/FileUploads.cs](../TflCbs.Framework/Services/FileUploads.cs) | Size cap + filename sanitising for `IFormFile` (116 lines; §5.7) |
+
+And the shared client assets, all served from `~/_content/TflCbs.Web.Shared/`:
+
+| Asset | Where | Used by |
+|---|---|---|
+| `_RecordPicker.cshtml` + `cbs-search.js` | [Views/Shared/_RecordPicker.cshtml](../TflCbs.Web.Shared/Views/Shared/_RecordPicker.cshtml), [wwwroot/js/cbs-search.js](../TflCbs.Web.Shared/wwwroot/js/cbs-search.js) | every screen in this guide |
+| `_AccountPicker.cshtml` + `cbs-account-picker.js` | [Views/Shared/_AccountPicker.cshtml](../TflCbs.Web.Shared/Views/Shared/_AccountPicker.cshtml), [wwwroot/js/cbs-account-picker.js](../TflCbs.Web.Shared/wwwroot/js/cbs-account-picker.js) | §3, §4, §5, §7 |
+| `_DatePicker.cshtml` + `cbs-datepicker.js` | [Views/Shared/_DatePicker.cshtml](../TflCbs.Web.Shared/Views/Shared/_DatePicker.cshtml), [wwwroot/js/cbs-datepicker.js](../TflCbs.Web.Shared/wwwroot/js/cbs-datepicker.js) | §4, §6 |
 
 ### Token rules (get these wrong and you ship a bug)
 
@@ -262,14 +282,15 @@ groups by it. Pure master data: no money, no scroll, no branch scope.
 
 | Path | Role |
 |---|---|
-| [TflCbs.Modules.Reference/DenominationUnitService.cs](../TflCbs.Modules.Reference/DenominationUnitService.cs) | Service, 224 lines |
-| [TflCbs.Modules.Reference/CurrencyService.cs](../TflCbs.Modules.Reference/CurrencyService.cs) | Currency picker source (moved here from TradeFinance) |
-| [TflCbs.Modules.Bank.Web/Areas/Bank/Controllers/DenominationUnitController.cs](../TflCbs.Modules.Bank.Web/Areas/Bank/Controllers/DenominationUnitController.cs) | 7 actions, 159 lines |
-| [TflCbs.Modules.Bank.Web/Areas/Bank/Views/DenominationUnit/Index.cshtml](../TflCbs.Modules.Bank.Web/Areas/Bank/Views/DenominationUnit/Index.cshtml) | The whole UI, 97 lines |
-| [TflCbs.Modules.Bank.Web/Models/Bank/BankModels.cs](../TflCbs.Modules.Bank.Web/Models/Bank/BankModels.cs) | `DenominationUnitForm` (shares the file with `DenominationForm`) |
-| [TflCbs.Modules.Reference/ReferenceModule.cs](../TflCbs.Modules.Reference/ReferenceModule.cs) | `AddScoped<DenominationUnitService>()` |
+| [TflCbs.Modules.Administration/DenominationUnitService.cs](../TflCbs.Modules.Administration/DenominationUnitService.cs) | Service, 181 lines |
+| [TflCbs.Modules.Reference/CurrencyService.cs](../TflCbs.Modules.Reference/CurrencyService.cs) | Currency picker source, 97 lines (moved here from TradeFinance) |
+| [TflCbs.Modules.Administration.Web/Areas/Administration/Controllers/DenominationUnitController.cs](../TflCbs.Modules.Administration.Web/Areas/Administration/Controllers/DenominationUnitController.cs) | 6 actions, 151 lines |
+| [TflCbs.Modules.Administration.Web/Areas/Administration/Views/DenominationUnit/Index.cshtml](../TflCbs.Modules.Administration.Web/Areas/Administration/Views/DenominationUnit/Index.cshtml) | The whole UI, 96 lines |
+| [TflCbs.Modules.Administration.Web/Models/Administration/DenominationModels.cs](../TflCbs.Modules.Administration.Web/Models/Administration/DenominationModels.cs) | `DenominationUnitForm` (shares the file with `DenominationForm`) |
+| [TflCbs.Modules.Administration/AdministrationModule.cs](../TflCbs.Modules.Administration/AdministrationModule.cs) | `AddScoped<DenominationUnitService>()`, beside `DenominationService` and the `IDenominationReader` forward |
 | [TflCbs.Tools.DbMigrator/Migrations/sqlserver/0013_menu_routes_denomination_unit.sql](../TflCbs.Tools.DbMigrator/Migrations/sqlserver/0013_menu_routes_denomination_unit.sql) | Route cutover ×3 dialects |
-| [TflCbs.Tests/DenominationUnitServiceTests.cs](../TflCbs.Tests/DenominationUnitServiceTests.cs) | 8 cross-provider tests |
+| [TflCbs.Tests/DenominationUnitServiceTests.cs](../TflCbs.Tests/DenominationUnitServiceTests.cs) | 9 cross-provider tests, 310 lines |
+| [TflCbs.Tests/CurrencyServiceTests.cs](../TflCbs.Tests/CurrencyServiceTests.cs) | 4 tests for the picker source, 101 lines |
 
 No JavaScript file — the screen emits `SearchDescriptor` JSON and shared `cbs-search.js` does the rest.
 
@@ -288,33 +309,28 @@ Read-only companions: `G_CURRENCY` (picker + code display), `G_DENOMINATION` (de
 
 ### 1.2 Why the code sits where it does
 
-**Service in `Modules.Reference`, screen in `Modules.Bank.Web`.** Two independent axes:
+**Service in `Modules.Administration`, screen in `Modules.Administration.Web`, URL still `/Bank/…`.**
+Menu 893 hangs under Central Administration, and since 2026-09-24 the code follows the menu module that owns
+the data ([decision 0001](architecture/decisions/0001-code-module-follows-menu-module.md)). Administration
+owns denominations: it is the only module that creates, changes or deletes them.
 
-- *Which Area serves the URL* — menu 893 sits under Central Administration, so the route is `/Bank/…` and
-  `Bank.Web` serves it.
-- *Which assembly owns the logic* — `Bank.Web`'s backing **service** module is General, and General is
-  platform plumbing (menu, scroll, bank variables), not master data. So the service goes to Reference.
-
-Reference is a **core** module (`ICoreCbsModule`): registered unconditionally, never gated on
-`Modules:Enabled`. Its admission rule: no domain behaviour **and** ≥2 domains consume it. Denomination Unit
-passes (cash-handling screens in more than one domain). `LockerMake` would not.
-
-That costs exactly one line in [TflCbs.Modules.Bank.Web.csproj](../TflCbs.Modules.Bank.Web/TflCbs.Modules.Bank.Web.csproj):
-
-```xml
-<ProjectReference Include="..\TflCbs.Modules.Reference\TflCbs.Modules.Reference.csproj" />
-```
-
-`WebModuleBoundaryTests` allows a **core** service reference here and fails the build on a sibling-domain
-one. Same split already applies to State/District: HR menu, Reference code.
+- *The URL did not move.* The controller keeps `[Route("Bank/DenominationUnit")]`, so `A_MENUS.NavigateURL`
+  and the access guard see exactly what they saw before — no migration. Only `[Area("Administration")]`
+  changed, which decides where the views live.
+- *Currency stays in `Reference`* — ownerless and read by many domains (decision 0001, exception 2). So
+  [TflCbs.Modules.Administration.Web.csproj](../TflCbs.Modules.Administration.Web/TflCbs.Modules.Administration.Web.csproj)
+  references Reference for the currency picker; `WebModuleBoundaryTests` allows a **core** reference and fails
+  the build on a sibling-domain one.
+- *Other modules read, never write*, through `TflCbs.Modules.Administration.Contracts` (§2.2, §5).
 
 ### 1.3 The controller
 
-159 lines, five actions, one private helper. No `try`, no SQL, no `HttpContext`, no mapper, no antiforgery
+151 lines, six actions (`Index`, `SearchData`, `SearchCurrencies`, `Save`, `Update`, `Delete`) and one
+private helper. No `try`, no SQL, no `HttpContext`, no mapper, no antiforgery
 attribute — each of those is someone else's job, and knowing whose is most of reading this file.
 
 ```csharp
-[Area("Bank")]                        // views live in Areas/Bank/Views/DenominationUnit/
+[Area("Administration")]              // views live in Areas/Administration/Views/DenominationUnit/
 [Route("Bank/DenominationUnit")]      // pinned: A_MENUS.NavigateURL holds this exact string
 [CbsAccessScreen(ScreenKey)]          // /search, /save, /update, /delete authorize as this screen
 public sealed class DenominationUnitController(
@@ -363,19 +379,19 @@ Two things that are absent on purpose:
 `[Bind(Prefix = "Form")]` on each POST is the bridge to the view: the view's model is `EditViewModel<T>` so it
 posts `Form.CurrencyId`, while the action wants a bare `DenominationUnitForm`.
 
-### 1.4 The view — every idea in 97 lines
+### 1.4 The view — every idea in 96 lines
 
-[Index.cshtml](../TflCbs.Modules.Bank.Web/Areas/Bank/Views/DenominationUnit/Index.cshtml) is the template every
-other master screen copies. Two halves: **lines 1–59 build configuration, lines 62–97 are the markup.** No
+[Index.cshtml](../TflCbs.Modules.Administration.Web/Areas/Administration/Views/DenominationUnit/Index.cshtml) is the template every
+other master screen copies. Two halves: **lines 1–58 build configuration, lines 61–96 are the markup.** No
 `.js` file and no hand-typed URL — both deliberate.
 
 | Block | Lines | What it is |
 |---|---|---|
 | `@model EditViewModel<DenominationUnitForm>` | 2 | `Form` + `IsEditMode`; that one boolean drives the action bar |
-| `ViewData["SelectedMenu"]` | 5 | sidebar highlight **and** the card title (line 66) — they cannot drift |
-| `searchDescriptor` | 7–26 | the Search modal |
-| `currencyPicker` | 29–58 | the picker, carrying its own nested descriptor |
-| `<form asp-action="Save">` | 62 | one form, three destinations |
+| `ViewData["SelectedMenu"]` | 5 | sidebar highlight **and** the card title (line 65) — they cannot drift |
+| `searchDescriptor` | 7–25 | the Search modal |
+| `currencyPicker` | 28–57 | the picker, carrying its own nested descriptor |
+| `<form asp-action="Save">` | 61 | one form, three destinations |
 
 `Url.Action(nameof(DenominationUnitController.SearchData))` — **never a string literal.** Renaming an action is
 then a compile error here, not a broken button found by a user.
@@ -579,8 +595,10 @@ and `RedirectToRecord` exist so nobody has to remember.
 
 ### 1.6 The service
 
-224 lines, five public methods, four private helpers, four message constants. The only place that knows what a
-denomination unit *is*.
+181 lines, five public methods, four message constants. The only place that knows what a denomination unit
+*is*. It used to be 224: the `Has`/`Eq`/`Val`/`Paged` helpers it once carried privately now come from
+`TflCbs.Abstractions.ServiceQuery` (§0, *Service conventions*), and every service below was trimmed the same
+way.
 
 ```csharp
 Task<Result<(IReadOnlyList<IReadOnlyDictionary<string, object?>> Rows, int Total)>>
@@ -779,22 +797,27 @@ the second scoped by the first**, plus a read-only grid driven by JavaScript.
 
 | Path | Role |
 |---|---|
-| [TflCbs.Modules.Reference/DenominationService.cs](../TflCbs.Modules.Reference/DenominationService.cs) | Service, 285 lines |
-| [TflCbs.Modules.Bank.Web/Areas/Bank/Controllers/DenominationController.cs](../TflCbs.Modules.Bank.Web/Areas/Bank/Controllers/DenominationController.cs) | 8 actions, 211 lines |
-| [TflCbs.Modules.Bank.Web/Areas/Bank/Views/Denomination/Index.cshtml](../TflCbs.Modules.Bank.Web/Areas/Bank/Views/Denomination/Index.cshtml) | Two pickers + read-only per-currency grid, 173 lines |
-| [TflCbs.Modules.Bank.Web/wwwroot/js/bank-denomination.js](../TflCbs.Modules.Bank.Web/wwwroot/js/bank-denomination.js) | The per-currency grid, 61 lines |
-| `Models/Bank/BankModels.cs` → `DenominationForm` | Same file as `DenominationUnitForm` |
+| [TflCbs.Modules.Administration/DenominationService.cs](../TflCbs.Modules.Administration/DenominationService.cs) | Service, ~280 lines (incl. the `IDenominationReader` read) |
+| [TflCbs.Modules.Administration.Web/Areas/Administration/Controllers/DenominationController.cs](../TflCbs.Modules.Administration.Web/Areas/Administration/Controllers/DenominationController.cs) | 7 actions, 195 lines |
+| [TflCbs.Modules.Administration.Web/Areas/Administration/Views/Denomination/Index.cshtml](../TflCbs.Modules.Administration.Web/Areas/Administration/Views/Denomination/Index.cshtml) | Two pickers + read-only per-currency grid, 167 lines |
+| [TflCbs.Modules.Administration.Web/wwwroot/js/denomination.js](../TflCbs.Modules.Administration.Web/wwwroot/js/denomination.js) | The per-currency grid, 52 lines |
+| `Models/Administration/DenominationModels.cs` → `DenominationForm` | Same file as `DenominationUnitForm` (50 lines, both forms) |
+| [TflCbs.Modules.Administration/AdministrationModule.cs](../TflCbs.Modules.Administration/AdministrationModule.cs) | `AddScoped<DenominationService>()` + `AddScoped<IDenominationReader>(…)` |
+| [TflCbs.Tools.DbMigrator/Migrations/sqlserver/0014_menu_routes_denomination.sql](../TflCbs.Tools.DbMigrator/Migrations/sqlserver/0014_menu_routes_denomination.sql) | Route cutover ×3 dialects |
+| [TflCbs.Tests/DenominationServiceTests.cs](../TflCbs.Tests/DenominationServiceTests.cs) | 11 cross-provider tests, 362 lines |
+| [TflCbs.Tests/DenominationParityTests.cs](../TflCbs.Tests/DenominationParityTests.cs) | 2 legacy-parity tests, 192 lines |
 
 ### 2.2 Why the code sits where it does
 
-Same reasoning as §1.2, one step further. The service is in **`TflCbs.Modules.Reference`** for the two
-reasons `DenominationUnitService` is: pure CRUD with no domain behaviour, and ≥2 domains consume it — Bank
-owns the maintenance screen, RetailBanking's Dormant Re Activation reads the rows to build its cash grid.
-That second consumer is not hypothetical here; it is why `TflCbs.Modules.RetailBanking.Web` carries a
-reference to `Reference` (§5).
+Same as §1.2: menu 890 is Central Administration, so the service is in **`TflCbs.Modules.Administration`**
+and the controller in **`Administration.Web`**, still at `/Bank/Denomination`.
 
-The controller is in **`Bank.Web`** because menu 890 sits under module 1 — the legacy placement axis, not
-the code axis. The two travel separately and that is deliberate.
+This master has a second reader — RetailBanking's Dormant Re Activation builds its cash grid from it (§5).
+It does not get `DenominationService`; it gets the read-only
+[`IDenominationReader`](../TflCbs.Modules.Administration.Contracts/IDenominationReader.cs) from
+`TflCbs.Modules.Administration.Contracts`, implemented by `DenominationService.GetByCurrencyAsync` over the
+same per-currency search this screen uses, so the two cannot drift (a test pins that). Writes never leave
+Administration.
 
 The interesting part is the **constructor**, which injects three services:
 
@@ -816,7 +839,7 @@ master**, never from a bespoke lookup bolted onto the screen's own service. Copy
 
 ### 2.3 The controller
 
-Eight actions in 211 lines, in §1's order: `Index`, three searches, `Save`, `Update`, `Delete`, plus one
+Seven actions in 195 lines, in §1's order: `Index`, three searches, `Save`, `Update`, `Delete`, plus one
 private helper.
 
 ```csharp
@@ -928,7 +951,7 @@ a form rebuilt server-side.
 
 ### 2.4 The view
 
-173 lines, same two halves as §1.4 — config block (1–105), then markup (108–173). Three things differ from
+167 lines, same two halves as §1.4 — config block (1–103), then markup (106–167). Three things differ from
 §1, all worth copying.
 
 #### Two `RecordPickerModel`s, and how they know about each other
@@ -985,7 +1008,7 @@ Three details in one small block:
 
 ```razor
 @section Scripts {
-    <script src="~/_content/TflCbs.Modules.Bank.Web/js/bank-denomination.js" asp-append-version="true"></script>
+    <script src="~/_content/TflCbs.Modules.Administration.Web/js/denomination.js" asp-append-version="true"></script>
 }
 ```
 
@@ -994,7 +1017,7 @@ and fails silently.** Any behaviour beyond what the descriptor expresses goes in
 `wwwroot/js/`. The `~/_content/<assembly>/` prefix is how a Razor Class Library's static assets are served;
 `asp-append-version` appends a content hash so a deploy busts the browser cache.
 
-#### The JavaScript — 61 lines, and the shape to copy
+#### The JavaScript — 52 lines, and the shape to copy
 
 ```javascript
 var currency = document.getElementById("Form_CurrencyId");
@@ -1079,7 +1102,7 @@ keeps the load path single.
 Currency picker  → search-currencies  → CurrencyService          (no dependency)
       │
       │ pick → cbs-search.js sets #Form_CurrencyId + #Form_CurrencyCode
-      │      → fires "change"  ────────────────┬──→ bank-denomination.js reloads the grid
+      │      → fires "change"  ────────────────┬──→ denomination.js reloads the grid
       │      → applies ClearTargets            │       (search?Filters[CurrencyId]=…)
       ↓                                        │
 Unit picker      → search-units ──────────────┘
@@ -1091,7 +1114,7 @@ them know about each other — all three are downstream of one `change` event on
 
 ### 2.7 The service
 
-285 lines, structurally **§1's service with one more join**. Same `using static` header, same repository
+262 lines, structurally **§1's service with one more join**. Same `using static` header, same repository
 properties, same in-memory search, same load-then-mutate update. Read §1.6 for the shared reasoning; what
 follows is what is genuinely different.
 
@@ -1244,15 +1267,20 @@ the routes **is** the maker-checker separation. There is no `if (mode == …)` a
 
 | Path | Role |
 |---|---|
-| [TflCbs.Modules.RetailBanking/HoldingAmountService.cs](../TflCbs.Modules.RetailBanking/HoldingAmountService.cs) | 715 lines — both maker-checker cycles |
-| [TflCbs.Modules.RetailBanking/AccountService.cs](../TflCbs.Modules.RetailBanking/AccountService.cs) | Account / COA pickers, account-number format, withdrawable |
-| [.../Controllers/AccHoldingAmountController.cs](../TflCbs.Modules.RetailBanking.Web/Areas/RetailBanking/Controllers/AccHoldingAmountController.cs) | 508 lines, 17 actions, four screen keys |
+| [TflCbs.Modules.RetailBanking/HoldingAmountService.cs](../TflCbs.Modules.RetailBanking/HoldingAmountService.cs) | 689 lines — both maker-checker cycles |
+| [TflCbs.Modules.RetailBanking/AccountService.cs](../TflCbs.Modules.RetailBanking/AccountService.cs) | Account / COA pickers, account-number format, withdrawable (271 lines) |
+| [.../Controllers/AccHoldingAmountController.cs](../TflCbs.Modules.RetailBanking.Web/Areas/RetailBanking/Controllers/AccHoldingAmountController.cs) | 482 lines, 19 actions, four screen keys |
 | [.../Views/AccHoldingAmount/Index.cshtml](../TflCbs.Modules.RetailBanking.Web/Areas/RetailBanking/Views/AccHoldingAmount/Index.cshtml) | Entry, 177 lines |
-| [.../Views/AccHoldingAmount/Authorize.cshtml](../TflCbs.Modules.RetailBanking.Web/Areas/RetailBanking/Views/AccHoldingAmount/Authorize.cshtml) | **Both** checker screens, 110 lines |
+| [.../Views/AccHoldingAmount/Authorize.cshtml](../TflCbs.Modules.RetailBanking.Web/Areas/RetailBanking/Views/AccHoldingAmount/Authorize.cshtml) | **Both** checker screens, 109 lines |
 | [.../Views/AccHoldingAmount/Release.cshtml](../TflCbs.Modules.RetailBanking.Web/Areas/RetailBanking/Views/AccHoldingAmount/Release.cshtml) | Release, 103 lines |
-| [.../Models/RetailBanking/AccHoldingAmountForm.cs](../TflCbs.Modules.RetailBanking.Web/Models/RetailBanking/AccHoldingAmountForm.cs) | 48 lines — one form for all four screens |
-| [.../wwwroot/js/acc-holding-amount.js](../TflCbs.Modules.RetailBanking.Web/wwwroot/js/acc-holding-amount.js) | Account-info refresh, 43 lines |
-| [TflCbs.Modules.General.Contracts/IScrollService.cs](../TflCbs.Modules.General.Contracts/IScrollService.cs) | `ScrollSources.HoldingAmount = 1145` |
+| [.../Models/RetailBanking/AccHoldingAmountForm.cs](../TflCbs.Modules.RetailBanking.Web/Models/RetailBanking/AccHoldingAmountForm.cs) | 41 lines — one form for all four screens |
+| [.../wwwroot/js/acc-holding-amount.js](../TflCbs.Modules.RetailBanking.Web/wwwroot/js/acc-holding-amount.js) | Account-info refresh, 39 lines |
+| [TflCbs.Modules.General.Contracts/IScrollService.cs](../TflCbs.Modules.General.Contracts/IScrollService.cs) | `ScrollSources.HoldingAmount = 1145` (41 lines) |
+| [TflCbs.Modules.RetailBanking/RetailBankingModule.cs](../TflCbs.Modules.RetailBanking/RetailBankingModule.cs) | `AddScoped<HoldingAmountService>()` — line 16, `AccountService` line 15 |
+| [TflCbs.Tools.DbMigrator/Migrations/sqlserver/0012_menu_routes_cutover_holding_release.sql](../TflCbs.Tools.DbMigrator/Migrations/sqlserver/0012_menu_routes_cutover_holding_release.sql) | Routes for 2786 / 2787. **SQL Server only — no Oracle/Postgres twin** (unlike 0013–0019) |
+| [TflCbs.Tools.DbMigrator/Migrations/sqlserver/0011_menu_module_backfill_batch7.sql](../TflCbs.Tools.DbMigrator/Migrations/sqlserver/0011_menu_module_backfill_batch7.sql) | ModuleId/ParentMenuId backfill for all 13 rows. **SQL Server only, by decision** — its header says why |
+| [TflCbs.Tests/HoldingAmountServiceTests.cs](../TflCbs.Tests/HoldingAmountServiceTests.cs) | 23 cross-provider tests, 676 lines |
+| [TflCbs.Tests/HoldingAmountParityTests.cs](../TflCbs.Tests/HoldingAmountParityTests.cs) | 3 legacy-parity tests, 315 lines |
 
 ### 3.2 Why the code sits where it does
 
@@ -1326,7 +1354,7 @@ That gives four states, and every guard in the service is a question about which
 
 ### 3.4 The controller
 
-508 lines, 17 actions, four screen keys. The largest controller in this guide and the one worth reading in
+482 lines, 19 actions, four screen keys. The largest controller in this guide and the one worth reading in
 full, because the pattern repeats on §4 and §5.
 
 #### The multi-screen pattern — copy this
@@ -1463,7 +1491,6 @@ var accountPicker = new AccountPickerModel
     BranchLen = Model.BranchLen, HeadLen = Model.HeadLen, AccountLen = Model.AccountLen,
     …
     CustomerNameTarget   = "#acc-customer-name",
-    BalanceTarget        = "#acc-balance",
     ChartOfAccountTarget = "#acc-coa",
     CoaDescriptor     = new SearchDescriptor { … },   // stage 1: chart of account
     AccountDescriptor = new SearchDescriptor { … },   // stage 2: accounts within it
@@ -1476,8 +1503,9 @@ Four ideas in one control:
   type a full account number the way it is printed.
 - **Two-stage dialog** — pick a chart of account, then an account within it. Two descriptors, one control;
   the cascade is built into the component rather than declared like §2.5.
-- **`…Target` selectors fill read-only boxes elsewhere on the page.** The picker writes customer name,
-  balance and COA into three inputs it does not own. Declarative, no per-screen JavaScript.
+- **`…Target` selectors fill read-only boxes elsewhere on the page.** The picker writes customer name and
+  COA into inputs it does not own. Declarative, no per-screen JavaScript. (`BalanceTarget` exists on the
+  component and is unused here — legacy shows no balance on this screen; see *Legacy-parity strip*.)
 - **`Disabled = isEdit`** — a hold belongs to one account for its whole life. Editing changes the amount and
   the remarks; it never re-points the hold. Enforced again in the service, which simply never reads an
   account id on update.
@@ -1550,7 +1578,7 @@ One legacy quirk is preserved and commented in the file: the amount stays editab
 the **Update** path persists it — pressing Release ignores an edited amount. Legacy behaves that way; it is
 kept rather than silently "fixed".
 
-#### The JavaScript — 43 lines, and a different coupling style from §2
+#### The JavaScript — 39 lines, and a different coupling style from §2
 
 ```javascript
 document.addEventListener("cbs:account-picked", function (e) { fetchInfo(e.detail && e.detail.accountId); });
@@ -1650,7 +1678,7 @@ POST /release-authorize             → AuthorizeReleaseAsync (passes the releas
 
 ### 3.7 The service
 
-715 lines. Same conventions as §1.6 and §2.7 — `Result`, `Repository<T>`, in-memory joins, `using static` —
+689 lines. Same conventions as §1.6 and §2.7 — `Result`, `Repository<T>`, in-memory joins, `using static` —
 with three things those screens did not need.
 
 #### Guards that compose, returning `Result?`
@@ -1811,12 +1839,16 @@ that hits the posting boundary head-on.
 
 | Path | Role |
 |---|---|
-| [TflCbs.Modules.RetailBanking/DirectCreditService.cs](../TflCbs.Modules.RetailBanking/DirectCreditService.cs) | 1008 lines — the largest service here |
-| [.../Controllers/DirectCreditController.cs](../TflCbs.Modules.RetailBanking.Web/Areas/RetailBanking/Controllers/DirectCreditController.cs) | 506 lines |
-| [.../Views/DirectCredit/Index.cshtml](../TflCbs.Modules.RetailBanking.Web/Areas/RetailBanking/Views/DirectCredit/Index.cshtml) | Entry, 331 lines — two forms |
+| [TflCbs.Modules.RetailBanking/DirectCreditService.cs](../TflCbs.Modules.RetailBanking/DirectCreditService.cs) | 934 lines — the largest service here |
+| [.../Controllers/DirectCreditController.cs](../TflCbs.Modules.RetailBanking.Web/Areas/RetailBanking/Controllers/DirectCreditController.cs) | 467 lines, 14 actions |
+| [.../Views/DirectCredit/Index.cshtml](../TflCbs.Modules.RetailBanking.Web/Areas/RetailBanking/Views/DirectCredit/Index.cshtml) | Entry, 328 lines — two forms |
 | [.../Views/DirectCredit/Authorize.cshtml](../TflCbs.Modules.RetailBanking.Web/Areas/RetailBanking/Views/DirectCredit/Authorize.cshtml) | Read-only checker view, 143 lines |
-| [.../Models/RetailBanking/DirectCreditForm.cs](../TflCbs.Modules.RetailBanking.Web/Models/RetailBanking/DirectCreditForm.cs) | 69 lines |
-| [.../wwwroot/js/direct-credit.js](../TflCbs.Modules.RetailBanking.Web/wwwroot/js/direct-credit.js) | Beneficiary grid → hidden JSON, 229 lines |
+| [.../Models/RetailBanking/DirectCreditForm.cs](../TflCbs.Modules.RetailBanking.Web/Models/RetailBanking/DirectCreditForm.cs) | 57 lines |
+| [.../wwwroot/js/direct-credit.js](../TflCbs.Modules.RetailBanking.Web/wwwroot/js/direct-credit.js) | Beneficiary grid → hidden JSON, 223 lines |
+| [TflCbs.Modules.RetailBanking/RetailBankingModule.cs](../TflCbs.Modules.RetailBanking/RetailBankingModule.cs) | `AddScoped<DirectCreditService>()` — line 18 |
+| [TflCbs.Tools.DbMigrator/Migrations/sqlserver/0017_menu_routes_direct_credit.sql](../TflCbs.Tools.DbMigrator/Migrations/sqlserver/0017_menu_routes_direct_credit.sql) | Route cutover ×3 dialects |
+| [TflCbs.Tests/DirectCreditServiceTests.cs](../TflCbs.Tests/DirectCreditServiceTests.cs) | 30 cross-provider tests, 863 lines — the biggest suite in the batch |
+| [TflCbs.Tests/DirectCreditParityTests.cs](../TflCbs.Tests/DirectCreditParityTests.cs) | 1 legacy-parity test, 150 lines |
 
 ### 4.2 Why the code sits where it does
 
@@ -1912,7 +1944,7 @@ Test 3 also explains why the ordering matters. A posted, unauthorized entry woul
 
 ### 4.5 The controller
 
-506 lines. Two screen keys, the §3.4 pattern exactly (`screen:` on every token call outside the entry
+467 lines. Two screen keys, the §3.4 pattern exactly (`screen:` on every token call outside the entry
 screen), plus three things §3 did not need.
 
 #### The mapping pre-check
@@ -2025,7 +2057,7 @@ saves; an import that wrote directly would be a bulk payment nobody looked at.
 
 ### 4.6 The views
 
-#### `Index.cshtml` — 331 lines, and **two** forms
+#### `Index.cshtml` — 328 lines, and **two** forms
 
 The one structural surprise on this screen:
 
@@ -2055,16 +2087,31 @@ input, the whole beneficiary editor hidden, and the import card gone. **The view
 `GuardEditableAsync` decision, rendered.** The service decides; the view displays; the service decides again
 on POST.
 
-#### The draft badge
+#### The draft badge — now a banner, not a field
+
+It began as a read-only `Status` box beside the remittance number. Legacy has no such field, so the box
+went in the *Legacy-parity strip* (below) — and came straight back as a page-top banner, because the thing
+it warns about is **our** divergence, not legacy's:
 
 ```razor
-@* The draft badge: a saved entry has NOT moved money while posting is deferred. *@
-<input class="form-control" value="@(Model.IsPosted ? "Posted" : "Draft — not posted")" readonly />
+@* Not a legacy field: legacy posts on save, we do not yet (NOTIMPL-POSTING). A banner rather than a
+   form field, so the screen still matches legacy's field set while the divergence stays visible. *@
+@if (isEdit && !Model.IsPosted)
+{
+    <div class="alert-banner">
+        <strong>Draft — not posted.</strong> This entry is saved but no money has moved; posting is not
+        available yet.
+    </div>
+}
 ```
 
-Small, and the most important text on the screen. A saved direct credit looks like a completed one — same
-row, same scroll number, same remittance number. Saying so on the screen is what stops someone treating a
-draft as done.
+The distinction is the point. **A field is part of the screen's contract with legacy; a banner is a notice
+about the migration.** Legacy needs no such notice — it actually posts. Keeping the warning out of the
+field set means the parity comparison stays honest *and* nobody mistakes a saved entry for a completed one.
+`.alert-banner` is the existing warn style from `site.css`; no new CSS, no new partial. The same banner is
+on all four screens that can hold an unposted record — §4's entry and authorize views, §5's entry and
+authorize views — each worded for its own reader. §5's authorize view never carried the old *field*; it
+gets the banner anyway, because the notice is about the migration, not about matching legacy's field set.
 
 #### The beneficiary grid
 
@@ -2087,7 +2134,7 @@ Bank and branch use two `_RecordPicker`s in the §2.5 cascade: branch depends on
 Read-only, `hasRecord`-gated, same shape as §3.5's checker view: the checker searches, reads, and presses
 one button that always returns `NOTIMPL-POSTING` today.
 
-### 4.7 The JavaScript — 229 lines
+### 4.7 The JavaScript — 223 lines
 
 The largest client file in the batch, and the pattern to copy for any editable grid.
 
@@ -2151,7 +2198,7 @@ uploaded bytes. Contrast §5, where the same shortcut would have destroyed uploa
 
 ### 4.9 The service
 
-1008 lines; the parts §1–§3 have not already covered.
+934 lines; the parts §1–§3 have not already covered.
 
 #### `Validate` — a static method, and why that matters
 
@@ -2221,8 +2268,8 @@ identifies. **Do not store what you can compute from a key.**
 - **Beneficiary rows post as one hidden JSON field**, not an indexed form array — the same pattern §5 uses
   for denominations and Locker Type uses for rent discounts.
 - **`BranchListId` of 0 is a real branch.** `> 0` tests silently refuse it. The service uses `< 0`.
-- **`LoadAsync` reports `IsPosted`** from `HasLedgerRowsAsync`, and both views print `Draft — not posted`, so
-  nobody mistakes a saved entry for a posted one.
+- **`LoadAsync` reports `IsPosted`** from `HasLedgerRowsAsync`; no view renders it as a *field* any more
+  (legacy has no status field — see *Legacy-parity strip*), but both views gate the draft **banner** on it.
 - **Update rewrites all beneficiary rows wholesale.** Fine here; it would be data loss on a table holding
   uploaded bytes (§5.8).
 - **`UniqueTranNumber` stays NULL on drafts** — the posting sequence is not burned by entries that never post.
@@ -2254,13 +2301,19 @@ Constants, all `public` on the service: `ModeCash = 61`, `ModeTransfer = 63`, `C
 
 | Path | Role |
 |---|---|
-| [TflCbs.Modules.RetailBanking/DormantReactivationService.cs](../TflCbs.Modules.RetailBanking/DormantReactivationService.cs) | 1106 lines |
-| [.../Controllers/DormantReactivationController.cs](../TflCbs.Modules.RetailBanking.Web/Areas/RetailBanking/Controllers/DormantReactivationController.cs) | 556 lines, **three** screen keys |
-| [.../Views/DormantReactivation/Index.cshtml](../TflCbs.Modules.RetailBanking.Web/Areas/RetailBanking/Views/DormantReactivation/Index.cshtml) | Entry, multipart |
-| [.../Views/DormantReactivation/Authorize.cshtml](../TflCbs.Modules.RetailBanking.Web/Areas/RetailBanking/Views/DormantReactivation/Authorize.cshtml) | Checker: downloads + Authorize/Reject |
-| [.../Models/RetailBanking/DormantReactivationForm.cs](../TflCbs.Modules.RetailBanking.Web/Models/RetailBanking/DormantReactivationForm.cs) | Two fixed doc slots, `DenominationsJson`, `AccountNumberDisplay` |
-| [.../wwwroot/js/dormant-reactivation.js](../TflCbs.Modules.RetailBanking.Web/wwwroot/js/dormant-reactivation.js) | Account panel, charge, denomination grid |
-| [TflCbs.Framework/Services/FileUploads.cs](../TflCbs.Framework/Services/FileUploads.cs) | **No type gate** — see §5.7 |
+| [TflCbs.Modules.RetailBanking/DormantReactivationService.cs](../TflCbs.Modules.RetailBanking/DormantReactivationService.cs) | 947 lines |
+| [TflCbs.Modules.RetailBanking/ChargeService.cs](../TflCbs.Modules.RetailBanking/ChargeService.cs) | 296 lines — charge pricing in C#, not T-SQL (§5.4) |
+| [.../Controllers/DormantReactivationController.cs](../TflCbs.Modules.RetailBanking.Web/Areas/RetailBanking/Controllers/DormantReactivationController.cs) | 498 lines, 13 actions, **three** screen keys |
+| [.../Views/DormantReactivation/Index.cshtml](../TflCbs.Modules.RetailBanking.Web/Areas/RetailBanking/Views/DormantReactivation/Index.cshtml) | Entry, multipart, 285 lines |
+| [.../Views/DormantReactivation/Authorize.cshtml](../TflCbs.Modules.RetailBanking.Web/Areas/RetailBanking/Views/DormantReactivation/Authorize.cshtml) | Checker: downloads + Authorize/Reject, 144 lines |
+| [.../Models/RetailBanking/DormantReactivationForm.cs](../TflCbs.Modules.RetailBanking.Web/Models/RetailBanking/DormantReactivationForm.cs) | 92 lines — two fixed doc slots, `DenominationsJson`, `AccountNumberDisplay` |
+| [.../wwwroot/js/dormant-reactivation.js](../TflCbs.Modules.RetailBanking.Web/wwwroot/js/dormant-reactivation.js) | Account panel, charge, denomination grid, 157 lines |
+| [TflCbs.Framework/Services/FileUploads.cs](../TflCbs.Framework/Services/FileUploads.cs) | 116 lines. **No type gate** — see §5.7 |
+| [TflCbs.Modules.Administration.Contracts/IDenominationReader.cs](../TflCbs.Modules.Administration.Contracts/IDenominationReader.cs) | §2's data, read through Administration's contract for the cash grid — the cross-module edge below |
+| [TflCbs.Modules.RetailBanking/RetailBankingModule.cs](../TflCbs.Modules.RetailBanking/RetailBankingModule.cs) | `AddScoped<DormantReactivationService>()` — line 20, `ChargeService` line 19 |
+| [TflCbs.Tools.DbMigrator/Migrations/sqlserver/0019_menu_routes_dormant_reactivation.sql](../TflCbs.Tools.DbMigrator/Migrations/sqlserver/0019_menu_routes_dormant_reactivation.sql) | Route cutover ×3 dialects |
+| [TflCbs.Tests/DormantReactivationServiceTests.cs](../TflCbs.Tests/DormantReactivationServiceTests.cs) | 25 cross-provider tests, 972 lines |
+| [TflCbs.Tests/DormantReactivationParityTests.cs](../TflCbs.Tests/DormantReactivationParityTests.cs) | 1 legacy-parity test, 159 lines |
 
 ### 5.2 Why the code sits where it does
 
@@ -2273,16 +2326,18 @@ The module keeps the banking; the framework keeps the plumbing. (Its image twin 
 Framework on 2026-09-11 — Signature was its only caller, so it now lives in `SignatureController.cs`; it
 comes back here the day a second screen needs it.)
 
-**The denomination grid pulls `TflCbs.Modules.Reference` into `RetailBanking.Web`:**
+**The denomination grid reads Administration through its contract:**
 
 ```
-TflCbs.Modules.RetailBanking.Web ──► TflCbs.Modules.Reference     (DenominationService)
+TflCbs.Modules.RetailBanking.Web ──► TflCbs.Modules.Administration.Contracts   (IDenominationReader)
 ```
 
 The **Web RCL** takes the reference, not the service module. `RetailBanking` (the service assembly) stays a
-leaf that knows only `Abstractions` + `General.Contracts`. It is the same edge `Hr.Web` already has, and it
-is the *second consumer* that admitted Denominations to `Reference` in the first place (§2.2) — the
-admission rule paying off rather than being asserted.
+leaf that knows only `Abstractions` + `General.Contracts`. Administration owns denominations (§2.2); this
+screen can read them and nothing more. The contract has no implementation of its own, so every host that
+runs this screen must also enable `Administration` (services only) — `TflCbs.Host.RetailBanking` does, and
+`ModuleConfigTests.A_host_that_enables_a_contract_consumer_also_enables_the_contract_owner` fails the build
+on a host that forgets.
 
 ### 5.3 The one case that completes
 
@@ -2521,7 +2576,7 @@ an unbounded upload is just a missing limit.
 
 ### 5.8 The controller
 
-556 lines. Three screen keys (§5.6), the §3.4 pattern, plus two things unique to this screen.
+498 lines. Three screen keys (§5.6), the §3.4 pattern, plus two things unique to this screen.
 
 #### `TryReadDocuments` — the merge that avoids destroying uploads
 
@@ -2598,7 +2653,7 @@ the download gate.
 
 ### 5.9 The service
 
-1106 lines — the biggest in the batch. The parts not already covered:
+947 lines — the biggest in the batch. The parts not already covered:
 
 #### `Validate` and `ValidateDenominations` are separate on purpose
 
@@ -2660,7 +2715,7 @@ itself.
 GET  /                         → blank; enctype="multipart/form-data"
 GET  /?row={token}             → LoadAsync; draft invariant as §4.4; readOnly threading as §4.6
 GET  /account-info?accountId   → balance, status, dormant date, currency, AND the priced charge
-GET  /denominations?currencyId → rows for the cash grid (DenominationService, from Reference)
+GET  /denominations?currencyId → rows for the cash grid (IDenominationReader, Administration's contract)
 POST /save | /update | /delete → drafts; UNIQUETRANNO stays NULL (don't burn the posting sequence)
 GET  /Authorize?row={token}    → read-only + two Download links + the gate message
 GET  /document/{token}         → File(bytes, "application/octet-stream", name) + MarkDocumentSeen
@@ -2713,10 +2768,13 @@ credential. Read §6.2 and §6.6 before changing anything here.
 
 | Path | Role |
 |---|---|
-| [TflCbs.Core.Authentication/UserAdminService.cs](../TflCbs.Core.Authentication/UserAdminService.cs) | 825 lines — **not** in the Administration module |
-| [.../Administration/Controllers/UserController.cs](../TflCbs.Modules.Administration.Web/Areas/Administration/Controllers/UserController.cs) | 283 lines |
-| [.../Administration/Views/User/Index.cshtml](../TflCbs.Modules.Administration.Web/Areas/Administration/Views/User/Index.cshtml) | 308 lines — three cascading pickers + limits grid |
-| `Models/UserForm.cs` → `UserForm`, `UserLimitInput` | Form state, including the limits rows |
+| [TflCbs.Core.Authentication/UserAdminService.cs](../TflCbs.Core.Authentication/UserAdminService.cs) | 778 lines — **not** in the Administration module |
+| [.../Administration/Controllers/UserController.cs](../TflCbs.Modules.Administration.Web/Areas/Administration/Controllers/UserController.cs) | 265 lines, 8 actions |
+| [.../Administration/Views/User/Index.cshtml](../TflCbs.Modules.Administration.Web/Areas/Administration/Views/User/Index.cshtml) | 301 lines — three cascading pickers + limits grid |
+| [.../Models/Administration/UserModels.cs](../TflCbs.Modules.Administration.Web/Models/Administration/UserModels.cs) → `UserForm`, `UserLimitInput` | 84 lines — form state, including the limits rows |
+| [TflCbs.Core.Authentication/AuthenticationModule.cs](../TflCbs.Core.Authentication/AuthenticationModule.cs) | `AddScoped<UserAdminService>()` — line 36 |
+| [TflCbs.Tools.DbMigrator/Migrations/sqlserver/0015_menu_route_user_creation.sql](../TflCbs.Tools.DbMigrator/Migrations/sqlserver/0015_menu_route_user_creation.sql) | Route cutover ×3 dialects |
+| [TflCbs.Tests/UserAdminServiceTests.cs](../TflCbs.Tests/UserAdminServiceTests.cs) | 17 cross-provider tests, 540 lines |
 
 ### 6.2 Why the service is in `Core.Authentication`
 
@@ -2746,7 +2804,7 @@ that column.
 
 ### 6.3 The controller
 
-283 lines, one screen key, the §1.3 shape — with three complications that all come from the same source:
+265 lines, one screen key, the §1.3 shape — with three complications that all come from the same source:
 **the view renders more than the form posts.**
 
 #### `USERID` is `decimal`
@@ -2823,7 +2881,7 @@ conditional errors first, then test validity once.
 
 ### 6.4 The view
 
-308 lines. Three cascading pickers, a conditional password block, and an indexed grid.
+301 lines. Three cascading pickers, a conditional password block, and an indexed grid.
 
 #### A two-level cascade
 
@@ -2939,7 +2997,7 @@ Two more properties of the same `switch`:
 
 ### 6.6 The service
 
-825 lines. Same conventions as everywhere else; three things are specific to writing users.
+778 lines. Same conventions as everywhere else; three things are specific to writing users.
 
 #### `ValidateAsync` — thirteen checks, in legacy's order
 
@@ -3109,13 +3167,18 @@ example of *serving user-supplied bytes safely*, and of why the screen key is no
 
 | Path | Role |
 |---|---|
-| [TflCbs.Modules.RetailBanking/SignatureService.cs](../TflCbs.Modules.RetailBanking/SignatureService.cs) | 311 lines |
-| [.../Controllers/SignatureController.cs](../TflCbs.Modules.RetailBanking.Web/Areas/RetailBanking/Controllers/SignatureController.cs) | 324 lines, **three** screen keys |
-| [.../Views/Signature/Index.cshtml](../TflCbs.Modules.RetailBanking.Web/Areas/RetailBanking/Views/Signature/Index.cshtml) | 156 lines — picker + two lanes |
-| [.../Views/Signature/_SignatureLane.cshtml](../TflCbs.Modules.RetailBanking.Web/Areas/RetailBanking/Views/Signature/_SignatureLane.cshtml) | 90 lines — **one partial, rendered twice** |
-| [.../Views/Signature/Authorize.cshtml](../TflCbs.Modules.RetailBanking.Web/Areas/RetailBanking/Views/Signature/Authorize.cshtml) | 22 lines — the placeholder |
-| `Models/RetailBanking/SignatureForm.cs` | 74 lines, incl. `ImageTokens` |
+| [TflCbs.Modules.RetailBanking/SignatureService.cs](../TflCbs.Modules.RetailBanking/SignatureService.cs) | 427 lines |
+| [.../Controllers/SignatureController.cs](../TflCbs.Modules.RetailBanking.Web/Areas/RetailBanking/Controllers/SignatureController.cs) | 356 lines, 8 actions, **three** screen keys |
+| [.../Views/Signature/Index.cshtml](../TflCbs.Modules.RetailBanking.Web/Areas/RetailBanking/Views/Signature/Index.cshtml) | 183 lines — picker + two lanes |
+| [.../Views/Signature/_SignatureLane.cshtml](../TflCbs.Modules.RetailBanking.Web/Areas/RetailBanking/Views/Signature/_SignatureLane.cshtml) | 87 lines — **one partial, rendered twice** |
+| [.../Views/Signature/Authorize.cshtml](../TflCbs.Modules.RetailBanking.Web/Areas/RetailBanking/Views/Signature/Authorize.cshtml) | 19 lines — the placeholder |
+| [.../Models/RetailBanking/SignatureForm.cs](../TflCbs.Modules.RetailBanking.Web/Models/RetailBanking/SignatureForm.cs) | 63 lines, incl. `ImageTokens` |
 | `ImageUploads` — in `SignatureController.cs` | Extension allowlist + `Sniff()` |
+| [TflCbs.Modules.RetailBanking/RetailBankingModule.cs](../TflCbs.Modules.RetailBanking/RetailBankingModule.cs) | `AddScoped<SignatureService>()` — line 17 |
+| [TflCbs.Tools.DbMigrator/Migrations/sqlserver/0016_menu_route_signature.sql](../TflCbs.Tools.DbMigrator/Migrations/sqlserver/0016_menu_route_signature.sql) | Route for menu 998, ×3 dialects |
+| [TflCbs.Tools.DbMigrator/Migrations/sqlserver/0018_menu_route_signature_authorize.sql](../TflCbs.Tools.DbMigrator/Migrations/sqlserver/0018_menu_route_signature_authorize.sql) | Route for menu 2788 — **its own route, not 998's** (§7.2), ×3 dialects |
+| [TflCbs.Tests/SignatureServiceTests.cs](../TflCbs.Tests/SignatureServiceTests.cs) | 15 cross-provider tests, 522 lines |
+| [TflCbs.Tests/SignatureParityTests.cs](../TflCbs.Tests/SignatureParityTests.cs) | 2 legacy-parity tests, 186 lines |
 
 ### 7.2 Three screen keys in one controller
 
@@ -3245,7 +3308,7 @@ rather than a convention two nullable parameters hope everyone honours.
 ### 7.6 The views — one partial, rendered twice
 
 `Index.cshtml` renders the account picker and then the same partial twice, once per lane. `_SignatureLane`
-is 90 lines and carries five decisions worth reading.
+is 87 lines and carries five decisions worth reading.
 
 #### Each lane is its own `<form>`
 
@@ -3310,7 +3373,7 @@ to do.
 
 ### 7.7 The service
 
-311 lines. Two internals carry the whole design.
+427 lines. Two internals carry the whole design.
 
 #### One branch gate, and everything passes through it
 
@@ -3407,6 +3470,104 @@ branch-scoped, maker ≠ checker — and `PassedBy` is what it stamps.
 - **`SignatureTarget` is a struct with factories** so "account XOR locker" is a type, not a convention.
 
 ---
+
+## Cross-provider verification
+
+**Status (21 Sep 2026): the read side is proven on all 7 screens, the write side on 6 of 7.** Every test in
+`TflCbs.Tests` is a `[Theory]` over `TestConfig.ConfiguredProviders()`, so it runs **once per provider that
+has a non-empty connection string** — SQL Server and Oracle today. Full suite: **563/563**.
+
+Two things to know before you trust a green run:
+
+- A provider with an **empty** connection string is silently skipped, not failed. Oracle sat skipped for
+  weeks and the suite stayed green throughout. If a run looks suspiciously clean, check
+  `TflCbs.Tests/appsettings.Development.json` first.
+- **PostgreSQL has never been verified.** There is no PostgreSQL connection string anywhere in the repo, so
+  nothing below says anything about it, even though it is a production target.
+
+### The finding that shaped the rest
+
+**Read-only tests hide broken writes.** The read path coerces — `Convert.ChangeType` and `Guid.Parse` in
+`ColumnDescriptor.SetValue` — so a column whose CLR type Oracle's provider cannot bind still *reads back*
+correctly, while every insert of it has been failing since the port. The same asymmetry turned up three
+times in this sweep:
+
+| What would not bind | Symptom | Fix |
+|---|---|---|
+| CLR `bool` on Oracle | ORA-00932 on insert/update | flags are `INT` 0/1 on all three providers — `scripts/bit-to-int.sqlserver.sql` (83 columns / 27 tables), plus `ParameterValue.Normalize` in the DAL |
+| CLR `Guid` on Oracle | `DbType.Guid` → `ArgumentException` | GUIDs are `CHAR(36)` **uppercase** on all three — `scripts/guid-to-char36.sqlserver.sql` (40 columns / 40 tables); the 3 write sites now bind `Guid.NewGuid().ToString().ToUpperInvariant()` |
+| `NULL` into a `binary` column on SQL Server | Msg 257, *implicit conversion from nvarchar to binary is not allowed* | `ParameterValue.TypeForNull` — a null parameter is typed from its `ColumnDescriptor`, SQL Server only (ODP.NET rejects the declared `DbType` for `Guid` and `DateTime2`) |
+
+The first two are hard rules now — **no `BIT`, no `UNIQUEIDENTIFIER`** (see `CLAUDE.md` → Conventions; full
+rationale and the migration scripts in [`xnet-scripts-sqlserver.sql`](xnet-scripts-sqlserver.sql)).
+
+### The round-trip test per screen
+
+One test per screen drives that screen's whole write path — **create → search → update → search → delete** —
+against rows it creates itself, discovering every id it needs from live data and cleaning up in `finally`.
+The search legs matter as much as the writes: they prove the row the screen just wrote is the row the screen
+can find.
+
+| § | Screen | Test | What the write leg exercises |
+|---|---|---|---|
+| [1](#1-denomination-unit) | Denomination Unit | `DenominationUnitServiceTests.CreateSearchUpdateSearchDelete_RoundTrips` | plain master CRUD; rows named `zz_test_*` |
+| [2](#2-denominations) | Denominations | `DenominationServiceTests.CreateSearchUpdateSearchDelete_RoundTrips` | child master under a currency; rows tagged by denomination ≥ 99,000,000 |
+| [3](#3-holding-amount-4-screens) | Holding Amount | `HoldingAmountServiceTests.EnterAuthorizeReleaseAuthorise_RoundTrips` | all four screens on one hold — enter, authorize, release, authorize-release — with **both** maker-cannot-authorize refusals and the frozen-after-pass guard. Needs two users. Cleanup is at repository level (`PurgeHoldAsync`), because past authorization the screen itself offers no delete |
+| [4](#4-direct-credit-outgoing-2-screens) | Direct Credit Outgoing | `DirectCreditServiceTests.CreateSearchUpdateSearchDelete_RoundTrips` | header + beneficiary rows in one transaction; the update goes 1 → 2 beneficiaries so the detail table is rewritten, not patched. Asserts `NOTIMPL-POSTING` on a **real, valid, in-branch** draft — proving the refusal holds for more than the unknown ids the other tests pass it |
+| [5](#5-dormant-re-activation-2-screens) | Dormant Re Activation | — | **not written yet** — the last screen in the sweep |
+| [6](#6-user-creation) | User Creation | `UserAdminServiceTests.CreateSearchUpdateSearchDelete_RoundTrips` | actor at level 126, discovers a free authorized employee, asserts `AllowOtherBranchApproval` survives a 1 → 0 edit |
+| [7](#7-signature-image-upload-2-menu-rows) | Signature Image Upload | `SignatureServiceTests.SaveListDeactivate_RoundTrips` | save, save again without keeping the first, assert the first goes inactive and the bytes read back. **No delete leg — legacy has none** (removal is `ISACTIVE = 0`) |
+
+### What the sweep actually found
+
+None of this was visible from the read side.
+
+**Screen 6 (User Creation) alone produced four schema defects**, all fixed on both providers:
+
+| Defect | Why it broke | Script |
+|---|---|---|
+| `a_User.Password` / `a_UserLog.Password` were `NOT NULL` | the port writes `PASSWORDHASH` and never `Password`, so **no user could be created on either provider** | `scripts/password-nullable.*.sql`, then `scripts/password-drop.*.sql` (data kept in `*_PasswordDropBackup`) |
+| Oracle `A_PASSWORDCHANGELOG.WORKINGDATE` was `VARCHAR2` | a `DateTime` parameter bound against a string column | [`xnet-scripts-oracle.sql`](xnet-scripts-oracle.sql) |
+| `a_UserLog.LEVEL` | `LEVEL` is an Oracle reserved pseudo-column — ORA-00904 on every generated `SELECT` | `scripts/userlog-level-rename.*.sql` → `LEVEL_` |
+| `A_PASSWORDCHANGELOG.OLDPASSWORD` / `NEWPASSWORD` were binary | they hold a PBKDF2 **string** now. Worse, SQL Server pads `binary(100)`, so the last-N password-reuse check compared padded bytes and **silently never matched** — a live bug, not merely a binding one | `scripts/passwordchangelog-varchar.*.sql` → `varchar(200)`, matching `a_User.PASSWORDHASH` |
+
+Also found and fixed: `DbErrors.IsForeignKey` was blind to Oracle — it keyed on the words *foreign key*,
+which ORA-02291/02292 never say — so an FK violation surfaced as an unhandled failure instead of a message.
+
+### Standing differences between the two providers
+
+- **Oracle has no foreign keys.** All 697 were dropped at migration and are not restored. One test names
+  this: `SignatureServiceTests.Save_UnknownTarget_RejectedByForeignKey` skips Oracle explicitly, because the
+  orphan write it asserts against is refused only by SQL Server's `FK_b_Signature_b_Account`. The service
+  does **not** guard the target itself — xnet legacy does not, and the port matches legacy.
+- **`msrepl_tran_version` is dead scar tissue.** No SQL Server replication is configured. The column is
+  carried on 40 tables and was converted along with the real GUID columns rather than dropped; dropping it
+  outright is still open.
+
+### Still to verify
+
+1. **Screen 5, Dormant Re Activation** — the remaining round-trip. It also carries a GUID write
+   (`DormantReactivationService`), so it is the last screen that could still be hiding an Oracle write bug.
+2. **PostgreSQL** — never run, no connection string.
+3. **Oracle foreign keys** — deferred by decision, not by oversight.
+
+---
+
+## Legacy-parity strip (2026-09-22)
+
+Nine fields rendered by these screens had no counterpart in xnet legacy. All were removed; the rule is
+`no-behaviour-beyond-legacy`. Listed here so the next reader does not "restore" them as missing work.
+
+| Screen | Field removed | What legacy does |
+|---|---|---|
+| 3 Holding Amount (Index/Authorize/Release) | **Hold Type** radios | `HOLDTYPE` appears nowhere in the xnet source. The column exists; the page never touches it. The controller now passes `LegacyHoldType = 0` and `AccHoldingAmountForm.HoldType` is gone |
+| 3 Holding Amount (×3 views) | **Available Balance** | Legacy shows three amounts only — *WithDrawable Amount*, *Amount Withhold*, *Available Withdrawal balance* |
+| 4 Direct Credit (Index) | **Available Balance** | No balance on the page; its `AccountParamInfo` is `Visible="false"` and carries no balance anyway |
+| 4 Direct Credit (Index + Authorize) | **Status** (`Draft — not posted`) — *field removed, reinstated as a banner* | Status is a scroll-grid column, never a form field. The warning is about **our** deferred posting, not legacy's behaviour, so it lives in an `.alert-banner` above the cards instead of in the field set |
+| 5 Dormant Re Activation (Index) | **Account Status** | No such label; `DormantReactivationForm.AccountStatus`, its `account-info` JSON field and the `#acc-status` JS fill went with it |
+| 5 Dormant Re Activation (Index) | **Status** (*reinstated as a banner*), **Scroll Number** (header block) | `uxStatusTr1` is `visible="false"`; scroll number is a grid column. *Unique Transaction Number* stays — legacy renders it. Same banner treatment as §4 |
+| 6 User Creation | **Transaction while pass**, **Self authorisation** | Dead in legacy: the wrapper `<div id="uxTransactionWhilePasstr">` is `visible="false"` and both reads/writes are commented out. Ours bound them and never persisted them |
+| 6 User Creation | **Allow other branch approval** — *made conditional, not removed* | Legacy renders it only when the selected branch is the `SERVICE_BRANCH` bank variable, and ticks it on selection (`uxOrgElementId_ValuesReturned`). Now the same: hidden server-side off-HO, toggled client-side on branch change, and forced to 0 in `ApplyServiceBranchRuleAsync` before the service sees it |
 
 ## Still open
 

@@ -1,0 +1,791 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Part 3 — Common reference</title>
+<style>
+:root{color-scheme:light dark}
+*{box-sizing:border-box}
+body{margin:0;background:#f6f8fa;color:#1f2328;font:16px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif}
+.wrap{max-width:900px;margin:0 auto;padding:32px 24px 96px}
+.card{background:#fff;border:1px solid #d0d7de;border-radius:10px;padding:40px 48px}
+h1,h2,h3{line-height:1.25;font-weight:600}
+h1{font-size:1.9rem;margin:0 0 .3em;padding-bottom:.3em;border-bottom:1px solid #d8dee4}
+h2{font-size:1.4rem;margin:1.8em 0 .6em;padding-bottom:.25em;border-bottom:1px solid #eaeef2}
+h3{font-size:1.12rem;margin:1.4em 0 .5em}
+p,li{margin:.5em 0}
+a{color:#0969da;text-decoration:none}
+a:hover{text-decoration:underline}
+code{font-family:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;font-size:.86em;background:#eff1f3;padding:.15em .4em;border-radius:6px}
+pre{background:#f6f8fa;border:1px solid #d8dee4;border-radius:8px;padding:14px 16px;overflow:auto}
+pre code{background:none;padding:0;font-size:.85em;line-height:1.45}
+pre>code:not([class]){line-height:1.25}
+blockquote{margin:1em 0;padding:.4em 1em;color:#3d444d;border-left:4px solid #d0d7de;background:#f6f8fa;border-radius:0 6px 6px 0}
+blockquote>:first-child{margin-top:0}blockquote>:last-child{margin-bottom:0}
+table{border-collapse:collapse;width:100%;margin:1em 0;display:block;overflow:auto}
+th,td{border:1px solid #d0d7de;padding:8px 12px;text-align:left;vertical-align:top}
+th{background:#f6f8fa;font-weight:600}
+tr:nth-child(2n) td{background:#f6f8fa}
+hr{border:0;border-top:1px solid #d8dee4;margin:2em 0}
+pre{position:relative}
+pre>button.copy{position:absolute;top:8px;right:8px;padding:5px 9px;cursor:pointer;
+  font:600 .68rem/1 ui-monospace,SFMono-Regular,Consolas,monospace;letter-spacing:.03em;
+  color:#636c76;background:#fff;border:1px solid #d0d7de;border-radius:6px;
+  opacity:0;transition:opacity .12s}
+pre:hover>button.copy,pre>button.copy:focus{opacity:1}
+pre>button.copy.done{color:#0a3622;background:#dafbe1;border-color:#4ac26b}
+@media(hover:none){pre>button.copy{opacity:1}}
+td code.cp{cursor:pointer}
+td code.cp:hover,td code.cp:focus{outline:1px solid #8c959f;outline-offset:1px}
+td code.cp.done{color:#0a3622;background:#dafbe1}
+.docnav{margin:0 0 20px;font-size:.85rem;color:#636c76}
+.docnav a{color:#636c76}
+ul{padding-left:1.4em}ol{padding-left:1.4em}
+img{max-width:100%;height:auto;border:1px solid #d0d7de;border-radius:6px;vertical-align:top}
+a img{cursor:zoom-in}
+figure.clip{margin:1em 0}
+video{display:block;width:100%;height:auto;border:1px solid #d0d7de;border-radius:6px;background:#111}
+tr:has(:target) td{background:#fff8c5!important}
+h2>input.lab,h3>input.lab{width:1em;height:1em;margin:0 .45em 0 0;vertical-align:-.08em;cursor:pointer;accent-color:#1a7f37}
+h2.labdone,h3.labdone,a.labdone{color:#1a7f37}
+a.labdone::after{content:" \2713";font-weight:700}
+.labbadge{position:fixed;right:14px;bottom:14px;z-index:5;background:#fff;border:1px solid #d0d7de;border-radius:999px;
+  padding:6px 12px;font-size:.8rem;color:#3d444d;box-shadow:0 2px 8px rgba(0,0,0,.08)}
+@media(max-width:640px){.card{padding:24px 18px}.wrap{padding:16px 10px 64px}}
+@media print{body{background:#fff;color:#000}.wrap{max-width:none;padding:0}.card{border:0;padding:0}
+ pre>button.copy,.labbadge,.docnav,input.lab{display:none}a{color:inherit}
+ pre,table,blockquote,img,figure{break-inside:avoid}h1,h2,h3{break-after:avoid}}
+@media(prefers-color-scheme:dark){
+ body{background:#0d1117;color:#e6edf3}
+ .card{background:#161b22;border-color:#30363d}
+ h1{border-color:#30363d}h2{border-color:#21262d}
+ code{background:#262c34}
+ pre{background:#0d1117;border-color:#30363d}
+ blockquote{background:#161b22;border-color:#30363d;color:#9198a1}
+ th,td{border-color:#30363d}th{background:#161b22}tr:nth-child(2n) td{background:#12171e}
+ a{color:#4493f8}.docnav,.docnav a{color:#9198a1}
+ hr{border-color:#30363d}
+ pre>button.copy{color:#9198a1;background:#161b22;border-color:#30363d}
+ pre>button.copy.done{color:#aff5b4;background:#1b4721;border-color:#2ea043}
+ td code.cp.done{color:#aff5b4;background:#1b4721}
+ tr:has(:target) td{background:#3b2f00!important}
+ h2.labdone,h3.labdone,a.labdone{color:#3fb950}
+ .labbadge{background:#161b22;border-color:#30363d;color:#9198a1}
+ video{border-color:#30363d}
+}
+</style></head>
+<body><div class="wrap"><div class="card">
+<p><a href="git-with-gitea.html">Git with Gitea — start page</a> · <a href="git-with-gitea-part2.html">← Part 2 · Command line</a> · <a href="git-with-gitea-cheat-sheet.html">Cheat sheet</a></p>
+<h1 id="part-3-common-reference">Part 3 — Common reference</h1>
+<p>Everything here applies to both halves. Sections 14 and 15 are worth reading once now; 16 to 19
+are for coming back to.</p>
+<p><strong>On this page</strong></p>
+<ul>
+<li><a href="#14-gitea-specifics">14. Gitea specifics</a><ul>
+<li><a href="#141-tokens-see-04">14.1 Tokens — see §0.4</a></li>
+<li><a href="#142-ssh-instead-optional-nicer-once-set-up">14.2 SSH instead (optional, nicer once set up)</a></li>
+<li><a href="#143-the-gitea-web-ui-mapped-to-git-concepts">14.3 The Gitea web UI, mapped to git concepts</a></li>
+<li><a href="#144-merge-styles-gitea-offers-on-a-pr">14.4 Merge styles Gitea offers on a PR</a></li>
+<li><a href="#145-branch-protection-expect-main-to-reject-you">14.5 Branch protection — expect <code>main</code> to reject you</a></li>
+<li><a href="#146-tea-giteas-official-cli-optional">14.6 <code>tea</code> — Gitea's official CLI (optional)</a></li>
+</ul>
+</li>
+<li><a href="#15-oh-no-the-recovery-section">15. "Oh no" — the recovery section</a></li>
+<li><a href="#16-make-git-comfortable">16. Make git comfortable</a><ul>
+<li><a href="#aliases-worth-30-seconds-saves-them-back-daily">Aliases — worth 30 seconds, saves them back daily</a></li>
+<li><a href="#other-settings-worth-having">Other settings worth having</a></li>
+<li><a href="#where-settings-live">Where settings live</a></li>
+</ul>
+</li>
+<li><a href="#17-graduating-the-real-repository">17. Graduating: the real repository</a></li>
+<li><a href="#18-rules-of-thumb">18. Rules of thumb</a></li>
+<li><a href="#19-glossary">19. Glossary</a></li>
+<li><a href="#where-to-go-next">Where to go next</a></li>
+</ul>
+<hr />
+<h2 id="14-gitea-specifics">14. Gitea specifics</h2>
+<p>Everything so far is universal git. This section is about our server —
+<code>http://192.168.0.22:3000</code>, running <strong>Gitea 1.27</strong> (check yours at
+<a href="http://192.168.0.22:3000/api/v1/version">http://192.168.0.22:3000/api/v1/version</a>). Button names below are that version's.</p>
+<blockquote>
+<p><strong>Gitea is not GitHub, and the tutorials you find will be GitHub's.</strong> The concepts are identical;
+several of the buttons are not. The ones that trip people up:</p>
+<table>
+<thead>
+<tr>
+<th>You will read (GitHub)</th>
+<th>What Gitea actually shows</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><em>Compare &amp; Pull Request</em> banner</td>
+<td><strong>Pull Requests</strong> tab → <strong>New Pull Request</strong>. (A green <em>"You pushed on branch …"</em> banner with the same button appears on the repo page for a while after a push)</td>
+</tr>
+<tr>
+<td><em>Merge pull request</em> button</td>
+<td><strong>Create merge commit</strong>, with a <strong>▾</strong> for the other styles (<a href="#144-merge-styles-gitea-offers-on-a-pr">§14.4</a>)</td>
+</tr>
+<tr>
+<td><em>Squash and merge</em></td>
+<td><strong>Create squash commit</strong></td>
+</tr>
+<tr>
+<td><em>Settings → Developer settings → Personal access tokens</em></td>
+<td><strong>Settings → Applications</strong> (<a href="git-with-gitea-part0.html#04-your-gitea-account-repo-and-token">§0.4</a>)</td>
+</tr>
+<tr>
+<td><em>Draft pull request</em></td>
+<td>a <code>WIP:</code> title prefix (<a href="git-with-gitea-part0.html#05-pull-requests-the-part-that-is-not-git">§0.5</a>)</td>
+</tr>
+<tr>
+<td><em>CODEOWNERS</em>, required reviewers</td>
+<td><strong>Settings → Branches</strong> protection rules (<a href="#145-branch-protection-expect-main-to-reject-you">§14.5</a>)</td>
+</tr>
+<tr>
+<td><code>gh</code> CLI</td>
+<td><code>tea</code> (<a href="#146-tea-giteas-official-cli-optional">§14.6</a>)</td>
+</tr>
+</tbody>
+</table>
+<p>Same page, different label. When a guide names a button you cannot find, look for the one that
+does the same job before assuming you are lost.</p>
+</blockquote>
+<h3 id="141-tokens-see-04">14.1 Tokens — see §0.4</h3>
+<p>Authentication is in <a href="git-with-gitea-part0.html#04-your-gitea-account-repo-and-token">§0.4</a>, because both halves need it
+before their first push: generate a Personal Access Token in <strong>Gitea → Settings → Applications</strong>,
+give it <strong>repository → Read and Write</strong> (and nothing else), and let Windows Credential Manager
+store it. <strong>Never your account password,
+and never a token embedded in the remote URL.</strong> Visual Studio and the command line share the same
+credential store, so you do this once for both.</p>
+<p>The warning there is worth repeating: <strong>this server is plain HTTP</strong>, so treat the token as
+LAN-visible.</p>
+<h3 id="142-ssh-instead-optional-nicer-once-set-up">14.2 SSH instead (optional, nicer once set up)</h3>
+<pre><code class="language-bash">ssh-keygen -t ed25519 -C &quot;adhirranjan@softtrust.com&quot;     # Enter x3 accepts the defaults
+cat ~/.ssh/id_ed25519.pub                          # copy this whole line
+# Gitea → Settings → SSH / GPG Keys → Add Key → paste
+ssh -T git@192.168.0.22                               # verify
+
+git remote set-url origin git@192.168.0.22:Adhir/git-practice.git
+</code></pre>
+<p>No tokens, no prompts. Use HTTPS+token if your network blocks SSH.</p>
+<p><a href="img/git-with-gitea/g-ssh-keys.png" target="_blank" rel="noopener"><img alt="Gitea SSH / GPG Keys page" src="img/git-with-gitea/g-ssh-keys.png" /></a></p>
+<p><em>Gitea → Settings → </em><em>SSH / GPG Keys</em><em> → </em><em>Add Key</em><em> (boxed): paste the single line from
+<code>id_ed25519.pub</code>.</em></p>
+<h3 id="143-the-gitea-web-ui-mapped-to-git-concepts">14.3 The Gitea web UI, mapped to git concepts</h3>
+<table>
+<thead>
+<tr>
+<th>In Gitea</th>
+<th>Is</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Code</strong></td>
+<td>your files at the tip of the selected branch</td>
+<td>The branch dropdown top-left</td>
+</tr>
+<tr>
+<td><strong>Issues</strong></td>
+<td>to-do items / bug reports</td>
+<td>Say <code>Fixes #12</code> in a commit or PR to auto-close issue 12 on merge</td>
+</tr>
+<tr>
+<td><strong>Pull Requests</strong></td>
+<td>a request to merge branch A into branch B</td>
+<td>Reviewed and merged here. No <em>git</em> command reaches it — browser, or <code>tea</code> (<a href="#146-tea-giteas-official-cli-optional">§14.6</a>)</td>
+</tr>
+<tr>
+<td><strong>Releases</strong></td>
+<td>annotated tags, with files attached</td>
+<td>Built on <code>git tag</code></td>
+</tr>
+<tr>
+<td><strong>Wiki</strong></td>
+<td>a second git repo, for prose</td>
+<td>Cloneable separately</td>
+</tr>
+<tr>
+<td><strong>Activity / Insights</strong></td>
+<td>commit graphs, contributors</td>
+<td>Reads your commit <em>email</em> — see §0.1</td>
+</tr>
+<tr>
+<td><strong>Packages</strong></td>
+<td>a registry (NuGet, npm, Docker, …) attached to the repo</td>
+<td>Not git. Gitea can host our NuGet feed</td>
+</tr>
+<tr>
+<td><strong>Actions</strong></td>
+<td>Gitea's built-in CI, GitHub-Actions-compatible YAML in <code>.gitea/workflows/</code></td>
+<td>Off unless an admin enabled it <em>and</em> registered a runner</td>
+</tr>
+<tr>
+<td><strong>Settings → Branches</strong></td>
+<td>branch protection</td>
+<td>Where "you cannot push to main" is configured</td>
+</tr>
+<tr>
+<td><strong>Settings → Webhooks</strong></td>
+<td>fire an HTTP call on push/PR</td>
+<td>For driving an <em>external</em> CI server</td>
+</tr>
+</tbody>
+</table>
+<p><a href="img/git-with-gitea/g-repo-home.png" target="_blank" rel="noopener"><img alt="A Gitea repository page" src="img/git-with-gitea/g-repo-home.png" /></a></p>
+<p><em>The repo page. The boxed tab row is the table above, left to right (</em><em>Settings</em><em> hides behind </em><em>⋯</em><em>
+on a narrow window). Below it: the commit / branch / tag counters, the branch dropdown, and the blue
+</em><em>Code</em><em> button that holds the clone URL.</em></p>
+<h3 id="144-merge-styles-gitea-offers-on-a-pr">14.4 Merge styles Gitea offers on a PR</h3>
+<p>The merge button is labelled with the style itself — there is no generic <em>"Merge"</em> button. The
+default reads <strong>Create merge commit</strong>; the <strong>▾</strong> beside it switches style (an admin can disable
+any of these per repo, so you may see fewer):</p>
+<p><a href="img/git-with-gitea/g-pr-merge-styles.png" target="_blank" rel="noopener"><img alt="The merge-style dropdown" src="img/git-with-gitea/g-pr-merge-styles.png" /></a></p>
+<p><em>The </em><em>▾</em><em> opened on a real PR in Gitea 1.27: five styles. </em><em>Manually merged</em><em> is missing because
+it is switched off in this repo's settings.</em></p>
+<table>
+<thead>
+<tr>
+<th>Button label</th>
+<th>Result</th>
+<th>When</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Create merge commit</strong></td>
+<td>Keeps every commit, adds a merge commit</td>
+<td>Default. Full, honest history</td>
+</tr>
+<tr>
+<td><strong>Rebase, then fast-forward</strong></td>
+<td>Replays your commits onto main, no merge commit</td>
+<td>Linear history, if the team wants that</td>
+</tr>
+<tr>
+<td><strong>Rebase, then create merge commit</strong></td>
+<td>Replays your commits onto main, then adds a merge commit anyway</td>
+<td>Linear commits <em>and</em> a visible "this came from a PR" marker</td>
+</tr>
+<tr>
+<td><strong>Create squash commit</strong></td>
+<td>All your commits collapse into one</td>
+<td>Great when your branch has 14 "wip" commits</td>
+</tr>
+<tr>
+<td><strong>Fast-forward only</strong></td>
+<td>Refuses unless the branch is already up to date</td>
+<td>Strictest</td>
+</tr>
+<tr>
+<td><strong>Manually merged</strong></td>
+<td>Marks the PR merged without merging — you did it at the command line</td>
+<td>Rare. Bookkeeping only</td>
+</tr>
+</tbody>
+</table>
+<p>Ask which one this team uses and be consistent. Squash is the friendliest default for a learner —
+your messy branch history never reaches <code>main</code>.</p>
+<h3 id="145-branch-protection-expect-main-to-reject-you">14.5 Branch protection — expect <code>main</code> to reject you</h3>
+<p>If an admin enabled protection on <code>main</code>, a direct <code>git push</code> to it fails by design:</p>
+<pre><code>! [remote rejected] main -&gt; main (protected branch hook declined)
+</code></pre>
+<p>That is not a bug and not a permissions problem to escalate. Branch, push, PR.</p>
+<p><a href="img/git-with-gitea/g-branch-protection.png" target="_blank" rel="noopener"><img alt="Branch protection rule form" src="img/git-with-gitea/g-branch-protection.png" /></a></p>
+<p><em>Where protection is configured: repo </em><em>Settings → Branches → Add New Rule</em><em>. </em><em>Protected Branch
+Name Pattern</em><em> (boxed) is where an admin types <code>main</code>; the rest of the page sets who may push and
+how many approvals a PR needs. The practice repos have no rule, which is why the labs can push to
+<code>main</code> directly.</em></p>
+<hr />
+<h3 id="146-tea-giteas-official-cli-optional">14.6 <code>tea</code> — Gitea's official CLI (optional)</h3>
+<p>Every git tutorial you find online will sooner or later type <code>gh</code>. <strong><code>gh</code> is the GitHub CLI</strong> — a
+separate program from git, which does the things that live on GitHub's <em>website</em> rather than in
+git itself (<code>gh pr create</code>, <code>gh issue list</code>, <code>gh pr checkout 42</code>). It talks to github.com and
+nowhere else. Run it here and you get "command not found" or an authentication failure against a
+server that has nothing to do with us. That is not you doing something wrong.</p>
+<p><strong><code>tea</code> is the Gitea equivalent.</strong> Same idea, our server: pull requests, issues and releases from
+the terminal instead of the browser.</p>
+<blockquote>
+<p><strong>You do not need this.</strong> Nothing in this guide requires <code>tea</code>, and the labs in §8 and §13 never use it.
+Learn git first. Come back here when opening the browser for every PR starts to annoy you.</p>
+</blockquote>
+<p><strong>Install</strong> — a single binary, no runtime:</p>
+<ol>
+<li>Download the Windows build from the releases page: <a href="https://gitea.com/gitea/tea/releases">https://gitea.com/gitea/tea/releases</a>
+   (<code>tea-&lt;version&gt;-windows-amd64.exe</code>).</li>
+<li>Rename it to <code>tea.exe</code> and put it in a folder that is on your <code>PATH</code>.</li>
+<li><code>tea --version</code> to confirm.</li>
+</ol>
+<p><strong>Log in</strong> — with the same Personal Access Token from §0.4, never your password:</p>
+<pre><code class="language-bash">tea login add --name trustbank --url http://192.168.0.22:3000 --token &lt;YOUR-PAT&gt;
+tea login list                      # confirm it is there
+</code></pre>
+<p><strong>What it can do</strong> — run from inside a cloned repo, which is how it knows which project you mean:</p>
+<table>
+<thead>
+<tr>
+<th>Command</th>
+<th>Does</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>tea pr create --base main --head feature/x --title "..."</code></td>
+<td>Open a pull request without leaving the terminal</td>
+</tr>
+<tr>
+<td><code>tea pr list</code></td>
+<td>Open PRs on this repo</td>
+</tr>
+<tr>
+<td><code>tea pr &lt;number&gt;</code></td>
+<td>Show one PR — title, state, branches</td>
+</tr>
+<tr>
+<td><code>tea pr checkout &lt;number&gt;</code></td>
+<td>Check out someone else's PR branch locally to test it</td>
+</tr>
+<tr>
+<td><code>tea pr merge &lt;number&gt;</code></td>
+<td>Merge it (if you have the rights)</td>
+</tr>
+<tr>
+<td><code>tea issue list</code> / <code>tea issue create</code></td>
+<td>Issues</td>
+</tr>
+<tr>
+<td><code>tea release create --tag v1.0</code></td>
+<td>A Gitea release from a tag</td>
+</tr>
+<tr>
+<td><code>tea notifications</code></td>
+<td>Your Gitea notification inbox</td>
+</tr>
+<tr>
+<td><code>tea open</code></td>
+<td>Open the current repo's Gitea page in the browser</td>
+</tr>
+<tr>
+<td><code>tea &lt;command&gt; --help</code></td>
+<td>The authoritative flag list — trust this over any doc, including this one</td>
+</tr>
+</tbody>
+</table>
+<p><strong>What it does not do.</strong> <code>tea</code> is not a git replacement. Cloning, branching, staging, committing,
+pushing — all still plain <code>git</code>, exactly as in §11. <code>tea</code> only covers the layer <em>above</em> git, the
+same layer the web UI covers.</p>
+<p><strong>Two cautions:</strong></p>
+<ul>
+<li><strong>Your token lands in a config file</strong> (<code>%USERPROFILE%\.config\tea\config.yml</code>) in readable form.
+  That is a file on your disk holding write access to our source. Treat it like a password file,
+  and revoke the token in Gitea (<strong>Settings → Applications</strong>) if the machine is ever lost or handed on.</li>
+<li><strong>Reviewing code in a terminal is worse than reviewing it in a browser.</strong> <code>tea pr create</code> is a
+  genuine convenience — you are already in the terminal, you just pushed. But reading a diff,
+  commenting on line 47 and having a conversation about it are things the Gitea web UI does far
+  better. Most people end up creating PRs with <code>tea</code> and reviewing them in the browser.</li>
+</ul>
+<hr />
+<h2 id="15-oh-no-the-recovery-section">15. "Oh no" — the recovery section</h2>
+<p>Read this once now, so you remember it exists at 3am.</p>
+<p><strong>This section is terminal-only, and that is not an oversight.</strong> <code>git reflog</code> — the thing that
+makes almost everything below recoverable — <strong>has no button in Visual Studio</strong>, in Rider, or in
+any other IDE. If you work in the IDE, the one git command worth knowing by heart is <code>git reflog</code>,
+typed into <strong>View → Terminal</strong>. Lab V8 exists to make you meet that wall once, calmly, before it
+matters.</p>
+<p><strong>Which undo?</strong> Answer two questions — <em>is it committed?</em> and <em>is it pushed?</em> — and the tool
+follows:</p>
+<pre><code>  What are you undoing?               Visual Studio           Command
+  ─────────────────────               ─────────────           ───────
+  NOT committed yet
+    ├─ staged by mistake, keep edits  −  on the file          git restore --staged &lt;file&gt;
+    └─ throw the edits away  ⚠        Undo Changes            git restore &lt;file&gt;
+
+  committed, NOT pushed
+    ├─ wrong message / forgot a file  tick Amend              git commit --amend
+    ├─ undo it, keep the work         Reset › Keep Changes    git reset HEAD~1
+    └─ undo it AND the work           Reset › Delete Changes  git reset --hard HEAD~1
+
+  committed AND pushed
+    └─ always, whatever the mistake   Revert                  git revert &lt;sha&gt;
+
+  ⚠ the one git cannot undo: those edits were never committed.
+  Delete Changes / reset --hard CAN be undone, with git reflog.
+  Never reset commits that others have already pulled — revert them.
+</code></pre>
+<p><strong>The rule: if it was ever committed, it is still there for ~90 days, even if you cannot see it.</strong>
+<code>git reflog</code> records every position <code>HEAD</code> has held — including ones you "destroyed".</p>
+<pre><code class="language-bash">git reflog                    # a numbered list: HEAD@{0}, HEAD@{1}, ...
+git reset --hard HEAD@{3}     # go back to how things were 3 moves ago
+</code></pre>
+<table>
+<thead>
+<tr>
+<th>Situation</th>
+<th>Fix</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><span id="oh-message"></span>Wrong message on the last commit</td>
+<td><code>git commit --amend -m "Right message"</code> (unpushed only)</td>
+</tr>
+<tr>
+<td><span id="oh-forgot-file"></span>Forgot a file in the last commit</td>
+<td><code>git add f.cs &amp;&amp; git commit --amend --no-edit</code> (unpushed only)</td>
+</tr>
+<tr>
+<td><span id="oh-too-early"></span>Committed too early</td>
+<td><code>git reset --soft HEAD~1</code> — the changes come back, staged</td>
+</tr>
+<tr>
+<td><span id="oh-staged-wrong"></span>Staged the wrong file</td>
+<td><code>git restore --staged f.cs</code></td>
+</tr>
+<tr>
+<td><span id="oh-wrecked"></span>Wrecked a file, not yet staged</td>
+<td><code>git restore f.cs</code> (this one is genuinely unrecoverable)</td>
+</tr>
+<tr>
+<td><span id="oh-on-main"></span>Committed to <code>main</code> by mistake</td>
+<td><code>git branch feature/x</code> then <code>git reset --hard origin/main</code>, then work on <code>feature/x</code></td>
+</tr>
+<tr>
+<td><span id="oh-pushed"></span>Need to undo a <strong>pushed</strong> commit</td>
+<td><code>git revert &lt;sha&gt;</code> then push. Never <code>reset</code> shared history</td>
+</tr>
+<tr>
+<td><span id="oh-reset-hard"></span><code>git reset --hard</code> and regretted it</td>
+<td><code>git reflog</code>, find the commit, <code>git reset --hard &lt;sha&gt;</code></td>
+</tr>
+<tr>
+<td><span id="oh-deleted-branch"></span>Deleted a branch by mistake</td>
+<td><code>git reflog</code>, find its last commit, <code>git switch -c &lt;name&gt; &lt;sha&gt;</code></td>
+</tr>
+<tr>
+<td><span id="oh-merge"></span>Merge went wrong, mid-conflict</td>
+<td><code>git merge --abort</code></td>
+</tr>
+<tr>
+<td><span id="oh-rebase"></span>Rebase went wrong, mid-rebase</td>
+<td><code>git rebase --abort</code></td>
+</tr>
+<tr>
+<td><span id="oh-rejected"></span>Pull rejected: "non-fast-forward"</td>
+<td><code>git pull</code> (merge theirs in), resolve, then push</td>
+</tr>
+<tr>
+<td><span id="oh-detached"></span>"detached HEAD"</td>
+<td><code>git switch -c keep-this</code> to save the commits, or <code>git switch main</code> to abandon them</td>
+</tr>
+<tr>
+<td><span id="oh-secret"></span>Committed a secret</td>
+<td>Rotate the secret <strong>first</strong> — assume it is compromised. Then purge with <code>git filter-repo</code>, force-push, and tell everyone to re-clone</td>
+</tr>
+<tr>
+<td><span id="oh-lost"></span>Truly, totally lost</td>
+<td><code>git fsck --lost-found</code> lists dangling commits</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Two rules that prevent almost every disaster:</strong></p>
+<ol>
+<li><strong>Commit before you experiment.</strong> A commit is free and makes everything undoable.</li>
+<li><strong>Never rewrite history that others have pulled</strong> (<code>reset --hard</code>, <code>rebase</code>, <code>--force</code> on a
+   shared branch). On your own unpushed branch, rewrite all you like.</li>
+</ol>
+<hr />
+<h2 id="16-make-git-comfortable">16. Make git comfortable</h2>
+<p>Aliases are command-line settings, but <strong>they are worth having even if you live in the IDE</strong> —
+the three places Part 1 sends you to the terminal (<code>reflog</code>, <code>add -f</code>, <code>bisect</code>) are exactly the
+places you will be typing under pressure.</p>
+<h3 id="aliases-worth-30-seconds-saves-them-back-daily">Aliases — worth 30 seconds, saves them back daily</h3>
+<pre><code class="language-bash">git config --global alias.st  status
+git config --global alias.co  checkout
+git config --global alias.br  branch
+git config --global alias.cm  &quot;commit -m&quot;
+git config --global alias.lg  &quot;log --oneline --graph --all --decorate -20&quot;
+git config --global alias.last &quot;log -1 HEAD --stat&quot;
+git config --global alias.unstage &quot;restore --staged&quot;
+
+git lg          # the one you will use most
+</code></pre>
+<h3 id="other-settings-worth-having">Other settings worth having</h3>
+<pre><code class="language-bash">git config --global core.editor &quot;code --wait&quot;     # VS Code for commit messages
+git config --global diff.tool vscode
+git config --global fetch.prune true              # auto-prune dead remote branches
+git config --global rerere.enabled true           # remember conflict resolutions
+git config --global push.default simple           # push only the current branch
+</code></pre>
+<h3 id="where-settings-live">Where settings live</h3>
+<table>
+<thead>
+<tr>
+<th>Scope</th>
+<th>File</th>
+<th>Wins?</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>--system</code></td>
+<td>git install dir</td>
+<td>lowest priority</td>
+</tr>
+<tr>
+<td><code>--global</code></td>
+<td><code>C:\Users\&lt;you&gt;\.gitconfig</code></td>
+<td>middle — your personal defaults</td>
+</tr>
+<tr>
+<td><code>--local</code></td>
+<td><code>&lt;repo&gt;\.git\config</code></td>
+<td><strong>highest</strong> — per-repo overrides</td>
+</tr>
+</tbody>
+</table>
+<p>Use <code>--local</code> to set a different <code>user.email</code> for one repo (e.g. work vs personal).</p>
+<h2 id="17-graduating-the-real-repository">17. Graduating: the real repository</h2>
+<p>Do this only after the labs, and read every step before running it.</p>
+<p><strong>Where <code>TflCbsNet10Sol\</code> stands today:</strong> <code>git init</code> has been run and the branch is <code>main</code>, but
+there are <strong>no commits yet</strong> — everything in the solution is still untracked. A carefully written
+<a href="../../.gitignore">.gitignore</a> is already in place, which is the hard part. So the work below is
+the <em>first commit</em>, not the initialisation.</p>
+<p><strong>Check the remote before you push anything.</strong> Run <code>git remote -v</code>. If it does not name
+<code>192.168.0.22:3000</code>, the repository is pointed somewhere other than our Gitea server, and pushing
+would publish the whole solution to that other place. Settle where this code belongs <em>before</em> the
+first push, and fix it with <code>git remote set-url origin &lt;the-right-url&gt;</code> (<strong>Git → Manage Remotes →
+Edit</strong> in Visual Studio) rather than removing and re-adding.</p>
+<pre><code class="language-bash">cd E:/Adhir/AdWork/TrustBank.Code/TflCbsNet10Sol
+
+git remote -v             # WHERE would a push go? Settle this first — see above
+git status                # will list THOUSANDS of files — this is why the next step matters
+
+# 1. Confirm the ignores are doing their job BEFORE you add anything.
+git status -s | grep -Ei &quot;bin/|obj/|appsettings.Development.json|\.pfx|App_Data|docker-data&quot;
+#    ^ this must print NOTHING. If it prints anything, fix .gitignore first.
+
+# 2. Sanity-check the size of what you are about to commit.
+git status -s | wc -l
+git add -A
+git status -s | wc -l     # same number? good.
+
+# 3. Look for secrets one more time. This is the last cheap moment to catch them.
+git diff --staged --name-only | grep -Ei &quot;secret|password|\.env|credential|\.pfx|\.p12&quot;
+
+git commit -m &quot;Initial commit: TrustBank CBS .NET 10 migration&quot;
+</code></pre>
+<p>Then, with an empty (<strong>not</strong> initialised) repo created in Gitea:</p>
+<pre><code class="language-bash">git remote add origin http://192.168.0.22:3000/Adhir/TflCbsNet10Sol.git   # or `set-url`, if origin already exists
+git push -u origin main
+</code></pre>
+<blockquote>
+<p><strong>Doing this in Visual Studio instead?</strong> Steps 1 and 3 have no UI — the filtering is the whole
+point of them, and <strong>Git Changes</strong> cannot filter. Open <strong>View → Terminal</strong> and run them there
+before you touch the commit button. Everything after that (<strong>Commit All</strong>, <strong>Git → Manage
+Remotes</strong>, <strong>Push</strong>) works exactly as in Part 1.</p>
+</blockquote>
+<p><strong>Before that first push, three things are worth settling with your lead:</strong></p>
+<ol>
+<li><strong>Is the dev connection string in a committed file anywhere?</strong> <code>**/appsettings.Development.json</code>
+   is ignored, but check <code>compose*.yaml</code>, <code>web.config</code>, and the deploy scripts by hand. A secret
+   in commit #1 is a secret in the history forever.</li>
+<li><strong>Should <code>TflCbs.Entities.dll</code> (bare-DLL HintPath) be committed?</strong> Binaries in git are a known
+   smell, but the build genuinely needs it. Decide deliberately, not by accident.</li>
+<li><strong>Protect <code>main</code> in Gitea</strong> (Settings → Branches) from day one, so nobody — including you —
+   can push to it directly. It is far easier to enable now than after bad habits form.</li>
+</ol>
+<hr />
+<h2 id="18-rules-of-thumb">18. Rules of thumb</h2>
+<ul>
+<li><strong>Run <code>git status</code> constantly.</strong> It is free, and it answers most questions before you ask them.</li>
+<li><strong>Commit small and often.</strong> A commit is a save point; you cannot have too many.</li>
+<li><strong>Pull before you start work</strong>, and before you push.</li>
+<li><strong>Never commit to <code>main</code>.</strong> Branch, PR, review, merge.</li>
+<li><strong>Never <code>--force</code> a shared branch.</strong> <code>--force-with-lease</code> on your own branch, at most.</li>
+<li><strong>Never commit secrets, build output, or <code>.user</code> files.</strong> Check <code>git status</code> before <code>git add .</code>.</li>
+<li><strong>Write the commit message for the person who reads it in a year.</strong> That person is you.</li>
+<li><strong>If you are about to try something risky, commit first.</strong> Then anything is undoable.</li>
+<li><strong>Read the error message.</strong> Git's errors are unusually good and usually contain the fix.</li>
+</ul>
+<hr />
+<h2 id="19-glossary">19. Glossary</h2>
+<table>
+<thead>
+<tr>
+<th>Term</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>repository (repo)</td>
+<td>A project plus its entire history — the <code>.git</code> folder</td>
+</tr>
+<tr>
+<td>working tree</td>
+<td>The files as they currently sit on your disk</td>
+</tr>
+<tr>
+<td>index / staging area</td>
+<td>The shortlist of changes that will go into the next commit</td>
+</tr>
+<tr>
+<td>commit</td>
+<td>A snapshot + message + author + parent. Identified by a SHA like <code>a1b2c3d</code></td>
+</tr>
+<tr>
+<td>SHA / hash</td>
+<td>A commit's unique id. The first 7 characters are usually enough</td>
+</tr>
+<tr>
+<td>branch</td>
+<td>A movable pointer to a commit. That is all</td>
+</tr>
+<tr>
+<td>HEAD</td>
+<td>Where you are now</td>
+</tr>
+<tr>
+<td>remote</td>
+<td>A named server URL, usually <code>origin</code></td>
+</tr>
+<tr>
+<td>origin/main</td>
+<td>Your cached copy of the server's <code>main</code>, as of the last fetch</td>
+</tr>
+<tr>
+<td>tracking branch</td>
+<td>A local branch linked to a remote one (what <code>-u</code> sets up)</td>
+</tr>
+<tr>
+<td>fetch</td>
+<td>Download from the server, change nothing local</td>
+</tr>
+<tr>
+<td>pull</td>
+<td>Fetch, then integrate</td>
+</tr>
+<tr>
+<td>push</td>
+<td>Upload your commits</td>
+</tr>
+<tr>
+<td>merge</td>
+<td>Join two histories, possibly creating a merge commit</td>
+</tr>
+<tr>
+<td>rebase</td>
+<td>Replay commits onto a new base — rewrites them</td>
+</tr>
+<tr>
+<td>fast-forward</td>
+<td>A merge that only needs the pointer moved</td>
+</tr>
+<tr>
+<td>conflict</td>
+<td>Two branches changed the same lines; git needs you to decide</td>
+</tr>
+<tr>
+<td>stash</td>
+<td>A shelf for uncommitted work</td>
+</tr>
+<tr>
+<td>tag</td>
+<td>A permanent name for a commit, usually a release</td>
+</tr>
+<tr>
+<td>detached HEAD</td>
+<td>You are on a commit, not a branch</td>
+</tr>
+<tr>
+<td>reflog</td>
+<td>The log of where HEAD has been — your undo history</td>
+</tr>
+<tr>
+<td>PR</td>
+<td>Pull Request: "please merge my branch", reviewed in the Gitea UI. A server feature, not a git one — §0.5</td>
+</tr>
+<tr>
+<td>upstream</td>
+<td>The branch yours tracks</td>
+</tr>
+<tr>
+<td>clean tree</td>
+<td>No uncommitted changes</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="where-to-go-next">Where to go next</h2>
+<ul>
+<li><strong>The other half of this guide.</strong> If you came through
+  <a href="git-with-gitea-part1.html">Part 1</a>, Part 2 explains what every button was doing; if you came
+  through <a href="git-with-gitea-part2.html">Part 2</a>, Part 1 is mostly one translation table
+  (<a href="git-with-gitea-part1.html#6-command-visual-studio-side-by-side">§6</a>). Each half has its own sandbox folder and its own
+  Gitea repo, so doing the second costs you nothing you already built.</li>
+<li><code>git help &lt;command&gt;</code> — the authoritative manual, offline, for any command here.</li>
+<li><a href="https://git-scm.com/book">Pro Git</a> — free, complete, and genuinely well written. Chapters 2, 3 and 6.</li>
+<li><a href="day-one.html">docs/guides/day-one.md</a> — getting the CBS app itself running.</li>
+</ul>
+<hr />
+<p><strong>Back to:</strong> <a href="git-with-gitea.html">the start page</a> · <a href="git-with-gitea-cheat-sheet.html">the cheat sheet</a></p>
+<p><a href="git-with-gitea.html">Git with Gitea — start page</a> · <a href="git-with-gitea-part2.html">← Part 2 · Command line</a> · <a href="git-with-gitea-cheat-sheet.html">Cheat sheet</a></p>
+</div></div>
+<script>
+(function(){
+ function put(t){
+  if(navigator.clipboard&&navigator.clipboard.writeText)return navigator.clipboard.writeText(t);
+  return new Promise(function(res,rej){
+   var a=document.createElement('textarea');a.value=t;a.setAttribute('readonly','');
+   a.style.cssText='position:fixed;top:0;left:0;opacity:0';document.body.appendChild(a);
+   a.select();var ok=false;try{ok=document.execCommand('copy')}catch(e){}
+   document.body.removeChild(a);ok?res():rej()});
+ }
+ function flash(el,txt,ms){
+  var was=el.textContent;el.classList.add('done');if(txt)el.textContent=txt;
+  setTimeout(function(){el.classList.remove('done');if(txt)el.textContent=was},ms||1200);
+ }
+ function copy(text,el,okTxt){
+  put(text).then(function(){flash(el,okTxt)},function(){
+   if(okTxt){var w=el.textContent;el.textContent='Ctrl+C';setTimeout(function(){el.textContent=w},2000)}});
+ }
+ document.querySelectorAll('pre').forEach(function(pre){
+  if(pre.classList.contains('txtdoc'))return;
+  var b=document.createElement('button');
+  b.type='button';b.className='copy';b.textContent='Copy';
+  b.setAttribute('aria-label','Copy this code block to the clipboard');
+  b.addEventListener('click',function(){copy((pre.querySelector('code')||pre).innerText,b,'Copied')});
+  pre.appendChild(b);
+ });
+ document.querySelectorAll('td code').forEach(function(c){
+  if(!c.textContent.trim())return;
+  c.classList.add('cp');c.tabIndex=0;c.setAttribute('role','button');
+  c.title='Click to copy';
+  c.addEventListener('click',function(){copy(c.textContent,c)});
+  c.addEventListener('keydown',function(e){
+   if(e.key==='Enter'||e.key===' '){e.preventDefault();copy(c.textContent,c)}});
+ });
+ // Lab tick-boxes: any heading whose id starts "lab-" gets a checkbox, remembered in this
+ // browser only. Storage can be missing (private window, blocked site data) - the page
+ // still works, the ticks just do not persist.
+ function sget(k){try{return localStorage.getItem(k)}catch(e){return null}}
+ function sset(k,on){try{on?localStorage.setItem(k,'1'):localStorage.removeItem(k)}catch(e){}}
+ var labs=[].slice.call(document.querySelectorAll('h2[id^="lab-"],h3[id^="lab-"]'));
+ if(labs.length){
+  var badge=document.createElement('div');badge.className='labbadge';document.body.appendChild(badge);
+  var count=function(){badge.textContent='Labs done: '+labs.filter(function(h){return sget('labdone:'+h.id)}).length+' of '+labs.length};
+  labs.forEach(function(h){
+   var cb=document.createElement('input');cb.type='checkbox';cb.className='lab';
+   cb.title='Tick when you have finished this lab (remembered in this browser)';cb.setAttribute('aria-label','Lab done');
+   cb.checked=!!sget('labdone:'+h.id);h.classList.toggle('labdone',cb.checked);
+   cb.addEventListener('change',function(){sset('labdone:'+h.id,cb.checked);h.classList.toggle('labdone',cb.checked);count()});
+   h.insertBefore(cb,h.firstChild);
+  });
+  count();
+ }
+ document.querySelectorAll('li>a[href*="#lab-"]').forEach(function(a){
+  if(sget('labdone:'+a.getAttribute('href').split('#')[1]))a.classList.add('labdone')});
+})();
+</script>
+</body></html>

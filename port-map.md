@@ -16,6 +16,7 @@
 | `TflCbs.Host.RetailBanking` | Thin host — RetailBanking only | 5400 | 7400 |
 | `TflCbs.Host.Administration` | Thin host — Administration only (Module/Role masters) | 5500 | 7500 |
 | `TflCbs.Host.Inventory` | Thin host — Inventory only (Unit of Measurement, Asset/Consumable Category) | 5600 | 7600 |
+| `TflCbs.ReportViewer` | Crystal report viewer (.NET Framework 4.8, IIS Express via `scripts/run-report-viewer.ps1`); not behind the gateway | — | 44390 |
 
 **Port pattern:** HTTP = `5x00`, HTTPS = `7x00`, paired per host (gateway x=1, Lockers 2, Hr 3, RetailBanking 4, Administration 5, Inventory 6; the default host predates the pattern at 5019/7225).
 
@@ -76,6 +77,7 @@ The dev `dotnet run` ports (§1–2, 5xxx/7xxx) are for local dev only. The depl
 | | `cbs-retail` | http 8140 / https 8141 | `D:\publish\multi\retail` |
 | | `cbs-admin` | http 8150 / https 8151 | `D:\publish\multi\admin` |
 | | `cbs-inventory` | http 8160 / https 8161 | `D:\publish\multi\inventory` |
+| Report viewer | `cbs-reportviewer` | https 8171 only (8170 reserved; its cookies are `requireSSL`) | `D:\publish\reportviewer` — .NET 4.8 Crystal viewer, `scripts/deploy-report-viewer-iis.ps1` |
 
 > **Both** ports are bound on every site: `deploy-cbs-iis.ps1` always creates the site on its http port and *adds* the https binding when `-CertThumbprint` is passed (without it you get http only). The gateway proxies to the backends over **https** — the scheme it writes into the gateway's `appsettings.Production.json` follows whether the cert was supplied. The http backend ports stay reachable directly, so treat them as a bring-up/diagnostic path, not a route anyone should use: only `cbs-gateway` is meant to be public.
 

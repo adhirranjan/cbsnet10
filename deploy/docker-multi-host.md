@@ -8,7 +8,7 @@ The repo **ships `compose.multi.yaml`** + the same parameterized Dockerfile (ver
 
 ## Deployment checklist (run in order)
 
-1. ☐ **Prerequisites** — Docker + compose; the DB reachable from the container network; **create the two shared SSO tables once** — `CBS_DATAPROTECTIONKEYS`, `CBS_SESSIONREVOCATIONS` (§3).
+1. ☐ **Prerequisites** — Docker + compose; the DB reachable from the container network; **create the two shared SSO tables once** (DbMigrator `0020_sso_shared_tables`) — `CBS_DATAPROTECTIONKEYS`, `CBS_SESSIONREVOCATIONS` (§3).
 2. ☐ **Secrets** — `.env` at the solution root: `CBS_SQLSERVER_CONNSTRING=…` **and** `CBS_PUBLIC_HOST=<gateway hostname>` (§5).
 3. ☐ **Confirm the three SSO preconditions** (§3) — every app service `KeyRing=TflOmniDb` + `SessionRevocation=TflOmniDb` (same DB, same `ApplicationName`); only the gateway publishes a port.
 4. ☐ **Gateway routing** (§4) — cluster Destinations point at the compose **service names** (`http://default:8080/`, …), already wired in `compose.multi.yaml` (§5).

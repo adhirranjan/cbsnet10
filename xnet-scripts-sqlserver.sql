@@ -1,4 +1,4 @@
-IF COL_LENGTH('dbo.a_User', 'PASSWORDHASH') IS NULL
+﻿IF COL_LENGTH('dbo.a_User', 'PASSWORDHASH') IS NULL
     ALTER TABLE dbo.a_User ADD PASSWORDHASH VARCHAR(200) NULL;
 GO
 
@@ -41,6 +41,40 @@ GO
 -- =====================================================================
 -- bit -> int
 -- =====================================================================
+
+-- ---------------------------------------------------------------------
+-- CONVENTION: flag columns are INT (0/1) on all three providers -- never BIT,
+-- NUMBER(1) or BOOLEAN. Entities carry them as int? / CoreDataType.Int32.
+--
+-- Why: Oracle's managed provider cannot bind a CLR bool (ORA-00932), so a bool
+-- property forces the DAL to translate on the way in and out. Storing the flag
+-- as INT removes the translation entirely -- what the code holds is what the
+-- column holds, identically on SQL Server, Oracle (NUMBER(10,0)) and
+-- PostgreSQL (INTEGER).
+--
+-- This applies to NEW tables too, not just conversions -- see CBS_OTP.ISUSED,
+-- B_USERSWITCHLOGTIME.ISOFFLINE, A_BRLOGINACCESSTIME.ISACTIVE and
+-- K_LOCKERRENTDISC.ISACTIVESCDISC further down this file.
+--
+-- Note: the TflOmniDb docs map BIT -> Boolean -> NUMBER(1,0) -> BOOLEAN. That is
+-- the library default, NOT this project's convention. INT wins here.
+--
+-- OPEN: none of these INT flags carry CHECK (col IN (0,1)). BIT enforced 0/1 for
+-- free; INT does not, on any provider. Worth adding -- additive, no code change.
+--
+-- STILL ON BIT: 83 flag columns across 27 tables the code uses today (and ~2700
+-- more schema-wide). The 83 get the same bit -> INT treatment as the 9 below,
+-- in a separate script -- NOT included here, run it on its own:
+--
+--     scripts/bit-to-int.sqlserver.sql
+--
+-- Same shape as this section: pre-flight blocker query, drop 1 index + 4 DEFAULT
+-- constraints, 83 guarded ALTER COLUMN ... INT, recreate, verify. Idempotent.
+-- SQL Server only -- Oracle already holds all 83 as NUMBER(10,0), which is what
+-- CoreDataType.Int32 renders to, so there is no Oracle twin.
+-- After running it: regenerate TflCbs.Entities for those 27 tables (bool? ->
+-- int?) and fix the call sites (== true -> == 1), or the build breaks.
+-- ---------------------------------------------------------------------
 
 
 --index drop for bit-->int
@@ -178,6 +212,68 @@ GO
 
 
  
+
+
+-- =====================================================================
+-- uniqueidentifier -> char(36)
+-- =====================================================================
+
+-- ---------------------------------------------------------------------
+-- CONVENTION: GUID-valued columns are CHAR(36) holding the 36-character
+-- UPPERCASE hyphenated form on all three providers -- never UNIQUEIDENTIFIER,
+-- RAW(16) or UUID. Entities carry them as string? / CoreDataType.
+-- AnsiStringFixed(36).
+--
+-- Why: Oracle's managed provider cannot bind a CLR Guid -- the DbType.Guid that
+-- ADO.NET infers from a Guid value raises ArgumentException ("Value does not
+-- fall within the expected range"), so every INSERT writing a Guid failed on
+-- Oracle. Reads never showed it: ColumnDescriptor.SetValue already does
+-- Guid.Parse(value.ToString()) precisely because Oracle stores these as
+-- CHAR(36). Exactly the bool / ORA-00932 asymmetry again -- the read side
+-- coerced and hid a write side that had never worked.
+--
+-- Same reasoning as bit -> INT above: normalise in the schema so what the code
+-- holds is what the column holds, rather than asking the DAL to translate.
+--
+-- CASE matters. SQL Server's implicit uniqueidentifier -> char conversion and
+-- CONVERT(char(36), newid()) both emit UPPERCASE, which is what the migrated
+-- Oracle rows already hold. .NET's Guid.ToString() is lowercase, so every call
+-- site writes Guid.NewGuid().ToString().ToUpperInvariant() -- a lowercase value
+-- would silently never match on a CHAR comparison.
+--
+-- This applies to NEW tables too: G_ORGELEMENTIPMAP.ID further up this file was
+-- created as UNIQUEIDENTIFIER DEFAULT NEWID() and is converted by the script
+-- below. A new table should declare CHAR(36) with
+-- DEFAULT (CONVERT(char(36), newid())) from the start.
+--
+-- CONVERTED: 40 GUID columns across the 40 tables the code uses today -- NOT
+-- included here, run it on its own:
+--
+--     scripts/guid-to-char36.sqlserver.sql
+--
+-- Same shape as the bit -> INT section: pre-flight blocker query, drop 5 DEFAULT
+-- constraints + PK_sms_buffer, 40 guarded ALTER COLUMN ... char(36), recreate,
+-- verify. Idempotent. SQL Server only -- Oracle already holds all 40 as
+-- CHAR(36 CHAR), so its twin is verify-only:
+--
+--     scripts/guid-to-char36.oracle-verify.sql
+--
+-- After running it: regenerate TflCbs.Entities for those 40 tables (Guid? ->
+-- string?) and fix the three call sites that write a Guid to a column
+-- (DirectCreditService.GUID, DormantReactivationService.GUID,
+-- ForgotPasswordService.BUFFERID), or the build breaks.
+--
+-- STILL UNIQUEIDENTIFIER: 1262 columns schema-wide, on tables the code does not
+-- reference. 34 of the 40 converted were msrepl_tran_version -- dead SQL Server
+-- replication metadata (this database publishes nothing) that sits on nearly
+-- every entity and would otherwise keep re-introducing Guid properties on each
+-- regeneration.
+--
+-- OPEN: the 711 msrepl_tran_version columns are never read or written by this
+-- codebase and could be dropped outright rather than converted. Deliberately
+-- not done -- a separate, larger change.
+-- ---------------------------------------------------------------------
+
 
 -- a_userLoginType
 IF OBJECT_ID('dbo.A_USERLOGINTYPE') IS NULL
@@ -494,6 +590,13 @@ GO
 UPDATE dbo.a_User SET USERLEVEL = [LEVEL] WHERE USERLEVEL IS NULL;
 GO
 
+-- =====================================================================
+-- a_User.Password / a_UserLog.Password : drop column
+-- =====================================================================
+ALTER TABLE dbo.a_User DROP COLUMN [Password];
+ALTER TABLE dbo.a_UserLog DROP COLUMN [Password];
+
+-- =====================================================================
 IF COL_LENGTH('dbo.b_AccHoldingAmount', 'HOLDTYPE') IS NULL
     ALTER TABLE dbo.b_AccHoldingAmount ADD HOLDTYPE INT NULL;
 GO
@@ -527,3 +630,12 @@ GO
 
 
  
+
+EXEC sp_rename 'dbo.G_CURRENCY.Decimal', 'DECIMAL_', 'COLUMN';
+EXEC sp_rename 'dbo.A_USER.Level',       'LEVEL_',   'COLUMN';
+EXEC sp_rename 'dbo.a_UserLog.Level', 'LEVEL_', 'COLUMN';
+GO
+ALTER TABLE dbo.a_PasswordChangeLog ALTER COLUMN [NewPassword] varchar(200) NOT NULL;
+
+ALTER TABLE dbo.a_PasswordChangeLog ALTER COLUMN [OldPassword] varchar(200) NULL;
+GO

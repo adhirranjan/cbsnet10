@@ -18,6 +18,7 @@ a:hover{text-decoration:underline}
 code{font-family:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;font-size:.86em;background:#eff1f3;padding:.15em .4em;border-radius:6px}
 pre{background:#f6f8fa;border:1px solid #d8dee4;border-radius:8px;padding:14px 16px;overflow:auto}
 pre code{background:none;padding:0;font-size:.85em;line-height:1.45}
+pre>code:not([class]){line-height:1.25}
 blockquote{margin:1em 0;padding:.4em 1em;color:#3d444d;border-left:4px solid #d0d7de;background:#f6f8fa;border-radius:0 6px 6px 0}
 blockquote>:first-child{margin-top:0}blockquote>:last-child{margin-bottom:0}
 table{border-collapse:collapse;width:100%;margin:1em 0;display:block;overflow:auto}
@@ -39,7 +40,20 @@ td code.cp.done{color:#0a3622;background:#dafbe1}
 .docnav{margin:0 0 20px;font-size:.85rem;color:#636c76}
 .docnav a{color:#636c76}
 ul{padding-left:1.4em}ol{padding-left:1.4em}
+img{max-width:100%;height:auto;border:1px solid #d0d7de;border-radius:6px;vertical-align:top}
+a img{cursor:zoom-in}
+figure.clip{margin:1em 0}
+video{display:block;width:100%;height:auto;border:1px solid #d0d7de;border-radius:6px;background:#111}
+tr:has(:target) td{background:#fff8c5!important}
+h2>input.lab,h3>input.lab{width:1em;height:1em;margin:0 .45em 0 0;vertical-align:-.08em;cursor:pointer;accent-color:#1a7f37}
+h2.labdone,h3.labdone,a.labdone{color:#1a7f37}
+a.labdone::after{content:" \2713";font-weight:700}
+.labbadge{position:fixed;right:14px;bottom:14px;z-index:5;background:#fff;border:1px solid #d0d7de;border-radius:999px;
+  padding:6px 12px;font-size:.8rem;color:#3d444d;box-shadow:0 2px 8px rgba(0,0,0,.08)}
 @media(max-width:640px){.card{padding:24px 18px}.wrap{padding:16px 10px 64px}}
+@media print{body{background:#fff;color:#000}.wrap{max-width:none;padding:0}.card{border:0;padding:0}
+ pre>button.copy,.labbadge,.docnav,input.lab{display:none}a{color:inherit}
+ pre,table,blockquote,img,figure{break-inside:avoid}h1,h2,h3{break-after:avoid}}
 @media(prefers-color-scheme:dark){
  body{background:#0d1117;color:#e6edf3}
  .card{background:#161b22;border-color:#30363d}
@@ -53,6 +67,10 @@ ul{padding-left:1.4em}ol{padding-left:1.4em}
  pre>button.copy{color:#9198a1;background:#161b22;border-color:#30363d}
  pre>button.copy.done{color:#aff5b4;background:#1b4721;border-color:#2ea043}
  td code.cp.done{color:#aff5b4;background:#1b4721}
+ tr:has(:target) td{background:#3b2f00!important}
+ h2.labdone,h3.labdone,a.labdone{color:#3fb950}
+ .labbadge{background:#161b22;border-color:#30363d;color:#9198a1}
+ video{border-color:#30363d}
 }
 </style></head>
 <body><div class="wrap"><div class="card">
@@ -72,6 +90,12 @@ with a <em>Cheat sheet</em> and a <em>Ways to get it wrong</em> list — those t
 <li><a href="#15-cheat-sheet">1.5 Cheat sheet</a></li>
 <li><a href="#16-four-ways-to-get-it-wrong">1.6 Four ways to get it wrong</a></li>
 <li><a href="#17-what-tokens-are-not">1.7 What tokens are not</a></li>
+<li><a href="#2-portable-column-types--the-two-banned-sql-server-types">2. Portable column types — the two banned SQL Server types</a></li>
+<li><a href="#21-the-rule">2.1 The rule</a></li>
+<li><a href="#22-why-and-how-both-were-found">2.2 Why, and how both were found</a></li>
+<li><a href="#23-where-the-translation-happens-now">2.3 Where the translation happens now</a></li>
+<li><a href="#24-cheat-sheet">2.4 Cheat sheet</a></li>
+<li><a href="#25-five-ways-to-get-it-wrong">2.5 Five ways to get it wrong</a></li>
 </ul>
 <hr />
 <h2 id="1-row-tokens-the-four-helpers">1. Row tokens — the four helpers</h2>
@@ -248,6 +272,137 @@ session". Access is enforced separately:</p>
   call.</li>
 </ul>
 <p>Tokens secure the <strong>handoff</strong>. The guard and the service are the access control.</p>
+<hr />
+<h2 id="2-portable-column-types-the-two-banned-sql-server-types">2. Portable column types — the two banned SQL Server types</h2>
+<pre><code>flag  →  INT holding 0/1        never BIT, NUMBER(1), BOOLEAN
+GUID  →  CHAR(36) UPPERCASE     never UNIQUEIDENTIFIER, RAW(16), UUID
+</code></pre>
+<p>SQL Server, Oracle and PostgreSQL are all production targets. A column type only one of them can bind is a
+defect — and, as below, a defect the read path hides.</p>
+<p>Sources: <a href="../libs/TflOmniDb/TflOmniDb/Repository/ParameterValue.cs"><code>ParameterValue.cs</code></a>, the migration
+scripts <code>scripts/bit-to-int.sqlserver.sql</code> and <code>scripts/guid-to-char36.{sqlserver.sql,oracle-verify.sql}</code>,
+and the full rationale in <a href="xnet-scripts-sqlserver.sql"><code>xnet-scripts-sqlserver.sql</code></a>.</p>
+<h3 id="21-the-rule">2.1 The rule</h3>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>SQL Server</th>
+<th>Oracle</th>
+<th>PostgreSQL</th>
+<th>Entity property</th>
+<th><code>CoreDataType</code></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>flag</td>
+<td><code>INT</code></td>
+<td><code>NUMBER(10,0)</code></td>
+<td><code>INTEGER</code></td>
+<td><code>int?</code></td>
+<td><code>Int32</code></td>
+</tr>
+<tr>
+<td>GUID</td>
+<td><code>CHAR(36)</code></td>
+<td><code>CHAR(36 CHAR)</code></td>
+<td><code>CHAR(36)</code></td>
+<td><code>string?</code></td>
+<td><code>AnsiStringFixed</code></td>
+</tr>
+</tbody>
+</table>
+<p>In code:</p>
+<pre><code class="language-csharp">if (user.ALLOWOTHERBRANCHAPPROVAL == 1)                  // not == true, not ?? false
+    …
+
+row.GUID = Guid.NewGuid().ToString().ToUpperInvariant();  // never .ToString() alone
+</code></pre>
+<p>This applies to <strong>new</strong> tables too, not only conversions. Declare the portable type from the start; in SQL
+Server a GUID default is <code>DEFAULT (CONVERT(char(36), newid()))</code>.</p>
+<blockquote>
+<p>The TflOmniDb datatype-mapping docs map <code>BIT</code> → <code>Boolean</code> → <code>NUMBER(1,0)</code> → <code>BOOLEAN</code>. That is the
+<strong>library default</strong>, not this project's convention. <code>INT</code> wins here.</p>
+</blockquote>
+<h3 id="22-why-and-how-both-were-found">2.2 Why, and how both were found</h3>
+<p>Oracle's managed provider cannot bind either CLR type:</p>
+<ul>
+<li>a CLR <code>bool</code> parameter → <strong>ORA-00932</strong>, inconsistent datatypes;</li>
+<li>a CLR <code>Guid</code> parameter → <code>DbType.Guid</code> → <strong><code>ArgumentException</code></strong>.</li>
+</ul>
+<p>Both were invisible for months because <strong>the read path coerces</strong>. <code>ColumnDescriptor.SetValue</code> and
+<code>PocoMaterializer</code> run <code>Convert.ChangeType</code> and <code>Guid.Parse</code>, so <code>NUMBER(10,0)</code> reads back into a <code>bool?</code>
+and <code>CHAR(36)</code> into a <code>Guid?</code> quite happily. Every read test passed. Every <em>write</em> of those columns had
+been failing on Oracle since the port, and nothing said so.</p>
+<p>That is the general lesson, not a footnote: <strong>a read-only test suite proves nothing about the write path on
+a second provider.</strong> Screen coverage in this repo is therefore round-trip — create, search, update, search,
+delete — see <a href="screens-code-guide-xnet-7.html#cross-provider-verification">screens-code-guide-xnet-7.md → Cross-provider verification</a>.</p>
+<h3 id="23-where-the-translation-happens-now">2.3 Where the translation happens now</h3>
+<p>Nowhere, for flags and GUIDs — that is the point. What the code holds is what the column holds, on all three
+providers, so there is no conversion left to get wrong.</p>
+<p>The DAL keeps two narrow adjustments, both in <code>ParameterValue</code>, and both exist for cases the convention does
+<strong>not</strong> cover:</p>
+<pre><code class="language-csharp">Normalize(provider, value)          // a stray CLR bool → 1/0 on Oracle; null → DBNull
+TypeForNull(provider, value, col)   // SQL Server only: a null parameter is typed from its
+                                    // ColumnDescriptor, because ADO.NET infers nvarchar from
+                                    // DBNull and SQL Server refuses nvarchar → binary (Msg 257)
+</code></pre>
+<p><code>TypeForNull</code> is deliberately SQL-Server-only: declaring the mapped <code>DbType</code> on Oracle breaks every insert,
+because ODP.NET rejects <code>DbType.Guid</code> and <code>DbType.DateTime2</code> outright. Covered by <code>ParameterTypingTests</code>
+(no database needed).</p>
+<h3 id="24-cheat-sheet">2.4 Cheat sheet</h3>
+<table>
+<thead>
+<tr>
+<th>You are…</th>
+<th>Do this</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>adding a flag column</td>
+<td><code>INT</code> (<code>NUMBER(10,0)</code> / <code>INTEGER</code>); entity <code>int?</code></td>
+</tr>
+<tr>
+<td>adding a GUID column</td>
+<td><code>CHAR(36)</code>; entity <code>string?</code>; SQL Server default <code>CONVERT(char(36), newid())</code></td>
+</tr>
+<tr>
+<td>reading a flag</td>
+<td><code>x.ISACTIVE == 1</code></td>
+</tr>
+<tr>
+<td>writing a flag</td>
+<td><code>1</code> / <code>0</code></td>
+</tr>
+<tr>
+<td>writing a GUID</td>
+<td><code>Guid.NewGuid().ToString().ToUpperInvariant()</code></td>
+</tr>
+<tr>
+<td>binding a checkbox</td>
+<td><code>bool</code> lives in the Razor view model only — convert in the controller</td>
+</tr>
+<tr>
+<td>converting an existing column</td>
+<td>run the script, regenerate the entity, then fix the call sites (the build finds them)</td>
+</tr>
+</tbody>
+</table>
+<h3 id="25-five-ways-to-get-it-wrong">2.5 Five ways to get it wrong</h3>
+<ol>
+<li><strong><code>.ToString()</code> without <code>.ToUpperInvariant()</code>.</strong> It writes lowercase; every <code>CHAR(36)</code> comparison against
+   an existing row then fails to match. Nothing throws — the row is simply never found.</li>
+<li><strong><code>== true</code> or <code>?? false</code> on a flag.</strong> Does not compile against <code>int?</code>, which is the good case; what does
+   compile is a sloppy <code>!= 0</code>, which quietly accepts 2.</li>
+<li><strong>Declaring <code>bool</code> on a new service DTO.</strong> It works on SQL Server and dies on Oracle at the first write.
+   Keep <code>bool</code> in the view model, <code>int</code> from the controller inwards.</li>
+<li><strong>Trusting a green test run.</strong> A provider whose connection string is empty is <em>skipped</em>, not failed, and
+   a read-only test passes on a write path that has never worked.</li>
+<li><strong>Assuming <code>INT</code> enforces 0/1.</strong> <code>BIT</code> did; <code>INT</code> does not, on any provider. No <code>CHECK (col IN (0,1))</code>
+   exists on these columns yet — still open.</li>
+</ol>
 </div></div>
 <script>
 (function(){
@@ -283,6 +438,26 @@ session". Access is enforced separately:</p>
   c.addEventListener('keydown',function(e){
    if(e.key==='Enter'||e.key===' '){e.preventDefault();copy(c.textContent,c)}});
  });
+ // Lab tick-boxes: any heading whose id starts "lab-" gets a checkbox, remembered in this
+ // browser only. Storage can be missing (private window, blocked site data) - the page
+ // still works, the ticks just do not persist.
+ function sget(k){try{return localStorage.getItem(k)}catch(e){return null}}
+ function sset(k,on){try{on?localStorage.setItem(k,'1'):localStorage.removeItem(k)}catch(e){}}
+ var labs=[].slice.call(document.querySelectorAll('h2[id^="lab-"],h3[id^="lab-"]'));
+ if(labs.length){
+  var badge=document.createElement('div');badge.className='labbadge';document.body.appendChild(badge);
+  var count=function(){badge.textContent='Labs done: '+labs.filter(function(h){return sget('labdone:'+h.id)}).length+' of '+labs.length};
+  labs.forEach(function(h){
+   var cb=document.createElement('input');cb.type='checkbox';cb.className='lab';
+   cb.title='Tick when you have finished this lab (remembered in this browser)';cb.setAttribute('aria-label','Lab done');
+   cb.checked=!!sget('labdone:'+h.id);h.classList.toggle('labdone',cb.checked);
+   cb.addEventListener('change',function(){sset('labdone:'+h.id,cb.checked);h.classList.toggle('labdone',cb.checked);count()});
+   h.insertBefore(cb,h.firstChild);
+  });
+  count();
+ }
+ document.querySelectorAll('li>a[href*="#lab-"]').forEach(function(a){
+  if(sget('labdone:'+a.getAttribute('href').split('#')[1]))a.classList.add('labdone')});
 })();
 </script>
 </body></html>

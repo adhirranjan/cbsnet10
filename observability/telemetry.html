@@ -1,0 +1,399 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Telemetry — what we emit and how to use it</title>
+<style>
+:root{color-scheme:light dark}
+*{box-sizing:border-box}
+body{margin:0;background:#f6f8fa;color:#1f2328;font:16px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif}
+.wrap{max-width:900px;margin:0 auto;padding:32px 24px 96px}
+.card{background:#fff;border:1px solid #d0d7de;border-radius:10px;padding:40px 48px}
+h1,h2,h3{line-height:1.25;font-weight:600}
+h1{font-size:1.9rem;margin:0 0 .3em;padding-bottom:.3em;border-bottom:1px solid #d8dee4}
+h2{font-size:1.4rem;margin:1.8em 0 .6em;padding-bottom:.25em;border-bottom:1px solid #eaeef2}
+h3{font-size:1.12rem;margin:1.4em 0 .5em}
+p,li{margin:.5em 0}
+a{color:#0969da;text-decoration:none}
+a:hover{text-decoration:underline}
+code{font-family:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;font-size:.86em;background:#eff1f3;padding:.15em .4em;border-radius:6px}
+pre{background:#f6f8fa;border:1px solid #d8dee4;border-radius:8px;padding:14px 16px;overflow:auto}
+pre code{background:none;padding:0;font-size:.85em;line-height:1.45}
+pre>code:not([class]){line-height:1.25}
+blockquote{margin:1em 0;padding:.4em 1em;color:#3d444d;border-left:4px solid #d0d7de;background:#f6f8fa;border-radius:0 6px 6px 0}
+blockquote>:first-child{margin-top:0}blockquote>:last-child{margin-bottom:0}
+table{border-collapse:collapse;width:100%;margin:1em 0;display:block;overflow:auto}
+th,td{border:1px solid #d0d7de;padding:8px 12px;text-align:left;vertical-align:top}
+th{background:#f6f8fa;font-weight:600}
+tr:nth-child(2n) td{background:#f6f8fa}
+hr{border:0;border-top:1px solid #d8dee4;margin:2em 0}
+pre{position:relative}
+pre>button.copy{position:absolute;top:8px;right:8px;padding:5px 9px;cursor:pointer;
+  font:600 .68rem/1 ui-monospace,SFMono-Regular,Consolas,monospace;letter-spacing:.03em;
+  color:#636c76;background:#fff;border:1px solid #d0d7de;border-radius:6px;
+  opacity:0;transition:opacity .12s}
+pre:hover>button.copy,pre>button.copy:focus{opacity:1}
+pre>button.copy.done{color:#0a3622;background:#dafbe1;border-color:#4ac26b}
+@media(hover:none){pre>button.copy{opacity:1}}
+td code.cp{cursor:pointer}
+td code.cp:hover,td code.cp:focus{outline:1px solid #8c959f;outline-offset:1px}
+td code.cp.done{color:#0a3622;background:#dafbe1}
+.docnav{margin:0 0 20px;font-size:.85rem;color:#636c76}
+.docnav a{color:#636c76}
+ul{padding-left:1.4em}ol{padding-left:1.4em}
+img{max-width:100%;height:auto;border:1px solid #d0d7de;border-radius:6px;vertical-align:top}
+a img{cursor:zoom-in}
+figure.clip{margin:1em 0}
+video{display:block;width:100%;height:auto;border:1px solid #d0d7de;border-radius:6px;background:#111}
+tr:has(:target) td{background:#fff8c5!important}
+h2>input.lab,h3>input.lab{width:1em;height:1em;margin:0 .45em 0 0;vertical-align:-.08em;cursor:pointer;accent-color:#1a7f37}
+h2.labdone,h3.labdone,a.labdone{color:#1a7f37}
+a.labdone::after{content:" \2713";font-weight:700}
+.labbadge{position:fixed;right:14px;bottom:14px;z-index:5;background:#fff;border:1px solid #d0d7de;border-radius:999px;
+  padding:6px 12px;font-size:.8rem;color:#3d444d;box-shadow:0 2px 8px rgba(0,0,0,.08)}
+@media(max-width:640px){.card{padding:24px 18px}.wrap{padding:16px 10px 64px}}
+@media print{body{background:#fff;color:#000}.wrap{max-width:none;padding:0}.card{border:0;padding:0}
+ pre>button.copy,.labbadge,.docnav,input.lab{display:none}a{color:inherit}
+ pre,table,blockquote,img,figure{break-inside:avoid}h1,h2,h3{break-after:avoid}}
+@media(prefers-color-scheme:dark){
+ body{background:#0d1117;color:#e6edf3}
+ .card{background:#161b22;border-color:#30363d}
+ h1{border-color:#30363d}h2{border-color:#21262d}
+ code{background:#262c34}
+ pre{background:#0d1117;border-color:#30363d}
+ blockquote{background:#161b22;border-color:#30363d;color:#9198a1}
+ th,td{border-color:#30363d}th{background:#161b22}tr:nth-child(2n) td{background:#12171e}
+ a{color:#4493f8}.docnav,.docnav a{color:#9198a1}
+ hr{border-color:#30363d}
+ pre>button.copy{color:#9198a1;background:#161b22;border-color:#30363d}
+ pre>button.copy.done{color:#aff5b4;background:#1b4721;border-color:#2ea043}
+ td code.cp.done{color:#aff5b4;background:#1b4721}
+ tr:has(:target) td{background:#3b2f00!important}
+ h2.labdone,h3.labdone,a.labdone{color:#3fb950}
+ .labbadge{background:#161b22;border-color:#30363d;color:#9198a1}
+ video{border-color:#30363d}
+}
+</style></head>
+<body><div class="wrap"><div class="card">
+<h1 id="telemetry-what-we-emit-and-how-to-use-it">Telemetry — what we emit and how to use it</h1>
+<p><em>A reference for developers and operators: which OpenTelemetry (OTel) traces and metrics the CBS emits, where the code lives, how to switch it on for each deployment shape, and how to read the output. New to observability? Start with the <a href="observability-primer.html">primer</a>. It explains logs, metrics and traces, OTLP, and the Grafana stack.</em></p>
+<hr />
+<h2 id="1-at-a-glance">1. At a glance</h2>
+<table>
+<thead>
+<tr>
+<th>Signal</th>
+<th>Status</th>
+<th>Source</th>
+<th>Export</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Traces</strong></td>
+<td>✅ Built</td>
+<td>ASP.NET Core requests, HttpClient calls, TflOmniDb DB commands</td>
+<td>OTLP (gRPC)</td>
+</tr>
+<tr>
+<td><strong>Metrics</strong></td>
+<td>✅ Built</td>
+<td>ASP.NET Core + HttpClient RED metrics, .NET runtime</td>
+<td>OTLP (gRPC)</td>
+</tr>
+<tr>
+<td><strong>Logs</strong></td>
+<td>⚠️ Local only</td>
+<td>TflOmniLog → Serilog (file / console)</td>
+<td><strong>Not</strong> exported over OTLP yet</td>
+</tr>
+<tr>
+<td>Custom business metrics</td>
+<td>❌ None</td>
+<td>—</td>
+<td>—</td>
+</tr>
+</tbody>
+</table>
+<p>Key properties:</p>
+<ul>
+<li><strong>Off by default.</strong> Nothing is registered unless <code>Observability:Enabled=true</code>, so a host that hasn't opted in doesn't pay for it. Only the Docker compose files turn it on.</li>
+<li><strong>Fails soft.</strong> The OTLP exporter retries in the background and never throws into the request path. If the collector is down, you just get no telemetry; requests still work.</li>
+<li><strong>One trace across the farm.</strong> The gateway creates the root span and passes the W3C <code>traceparent</code> header on, so a request appears as a single <code>gateway → host → DB</code> tree.</li>
+<li><strong>Same on all three database providers.</strong> Database spans come from the DAL's single execution point, so SQL Server, Oracle and PostgreSQL all get them.</li>
+</ul>
+<hr />
+<h2 id="2-where-it-lives">2. Where it lives</h2>
+<table>
+<thead>
+<tr>
+<th>Piece</th>
+<th>File</th>
+<th>What it does</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Host registration</td>
+<td><a href="../../TflCbs.Framework/DependencyInjection/CbsObservabilityExtensions.cs"><code>TflCbs.Framework/DependencyInjection/CbsObservabilityExtensions.cs</code></a></td>
+<td><code>AddCbsObservability(configuration)</code> — one call wires tracing + metrics + OTLP export</td>
+</tr>
+<tr>
+<td>Options</td>
+<td><a href="../../TflCbs.Framework/Infrastructure/ObservabilityOptions.cs"><code>TflCbs.Framework/Infrastructure/ObservabilityOptions.cs</code></a></td>
+<td>Reads the <code>Observability</code> config section over defaults</td>
+</tr>
+<tr>
+<td>DB spans</td>
+<td><a href="../../libs/TflOmniDb/TflOmniDb/Repository/CommandLogger.cs"><code>libs/TflOmniDb/TflOmniDb/Repository/CommandLogger.cs</code></a></td>
+<td><code>ActivitySource</code> named <code>TflOmniDb</code> (<code>CommandLogging.ActivitySourceName</code>); one <code>db.execute</code> span per command</td>
+</tr>
+<tr>
+<td>Gateway</td>
+<td><a href="../../TflCbs.Gateway/Program.cs"><code>TflCbs.Gateway/Program.cs</code></a></td>
+<td>Its own inline OTel setup (the gateway doesn't reference Framework); same config keys</td>
+</tr>
+<tr>
+<td>Callers</td>
+<td><code>Program.cs</code> of <code>TflCbs.Host.Main</code> and every thin host (Hr, Lockers, RetailBanking, Administration, Inventory)</td>
+<td><code>builder.Services.AddCbsObservability(builder.Configuration);</code></td>
+</tr>
+<tr>
+<td>Dev backend</td>
+<td><a href="../../compose.observability.yaml"><code>compose.observability.yaml</code></a></td>
+<td>One <code>grafana/otel-lgtm</code> container: collector + Tempo + Prometheus + Grafana</td>
+</tr>
+<tr>
+<td>Packages</td>
+<td><a href="../../Directory.Packages.props"><code>Directory.Packages.props</code></a></td>
+<td><code>OpenTelemetry.*</code> 1.17.0 (Extensions.Hosting, Exporter.OpenTelemetryProtocol, Instrumentation.AspNetCore/Http/Runtime)</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="3-what-gets-emitted">3. What gets emitted</h2>
+<h3 id="traces">Traces</h3>
+<table>
+<thead>
+<tr>
+<th>Span</th>
+<th>Comes from</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Incoming request</td>
+<td>ASP.NET Core instrumentation</td>
+<td>Recorded on gateway and hosts; <code>RecordException = true</code>, so an unhandled exception is attached to its span</td>
+</tr>
+<tr>
+<td>Outgoing HTTP</td>
+<td>HttpClient instrumentation</td>
+<td>On the gateway this is the YARP proxy hop, which also injects <code>traceparent</code></td>
+</tr>
+<tr>
+<td><code>db.execute</code> (kind <em>Client</em>)</td>
+<td>TflOmniDb <code>CommandLogger.ExecuteAsync</code></td>
+<td>Times the actual command round-trip; nests under the request span; set to status <em>Error</em> if the command throws</td>
+</tr>
+</tbody>
+</table>
+<p>Tags on <code>db.execute</code>:</p>
+<table>
+<thead>
+<tr>
+<th>Tag</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>db.system</code></td>
+<td><code>mssql</code> / <code>oracle</code> / <code>postgresql</code> / <code>other</code></td>
+</tr>
+<tr>
+<td><code>db.statement</code></td>
+<td>The <strong>parameterized</strong> SQL text (the same text the command log already writes)</td>
+</tr>
+<tr>
+<td><code>db.operation</code></td>
+<td>First SQL keyword, uppercased (<code>SELECT</code>, <code>INSERT</code>, …)</td>
+</tr>
+<tr>
+<td><code>tfl.command.seq</code></td>
+<td>The DAL's per-command sequence number (the same one that appears in the SQL debug log)</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Parameter values never reach a span.</strong> Values travel in <code>DbParameter</code>s, not in the SQL text. Masking rules for the log still apply there; spans just don't carry values at all.</p>
+<p><strong>Sampling</strong> is parent-based over a trace-ID ratio (<code>SamplingRatio</code>). A child span follows its parent's decision, so the gateway's choice applies all the way down and no trace is kept half-sampled.</p>
+<h3 id="metrics">Metrics</h3>
+<ul>
+<li><strong>ASP.NET Core:</strong> request rate, error rate, duration (the RED metrics), per route.</li>
+<li><strong>HttpClient:</strong> the same metrics for outgoing calls, including the gateway → host hop.</li>
+<li><strong>Runtime:</strong> GC, heap, thread pool, exceptions.</li>
+</ul>
+<p>Resource attributes on every signal:
+- <code>service.name</code> = <code>Observability:ServiceName</code>
+- <code>service.instance.id</code> = <code>Observability:HostName</code></p>
+<hr />
+<h2 id="4-configuration">4. Configuration</h2>
+<p>The <code>Observability</code> section. Defaults are in <code>ObservabilityOptions</code>, and a blank value keeps the default.</p>
+<table>
+<thead>
+<tr>
+<th>Key</th>
+<th>Default</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>Enabled</code></td>
+<td><code>false</code></td>
+<td>Master switch. <code>false</code> or absent registers nothing.</td>
+</tr>
+<tr>
+<td><code>ServiceName</code></td>
+<td><code>trustbank-cbs</code> (gateway: <code>cbs-gateway</code>)</td>
+<td>OTel <code>service.name</code> — separates services in Grafana</td>
+</tr>
+<tr>
+<td><code>HostName</code></td>
+<td>machine name</td>
+<td>OTel <code>service.instance.id</code>; also the <code>Host</code> dimension on request logs</td>
+</tr>
+<tr>
+<td><code>SamplingRatio</code></td>
+<td><code>1.0</code></td>
+<td>Head sampling, from 0.0 to 1.0 (values outside are clamped). <code>1.0</code> suits dev.</td>
+</tr>
+<tr>
+<td><code>Otlp:Endpoint</code></td>
+<td><code>http://localhost:4317</code></td>
+<td>Collector endpoint (OTLP gRPC)</td>
+</tr>
+</tbody>
+</table>
+<p>As environment variables (for compose, IIS <code>web.config</code> or a shell), use a double underscore: <code>Observability__Enabled=true</code>, <code>Observability__Otlp__Endpoint=http://…:4317</code>.</p>
+<p>What each file sets:
+- <code>TflCbs.Host.Main/appsettings.json</code> sets <code>Enabled: false</code> explicitly, so a local <code>dotnet run</code> emits nothing.
+- Each thin host's <code>appsettings.json</code> sets only <code>HostName</code> (<code>hr-host</code>, <code>lockers-host</code>, …).</p>
+<hr />
+<h2 id="5-how-to-turn-it-on">5. How to turn it on</h2>
+<p>Start the backend first (every shape except the combined compose command below needs it running):</p>
+<pre><code class="language-bash">docker compose -f compose.observability.yaml up -d     # Grafana → http://localhost:3000
+</code></pre>
+<h3 id="local-dotnet-run">Local <code>dotnet run</code></h3>
+<pre><code class="language-powershell">$env:Observability__Enabled = &quot;true&quot;
+dotnet run --project TflCbs.Host.Main
+</code></pre>
+<p>The default endpoint <code>http://localhost:4317</code> already points at the container's published port.</p>
+<h3 id="docker-single-host-multi-host">Docker single host / multi-host</h3>
+<p>Telemetry is <strong>on by default</strong> in both compose files. Bring the app and the backend up together:</p>
+<pre><code class="language-bash">docker compose -f compose.yaml       -f compose.observability.yaml up -d
+docker compose -f compose.multi.yaml -f compose.observability.yaml up -d
+</code></pre>
+<ul>
+<li>The app reaches the collector by service name (<code>http://otel-lgtm:4317</code>).</li>
+<li>In multi-host, each service gets its own name: <code>cbs-gateway</code>, <code>cbs-default</code>, <code>cbs-hr</code>, <code>cbs-lockers</code>, <code>cbs-retail</code>, <code>cbs-admin</code>, <code>cbs-inventory</code>.</li>
+<li>To run without the backend, set <code>OBSERVABILITY_ENABLED=false</code>, which silences the exporter.</li>
+</ul>
+<h3 id="iis-single-or-farm">IIS (single or farm)</h3>
+<p>Add the variables to each site's <code>web.config</code> <code>&lt;environmentVariables&gt;</code>, gateway included:</p>
+<pre><code class="language-xml">&lt;environmentVariable name=&quot;Observability__Enabled&quot; value=&quot;true&quot; /&gt;
+&lt;environmentVariable name=&quot;Observability__Otlp__Endpoint&quot; value=&quot;http://localhost:4317&quot; /&gt;
+&lt;environmentVariable name=&quot;Observability__ServiceName&quot; value=&quot;cbs-hr&quot; /&gt;
+</code></pre>
+<blockquote>
+<p><strong>Watch out:</strong> <code>dotnet publish</code> / <code>deploy-cbs-iis.ps1</code> regenerate <code>web.config</code> and <strong>wipe</strong> these, just as they wipe the connection string. Re-add them after every redeploy. The deploy script does not set them today.</p>
+</blockquote>
+<hr />
+<h2 id="6-reading-it-in-grafana">6. Reading it in Grafana</h2>
+<p>Open <code>http://localhost:3000</code> (dev: anonymous admin).</p>
+<ul>
+<li><strong>One request's journey:</strong> Explore → <strong>Tempo</strong> → search by service name (or trace ID). The tree shows gateway → host → each <code>db.execute</code>, with a duration bar on each span; the slow step is the long bar. Open a DB span to see its <code>db.statement</code>.</li>
+<li><strong>RED / runtime charts:</strong> Explore → <strong>Prometheus</strong>. Examples:</li>
+<li><code>http_server_request_duration_seconds</code> (histogram: rate, errors via <code>http_response_status_code</code>, p95)</li>
+<li><code>http_client_request_duration_seconds</code></li>
+<li><code>dotnet_*</code> runtime series (GC, thread pool, exceptions)</li>
+<li><strong>Logs → trace:</strong> each log line's correlation ID is the ambient <code>Activity.Current.Id</code>, the W3C ID that contains the trace ID. The <code>Result.Reference</code> shown to users in error messages is the same value. Copy the trace ID from a log line or error message and look it up in Tempo.</li>
+</ul>
+<p>Telemetry in the dev container is <strong>ephemeral</strong>: a restart starts from empty. To keep it, mount a volume at <code>/data</code> (commented out in the compose file).</p>
+<hr />
+<h2 id="7-extending-it">7. Extending it</h2>
+<ul>
+<li><strong>A new host:</strong> call <code>builder.Services.AddCbsObservability(builder.Configuration);</code> in <code>Program.cs</code> and give it its own <code>Observability:HostName</code>. Nothing else is needed.</li>
+<li><strong>Custom spans:</strong> create an <code>ActivitySource</code> in the module and start activities from it. <code>AddCbsObservability</code> only subscribes to the sources it names (ASP.NET Core, HttpClient, <code>TflOmniDb</code>), so the new source name must also be added with <code>.AddSource(...)</code> there.</li>
+<li><strong>Custom metrics:</strong> the same pattern with <code>System.Diagnostics.Metrics.Meter</code>, plus <code>.AddMeter(...)</code> in <code>AddCbsObservability</code>. No module has one yet.</li>
+<li><strong>Module assemblies stay OTel-free.</strong> <code>System.Diagnostics</code> is part of the BCL, so a module can emit through <code>ActivitySource</code> / <code>Meter</code> without referencing any OpenTelemetry package. Only the Framework registration knows about OTLP.</li>
+</ul>
+<hr />
+<h2 id="8-not-built-yet">8. Not built yet</h2>
+<p>Tracked in <a href="../../BACKLOG.html">BACKLOG.md</a> (Broader feature backlog):</p>
+<ul>
+<li><strong>Log export.</strong> Logs stay in local files per node. Shipping them to Loki (or another OTLP log sink) would let you jump from a log line straight to its trace in Grafana.</li>
+<li><strong>Production back-end.</strong> Today there's only the single dev container.</li>
+<li><strong>Dashboards and alerting.</strong> No curated dashboards or SLO alerts yet.</li>
+<li><strong>Business metrics.</strong> No custom metrics yet (logins, maker-checker queue depth, posting throughput).</li>
+<li><strong>Production <code>SamplingRatio</code>.</strong> No value chosen yet.</li>
+<li><strong>Correlation across browser redirects.</strong> Browsers don't forward <code>traceparent</code> across redirects, so a cross-host user journey shows up as separate traces. Join them through the request log's <code>UserId</code> / <code>SessionId</code> instead (see <code>RequestLoggingMiddleware</code>).</li>
+</ul>
+</div></div>
+<script>
+(function(){
+ function put(t){
+  if(navigator.clipboard&&navigator.clipboard.writeText)return navigator.clipboard.writeText(t);
+  return new Promise(function(res,rej){
+   var a=document.createElement('textarea');a.value=t;a.setAttribute('readonly','');
+   a.style.cssText='position:fixed;top:0;left:0;opacity:0';document.body.appendChild(a);
+   a.select();var ok=false;try{ok=document.execCommand('copy')}catch(e){}
+   document.body.removeChild(a);ok?res():rej()});
+ }
+ function flash(el,txt,ms){
+  var was=el.textContent;el.classList.add('done');if(txt)el.textContent=txt;
+  setTimeout(function(){el.classList.remove('done');if(txt)el.textContent=was},ms||1200);
+ }
+ function copy(text,el,okTxt){
+  put(text).then(function(){flash(el,okTxt)},function(){
+   if(okTxt){var w=el.textContent;el.textContent='Ctrl+C';setTimeout(function(){el.textContent=w},2000)}});
+ }
+ document.querySelectorAll('pre').forEach(function(pre){
+  if(pre.classList.contains('txtdoc'))return;
+  var b=document.createElement('button');
+  b.type='button';b.className='copy';b.textContent='Copy';
+  b.setAttribute('aria-label','Copy this code block to the clipboard');
+  b.addEventListener('click',function(){copy((pre.querySelector('code')||pre).innerText,b,'Copied')});
+  pre.appendChild(b);
+ });
+ document.querySelectorAll('td code').forEach(function(c){
+  if(!c.textContent.trim())return;
+  c.classList.add('cp');c.tabIndex=0;c.setAttribute('role','button');
+  c.title='Click to copy';
+  c.addEventListener('click',function(){copy(c.textContent,c)});
+  c.addEventListener('keydown',function(e){
+   if(e.key==='Enter'||e.key===' '){e.preventDefault();copy(c.textContent,c)}});
+ });
+ // Lab tick-boxes: any heading whose id starts "lab-" gets a checkbox, remembered in this
+ // browser only. Storage can be missing (private window, blocked site data) - the page
+ // still works, the ticks just do not persist.
+ function sget(k){try{return localStorage.getItem(k)}catch(e){return null}}
+ function sset(k,on){try{on?localStorage.setItem(k,'1'):localStorage.removeItem(k)}catch(e){}}
+ var labs=[].slice.call(document.querySelectorAll('h2[id^="lab-"],h3[id^="lab-"]'));
+ if(labs.length){
+  var badge=document.createElement('div');badge.className='labbadge';document.body.appendChild(badge);
+  var count=function(){badge.textContent='Labs done: '+labs.filter(function(h){return sget('labdone:'+h.id)}).length+' of '+labs.length};
+  labs.forEach(function(h){
+   var cb=document.createElement('input');cb.type='checkbox';cb.className='lab';
+   cb.title='Tick when you have finished this lab (remembered in this browser)';cb.setAttribute('aria-label','Lab done');
+   cb.checked=!!sget('labdone:'+h.id);h.classList.toggle('labdone',cb.checked);
+   cb.addEventListener('change',function(){sset('labdone:'+h.id,cb.checked);h.classList.toggle('labdone',cb.checked);count()});
+   h.insertBefore(cb,h.firstChild);
+  });
+  count();
+ }
+ document.querySelectorAll('li>a[href*="#lab-"]').forEach(function(a){
+  if(sget('labdone:'+a.getAttribute('href').split('#')[1]))a.classList.add('labdone')});
+})();
+</script>
+</body></html>

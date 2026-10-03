@@ -53,6 +53,13 @@ Do not open a review until all of these are green. A reviewer's time is the scar
       not surfaced as a raw provider error.
 - [ ] Registered with one `AddScoped` line in that assembly's `<Domain>Module.AddServices` — **not** in
       `Program.cs`.
+- [ ] Any **new or changed column** uses the portable types: a flag is `INT` holding 0/1 (never
+      `BIT`), a GUID is `CHAR(36)` holding the **uppercase** hyphenated form (never
+      `UNIQUEIDENTIFIER`), on all three providers. Oracle's provider cannot bind a CLR `bool` or
+      `Guid`, and the read path coerces — so a wrong type here passes every read test and fails
+      only on write, on Oracle. Compare `== 1`; write
+      `Guid.NewGuid().ToString().ToUpperInvariant()`. See
+      [know-your-code.md §2](../know-your-code.md#2-portable-column-types--the-two-banned-sql-server-types).
 
 ## 4. Controller
 
@@ -117,6 +124,7 @@ These are cheap to spot and expensive to leave in. A reviewer stops at the first
 | A new screen whose `a_Menus.NavigateURL` still holds `~/x.aspx` | Nobody can reach it |
 | A field on the legacy screen that quietly vanished | The single most common parity defect |
 | A new NuGet package for something already solved here | Ask before adding a dependency |
+| A `BIT` or `UNIQUEIDENTIFIER` column, or a `bool`/`Guid` written to the database | Oracle cannot bind either; reads coerce, writes fail. `INT` 0/1 and `CHAR(36)` uppercase |
 
 ---
 

@@ -1,50 +1,52 @@
 # TrustBank CBS — Architecture Discussion Brief
 
-**Internal briefing note · 21 August 2026 · For a management review of the .NET 10 migration**
+**Internal briefing note · 3 October 2026 · For a management review of the .NET 10 migration**
 
-*One page of "where we are", one of "what's open", and the decisions we need. Detail lives in the reference documents listed at the end.*
+*One page of "where we are", one of "what's open", and the decisions we need. Detail lives in the reference documents listed at the end. Previous edition: 21 August 2026. Section 2 lists what has changed since then.*
 
 ---
 
 ## 1. The position in five lines
 
-- We are migrating TrustBank CBS from **ASP.NET WebForms / VB.NET / .NET 4.8** to **.NET 10 / C# ASP.NET Core MVC**, using a **strangler-fig** approach — legacy keeps running, screens cut over one at a time.
-- The **reusable foundation is finished and proven**: framework, security, session, multi-database data layer, UI component toolkit, and a repeatable per-screen recipe. This is typically 15–20% of a programme of this size and it is behind us.
-- The target architecture — a **modular monolith** — is not a plan, it is **built**. As of **29 July 2026 all 8 business domains are their own assemblies** and the old shared service project was dissolved.
-- The platform runs today in **four deployment shapes** (IIS single, IIS multi-host behind a gateway, Docker single, Docker multi-host) from **one codebase**, and on **three databases** (SQL Server, Oracle, PostgreSQL).
-- An independent pre-production review scored the solution **62/100** in July; remediation has moved it to **~77**. **Two gate items remain**, and one of them — no source control or CI — is the single biggest thing to fix, and it now also gates the value of **four test suites — 380 automated tests** — that nothing runs automatically.
+- We are migrating TrustBank CBS from **ASP.NET WebForms / VB.NET / .NET 4.8** to **.NET 10 / C# ASP.NET Core MVC** with a **strangler-fig** approach: legacy keeps running and screens cut over one at a time.
+- **The migration now targets the xnet codebase** (the Africa/international fork) rather than the India codebase. This was decided in early September. The xnet database was adapted to the code that had already been migrated, so the target was replaced rather than added as a second one. xnet is about **half the size** in screens (692 vs 1,458), so **the June effort estimate is out of date and has to be re-based** (§5).
+- **The reusable foundation and the modular-monolith architecture are built.** There are **13 business modules**, each in its own assembly, with boundaries enforced by the build. The platform runs in **four deployment shapes** from one codebase.
+- **The first real xnet screens are live against the xnet database.** They include two maker-checker money screens and the first two Crystal reports. Each was checked **row for row against the legacy stored procedures it replaces**, on **both SQL Server and Oracle**.
+- **The biggest open item is still the process, not the design.** Git has been initialised but **nothing is committed yet and there is no CI pipeline**. Until that changes, **~1,150 automated tests** run only when someone remembers to run them.
 
 ---
 
-## 2. What is built
+## 2. What changed since 21 August
 
-**36 projects** in the build solution, in four clean tiers.
-
-| Tier | Projects | What it gives us |
-|---|---|---|
-| **Foundation** | `TflCbs.Abstractions`, `TflCbs.Framework` | `Result<T>` contract, module contract, the four framework ports, security guard, session, tokens, search infrastructure. Framework references *only* Abstractions — never a business service or a screen. |
-| **Business modules (8/8 promoted)** | Core, always on: `General`, `Reference`, `Core.Authentication` · Domains: `Accounts`, `Administration`, `Clearing`, `HR`, `Lockers`, `RetailBanking` | Each domain is independently owned, separately buildable, and can be switched on or off by configuration. |
-| **Screens** | 5 domain web libraries (`*.Web`) + 2 core (auth, shell) + `TflCbs.Web.Shared` | Screens ship as Razor Class Libraries, so a host composes exactly the screens it needs. |
-| **Hosts & infrastructure** | `TflCbs.Host.Main` (full host), YARP `Gateway`, 4 thin per-module hosts · `TflCbs.Entities`, `TflOmniDb`, `TflOmniLog`, `TflSecurityCrypto` · `DbMigrator` | Same code, many footprints. In-house entity, data-access, logging and crypto libraries — no niche third-party dependencies. Schema changes are versioned and journalled by a migration runner. |
-
-**Delivered functionality so far:** 12 domain screens across 5 areas, plus login/logout, module chooser, menu, home and error handling — 47 views. These are the pilot screens the delivery estimate is calibrated on, not throwaway demos: they run against the real database.
-
-**Two things changed in August that are worth a line each.** The two in-house libraries (`TflOmniDb`, `TflSecurityCrypto`) were **vendored into the repository**, so the solution is now self-contained — previously a fresh copy could not be built unless an unrelated archive folder happened to sit at the right relative path, which is exactly the kind of thing that fails on the first day of a new team member or a new build agent. And the shared configuration files that are security controls (log masking) or operational controls (route cut-over) were moved out of the default host into a solution-level `config/` folder linked by all five hosts, so they cannot drift apart between hosts.
+| Area | Change |
+|---|---|
+| **Target codebase** | Re-based on **xnet**. Entities were regenerated from the xnet database (3,272 tables), and the menu now reads xnet's own menu map. Dev databases: SQL Server `Trustbank_XNETT_ORCL` and Oracle `XNETTN`. |
+| **Business modules** | **8 → 13.** Five xnet domains that had no code before were added as boundaries: Inventory, Trade Finance, Internet Banking, Reconciliation and Loan Origination. One of them (Inventory) also got its own thin host, to prove the slices really are isolated. The Clearing module was deleted because nothing called it. |
+| **Screens** | A batch of **13 xnet menu entries** was delivered: Holding Amount (4 screens, two maker-checker cycles), Direct Credit, Dormant Re-Activation, Signature Upload, Denominations, Denomination Unit and User Creation. The **14 earlier pilot screens** that are not on the xnet path were **parked**: taken out of the build, kept whole, and to be restored when each is reviewed. |
+| **Reports** | **Phase 1 complete.** Crystal Reports stays, but runs **out of process** in a small render-only .NET 4.8 viewer app, with a signed, single-use handoff from CBS. Two reports are live (Account Opened, Chart of Account List). Measured with 100,000 rows: about 1 s to hand off and 0.7 s to the first page. All 871 legacy layouts load in the target Crystal runtime. |
+| **Multi-database** | **Oracle joined the automated test matrix.** It immediately exposed two classes of defect that SQL Server had hidden: Oracle cannot bind a .NET `bool` or `Guid`. **Writes to those columns had never worked on Oracle.** Both are fixed with portable column types (INT 0/1 flags, CHAR(36) GUIDs), recorded as standing rules, and checked at screen review. |
+| **Legacy parity** | Every batch-7 screen now has a **parity test** that runs the legacy stored procedure and the new C# side by side and compares them row for row. These tests caught real mismatches before users did, for example the branch scoping on three screens. The one rewritten report query runs in **1.2 s, where the proc took 46 s**. |
+| **Security & login** | The **MFA stack** (OTP / Active Directory / QR) was rewritten in .NET 10; the vendor's .NET 3.5 assemblies are gone. Password transport moved from RC4 to RSA-OAEP. Session idle policy was fixed: a cookie had made the effective idle timeout **8 hours** instead of 25 minutes. |
+| **Solution** | **56 projects** (was 36). The increase comes from the five new domain modules and their screen libraries, plus the nine MFA projects brought into the solution. |
 
 ---
 
 ## 3. The architectural decisions, and why they were made
 
-**Modular monolith — one process, one database, hard internal boundaries.**
+**Modular monolith: one process, one database, hard internal boundaries.**
 
-This is the deliberate middle path between the legacy monolith and microservices, and for a core banking system it is the defensible choice:
+This is the deliberate middle path between the legacy monolith and microservices. For a core banking system it is the defensible choice:
 
-- **Money movement needs transactions.** One database gives us real ACID guarantees across a posting. A distributed design would trade that for eventual consistency and a class of failure modes we would then have to engineer around — for no benefit at our volumes.
-- **Operationally simple today.** One application to deploy, monitor and back up.
-- **But the boundaries are real.** Modules talk to each other only through published contracts, and **94 automated architecture tests fail the build** if anyone crosses a line. This is the crucial difference from a conventional monolith: the design cannot silently erode as the team grows. The suite also guards *itself*: a meta-check verifies that each boundary rule is still genuinely capable of failing, so a rule cannot quietly turn green by becoming impossible to violate.
-- **Scale-out is available without a rewrite.** Because the boundaries are enforced, we already run individual modules as separate hosts behind a gateway. That capability is built and demonstrated — we simply do not need it yet.
+- **Money movement needs transactions.** One database gives real ACID guarantees across a posting. A distributed design would trade that for eventual consistency, plus a class of failure modes we would then have to engineer around. At our volumes there is nothing to gain.
+- **It is simple to operate today.** There is one application to deploy, monitor and back up.
+- **The boundaries are real.** Modules talk to each other only through published contracts, and **152 automated architecture checks fail the build** if anyone crosses a line. That is what separates this from a conventional monolith: the design cannot quietly erode as the team grows. A meta-check also confirms that each boundary rule can still fail, so a rule cannot pass simply because it has become impossible to break.
+- **Scale-out is available without a rewrite.** Because the boundaries are enforced, individual modules already run as separate hosts behind a gateway. That capability is built and demonstrated. We do not need it yet.
 
-**Second decision: horizontal framework/screen split.** Reusable plumbing lives in one assembly that has no knowledge of any screen. That is what makes the per-screen migration recipe fast and repeatable, and it is likewise arch-tested.
+**The xnet move proved the architecture.** Swapping the entire legacy target was absorbed mainly by **adapting the database to the code**. The code itself changed only where the schema could not be bent: menu authorisation and one renamed rights table. Five new domain modules were added without touching any existing module.
+
+**Second decision: the horizontal split between framework and screens.** Reusable plumbing lives in one assembly that knows nothing about any screen. That is what keeps the per-screen recipe fast and repeatable, and it is arch-tested too.
+
+**Third decision (new): reports stay on Crystal, kept out of process.** CBS sends the data and the viewer only renders it. Moving all reports to a new engine is estimated at 900–1,250 person-days, so we move only a report that is being changed anyway (§7).
 
 ---
 
@@ -52,70 +54,80 @@ This is the deliberate middle path between the legacy monolith and microservices
 
 | Claim | Evidence |
 |---|---|
-| Boundaries hold | **94 architecture tests**, run on every build |
-| Business logic works on all three databases | **149 cross-provider service tests** |
-| The whole stack works end to end | **74 in-process integration tests** do a full authenticated round trip against the real pipeline — login, 22 module tiles, live menu, real search results from the database |
-| The browser sees what we think it sees | **63 Playwright end-to-end tests** across 10 specs — the strict content-security policy actually enforced, session/cookie behaviour, and every reusable component driven for real |
-| Access control is fail-closed | Central guard on every request + a startup assertion that it cannot be ordered away, both pinned by tests |
-| No SQL injection surface | All access parameterized; new master CRUD is forbidden raw SQL by standing rule |
-| Rewrites are no slower than the procs they replace | Dated performance reports comparing migrated C# against the original T-SQL, on both SQL Server and Oracle |
-| The migration recipe is real | Documented step-by-step tutorial plus a written definition-of-done; a new developer builds a full CRUD screen from it |
+| Boundaries hold | **152 architecture checks**, run on every build |
+| Business logic works on SQL Server **and Oracle** | **618 cross-provider service test cases** run against both databases, including full create/update/delete round trips on every batch-7 screen |
+| New code matches legacy behaviour | **Parity tests** compare our C# with the legacy stored procedure row for row: menu, holding amount, direct credit, dormant re-activation, signature, denominations and both reports |
+| The whole stack works end to end | **244 in-process integration tests**: login, access guard, antiforgery, every batch-7 screen's form fields, row-token replay and tamper refusal, and the report handoff |
+| The browser sees what we think it sees | **~100 Playwright browser tests**: strict content-security policy, session and idle timeout, and every reusable component. They found and fixed a date-picker defect that posted the 1st of the month whatever day was picked. |
+| Access control is fail-closed | A central guard runs on every request, with a startup assertion that it cannot be ordered away. Both are pinned by tests. |
+| No SQL injection surface | All data access is parameterised; raw SQL in new master CRUD is forbidden by a standing rule |
+| Rewrites are not slower than legacy | Dated performance reports compare C# with T-SQL on both engines. The rewritten report query runs in 1.2 s; the proc took 46 s. |
 
 ---
 
-## 5. Scope and effort — the commercial picture
+## 5. Scope and effort: the commercial picture
 
-From an automated scan of the legacy codebase plus measured velocity on the delivered pilot screens (ROM, ±40%, prepared 17 June 2026):
+**The June estimate was built on the India codebase and no longer describes the target.** Measured scope for each:
 
-| | |
-|---|---|
-| **Legacy scope counted** | 1,458 ASPX screens (1,059 functional + 399 reports) · 5,317 stored procedures · 1,497 VB code-behind files |
-| **Likely effort** | ~10,550 person-days (~48 person-years) |
-| **Indicative timeline** | ~2.5–3 years with a team of ~20 |
-| **Range** | Optimistic ~7,400 pd · Likely ~10,550 pd · Pessimistic ~14,800 pd |
+| | India (June estimate basis) | **xnet (current target)** |
+|---|---:|---:|
+| Screens (`.aspx` + `.ascx`) | 1,458 | **692** |
+| — functional | 1,059 | **640** |
+| — report screens | 399 | **52** (fronting **871** Crystal layouts) |
+| Distinct stored procedures | 5,317 | **2,155** |
+| Lines of markup + code-behind | — | **1.37 million** |
 
-**The three biggest levers on that number:** whether reports are rebuilt or rehosted (±500–700 pd), whether we commit to one database or keep all three (±120–150 pd), and how much senior attention the high-risk engine procedures (interest, GL, day-end, clearing) need.
+The June figure was **~10,550 person-days (±40%), ~2.5–3 years with ~20 people**. **It should not be quoted for xnet.** The screen count roughly halves, but xnet adds international scope (SWIFT, PAPSS, Treasury) that has not been sized. A re-estimate on the xnet inventory is the first deliverable of the discovery phase (§7).
+
+**The three biggest levers on the new number:** the report engine (a full move costs an extra 900–1,250 pd; keeping Crystal avoids most of it), whether we keep all three databases, and the **posting engine** (interest, GL, day-end, clearing), which is not built yet (§6).
 
 ---
 
-## 6. Open risks — what we would want to say before anyone asks
+## 6. Open risks: what we would want to say before anyone asks
 
 | # | Item | Status | Why it matters |
 |---|---|---|---|
-| **1** | **No source control or CI** | **Open — highest priority, unchanged since July** | The working tree is still not a git repository. Nothing is recoverable, nothing gates a bad change, and we have already kept dead code purely because we could not retrieve it later. Every other item on this list gets cheaper the moment this is fixed, because a fix can then be proven and kept. Cheap to do; it should not survive another sprint. |
-| **2** | Optimistic concurrency not rolled out | Partial | The pattern is built and DB-verified on one master. Until it is applied to the remaining write services, concurrent edits are last-writer-wins. |
-| **3** | Database credentials and certificates | Partial | Secrets are out of committed config, but the shared administrative login still needs rotating and replacing with a least-privilege account, and the self-signed certificate needs replacing for production. |
-| **4** | No infrastructure-as-code; observability instrumented but disabled by default | Deferred by decision | These are the "next band" items after the production gate, not blockers. **The controller and end-to-end test tiers that sat here in July are now done** — 74 in-process integration tests and 63 browser tests. |
+| **1** | **No source control history or CI** | **Open: highest priority** | Git is initialised and a team guide exists, but **there are zero commits** and no pipeline. Nothing is recoverable and nothing gates a bad change. The ~1,150 tests catch regressions only when someone runs them by hand. Every other item on this list gets cheaper once this is fixed. |
+| **2** | **Posting engine not built** | Deferred by decision | Screens that move money (Direct Credit, Dormant Re-Activation with a charge) save drafts and **refuse to authorise** with an explicit "posting not implemented" message, and the screen tells the user so. Nothing silently half-posts. This is the largest technical piece still ahead and gates most of Retail operations. |
+| **3** | Optimistic concurrency | **Regressed to none in the build** | The pattern is built in the data layer, but its only adopter (the State master) was among the parked screens. **Concurrent edits on every live screen are last-writer-wins** until it is rolled out. |
+| **4** | Production TLS, DB credentials | Open, ops-owned | Four VAPT reports flagged credentials sent over unencrypted or bare-IP HTTP. Every CBS origin must be `https://<real hostname>` with a trusted certificate; no code change can substitute for that. The shared admin DB login still needs replacing with a least-privilege account. |
+| **5** | MFA go-live gates | Built, not yet proven live | The rewritten AD path has not been tested against a real domain controller. QR-at-login needs the mobile app and device keypair, and currently runs on SQL Server only. |
+| **6** | Infrastructure as code; observability backend | Deferred by decision | App-side telemetry is built and switched off by default. The collector and dashboards are ops work for after the gate. |
 
-Items 1–3 are the remainder of a written eight-item gate plan; six are already complete, including the two Critical findings (an authentication bypass and reversible password storage — passwords are now PBKDF2, with all 1,731 user records migrated).
+The independent pre-production review scored the solution **62/100** in July and **~77** after remediation (last scored 31 July). It has not been re-scored since the xnet move. Of the two Critical findings, both are closed (the authentication bypass, and reversible password storage; passwords are now PBKDF2).
 
-**The honest summary:** the *structure* of this system is its strongest attribute and was rated as such independently. The remaining risk is almost entirely **process and operations**, not design.
+**The honest summary:** the *structure* is still the system's strongest attribute, and the xnet re-base tested it. The remaining risk is **process (items 1, 4) and one large unbuilt capability (item 2)**, not design.
 
 ---
 
 ## 7. What we would like decided
 
-1. **Authorize source control and a CI pipeline now.** Small effort, removes the largest single risk, and every subsequent fix then lands behind a test gate.
-2. **Settle the reports question** — rebuild or rehost. It is the biggest single swing in the estimate and it blocks a firm Phase-1 budget.
-3. **Settle the database target** — commit to one engine, or fund keeping all three. We support three today; that has an ongoing hardening cost.
-4. **Approve a 4–6 week discovery phase** to convert the ±40% ROM into a committed ±15% plan before any large build commitment. The foundation is ready, so the team can start migrating screens the day it ends.
+1. **Authorise the first commit and a CI pipeline now.** It is a small effort, it removes the largest single risk, and from then on every fix lands behind ~1,150 tests.
+2. **Approve a 4–6 week discovery phase on xnet** to turn the inventory into a committed ±15% plan. It replaces the India estimate and sizes the international scope.
+3. **Schedule the posting engine.** Decide when it starts and who owns it. Retail money screens can be built up to "draft" ahead of it, but cannot go live without it.
+4. **Confirm the report direction:** keep Crystal (out of process), and approve a 2-week trial of DevExpress (first choice) and Telerik on 3 real layouts before any engine move is funded.
+5. **Settle the database target:** commit to one engine, or fund keeping all three. SQL Server and Oracle are now both under test; PostgreSQL is supported by the data layer but has no xnet test database.
+6. **Name an owner for production TLS certificates and the least-privilege DB account.** This is not development work, and it is a VAPT finding.
 
 ---
 
-## Appendix — reference documents
+## Appendix: reference documents
 
-| Document | Audience | Formats |
-|---|---|---|
-| `architecture-overview.md` | The full engineering reference — every project, why it exists, and how a request flows end to end | md · html · txt · pdf · docx |
-| `architecture/TrustBank-CBS-Platform-Architecture` | Outward-facing; for an institution evaluating the platform | md · html · txt · pdf · docx |
-| `architecture-review/ARCHITECTURE-REVIEW` | The independent pre-production review, findings graded C/H/M | md · html · txt · pdf · docx |
-| `architecture-review/REMEDIATION-PLAN` | The eight-item gate plan; live status | md · html · txt · pdf · docx |
-| `architecture/modular-monolith.md` | Decision record — the vertical module split | md · html · txt · pdf · docx |
-| `architecture/reusable-boundary.md` | Decision record — the framework/screen split | md · html · txt · pdf · docx |
-| `migration-estimate/TrustBank-Migration-Estimate` | Commercial pack — report, deck and workbook | docx · pptx · xlsx |
-| `port-map.md` | Every host, port and deployment shape on one page | md · html |
-| `guides/day-one.md` · `guides/building-a-crud-screen.md` · `guides/screen-definition-of-done.md` | The onboarding path: first-day setup, the per-screen recipe, and the review gate | md · html |
+| Document | Audience |
+|---|---|
+| `architecture-overview.md` | Full engineering reference: every project, why it exists, how a request flows end to end |
+| `architecture/TrustBank-CBS-Platform-Architecture.md` | Outward-facing; for an institution evaluating the platform |
+| `architecture/Why-Modular-Monolith-Not-Microservices.md` · `architecture/Is-CBS-A-Multi-Tier-Application.md` | The two questions most often asked about the architecture, answered |
+| `architecture/diagrams/` | Layered architecture and feature board as `.svg` (pastes into PowerPoint/Word) + `.png` |
+| `architecture-review/ARCHITECTURE-REVIEW.md` · `REMEDIATION-PLAN.md` | The independent pre-production review and the gate plan |
+| `xnet-variant-impact-analysis.md` · `BACKLOG-xnet-variant.md` | What re-basing on xnet cost and changed |
+| `legacy-inventory/README.md` · `legacy-inventory/reports.md` | The xnet scope, counted: screens, procs and reports by module |
+| `screens-code-guide-xnet-7.md` | The 13 delivered xnet menu entries, how each is built and verified |
+| `architecture/report-viewer-handoff.md` · `BACKLOG-legacy-app-wide.md` §4.3 | The reports design and the report-engine decision note |
+| `migration-estimate/` | The June commercial pack (India basis, to be re-based) |
+| `port-map.md` | Every host, port and deployment shape on one page |
+| `guides/day-one.md` · `guides/building-a-crud-screen.md` · `guides/git-with-gitea.md` | Onboarding: first-day setup, the per-screen recipe, the source-control workflow |
 
 ---
 
-*Prepared from the solution as it stands on 21 August 2026. Figures for tests, projects and screens are counted from the source tree, not estimated.*
+*Prepared from the solution as it stands on 3 October 2026. Projects, architecture and integration test counts come from the source tree and test discovery, not estimates. Legacy scope comes from the generated xnet inventory (5 September 2026).*

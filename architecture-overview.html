@@ -18,6 +18,7 @@ a:hover{text-decoration:underline}
 code{font-family:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;font-size:.86em;background:#eff1f3;padding:.15em .4em;border-radius:6px}
 pre{background:#f6f8fa;border:1px solid #d8dee4;border-radius:8px;padding:14px 16px;overflow:auto}
 pre code{background:none;padding:0;font-size:.85em;line-height:1.45}
+pre>code:not([class]){line-height:1.25}
 blockquote{margin:1em 0;padding:.4em 1em;color:#3d444d;border-left:4px solid #d0d7de;background:#f6f8fa;border-radius:0 6px 6px 0}
 blockquote>:first-child{margin-top:0}blockquote>:last-child{margin-bottom:0}
 table{border-collapse:collapse;width:100%;margin:1em 0;display:block;overflow:auto}
@@ -39,7 +40,20 @@ td code.cp.done{color:#0a3622;background:#dafbe1}
 .docnav{margin:0 0 20px;font-size:.85rem;color:#636c76}
 .docnav a{color:#636c76}
 ul{padding-left:1.4em}ol{padding-left:1.4em}
+img{max-width:100%;height:auto;border:1px solid #d0d7de;border-radius:6px;vertical-align:top}
+a img{cursor:zoom-in}
+figure.clip{margin:1em 0}
+video{display:block;width:100%;height:auto;border:1px solid #d0d7de;border-radius:6px;background:#111}
+tr:has(:target) td{background:#fff8c5!important}
+h2>input.lab,h3>input.lab{width:1em;height:1em;margin:0 .45em 0 0;vertical-align:-.08em;cursor:pointer;accent-color:#1a7f37}
+h2.labdone,h3.labdone,a.labdone{color:#1a7f37}
+a.labdone::after{content:" \2713";font-weight:700}
+.labbadge{position:fixed;right:14px;bottom:14px;z-index:5;background:#fff;border:1px solid #d0d7de;border-radius:999px;
+  padding:6px 12px;font-size:.8rem;color:#3d444d;box-shadow:0 2px 8px rgba(0,0,0,.08)}
 @media(max-width:640px){.card{padding:24px 18px}.wrap{padding:16px 10px 64px}}
+@media print{body{background:#fff;color:#000}.wrap{max-width:none;padding:0}.card{border:0;padding:0}
+ pre>button.copy,.labbadge,.docnav,input.lab{display:none}a{color:inherit}
+ pre,table,blockquote,img,figure{break-inside:avoid}h1,h2,h3{break-after:avoid}}
 @media(prefers-color-scheme:dark){
  body{background:#0d1117;color:#e6edf3}
  .card{background:#161b22;border-color:#30363d}
@@ -53,6 +67,10 @@ ul{padding-left:1.4em}ol{padding-left:1.4em}
  pre>button.copy{color:#9198a1;background:#161b22;border-color:#30363d}
  pre>button.copy.done{color:#aff5b4;background:#1b4721;border-color:#2ea043}
  td code.cp.done{color:#aff5b4;background:#1b4721}
+ tr:has(:target) td{background:#3b2f00!important}
+ h2.labdone,h3.labdone,a.labdone{color:#3fb950}
+ .labbadge{background:#161b22;border-color:#30363d;color:#9198a1}
+ video{border-color:#30363d}
 }
 </style></head>
 <body><div class="wrap"><div class="card">
@@ -61,7 +79,7 @@ ul{padding-left:1.4em}ol{padding-left:1.4em}
 request flows through them.</p>
 <ul>
 <li><strong>Solution root:</strong> <code>E:\Adhir\AdWork\TrustBank.Code\TflCbsNet10Sol\</code></li>
-<li><strong>Solution file:</strong> <code>TflCbsNet10Sol.slnx</code> — <strong>45 projects</strong>.</li>
+<li><strong>Solution file:</strong> <code>TflCbsNet10Sol.slnx</code> — <strong>55 projects</strong>.</li>
 <li><strong>Almost all projects target <code>net10.0</code></strong> (set centrally in <code>Directory.Build.props</code>), with Central Package
   Management (versions in <code>Directory.Packages.props</code>). Two exceptions, both under <code>libs/</code>: the MFA-AD
   server projects target <strong><code>net10.0-windows</code></strong> (§3), and everything under <code>libs/</code> opts out of Central
@@ -71,13 +89,32 @@ request flows through them.</p>
 (the proc-conversion lab — experimental, API-drifted) and <code>TflCbs.Tools.PerfProbe</code> (a measurement
 tool run directly with <code>dotnet run</code>). Plus two <strong>vendored in-house library trees</strong> with their own
 solutions — <code>libs/TflOmniDb/</code> and <code>libs/TflSecurityCrypto/</code> (§3) — the <code>TflCbs.E2E</code> Playwright
-suite (a Node project, not a .NET one), and the gitignored <code>codebase_shared/</code> handover tree (§4).</p>
+suite (a Node project, not a .NET one), the gitignored <code>codebase_shared/</code> handover tree (§4), and
+<code>TflCbs.ReportViewer</code>, the .NET Framework 4.8 site that renders the Crystal reports (§4).</p>
 <blockquote>
 <p><strong>Last reviewed:</strong> 2026-09-03. The modular-monolith split completed on 2026-07-29 (<code>TflCbsServices</code>
 dissolved); the in-house libraries were vendored into the repo on 2026-08-19; the canonical config
 files moved to solution-level <code>config/</code> on 2026-08-21; the MFA vendor stack was replaced with our own
-.NET 10 rewrite on 2026-09-03 (§3.1).</p>
+.NET 10 rewrite on 2026-09-03 (§3.1). Reports: the Crystal report viewer app and the first two report screens
+were added on 2026-09-28 (§4, Not in the solution build).</p>
 </blockquote>
+<h2 id="contents">Contents</h2>
+<ol>
+<li><a href="#1-the-big-picture-why-this-shape">The big picture (why this shape)</a></li>
+<li><a href="#2-layers-at-a-glance-dependency-direction-is-strictly-inward">Layers at a glance</a></li>
+<li><a href="#3-external-vendored-dependencies">External / vendored dependencies</a>
+   - <a href="#31-the-mfa-stack-libstssipl_mfa__net">3.1 The MFA stack</a></li>
+<li><a href="#4-every-project-by-layer">Every project, by layer</a>
+   - <a href="#at-a-glance">At a glance</a>
+   - <a href="#layer-foundation-dependency-free">Foundation</a> · <a href="#layer-entities">Entities</a> · <a href="#layer-logging-reusable-aspnet-free">Logging</a> · <a href="#layer-service-modules-per-domain-zero-aspnet">Service modules</a>
+   - <a href="#layer-framework-web-plumbing">Framework</a> · <a href="#layer-shared-web-rcl">Shared web RCL</a> · <a href="#layer-core-web-modules-rcls-always-on">Core web modules</a> · <a href="#layer-domain-web-modules-rcls-gated-by-modulesenabled">Domain web modules</a>
+   - <a href="#layer-hosts-composition-roots">Hosts</a> · <a href="#layer-tests">Tests</a> · <a href="#layer-tools-demos">Tools &amp; demos</a> · <a href="#not-in-the-solution-build">Not in the solution build</a></li>
+<li><a href="#5-how-they-work-together-composition">How they work together (composition)</a></li>
+<li><a href="#6-flow-among-the-projects-a-request-end-to-end">Flow among the projects</a></li>
+<li><a href="#7-why-each-layer-is-separate-the-reasoning">Why each layer is separate</a></li>
+<li><a href="#8-build-order-conventions-that-fall-out-of-this">Build order &amp; conventions</a></li>
+<li><a href="#9-related-docs">Related docs</a></li>
+</ol>
 <hr />
 <h2 id="1-the-big-picture-why-this-shape">1. The big picture (why this shape)</h2>
 <p>This is an incremental <strong>strangler-fig</strong> migration of TrustBank CBS (core banking) from ASP.NET
@@ -254,6 +291,189 @@ drift between them fails no build — it fails every login. <code>tssipl_mfa_ad_
 <hr />
 <hr />
 <h2 id="4-every-project-by-layer">4. Every project, by layer</h2>
+<h3 id="at-a-glance">At a glance</h3>
+<table>
+<thead>
+<tr>
+<th>Group</th>
+<th>Project</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Foundation</td>
+<td><code>TflCbs.Abstractions</code></td>
+<td>Shared base with no dependencies: <code>Result</code>, module interfaces, the four ports, DTOs, <code>ServiceQuery</code>/<code>DbErrors</code></td>
+</tr>
+<tr>
+<td></td>
+<td><code>TflCbs.Framework</code></td>
+<td>Web plumbing, access middleware, reusable services; references only Abstractions</td>
+</tr>
+<tr>
+<td></td>
+<td><code>TflCbs.Entities</code></td>
+<td>Auto-generated database entities</td>
+</tr>
+<tr>
+<td></td>
+<td><code>TflOmniLog</code> (+ <code>.Demo</code>, <code>.Tests</code>)</td>
+<td>In-house logging library, its demo and tests</td>
+</tr>
+<tr>
+<td>Core</td>
+<td><code>TflCbs.Modules.General</code></td>
+<td>Menu, bank variables, broadcast, alerts, maker-checker scroll, process-block check</td>
+</tr>
+<tr>
+<td></td>
+<td><code>TflCbs.Modules.General.Contracts</code></td>
+<td>General's public surface for other modules (<code>IScrollService</code>, <code>IProcessBlockCheck</code>)</td>
+</tr>
+<tr>
+<td></td>
+<td><code>TflCbs.Modules.Administration.Contracts</code></td>
+<td>Administration's read-only surface for other modules (<code>IDenominationReader</code>)</td>
+</tr>
+<tr>
+<td></td>
+<td><code>TflCbs.Modules.Reference</code></td>
+<td>Shared master data (State/District/Taluka)</td>
+</tr>
+<tr>
+<td></td>
+<td><code>TflCbs.Core.Authentication</code></td>
+<td>Login, sessions, user log time</td>
+</tr>
+<tr>
+<td></td>
+<td><code>TflCbs.Core.Authentication.Web</code></td>
+<td>Login/account screens, <code>/Account/Ping</code></td>
+</tr>
+<tr>
+<td></td>
+<td><code>TflCbs.Core.Shell.Web</code></td>
+<td>App shell (home, module chooser)</td>
+</tr>
+<tr>
+<td></td>
+<td><code>TflCbs.Web.Shared</code></td>
+<td>Shared layout, partials, pickers, static assets</td>
+</tr>
+<tr>
+<td>Domains</td>
+<td><code>Accounts</code></td>
+<td>Service only, no screens</td>
+</tr>
+<tr>
+<td></td>
+<td><code>Administration</code> + <code>.Web</code></td>
+<td>Administration service and screens</td>
+</tr>
+<tr>
+<td></td>
+<td><code>HR</code> + <code>Hr.Web</code></td>
+<td>HR service and screens (screens also use Reference)</td>
+</tr>
+<tr>
+<td></td>
+<td><code>Lockers</code> + <code>.Web</code></td>
+<td>Lockers service and screens</td>
+</tr>
+<tr>
+<td></td>
+<td><code>RetailBanking</code> + <code>.Web</code></td>
+<td>Retail banking service and screens</td>
+</tr>
+<tr>
+<td></td>
+<td><code>Bank.Web</code></td>
+<td>Screens only, no service assembly of its own</td>
+</tr>
+<tr>
+<td></td>
+<td><code>Inventory</code>, <code>TradeFinance</code>, <code>InternetBanking</code>, <code>Reconciliation</code>, <code>LoanOrigination</code> (each + <code>.Web</code>)</td>
+<td>Pilot master screens for the xnet domains</td>
+</tr>
+<tr>
+<td>Hosts</td>
+<td><code>TflCbs.Host.Main</code></td>
+<td>Main composition root; all modules run here</td>
+</tr>
+<tr>
+<td></td>
+<td><code>TflCbs.Host.{Administration, Hr, Inventory, Lockers, RetailBanking}</code></td>
+<td>Thin per-domain hosts</td>
+</tr>
+<tr>
+<td></td>
+<td><code>TflCbs.Gateway</code></td>
+<td>Reverse proxy (YARP) in front of the thin hosts</td>
+</tr>
+<tr>
+<td>Tools</td>
+<td><code>TflCbs.Tools.DbMigrator</code></td>
+<td>Numbered database migrations</td>
+</tr>
+<tr>
+<td></td>
+<td><code>TflCbs.Tools.PasswordReset</code></td>
+<td>One-off tool that migrates passwords to PBKDF2</td>
+</tr>
+<tr>
+<td>Tests</td>
+<td><code>TflCbs.Tests</code></td>
+<td>xUnit service tests across all three database providers</td>
+</tr>
+<tr>
+<td></td>
+<td><code>TflCbs.ArchTests</code></td>
+<td>Architecture boundary and namespace rules</td>
+</tr>
+<tr>
+<td></td>
+<td><code>TflCbs.IntegrationTests</code></td>
+<td>Runs the real pipeline in-process</td>
+</tr>
+<tr>
+<td></td>
+<td><code>TflCbs.Demo</code></td>
+<td>One demo per service method</td>
+</tr>
+<tr>
+<td>MFA (<code>libs/</code>)</td>
+<td><code>tssipl_mfa_otp_net</code></td>
+<td>OTP</td>
+</tr>
+<tr>
+<td></td>
+<td><code>tssipl_mfa_ad_{client, lib, api}_net</code></td>
+<td>Active Directory MFA; the API is Windows-only</td>
+</tr>
+<tr>
+<td></td>
+<td><code>tssipl_mfa_qr_{client, lib, api}_net</code></td>
+<td>QR MFA; the API is SQL Server only and is the one phones call</td>
+</tr>
+<tr>
+<td></td>
+<td><code>tssipl_mfa_{ad, qr}_tests_net</code></td>
+<td>Pin the wire contract between each client and its server</td>
+</tr>
+<tr>
+<td>Not in solution</td>
+<td><code>TflCbs.Lab</code>, <code>TflCbs.Lab.Demo</code>, <code>TflCbs.E2E</code>, <code>TflCbs.Tools.PerfProbe</code></td>
+<td>Lab is proc-conversion sample code; E2E is a Node Playwright suite; PerfProbe is run directly</td>
+</tr>
+<tr>
+<td></td>
+<td><code>TflCbs.ReportViewer</code></td>
+<td>.NET Framework 4.8 WebForms site that only renders Crystal reports; .NET 10 sends it the data</td>
+</tr>
+</tbody>
+</table>
+<p>Domain rows abbreviate <code>TflCbs.Modules.&lt;X&gt;</code>. Details per layer follow.</p>
 <h3 id="layer-foundation-dependency-free">Layer: foundation (dependency-free)</h3>
 <p><strong><code>TflCbs.Abstractions</code></strong> — class library, ns <code>TflCbs.Abstractions</code></p>
 <ul>
@@ -362,8 +582,8 @@ Without that test this project becomes a dumping ground.</p>
 </tr>
 <tr>
 <td><code>TflCbs.Modules.Administration</code></td>
-<td><code>ModuleService</code>, <code>RoleService</code></td>
-<td></td>
+<td><code>MenuService</code>, <code>ModuleService</code>, <code>RoleService</code>, <code>DenominationUnitService</code>, <code>DenominationService</code></td>
+<td>+ its own <code>.Contracts</code> (implements <code>IDenominationReader</code>)</td>
 </tr>
 <tr>
 <td><code>TflCbs.Modules.RetailBanking</code></td>
@@ -382,7 +602,9 @@ Without that test this project becomes a dumping ground.</p>
   (Redis-optional, fail-open), health checks, security response headers, forwarded headers, global
   antiforgery, the <code>cbs-login</code> rate-limit policy (so every host throttles credential POSTs, not just
   the gateway), OpenTelemetry (<code>AddCbsObservability</code>), and SSO (CbsAuth cookie + shared
-  DataProtection key ring + revocation). Owns ADO.NET driver wiring.</li>
+  DataProtection key ring + revocation). Owns ADO.NET driver wiring. <code>TflCbs.Framework.Reports</code>
+  (<code>ReportViewer</code>, <code>ReportViewerTransport</code>): hands a report screen's data to the Crystal report viewer app
+  and returns the one-time link to open it.</li>
 <li><strong>Refs.</strong> <code>TflCbs.Abstractions</code>, <code>TflOmniLog</code>; bare-DLL <code>TflOmniDb</code>; <code>FrameworkReference
   Microsoft.AspNetCore.App</code>. Packages: SqlClient, Oracle, Npgsql, Redis + SqlServer caching,
   OpenTelemetry (hosting, OTLP exporter, ASP.NET Core / HTTP / runtime instrumentation).</li>
@@ -467,8 +689,8 @@ module reference it</strong>, so a thin host no longer ships other domains' code
 <tr>
 <td><code>TflCbs.Modules.Administration.Web</code></td>
 <td><code>Administration</code></td>
-<td>Module + Role masters and ConnectedUsers (<code>/Administration/Module</code>, <code>/Role</code>, <code>/ConnectedUsers</code>).</td>
-<td><code>Modules.Administration</code>, <code>Core.Authentication</code></td>
+<td>Menu, Module, Role, User, Connected/Blocked users (<code>/Administration/…</code>) and the denomination masters, kept at their legacy URLs <code>/Bank/DenominationUnit</code>, <code>/Bank/Denomination</code> (<a href="architecture/decisions/0001-code-module-follows-menu-module.html">decision 0001</a>).</td>
+<td><code>Modules.Administration</code>, <code>Core.Authentication</code>, <code>Modules.Reference</code> (currency picker)</td>
 </tr>
 </tbody>
 </table>
@@ -633,8 +855,12 @@ unredacted with nothing to notice. Guarded by <code>ArchTests/LogMaskingConfigTe
 <td>The Playwright suite — a Node project.</td>
 </tr>
 <tr>
+<td><code>TflCbs.ReportViewer</code></td>
+<td>The Crystal report viewer: a render-only .NET Framework 4.8 WebForms site (Crystal Reports runs only on .NET Framework), run under IIS / IIS Express (<code>scripts/run-report-viewer.ps1</code>, dev <code>https://localhost:44390</code>). A .NET 10 report screen runs the query in C#, posts the rows to its <code>handoff.ashx</code> (gzip XML, shared key), gets a single-use 60-second ticket, and redirects the browser to <code>open.aspx?t=…</code>, which opens <code>CrystalViewer.aspx</code> (legacy's viewer: paper size, orientation, export, Back). It has no database access and no business logic. Contract: <a href="architecture/report-viewer-handoff.html"><code>architecture/report-viewer-handoff.md</code></a>. Tests: <code>TflCbs.IntegrationTests</code> <code>ReportViewer*</code> (skip when the viewer is not running).</td>
+</tr>
+<tr>
 <td><code>codebase_shared/</code></td>
-<td>A <strong>gitignored staging copy</strong>: a self-contained tree for handing the Administration thin client to an outside team — the 3 projects they edit (<code>TflCbs.Modules.Administration{,.Web}</code>, <code>TflCbs.Host.Administration</code>) plus <code>TflCbs.Entities</code> and <code>TflCbs.Web.Shared</code> as source, and 9 platform assemblies as prebuilt DLLs in <code>refs/</code> (each with <code>.pdb</code> and <code>.xml</code>). This is why nine assemblies now set <code>GenerateDocumentationFile</code> — when an assembly ships as a DLL, IntelliSense is the only place its API semantics can travel. Repo-walking guards exclude it (<code>RepoFiles.Find</code>) so they don't see two of everything.</td>
+<td><strong>Gitignored staging copies</strong>, one self-contained subfolder per module handed to a team: <code>administration/</code> and <code>retailbanking/</code> (since 2026-09-24). Each holds the module's projects as source (Web RCL, service module, thin host) plus <code>TflCbs.Entities</code> and <code>TflCbs.Web.Shared</code> as source, and every other platform assembly as a prebuilt DLL in its own <code>refs/</code> (with <code>.pdb</code> and <code>.xml</code>) — which is why those assemblies set <code>GenerateDocumentationFile</code>. RetailBanking's <code>refs/</code> also carries <code>TflCbs.Modules.Administration(.Contracts)</code>: that host runs Administration's services for <code>IDenominationReader</code>. Synced from main by plain copy. Repo-walking guards exclude the whole folder (<code>RepoFiles.Find</code>).</td>
 </tr>
 </tbody>
 </table>
@@ -894,6 +1120,10 @@ shared revocation table. Details: <a href="single-sign-on.html"><code>single-sig
 <td>The search + RowToken round trip</td>
 </tr>
 <tr>
+<td><a href="architecture/report-viewer-handoff.html"><code>architecture/report-viewer-handoff.md</code></a></td>
+<td>Reports: the .NET 10 → Crystal viewer handoff contract</td>
+</tr>
+<tr>
 <td><a href="port-map.html"><code>port-map.md</code></a></td>
 <td>Every project's dev + deployed ports</td>
 </tr>
@@ -958,6 +1188,26 @@ shared revocation table. Details: <a href="single-sign-on.html"><code>single-sig
   c.addEventListener('keydown',function(e){
    if(e.key==='Enter'||e.key===' '){e.preventDefault();copy(c.textContent,c)}});
  });
+ // Lab tick-boxes: any heading whose id starts "lab-" gets a checkbox, remembered in this
+ // browser only. Storage can be missing (private window, blocked site data) - the page
+ // still works, the ticks just do not persist.
+ function sget(k){try{return localStorage.getItem(k)}catch(e){return null}}
+ function sset(k,on){try{on?localStorage.setItem(k,'1'):localStorage.removeItem(k)}catch(e){}}
+ var labs=[].slice.call(document.querySelectorAll('h2[id^="lab-"],h3[id^="lab-"]'));
+ if(labs.length){
+  var badge=document.createElement('div');badge.className='labbadge';document.body.appendChild(badge);
+  var count=function(){badge.textContent='Labs done: '+labs.filter(function(h){return sget('labdone:'+h.id)}).length+' of '+labs.length};
+  labs.forEach(function(h){
+   var cb=document.createElement('input');cb.type='checkbox';cb.className='lab';
+   cb.title='Tick when you have finished this lab (remembered in this browser)';cb.setAttribute('aria-label','Lab done');
+   cb.checked=!!sget('labdone:'+h.id);h.classList.toggle('labdone',cb.checked);
+   cb.addEventListener('change',function(){sset('labdone:'+h.id,cb.checked);h.classList.toggle('labdone',cb.checked);count()});
+   h.insertBefore(cb,h.firstChild);
+  });
+  count();
+ }
+ document.querySelectorAll('li>a[href*="#lab-"]').forEach(function(a){
+  if(sget('labdone:'+a.getAttribute('href').split('#')[1]))a.classList.add('labdone')});
 })();
 </script>
 </body></html>

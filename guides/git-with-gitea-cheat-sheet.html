@@ -1,0 +1,341 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Git cheat sheet — clicks and commands</title>
+<style>
+:root{color-scheme:light dark}
+*{box-sizing:border-box}
+body{margin:0;background:#f6f8fa;color:#1f2328;font:16px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif}
+.wrap{max-width:900px;margin:0 auto;padding:32px 24px 96px}
+.card{background:#fff;border:1px solid #d0d7de;border-radius:10px;padding:40px 48px}
+h1,h2,h3{line-height:1.25;font-weight:600}
+h1{font-size:1.9rem;margin:0 0 .3em;padding-bottom:.3em;border-bottom:1px solid #d8dee4}
+h2{font-size:1.4rem;margin:1.8em 0 .6em;padding-bottom:.25em;border-bottom:1px solid #eaeef2}
+h3{font-size:1.12rem;margin:1.4em 0 .5em}
+p,li{margin:.5em 0}
+a{color:#0969da;text-decoration:none}
+a:hover{text-decoration:underline}
+code{font-family:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;font-size:.86em;background:#eff1f3;padding:.15em .4em;border-radius:6px}
+pre{background:#f6f8fa;border:1px solid #d8dee4;border-radius:8px;padding:14px 16px;overflow:auto}
+pre code{background:none;padding:0;font-size:.85em;line-height:1.45}
+pre>code:not([class]){line-height:1.25}
+blockquote{margin:1em 0;padding:.4em 1em;color:#3d444d;border-left:4px solid #d0d7de;background:#f6f8fa;border-radius:0 6px 6px 0}
+blockquote>:first-child{margin-top:0}blockquote>:last-child{margin-bottom:0}
+table{border-collapse:collapse;width:100%;margin:1em 0;display:block;overflow:auto}
+th,td{border:1px solid #d0d7de;padding:8px 12px;text-align:left;vertical-align:top}
+th{background:#f6f8fa;font-weight:600}
+tr:nth-child(2n) td{background:#f6f8fa}
+hr{border:0;border-top:1px solid #d8dee4;margin:2em 0}
+pre{position:relative}
+pre>button.copy{position:absolute;top:8px;right:8px;padding:5px 9px;cursor:pointer;
+  font:600 .68rem/1 ui-monospace,SFMono-Regular,Consolas,monospace;letter-spacing:.03em;
+  color:#636c76;background:#fff;border:1px solid #d0d7de;border-radius:6px;
+  opacity:0;transition:opacity .12s}
+pre:hover>button.copy,pre>button.copy:focus{opacity:1}
+pre>button.copy.done{color:#0a3622;background:#dafbe1;border-color:#4ac26b}
+@media(hover:none){pre>button.copy{opacity:1}}
+td code.cp{cursor:pointer}
+td code.cp:hover,td code.cp:focus{outline:1px solid #8c959f;outline-offset:1px}
+td code.cp.done{color:#0a3622;background:#dafbe1}
+.docnav{margin:0 0 20px;font-size:.85rem;color:#636c76}
+.docnav a{color:#636c76}
+ul{padding-left:1.4em}ol{padding-left:1.4em}
+img{max-width:100%;height:auto;border:1px solid #d0d7de;border-radius:6px;vertical-align:top}
+a img{cursor:zoom-in}
+figure.clip{margin:1em 0}
+video{display:block;width:100%;height:auto;border:1px solid #d0d7de;border-radius:6px;background:#111}
+tr:has(:target) td{background:#fff8c5!important}
+h2>input.lab,h3>input.lab{width:1em;height:1em;margin:0 .45em 0 0;vertical-align:-.08em;cursor:pointer;accent-color:#1a7f37}
+h2.labdone,h3.labdone,a.labdone{color:#1a7f37}
+a.labdone::after{content:" \2713";font-weight:700}
+.labbadge{position:fixed;right:14px;bottom:14px;z-index:5;background:#fff;border:1px solid #d0d7de;border-radius:999px;
+  padding:6px 12px;font-size:.8rem;color:#3d444d;box-shadow:0 2px 8px rgba(0,0,0,.08)}
+@media(max-width:640px){.card{padding:24px 18px}.wrap{padding:16px 10px 64px}}
+@media print{body{background:#fff;color:#000}.wrap{max-width:none;padding:0}.card{border:0;padding:0}
+ pre>button.copy,.labbadge,.docnav,input.lab{display:none}a{color:inherit}
+ pre,table,blockquote,img,figure{break-inside:avoid}h1,h2,h3{break-after:avoid}}
+@media(prefers-color-scheme:dark){
+ body{background:#0d1117;color:#e6edf3}
+ .card{background:#161b22;border-color:#30363d}
+ h1{border-color:#30363d}h2{border-color:#21262d}
+ code{background:#262c34}
+ pre{background:#0d1117;border-color:#30363d}
+ blockquote{background:#161b22;border-color:#30363d;color:#9198a1}
+ th,td{border-color:#30363d}th{background:#161b22}tr:nth-child(2n) td{background:#12171e}
+ a{color:#4493f8}.docnav,.docnav a{color:#9198a1}
+ hr{border-color:#30363d}
+ pre>button.copy{color:#9198a1;background:#161b22;border-color:#30363d}
+ pre>button.copy.done{color:#aff5b4;background:#1b4721;border-color:#2ea043}
+ td code.cp.done{color:#aff5b4;background:#1b4721}
+ tr:has(:target) td{background:#3b2f00!important}
+ h2.labdone,h3.labdone,a.labdone{color:#3fb950}
+ .labbadge{background:#161b22;border-color:#30363d;color:#9198a1}
+ video{border-color:#30363d}
+}
+</style></head>
+<body><div class="wrap"><div class="card">
+<h1 id="git-cheat-sheet-clicks-and-commands">Git cheat sheet — clicks and commands</h1>
+<p>A short reference to print or keep open (about two printed pages). Every row is explained in the full guide:
+<a href="git-with-gitea.html">Git with Gitea</a>. Server: <code>http://192.168.0.22:3000</code>. Sign in to git with a
+<strong>token</strong>, never your password.</p>
+<h2 id="getting-started">Getting started</h2>
+<table>
+<thead>
+<tr>
+<th>Task</th>
+<th>Visual Studio 2026</th>
+<th>Terminal</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Put a folder you have on Gitea</strong> (Lab VA / CA)</td>
+<td>Gitea: <strong>New Repository</strong>, <em>Initialize</em> unticked → add <code>.gitignore</code> <strong>first</strong> → <strong>Git → Create Git Repository… → Other → Local</strong> → <strong>Git → Manage Remotes</strong> → <code>origin</code> = repo URL → <strong>Push</strong></td>
+<td><code>dotnet new gitignore</code> · <code>git init</code> · <code>git add .</code> · <code>git status</code> (look!) · <code>git commit -m "Initial commit"</code> · <code>git remote add origin &lt;url&gt;</code> · <code>git push -u origin main</code></td>
+</tr>
+<tr>
+<td><strong>Get a copy of a Gitea repo</strong> (Lab VB / CB)</td>
+<td><strong>Git → Clone Repository…</strong> → URL from the repo's <strong>Code</strong> button + a <strong>new</strong> folder → <strong>Clone</strong></td>
+<td><code>git clone &lt;url&gt; &lt;new-folder&gt;</code></td>
+</tr>
+</tbody>
+</table>
+<h2 id="the-daily-loop">The daily loop</h2>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Step</th>
+<th>Visual Studio 2026</th>
+<th>Terminal</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>Where am I, what changed?</td>
+<td>Look at <strong>Git Changes</strong> and the <strong>↑↓ out / in</strong> counts in the status bar</td>
+<td><code>git status</code></td>
+</tr>
+<tr>
+<td>2</td>
+<td>Get everyone's work first</td>
+<td>Branch picker → <code>main</code>, then <strong>Git → Pull</strong></td>
+<td><code>git switch main</code> then <code>git pull</code></td>
+</tr>
+<tr>
+<td>3</td>
+<td>Start a branch</td>
+<td>Branch picker → <strong>New Branch…</strong>, <em>Based on:</em> <code>main</code></td>
+<td><code>git switch -c feature/x</code></td>
+</tr>
+<tr>
+<td>4</td>
+<td>Review your own diff</td>
+<td>Double-click a file under <strong>Changes</strong></td>
+<td><code>git diff</code></td>
+</tr>
+<tr>
+<td>5</td>
+<td>Stage what you mean</td>
+<td><strong>+</strong> on the file (or select lines → right-click → <strong>Git › Stage Selected Range</strong>)</td>
+<td><code>git add &lt;file&gt;</code> (lines: <code>git add -p</code>)</td>
+</tr>
+<tr>
+<td>6</td>
+<td>Commit</td>
+<td>Type a message → <strong>Commit Staged</strong>. <em>Read the button: "Commit All" takes everything</em></td>
+<td><code>git commit -m "feat: …"</code></td>
+</tr>
+<tr>
+<td>7</td>
+<td>Push</td>
+<td><strong>Git → Push</strong> (a new branch is created on Gitea, no prompt)</td>
+<td><code>git push -u origin feature/x</code> the first time, then <code>git push</code></td>
+</tr>
+<tr>
+<td>8</td>
+<td>Pull request</td>
+<td><strong>Browser only</strong>: repo page → <em>You pushed on branch</em> banner → <strong>New Pull Request</strong></td>
+<td>same — no git command opens a PR</td>
+</tr>
+<tr>
+<td>9</td>
+<td>After the merge</td>
+<td>Branch picker → <code>main</code> → <strong>Pull</strong>, then <strong>Git → Manage Branches</strong> → right-click the branch → <strong>Delete</strong></td>
+<td><code>git switch main</code>, <code>git pull</code>, <code>git branch -d feature/x</code>, <code>git fetch --prune</code></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Pull request, in the browser:</strong> check <strong>merge into: <code>main</code></strong> ← <strong>pull from: your branch</strong> · a
+specific title · what / why / how tested · <strong>Create Pull Request</strong> · after review, <strong>Create merge
+commit</strong> with <strong>Delete Branch</strong> ticked.</p>
+<h2 id="look-before-you-pull">Look before you pull</h2>
+<table>
+<thead>
+<tr>
+<th>Want to know</th>
+<th>Visual Studio</th>
+<th>Terminal</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>What is on the server that I do not have?</td>
+<td><strong>Git → Fetch</strong>, then <strong>Git Repository → Incoming</strong></td>
+<td><code>git fetch</code> then <code>git log --oneline HEAD..origin/main</code></td>
+</tr>
+<tr>
+<td>What would my push send?</td>
+<td><strong>Git Repository → Outgoing</strong></td>
+<td><code>git log --oneline origin/main..HEAD</code></td>
+</tr>
+<tr>
+<td>The whole shape</td>
+<td><strong>Git Repository</strong> graph</td>
+<td><code>git log --oneline --graph --all -20</code></td>
+</tr>
+</tbody>
+</table>
+<h2 id="undo">Undo</h2>
+<table>
+<thead>
+<tr>
+<th>Mistake</th>
+<th>Visual Studio</th>
+<th>Terminal</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Staged the wrong file</td>
+<td><strong>−</strong> on the file</td>
+<td><code>git restore --staged &lt;file&gt;</code></td>
+</tr>
+<tr>
+<td>Want my edits gone (<strong>cannot be undone</strong>)</td>
+<td>Right-click → <strong>Undo Changes</strong></td>
+<td><code>git restore &lt;file&gt;</code></td>
+</tr>
+<tr>
+<td>Wrong message / forgot a file, <strong>not pushed</strong></td>
+<td>Tick <strong>Amend</strong>, commit again</td>
+<td><code>git commit --amend</code></td>
+</tr>
+<tr>
+<td>Committed too early, <strong>not pushed</strong></td>
+<td>Right-click the commit <strong>below</strong> → <strong>Reset › Keep Changes</strong></td>
+<td><code>git reset HEAD~1</code></td>
+</tr>
+<tr>
+<td>Anything <strong>already pushed</strong></td>
+<td>Right-click the commit → <strong>Revert</strong></td>
+<td><code>git revert &lt;sha&gt;</code></td>
+</tr>
+<tr>
+<td>"I destroyed commits" / deleted a branch</td>
+<td><strong>No button</strong> — View → Terminal</td>
+<td><code>git reflog</code>, then <code>git reset --hard HEAD@{1}</code> or <code>git switch -c rescued &lt;sha&gt;</code></td>
+</tr>
+<tr>
+<td>Merge went wrong</td>
+<td><strong>Abort</strong> in Git Changes</td>
+<td><code>git merge --abort</code></td>
+</tr>
+</tbody>
+</table>
+<h2 id="park-work-for-a-moment">Park work for a moment</h2>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>Visual Studio</th>
+<th>Terminal</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Put it on the shelf</td>
+<td>Commit button <strong>▾</strong> → <strong>Stash All</strong></td>
+<td><code>git stash -u</code></td>
+</tr>
+<tr>
+<td>Bring it back</td>
+<td><strong>Stashes</strong> → right-click → <strong>Pop › Pop All as Unstaged</strong></td>
+<td><code>git stash pop</code></td>
+</tr>
+</tbody>
+</table>
+<h2 id="when-something-goes-wrong">When something goes wrong</h2>
+<ul>
+<li><strong>Read git's own words.</strong> VS: <strong>View → Output</strong> → <em>Show output from:</em> <strong>Source Control - Git</strong>.
+  Terminal: the error itself, and the <code>hint:</code> lines under it.</li>
+<li><strong>Push rejected / "Git - Push failed"</strong> → someone pushed first: <strong>Pull</strong>, look, then <strong>Push</strong> again.</li>
+<li><strong>Conflict</strong> → pick or edit the lines (VS <strong>Merge Editor</strong> → <strong>Accept Merge</strong>; terminal: delete the
+  <code>&lt;&lt;&lt;&lt;&lt;&lt;&lt;</code> <code>=======</code> <code>&gt;&gt;&gt;&gt;&gt;&gt;&gt;</code> markers, <code>git add</code>), commit, <strong>then build and run it</strong>.</li>
+<li><strong>Keeps asking for a password</strong> → Windows <strong>Credential Manager</strong> → remove the
+  <code>git:http://192.168.0.22:3000</code> entry → push again and paste a fresh token.</li>
+<li><strong>Anything committed is recoverable for ~90 days</strong> with <code>git reflog</code>. Anything never committed is not.</li>
+</ul>
+<h2 id="rules-of-thumb">Rules of thumb</h2>
+<p>Pull before you start · one branch, one purpose · never commit to <code>main</code> · stage deliberately ·
+commit small · push before you branch · never force-push a shared branch · commit before you
+experiment.</p>
+</div></div>
+<script>
+(function(){
+ function put(t){
+  if(navigator.clipboard&&navigator.clipboard.writeText)return navigator.clipboard.writeText(t);
+  return new Promise(function(res,rej){
+   var a=document.createElement('textarea');a.value=t;a.setAttribute('readonly','');
+   a.style.cssText='position:fixed;top:0;left:0;opacity:0';document.body.appendChild(a);
+   a.select();var ok=false;try{ok=document.execCommand('copy')}catch(e){}
+   document.body.removeChild(a);ok?res():rej()});
+ }
+ function flash(el,txt,ms){
+  var was=el.textContent;el.classList.add('done');if(txt)el.textContent=txt;
+  setTimeout(function(){el.classList.remove('done');if(txt)el.textContent=was},ms||1200);
+ }
+ function copy(text,el,okTxt){
+  put(text).then(function(){flash(el,okTxt)},function(){
+   if(okTxt){var w=el.textContent;el.textContent='Ctrl+C';setTimeout(function(){el.textContent=w},2000)}});
+ }
+ document.querySelectorAll('pre').forEach(function(pre){
+  if(pre.classList.contains('txtdoc'))return;
+  var b=document.createElement('button');
+  b.type='button';b.className='copy';b.textContent='Copy';
+  b.setAttribute('aria-label','Copy this code block to the clipboard');
+  b.addEventListener('click',function(){copy((pre.querySelector('code')||pre).innerText,b,'Copied')});
+  pre.appendChild(b);
+ });
+ document.querySelectorAll('td code').forEach(function(c){
+  if(!c.textContent.trim())return;
+  c.classList.add('cp');c.tabIndex=0;c.setAttribute('role','button');
+  c.title='Click to copy';
+  c.addEventListener('click',function(){copy(c.textContent,c)});
+  c.addEventListener('keydown',function(e){
+   if(e.key==='Enter'||e.key===' '){e.preventDefault();copy(c.textContent,c)}});
+ });
+ // Lab tick-boxes: any heading whose id starts "lab-" gets a checkbox, remembered in this
+ // browser only. Storage can be missing (private window, blocked site data) - the page
+ // still works, the ticks just do not persist.
+ function sget(k){try{return localStorage.getItem(k)}catch(e){return null}}
+ function sset(k,on){try{on?localStorage.setItem(k,'1'):localStorage.removeItem(k)}catch(e){}}
+ var labs=[].slice.call(document.querySelectorAll('h2[id^="lab-"],h3[id^="lab-"]'));
+ if(labs.length){
+  var badge=document.createElement('div');badge.className='labbadge';document.body.appendChild(badge);
+  var count=function(){badge.textContent='Labs done: '+labs.filter(function(h){return sget('labdone:'+h.id)}).length+' of '+labs.length};
+  labs.forEach(function(h){
+   var cb=document.createElement('input');cb.type='checkbox';cb.className='lab';
+   cb.title='Tick when you have finished this lab (remembered in this browser)';cb.setAttribute('aria-label','Lab done');
+   cb.checked=!!sget('labdone:'+h.id);h.classList.toggle('labdone',cb.checked);
+   cb.addEventListener('change',function(){sset('labdone:'+h.id,cb.checked);h.classList.toggle('labdone',cb.checked);count()});
+   h.insertBefore(cb,h.firstChild);
+  });
+  count();
+ }
+ document.querySelectorAll('li>a[href*="#lab-"]').forEach(function(a){
+  if(sget('labdone:'+a.getAttribute('href').split('#')[1]))a.classList.add('labdone')});
+})();
+</script>
+</body></html>

@@ -1,0 +1,2225 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Part 1 — Git in Visual Studio</title>
+<style>
+:root{color-scheme:light dark}
+*{box-sizing:border-box}
+body{margin:0;background:#f6f8fa;color:#1f2328;font:16px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif}
+.wrap{max-width:900px;margin:0 auto;padding:32px 24px 96px}
+.card{background:#fff;border:1px solid #d0d7de;border-radius:10px;padding:40px 48px}
+h1,h2,h3{line-height:1.25;font-weight:600}
+h1{font-size:1.9rem;margin:0 0 .3em;padding-bottom:.3em;border-bottom:1px solid #d8dee4}
+h2{font-size:1.4rem;margin:1.8em 0 .6em;padding-bottom:.25em;border-bottom:1px solid #eaeef2}
+h3{font-size:1.12rem;margin:1.4em 0 .5em}
+p,li{margin:.5em 0}
+a{color:#0969da;text-decoration:none}
+a:hover{text-decoration:underline}
+code{font-family:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;font-size:.86em;background:#eff1f3;padding:.15em .4em;border-radius:6px}
+pre{background:#f6f8fa;border:1px solid #d8dee4;border-radius:8px;padding:14px 16px;overflow:auto}
+pre code{background:none;padding:0;font-size:.85em;line-height:1.45}
+pre>code:not([class]){line-height:1.25}
+blockquote{margin:1em 0;padding:.4em 1em;color:#3d444d;border-left:4px solid #d0d7de;background:#f6f8fa;border-radius:0 6px 6px 0}
+blockquote>:first-child{margin-top:0}blockquote>:last-child{margin-bottom:0}
+table{border-collapse:collapse;width:100%;margin:1em 0;display:block;overflow:auto}
+th,td{border:1px solid #d0d7de;padding:8px 12px;text-align:left;vertical-align:top}
+th{background:#f6f8fa;font-weight:600}
+tr:nth-child(2n) td{background:#f6f8fa}
+hr{border:0;border-top:1px solid #d8dee4;margin:2em 0}
+pre{position:relative}
+pre>button.copy{position:absolute;top:8px;right:8px;padding:5px 9px;cursor:pointer;
+  font:600 .68rem/1 ui-monospace,SFMono-Regular,Consolas,monospace;letter-spacing:.03em;
+  color:#636c76;background:#fff;border:1px solid #d0d7de;border-radius:6px;
+  opacity:0;transition:opacity .12s}
+pre:hover>button.copy,pre>button.copy:focus{opacity:1}
+pre>button.copy.done{color:#0a3622;background:#dafbe1;border-color:#4ac26b}
+@media(hover:none){pre>button.copy{opacity:1}}
+td code.cp{cursor:pointer}
+td code.cp:hover,td code.cp:focus{outline:1px solid #8c959f;outline-offset:1px}
+td code.cp.done{color:#0a3622;background:#dafbe1}
+.docnav{margin:0 0 20px;font-size:.85rem;color:#636c76}
+.docnav a{color:#636c76}
+ul{padding-left:1.4em}ol{padding-left:1.4em}
+img{max-width:100%;height:auto;border:1px solid #d0d7de;border-radius:6px;vertical-align:top}
+a img{cursor:zoom-in}
+figure.clip{margin:1em 0}
+video{display:block;width:100%;height:auto;border:1px solid #d0d7de;border-radius:6px;background:#111}
+tr:has(:target) td{background:#fff8c5!important}
+h2>input.lab,h3>input.lab{width:1em;height:1em;margin:0 .45em 0 0;vertical-align:-.08em;cursor:pointer;accent-color:#1a7f37}
+h2.labdone,h3.labdone,a.labdone{color:#1a7f37}
+a.labdone::after{content:" \2713";font-weight:700}
+.labbadge{position:fixed;right:14px;bottom:14px;z-index:5;background:#fff;border:1px solid #d0d7de;border-radius:999px;
+  padding:6px 12px;font-size:.8rem;color:#3d444d;box-shadow:0 2px 8px rgba(0,0,0,.08)}
+@media(max-width:640px){.card{padding:24px 18px}.wrap{padding:16px 10px 64px}}
+@media print{body{background:#fff;color:#000}.wrap{max-width:none;padding:0}.card{border:0;padding:0}
+ pre>button.copy,.labbadge,.docnav,input.lab{display:none}a{color:inherit}
+ pre,table,blockquote,img,figure{break-inside:avoid}h1,h2,h3{break-after:avoid}}
+@media(prefers-color-scheme:dark){
+ body{background:#0d1117;color:#e6edf3}
+ .card{background:#161b22;border-color:#30363d}
+ h1{border-color:#30363d}h2{border-color:#21262d}
+ code{background:#262c34}
+ pre{background:#0d1117;border-color:#30363d}
+ blockquote{background:#161b22;border-color:#30363d;color:#9198a1}
+ th,td{border-color:#30363d}th{background:#161b22}tr:nth-child(2n) td{background:#12171e}
+ a{color:#4493f8}.docnav,.docnav a{color:#9198a1}
+ hr{border-color:#30363d}
+ pre>button.copy{color:#9198a1;background:#161b22;border-color:#30363d}
+ pre>button.copy.done{color:#aff5b4;background:#1b4721;border-color:#2ea043}
+ td code.cp.done{color:#aff5b4;background:#1b4721}
+ tr:has(:target) td{background:#3b2f00!important}
+ h2.labdone,h3.labdone,a.labdone{color:#3fb950}
+ .labbadge{background:#161b22;border-color:#30363d;color:#9198a1}
+ video{border-color:#30363d}
+}
+</style></head>
+<body><div class="wrap"><div class="card">
+<p><a href="git-with-gitea.html">Git with Gitea — start page</a> · <a href="git-with-gitea-part0.html">← Part 0 · Common ground</a> · <a href="git-with-gitea-part2.html">Part 2 · Command line →</a> · <a href="git-with-gitea-cheat-sheet.html">Cheat sheet</a></p>
+<h1 id="part-1-git-in-visual-studio">Part 1 — Git in Visual Studio</h1>
+<p>Everything in this half is done through the IDE. You will not need Part 2 to follow it.</p>
+<p>Two honest framings before you start, because they shape everything below:</p>
+<ul>
+<li><strong>Visual Studio's Git tooling is a skin over ordinary git.</strong> Every button runs one of the
+  commands in Part 2. Nothing here is a different system, and nothing the UI does is invisible from
+  the command line. That is good news: when the UI confuses you, the terminal can always tell you
+  what actually happened.</li>
+<li><strong>Visual Studio does not know what Gitea is.</strong> Its Pull Request features light up only for GitHub
+  and Azure DevOps. To Visual Studio our server is just a generic HTTP remote — which works
+  perfectly for clone / fetch / pull / push / branch / merge, and not at all for PRs. <strong>Pull
+  requests are created and reviewed in the Gitea web UI, always</strong> (<a href="git-with-gitea-part0.html#05-pull-requests-the-part-that-is-not-git">§0.5</a>).</li>
+</ul>
+<p>There are exactly <strong>three</strong> places in this half where the IDE has no button and you must open
+<strong>View → Terminal</strong>: the <code>reflog</code> (Lab V8), force-adding an ignored file (Lab V11), and <code>bisect</code>.
+They are called out where they arrive, and they are the entire honest answer to "can I do git
+without the command line?" — very nearly, but not quite.</p>
+<blockquote>
+<p><strong>About the terminal boxes.</strong> Most labs end with a grey box of git commands labelled <em>What git
+actually did</em>. Those are <strong>read-only verification</strong> — <code>log</code>, <code>status</code>, <code>show</code> — and you may skip
+every one of them and still complete the lab. They are there because seeing <code>git log</code> agree with
+the graph you just clicked through is what turns the UI from magic into a tool. Where a command
+is <strong>not</strong> optional, the lab says so in bold.</p>
+</blockquote>
+<p><strong>On this page</strong></p>
+<ul>
+<li><a href="#1-orientation-where-git-lives-in-visual-studio">1. Orientation — where git lives in Visual Studio</a><ul>
+<li><a href="#11-the-four-places-git-appears-on-screen">1.1 The four places git appears on screen</a></li>
+<li><a href="#12-the-git-changes-window-button-by-button">1.2 The Git Changes window, button by button</a></li>
+<li><a href="#13-the-git-repository-window-pane-by-pane">1.3 The Git Repository window, pane by pane</a></li>
+<li><a href="#14-reading-the-icons-and-the-counts">1.4 Reading the icons and the counts</a></li>
+<li><a href="#15-where-visual-studio-tells-you-things-went-wrong">1.5 Where Visual Studio tells you things went wrong</a></li>
+</ul>
+</li>
+<li><a href="#2-one-time-setup-in-visual-studio">2. One-time setup in Visual Studio</a></li>
+<li><a href="#3-the-daily-loop-in-clicks">3. The daily loop, in clicks</a><ul>
+<li><a href="#the-commit-button-renames-itself-and-that-is-the-whole-trick">The commit button renames itself, and that is the whole trick</a></li>
+</ul>
+</li>
+<li><a href="#4-branching-and-pull-requests-from-visual-studio">4. Branching and pull requests from Visual Studio</a><ul>
+<li><a href="#making-and-switching-branches">Making and switching branches</a></li>
+<li><a href="#then-leave-the-ide">Then leave the IDE</a></li>
+<li><a href="#after-the-merge-clean-up">After the merge, clean up</a></li>
+</ul>
+</li>
+<li><a href="#5-conflicts-the-merge-editor">5. Conflicts — the Merge Editor</a></li>
+<li><a href="#6-command-visual-studio-side-by-side">6. Command → Visual Studio, side by side</a></li>
+<li><a href="#7-visual-studio-gotchas">7. Visual Studio gotchas</a><ul>
+<li><a href="#71-it-did-not-work-the-beginner-troubleshooting-table">7.1 "It did not work" — the beginner troubleshooting table</a></li>
+<li><a href="#72-keyboard-shortcuts-worth-knowing">7.2 Keyboard shortcuts worth knowing</a></li>
+</ul>
+</li>
+<li><a href="#8-the-visual-studio-labs">8. The Visual Studio labs</a><ul>
+<li><a href="#lab-va-put-an-existing-folder-on-gitea">Lab VA — Put an existing folder on Gitea</a></li>
+<li><a href="#lab-vb-get-a-local-copy-of-a-gitea-repo">Lab VB — Get a local copy of a Gitea repo</a></li>
+<li><a href="#lab-v0-identity-and-an-empty-repo-on-gitea">Lab V0 — Identity, and an empty repo on Gitea</a></li>
+<li><a href="#lab-v1-build-the-sample-project-and-make-your-first-commit">Lab V1 — Build the sample project and make your first commit</a></li>
+<li><a href="#lab-v2-connect-to-gitea-and-push">Lab V2 — Connect to Gitea and push</a></li>
+<li><a href="#lab-v3-the-staging-area-properly">Lab V3 — The staging area, properly</a></li>
+<li><a href="#lab-v4-stage-selected-lines-and-the-two-commit-buttons">Lab V4 — Stage selected lines, and the two commit buttons</a></li>
+<li><a href="#lab-v5-a-branch-and-a-real-pull-request">Lab V5 — A branch and a real pull request</a></li>
+<li><a href="#lab-v6-make-a-conflict-on-purpose-fix-it-in-the-merge-editor">Lab V6 — Make a conflict on purpose, fix it in the Merge Editor</a></li>
+<li><a href="#lab-v7-undo-from-the-history-graph">Lab V7 — Undo, from the history graph</a></li>
+<li><a href="#lab-v8-destroy-work-get-it-back-and-hit-the-wall">Lab V8 — Destroy work, get it back, and hit the wall</a></li>
+<li><a href="#lab-v9-stash-i-need-to-switch-branches-right-now">Lab V9 — Stash: "I need to switch branches right now"</a></li>
+<li><a href="#lab-v10-be-your-own-colleague">Lab V10 — Be your own colleague</a></li>
+<li><a href="#lab-v11-gitignore-and-the-mistake-it-does-not-fix">Lab V11 — .gitignore, and the mistake it does not fix</a></li>
+<li><a href="#lab-v12-tags-and-a-gitea-release">Lab V12 — Tags and a Gitea release</a></li>
+<li><a href="#lab-v13-gitea-housekeeping-from-visual-studio">Lab V13 — Gitea housekeeping from Visual Studio</a></li>
+<li><a href="#you-have-finished-part-1">You have finished Part 1</a></li>
+</ul>
+</li>
+</ul>
+<hr />
+<h2 id="1-orientation-where-git-lives-in-visual-studio">1. Orientation — where git lives in Visual Studio</h2>
+<blockquote>
+<p><strong>Written against Visual Studio 2026</strong> (the <em>June 2026 Feature Update</em>); every screenshot in this
+half comes from it. Visual Studio 2022 has the same windows, but a few labels and dialogs differ —
+where they do, this guide gives the 2026 wording. The <strong>toolbar glyphs are not reliable</strong> — they
+have been redrawn between releases and the four small arrows in <em>Git Changes</em> look alike at a
+glance. <strong>Hover any of them for a tooltip</strong>; the tooltip is the authority, not the shape. Every
+instruction here also names the <strong>Git menu</strong> path, which has not moved.</p>
+</blockquote>
+<p><strong>Read this section with Visual Studio open in front of you.</strong> Nothing here asks you to change
+anything; the whole point is to find the four places git appears before you are asked to click any
+of them. Ten minutes here saves an hour of "the guide says press the up arrow, what up arrow".</p>
+<h3 id="11-the-four-places-git-appears-on-screen">1.1 The four places git appears on screen</h3>
+<pre><code>┌────────────────────────────────────────────────────────────────────────────────┐
+│ File  Edit  View  Git  Project  Build  Debug  Test  …    ← (1) the Git menu     │
+├──────────────────────────────────────────────┬─────────────────────────────────┤
+│                                              │  Git Changes                ✕   │
+│                                              │ ┌─────────────────────────────┐ │
+│                                              │ │ main  ↓̱  ↓  ↑  ⟳  ⋯        │ │  ← (2) Git Changes
+│                                              │ │       ↑  ↑  ↑  ↑            │ │     Fetch Pull Push SYNC
+│                                              │ ├─────────────────────────────┤ │
+│              your code                       │ │ Enter a commit message      │ │
+│                                              │ │                          ✨ │ │
+│                                              │ ├─────────────────────────────┤ │
+│                                              │ │ [ Commit Staged        ▾ ]  │ │
+│                                              │ ├─────────────────────────────┤ │
+│                                              │ │ ▾ Changes (1)            +  │ │
+│                                              │ │     README.md            +  │ │
+│                                              │ │ ▾ Staged Changes (1)     −  │ │
+│                                              │ │     Ledger.cs            −  │ │
+│                                              │ └─────────────────────────────┘ │
+├──────────────────────────────────────────────┴─────────────────────────────────┤
+│ Ready                     ↑↓ 1 / 2   ✎0   ⑂ main   🗀 GitSandbox-vs               │
+└────────────────────────────────────────────────────────────────────────────────┘
+                                              ↑ (3) the status bar, bottom-RIGHT
+</code></pre>
+<p>The same layout on a real screen:</p>
+<p><a href="img/git-with-gitea/vs-overview.png" target="_blank" rel="noopener"><img alt="Visual Studio 2026 with the four git places numbered" src="img/git-with-gitea/vs-overview.png" /></a></p>
+<p><em>Visual Studio 2026 with a practice branch checked out. </em><em>(1)</em><em> the </em><em>Git</em><em> menu, </em><em>(2)</em><em> the </em><em>Git
+Changes</em><em> window docked on the right, </em><em>(3)</em><em> the git part of the status bar, bottom-right,
+</em><em>(4)</em><em> the </em><em>Git Repository</em><em> window, open here as a document tab. The numbers match the table.</em></p>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Thing</th>
+<th>How to open it</th>
+<th>What it is, in one line</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td><strong>Git menu</strong></td>
+<td>The main menu bar, between <em>View</em> and <em>Project</em></td>
+<td>Everything you do once in a while: Clone, Fetch, Pull, Push, New Branch, Manage Remotes, Settings</td>
+</tr>
+<tr>
+<td>2</td>
+<td><strong>Git Changes</strong></td>
+<td><strong>View → Git Changes</strong></td>
+<td>What you have changed right now, and the button that commits it. You will spend 90% of your git time here</td>
+</tr>
+<tr>
+<td>3</td>
+<td><strong>Status bar</strong></td>
+<td>Bottom-<strong>right</strong> of the window, always visible</td>
+<td>Which branch you are on, and how many commits you have not pushed (↑) or not pulled (↓)</td>
+</tr>
+<tr>
+<td>4</td>
+<td><strong>Git Repository</strong></td>
+<td><strong>View → Git Repository</strong></td>
+<td>The history: every commit, every branch, as a graph. Where you go to merge, revert, reset or tag</td>
+</tr>
+</tbody>
+</table>
+<p><strong>If most of the Git menu is greyed out</strong>, you have no folder or solution open. With nothing open
+the menu offers only <em>Clone</em>, <em>Create Git Repository</em> and <em>Open Local Repository</em> — everything else
+(Push, Pull, Fetch, New Branch, Manage Remotes, Repository Settings) needs a repository to act on.
+<strong>File → Open → Project/Solution</strong>, or <strong>Open Folder</strong>, and the rest lights up. Same for the Git
+Changes and Git Repository windows: they are empty until something is open.</p>
+<p><a href="img/git-with-gitea/vs-git-menu.png" target="_blank" rel="noopener"><img alt="The Git menu" src="img/git-with-gitea/vs-git-menu.png" /></a></p>
+<p><em>The </em><em>Git</em><em> menu with a repository open. Boxed: the four sync commands (</em><em>Fetch, Pull, Push,
+Sync</em><em>), the branch commands, and </em><em>Manage Remotes… / Settings</em><em> — the three groups this guide uses.</em></p>
+<p><strong>Dock Git Changes and Git Repository where you can see both.</strong> Drag one by its title bar onto the
+docking guides. Most beginner confusion in the IDE comes from acting in one window and the
+consequence appearing in the other — you stage in <em>Git Changes</em> and the commit shows up in <em>Git
+Repository</em>, and if only one is visible it feels like nothing happened.</p>
+<h3 id="12-the-git-changes-window-button-by-button">1.2 The Git Changes window, button by button</h3>
+<p>This is the window to learn first. Top to bottom:</p>
+<table>
+<thead>
+<tr>
+<th>Part</th>
+<th>What it does</th>
+<th>The command behind it</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Branch name, top-left</td>
+<td>The branch you are committing <strong>to</strong>. Click it to switch</td>
+<td><code>git switch</code></td>
+</tr>
+<tr>
+<td>Toolbar arrow <strong>1</strong> (down, underlined)</td>
+<td><strong>Fetch</strong> — ask the server what is new, change nothing of yours. Always safe</td>
+<td><code>git fetch</code></td>
+</tr>
+<tr>
+<td>Toolbar arrow <strong>2</strong> (plain down)</td>
+<td><strong>Pull</strong> — fetch <em>and</em> merge it into your branch</td>
+<td><code>git pull</code></td>
+</tr>
+<tr>
+<td>Toolbar arrow <strong>3</strong> (up)</td>
+<td><strong>Push</strong> — send your commits to Gitea</td>
+<td><code>git push</code></td>
+</tr>
+<tr>
+<td>Toolbar arrow <strong>4</strong>, the circular <strong>⟳</strong></td>
+<td><strong>Sync</strong> — <strong>pull, then push, in one click.</strong> <em>Not</em> Fetch, despite the refresh-looking icon. Avoid it while learning (<a href="#3-the-daily-loop-in-clicks">§3</a>)</td>
+<td><code>git pull &amp;&amp; git push</code></td>
+</tr>
+<tr>
+<td><strong>⋯</strong></td>
+<td>Everything else — Manage Branches, Settings, Stash</td>
+<td></td>
+</tr>
+<tr>
+<td>Message box</td>
+<td>Your commit message. The <strong>✨</strong> asks Copilot to draft one from your changes</td>
+<td>the <code>-m "…"</code> part</td>
+</tr>
+<tr>
+<td><strong>Commit Staged ▾</strong></td>
+<td>Commits. <strong>The dropdown arrow matters — see <a href="#3-the-daily-loop-in-clicks">§3</a></strong></td>
+<td><code>git commit</code></td>
+</tr>
+<tr>
+<td><strong>Changes</strong> list</td>
+<td>Files you have edited but <strong>not</strong> chosen to commit yet</td>
+<td>your working tree</td>
+</tr>
+<tr>
+<td><strong>Staged Changes</strong> list</td>
+<td>Files you <strong>have</strong> chosen. Only these go into the next commit</td>
+<td>the staging area</td>
+</tr>
+<tr>
+<td><strong>+</strong> on a file</td>
+<td>Move it <em>down</em> into Staged Changes</td>
+<td><code>git add</code></td>
+</tr>
+<tr>
+<td><strong>−</strong> on a staged file</td>
+<td>Move it back <em>up</em>. Your edits are untouched</td>
+<td><code>git restore --staged</code></td>
+</tr>
+<tr>
+<td><strong>+</strong> / <strong>−</strong> on a <em>header</em></td>
+<td>Do it to every file at once</td>
+<td><code>git add .</code></td>
+</tr>
+<tr>
+<td>Right-click a file → <strong>Undo Changes</strong></td>
+<td><strong>Throw your edits away permanently.</strong> See the warning in <a href="#7-visual-studio-gotchas">§7</a></td>
+<td><code>git restore</code></td>
+</tr>
+<tr>
+<td><strong>▾</strong> on the commit button → <em>Stash All…</em></td>
+<td>Put unfinished work on a shelf and clean the screen. <strong>There is no separate Stash button</strong> — it shares the commit dropdown (§3)</td>
+<td><code>git stash</code></td>
+</tr>
+<tr>
+<td><strong>Stashes</strong> list, at the bottom of the panel</td>
+<td>What is currently on the shelf, and <strong>Drop All</strong></td>
+<td><code>git stash list</code></td>
+</tr>
+</tbody>
+</table>
+<p><a href="img/git-with-gitea/vs-git-changes.png" target="_blank" rel="noopener"><img alt="Git Changes, numbered" src="img/git-with-gitea/vs-git-changes.png" /></a></p>
+<p><em>Git Changes in the middle of Lab V4. </em><em>1</em><em> Fetch · </em><em>2</em><em> Pull · </em><em>3</em><em> Push · </em><em>4</em><em> Sync (⟳) ·
+</em><em>5</em><em> the commit button — it says </em><em>Commit Staged</em><em> because something is staged · </em><em>6</em><em> </em><em>−</em><em> on
+the Staged Changes header (unstage all) · </em><em>7</em><em> </em><em>+</em><em> on the Changes header (stage all). Note
+<code>Ledger.cs</code> in </em><em>both</em><em> lists: part of it is staged, part is not.</em></p>
+<blockquote>
+<p><strong>Fetch and Sync sit next to each other and both look like "refresh".</strong> Left to right the four
+arrows are <strong>Fetch, Pull, Push, Sync</strong> — hover to confirm before clicking, or use <strong>Git → Fetch</strong>
+from the menu, which cannot be misread. Clicking ⟳ when you meant Fetch does not just look at the
+server, it merges <em>and</em> pushes.</p>
+</blockquote>
+<p><strong>If the commit button looks dead, look at the message box.</strong> An empty message puts a red
+<strong>Required field.</strong> line under it and disables the button. That is the reason nine times out of ten.</p>
+<p><strong>The two lists are the whole idea.</strong> <em>Changes</em> is everything you have touched; <em>Staged Changes</em>
+is the shortlist you are about to commit. A file can appear in <strong>both at once</strong> — that is not a
+bug, it means part of the file is on the shortlist and part is not. Lab V4 does this deliberately.</p>
+<blockquote>
+<p><strong>Do this now, it takes 20 seconds.</strong> Open any file in your project, type a space, save
+(<strong>Ctrl+S</strong>). Watch it appear under <em>Changes</em>. Click <strong>+</strong> and watch it move to <em>Staged Changes</em>.
+Click <strong>−</strong> and watch it move back. Then <strong>Ctrl+Z</strong>, save again, and watch it disappear. You have
+just used the staging area, and nothing was committed.</p>
+</blockquote>
+<h3 id="13-the-git-repository-window-pane-by-pane">1.3 The Git Repository window, pane by pane</h3>
+<p><strong>View → Git Repository.</strong> Three panes:</p>
+<table>
+<thead>
+<tr>
+<th>Pane</th>
+<th>Holds</th>
+<th>You use it to</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Left</strong></td>
+<td>Branches, Remotes, Tags, <strong>Stashes</strong></td>
+<td>Switch, merge, delete, rename — all by <strong>right-click</strong></td>
+</tr>
+<tr>
+<td><strong>Middle</strong></td>
+<td>The commit graph, newest at the top</td>
+<td>Right-click any commit to Revert, Reset, Cherry-Pick or Tag it</td>
+</tr>
+<tr>
+<td><strong>Right/bottom</strong></td>
+<td>The selected commit's message, author, date and full diff</td>
+<td>Read what a commit actually changed</td>
+</tr>
+</tbody>
+</table>
+<p><a href="img/git-with-gitea/vs-git-repository.png" target="_blank" rel="noopener"><img alt="Git Repository window, all panes" src="img/git-with-gitea/vs-git-repository.png" /></a></p>
+<p><em>The whole window, left pane </em><em>expanded</em><em>. </em><em>1</em><em> the branch tree (<code>feature/vs-staging</code>, <code>main</code>,
+<code>remotes/origin</code>) · </em><em>2</em><em> the </em><em>Incoming</em><em> and </em><em>Local History (2 Outgoing)</em><em> rows · </em><em>3</em><em> the graph,
+newest first · </em><em>4</em><em> the details of the double-clicked commit: its diff, message, author and
+</em><em>Changes (2)</em><em> — this is the Commit All commit from Lab V4, which swept up <code>README.md</code> too.</em></p>
+<blockquote>
+<p><strong>⚠ The left pane is usually collapsed, and this is the single most confusing thing in the
+window.</strong> By default you see only the graph, and the branch tree is a <strong>narrow vertical strip of
+icons down the far-left edge</strong>. Every instruction in this guide that says <em>"right-click the
+branch"</em> means that tree — so if there is no branch list on your screen, you are not missing a
+feature, it is folded up.</p>
+<p>Three ways to get it, any of which work:</p>
+<ul>
+<li>Click the <strong>›</strong> chevron at the top of that left strip to expand the pane.</li>
+<li><strong>Git → Manage Branches</strong> — opens this window with the branch tree already showing. <strong>Use this
+  one if in doubt.</strong></li>
+<li>The <strong>Branch / Tag:</strong> dropdown above the graph filters <em>which</em> commits are drawn. It is a
+  filter, not the branch list — you cannot delete a branch from it.</li>
+</ul>
+<p><strong>The coloured branch badges in the graph are labels, not the branch list.</strong> Right-clicking
+<code>feature/interest-rate</code> where it sits beside a commit gives you the <em>commit</em> menu (Revert, Reset,
+Tag), not the <em>branch</em> menu (Merge, Rename, Delete).</p>
+</blockquote>
+<p>Two collapsible rows sit at the top of the middle pane, each with its own links:</p>
+<ul>
+<li><strong>Incoming (n)</strong> — commits the server has that you do not. <em>This is what a Pull will bring you.</em>
+  Its <strong>Fetch</strong> | <strong>Pull</strong> links are the safest place to fetch: they are words, not glyphs.</li>
+<li><strong>Local History (n Outgoing)</strong> — commits you have that the server does not, with <strong>Push</strong> | <strong>Sync</strong>
+  links. <em>This is what a Push will send.</em></li>
+</ul>
+<p><code>Incoming (0)</code> means <em>as of your last fetch</em> — click <strong>Fetch</strong> to refresh the count before trusting
+it.</p>
+<p><strong>Those two lists are the most useful thing in the window and almost nobody notices them.</strong> Looking
+at <em>Incoming</em> before you pull is the difference between being surprised by a merge and expecting
+one.</p>
+<h3 id="14-reading-the-icons-and-the-counts">1.4 Reading the icons and the counts</h3>
+<p><a href="img/git-with-gitea/vs-status-bar.png" target="_blank" rel="noopener"><img alt="The git part of the status bar" src="img/git-with-gitea/vs-status-bar.png" /></a></p>
+<p><em>Bottom-right of the window: <code>↑↓ 2 / 0</code> (outgoing / incoming), <code>✎ 0</code> (changed files), the branch,
+and the repository.</em></p>
+<p>Visual Studio 2026 shows both counts behind one <strong>↑↓</strong> icon, <strong>outgoing first</strong>:</p>
+<table>
+<thead>
+<tr>
+<th>You see</th>
+<th>It means</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>⑂ main</code> in the status bar</td>
+<td>You are on branch <code>main</code></td>
+</tr>
+<tr>
+<td><code>↑↓ 3 / 0</code></td>
+<td>You have <strong>3 commits not yet pushed</strong>. Your colleagues cannot see them</td>
+</tr>
+<tr>
+<td><code>↑↓ 0 / 2</code></td>
+<td>The server has <strong>2 commits you have not pulled</strong> (as of your last fetch). You are working on stale code</td>
+</tr>
+<tr>
+<td><code>↑↓ 0 / 0</code></td>
+<td>You are exactly level with the server</td>
+</tr>
+<tr>
+<td><code>✎ 2</code></td>
+<td>Two files changed and not yet committed</td>
+</tr>
+<tr>
+<td>A file in <strong>Changes</strong></td>
+<td>Edited, not on the shortlist</td>
+</tr>
+<tr>
+<td>A file in <strong>Staged Changes</strong></td>
+<td>On the shortlist for the next commit</td>
+</tr>
+<tr>
+<td>A file in <strong>both</strong></td>
+<td>Partly staged — see §1.2</td>
+</tr>
+<tr>
+<td><strong>Unmerged Changes</strong> appears</td>
+<td>A conflict. Go to <a href="#5-conflicts-the-merge-editor">§5</a></td>
+</tr>
+<tr>
+<td>A red ✕ or gold bar across Git Changes</td>
+<td>Something failed. Read §1.5</td>
+</tr>
+</tbody>
+</table>
+<p><strong>The first number is the one to watch.</strong> "I pushed it" and "it is on the server" are different
+claims, and <code>↑↓ 1 / 0</code> is the IDE telling you which one is true.</p>
+<h3 id="15-where-visual-studio-tells-you-things-went-wrong">1.5 Where Visual Studio tells you things went wrong</h3>
+<p>Most git operations report failure quietly, and a beginner who does not know where to look
+concludes that "nothing happened". There are three places:</p>
+<ol>
+<li><strong>A small dialog, for the common push failure only.</strong> When the server has commits you do not,
+   Visual Studio 2026 pops up <strong>Git - Push failed</strong> and offers <strong>Pull then Push</strong>, <strong>Pull</strong> or
+   <strong>Cancel</strong> (Lab V10 walks you into it).</li>
+<li><strong>A gold, red or blue info bar</strong> across the top of the <strong>Git Changes</strong> window (or the Git
+   Repository window), with the short version and sometimes a link that fixes it.</li>
+<li><strong>The Output window</strong> — <strong>View → Output</strong> (<strong>Ctrl+Alt+O</strong>), then set <strong>Show output from:</strong> to
+   <strong>Source Control - Git</strong>. This is the <em>full</em> text git printed, and it is usually the actual
+   answer.</li>
+</ol>
+<p><a href="img/git-with-gitea/vs-push-failed.png" target="_blank" rel="noopener"><img alt="The Push failed dialog" src="img/git-with-gitea/vs-push-failed.png" /></a></p>
+<p><em>The one failure that gets a dialog. </em><em>Pull</em><em> (boxed) is the safe choice — it brings the other
+person's commits down so you can look before pushing again. </em><em>Pull then Push</em><em> does both blind.</em></p>
+<p><a href="img/git-with-gitea/vs-output-git.png" target="_blank" rel="noopener"><img alt="Output window showing git's own text" src="img/git-with-gitea/vs-output-git.png" /></a></p>
+<p><em>The Output window with </em><em>Show output from:</em><em> set to </em><em>Source Control - Git</em><em> (1). Everything git
+printed is here: the pruned branch from the last fetch (2), and the full rejection with git's own
+hint to pull first (3).</em></p>
+<p><strong>Get into the habit now:</strong> when a click seems to do nothing, look at <strong>Output → Source Control -
+Git</strong> before anything else. Git's error messages are unusually good and very often contain the
+exact fix.</p>
+<hr />
+<h2 id="2-one-time-setup-in-visual-studio">2. One-time setup in Visual Studio</h2>
+<p>Do <a href="git-with-gitea-part0.html#01-before-you-start">§0.1</a> first — identity and the three <code>git config</code> settings.</p>
+<blockquote>
+<p><strong>The confusion that catches every newcomer: Visual Studio has two different "accounts", and
+neither is the one git uses.</strong></p>
+<table>
+<thead>
+<tr>
+<th>What it is</th>
+<th>Where</th>
+<th>What it is for</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Your <strong>Visual Studio / Microsoft account</strong></td>
+<td>Top-right of the IDE</td>
+<td>Your VS licence, settings sync, Copilot. <strong>Nothing to do with git</strong></td>
+</tr>
+<tr>
+<td>Your <strong>git identity</strong></td>
+<td><strong>Git → Settings → Git Global Config</strong></td>
+<td>The name and email stamped on your commits (§0.1)</td>
+</tr>
+<tr>
+<td>Your <strong>Gitea credentials</strong></td>
+<td>Prompted on first push; stored in Windows Credential Manager</td>
+<td>Permission to actually write to the server (§0.4)</td>
+</tr>
+</tbody>
+</table>
+<p>They are three separate things. Signing into Visual Studio does <strong>not</strong> log you into Gitea, and
+being signed in as one person while committing as another is how commits end up attributed to
+the wrong name. <strong>Git → Settings</strong> is the one that decides whose name is on your work.</p>
+</blockquote>
+<p><strong>Built-in terminal</strong> — <strong>View → Terminal</strong> (<code>Ctrl+`</code>). Keep it open. Every verification box in
+the labs is typed here, and when the UI does something you did not expect, <code>git status</code> and
+<code>git log --oneline --graph --all</code> will tell you what actually happened.</p>
+<p><strong>Credentials</strong> — the first push prompts for a username and password. Enter <code>Adhir</code> and <strong>paste
+your Personal Access Token</strong> as the password (<a href="git-with-gitea-part0.html#04-your-gitea-account-repo-and-token">§0.4</a>), not
+your account password. Windows Credential Manager stores it, and Visual Studio never asks again.</p>
+<p><strong>Where VS keeps git settings</strong> — <strong>Git → Settings</strong> opens <strong>Options → Source Control → Git
+Settings</strong>, which has two pages:</p>
+<table>
+<thead>
+<tr>
+<th>Panel</th>
+<th>Scope</th>
+<th>Equivalent</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Git Global Config</strong></td>
+<td>every repo on this machine</td>
+<td><code>git config --global</code> — the file <code>C:\Users\&lt;you&gt;\.gitconfig</code></td>
+</tr>
+<tr>
+<td><strong>Git Repository Config</strong></td>
+<td>this repo only</td>
+<td><code>git config --local</code> — the file <code>&lt;repo&gt;\.git\config</code>, and it <strong>wins</strong> over the global one</td>
+</tr>
+</tbody>
+</table>
+<p>Two options in there worth setting now, both under <strong>Git Global Config</strong>:</p>
+<ul>
+<li><strong>Rebase local branch when pulling: False</strong> — matches the <code>pull.rebase false</code> from §0.1.</li>
+<li><strong>Prune remote branches during fetch: True</strong> — otherwise branches deleted on the server linger
+  in your branch list forever. Lab V13 shows you this happening.</li>
+</ul>
+<p><a href="img/git-with-gitea/vs-git-global-config.png" target="_blank" rel="noopener"><img alt="Git Global Config page" src="img/git-with-gitea/vs-git-global-config.png" /></a></p>
+<p><em>Options → Source Control → Git Settings → </em><em>Git Global Config</em><em> (1). </em><em>User name</em><em> and </em><em>Email</em><em>
+(2) are what get stamped on every commit. </em><em>Prune remote branches during fetch: True</em><em> (3) and
+</em><em>Rebase local branch when pulling: False</em><em> (4) are the two settings above.</em></p>
+<hr />
+<h2 id="3-the-daily-loop-in-clicks">3. The daily loop, in clicks</h2>
+<p>Six steps cover ~95% of your day in the IDE:</p>
+<ol>
+<li><strong>Look.</strong> Glance at <strong>Git Changes</strong> and at the <strong>↑↓</strong> counts in the status bar. This is
+   <code>git status</code>, and it is already on screen — you get it free, which is the IDE's best trick.</li>
+<li><strong>Get everyone else's work.</strong> <strong>Git → Pull</strong> (or the <strong>↓</strong> arrow). Do this <em>before</em> you start,
+   not after you finish.</li>
+<li><strong>Branch.</strong> Branch picker → <strong>New Branch…</strong> → <code>feature/something</code>. Always from an up-to-date
+   <code>main</code>.</li>
+<li><strong>Work, then review your own diff.</strong> Double-click each file under <em>Changes</em> and read the
+   side-by-side diff before you stage it. This is the step people skip and regret.</li>
+<li><strong>Stage deliberately, then commit.</strong> <strong>+</strong> on the files you mean, type a message
+   (<a href="git-with-gitea-part0.html#06-commit-messages-and-branch-names">§0.6</a>), click <strong>Commit Staged</strong> — <em>not</em> Commit All; see
+   <a href="#7-visual-studio-gotchas">§7</a>.</li>
+<li><strong>Push.</strong> The <strong>↑</strong> arrow. Visual Studio 2026 pushes a brand-new branch straight away — there is
+   no "publish" prompt — creates it on Gitea and links the two (that is <code>git push -u</code>).</li>
+</ol>
+<p><a href="img/git-with-gitea/vs-pushed.png" target="_blank" rel="noopener"><img alt="Push succeeded info bar" src="img/git-with-gitea/vs-pushed.png" /></a></p>
+<p><em>After the first push of a new branch: "Successfully pushed feature/vs-staging to origin", and the
+counts drop to <code>0 / 0</code>.</em></p>
+<p>Then repeat 4–6 as often as you like, and open the pull request in the browser when the branch is
+ready. Small commits are better than big ones — they are easier to review and easier to undo when
+one of them turns out to be wrong.</p>
+<h3 id="the-commit-button-renames-itself-and-that-is-the-whole-trick">The commit button renames itself, and that is the whole trick</h3>
+<p><strong>There is only one commit button, and Visual Studio changes its label depending on what you have
+staged.</strong> This catches everybody, because the guide you are reading (or a colleague) says "click
+Commit All" and no such button is on screen.</p>
+<table>
+<thead>
+<tr>
+<th>If <em>Staged Changes</em> is…</th>
+<th>The button reads</th>
+<th>Its <strong>▾</strong> dropdown offers</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>not empty</strong></td>
+<td><strong>Commit Staged</strong></td>
+<td><em>Commit Staged and Push</em>, <em>Commit Staged and Sync</em></td>
+</tr>
+<tr>
+<td><strong>empty</strong></td>
+<td><strong>Commit All</strong></td>
+<td><em>Commit All and Push</em>, <em>Commit All and Sync</em></td>
+</tr>
+</tbody>
+</table>
+<p><a href="img/git-with-gitea/vs-commit-all.png" target="_blank" rel="noopener"><img alt="The button reading Commit All" src="img/git-with-gitea/vs-commit-all.png" /></a></p>
+<p><em>Right after committing the one staged line in Lab V4: Staged Changes is empty, so the button has
+renamed itself </em><em>Commit All</em><em> — and it will take </em><em>both</em><em> files listed under Changes.</em></p>
+<p>So <em>Commit Staged</em> and <em>Commit All</em> are never offered at the same time — they are the same button,
+renamed. <strong>To get "Commit All", stage nothing</strong> (or commit what you staged first, which empties the
+list and renames the button for you).</p>
+<p>What each one actually does:</p>
+<table>
+<thead>
+<tr>
+<th>Button / option</th>
+<th>What it commits</th>
+<th>Then</th>
+<th>Use it when</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Commit Staged</strong></td>
+<td><strong>Only</strong> what is in <em>Staged Changes</em></td>
+<td>stops</td>
+<td><strong>Almost always.</strong> You chose the files; it commits exactly those</td>
+</tr>
+<tr>
+<td><strong>Commit All</strong></td>
+<td><strong>Every tracked file you have edited</strong></td>
+<td>stops</td>
+<td>Nothing is staged and you genuinely want everything — after looking at the <em>Changes</em> list</td>
+</tr>
+<tr>
+<td><strong>… and Push</strong></td>
+<td>as above</td>
+<td>pushes to Gitea</td>
+<td>Never, while learning. Two steps behind one click</td>
+</tr>
+<tr>
+<td><strong>… and Sync</strong></td>
+<td>as above</td>
+<td><strong>pulls, then pushes</strong></td>
+<td>Never, while learning. It can start a merge you were not expecting</td>
+</tr>
+</tbody>
+</table>
+<p><strong>The same dropdown also holds the two stash commands</strong> — there is no separate Stash button
+anywhere in the window:</p>
+<table>
+<thead>
+<tr>
+<th>Also in the dropdown</th>
+<th>Does</th>
+<th>Command</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Stash All (--include-untracked)</strong></td>
+<td>Shelves everything, <strong>including files git is not tracking yet</strong>, and cleans the screen</td>
+<td><code>git stash -u</code></td>
+</tr>
+<tr>
+<td><strong>Stash All and Keep Staged (--keep-index)</strong></td>
+<td>Shelves everything but <strong>leaves your staged changes in place</strong>, so you can build and test just the part you are about to commit</td>
+<td><code>git stash --keep-index</code></td>
+</tr>
+</tbody>
+</table>
+<p><a href="img/git-with-gitea/vs-commit-dropdown.png" target="_blank" rel="noopener"><img alt="The commit button's dropdown" src="img/git-with-gitea/vs-commit-dropdown.png" /></a></p>
+<p><em>The </em><em>▾</em><em> beside </em><em>Commit Staged</em><em>: the commit variants, then the two stash commands (boxed) —
+there is no other Stash button.</em></p>
+<p><code>Ctrl+Enter</code> in the message box runs whichever commit option the button is currently showing.</p>
+<p><strong>Two things that trip people up:</strong></p>
+<ul>
+<li><strong>The button is greyed out until you type a message.</strong> If it looks dead, look at the message box —
+  it will say <em>"Enter a message \&lt;Required&gt;"</em>. That is the only reason, nine times out of ten.</li>
+<li><strong>Whichever dropdown option you pick, Visual Studio remembers it</strong> and makes it the default next
+  time. Click <em>… and Sync</em> once and every later commit does that until you change it back. Glance
+  at the button's label before every commit; it takes half a second.</li>
+</ul>
+<blockquote>
+<p><strong>The rule while you are learning: stage with <code>+</code>, then press <em>Commit Staged</em>.</strong> If the button
+does not say <em>Commit Staged</em>, use the <strong>▾</strong> to pick it.</p>
+</blockquote>
+<hr />
+<h2 id="4-branching-and-pull-requests-from-visual-studio">4. Branching and pull requests from Visual Studio</h2>
+<h3 id="making-and-switching-branches">Making and switching branches</h3>
+<p>The <strong>branch picker</strong> at the bottom-right of the status bar is the fastest thing in the whole UI:</p>
+<table>
+<thead>
+<tr>
+<th>To do this</th>
+<th>Click</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>See which branch you are on</td>
+<td>It is written right there, always visible</td>
+</tr>
+<tr>
+<td>Switch branch</td>
+<td>Branch picker → double-click the branch</td>
+</tr>
+<tr>
+<td>New branch</td>
+<td>Branch picker → <strong>New Branch…</strong> — pick the <strong>base</strong> branch carefully in that dialog</td>
+</tr>
+<tr>
+<td>See unpushed / unpulled counts</td>
+<td>The ↑↓ numbers beside the branch name</td>
+</tr>
+<tr>
+<td>Merge, rebase, rename, delete</td>
+<td><strong>Git → Manage Branches</strong> → right-click the branch in the tree. (Same window as <strong>Git Repository</strong>, whose left pane is collapsed by default — <a href="#13-the-git-repository-window-pane-by-pane">§1.3</a>)</td>
+</tr>
+</tbody>
+</table>
+<p><strong>The "base" dropdown in the New Branch dialog matters more than the name.</strong> A branch created from
+whatever you happened to be standing on is the single most common way to end up with a pull request
+full of somebody else's commits. Switch to <code>main</code> and pull <em>first</em>, then create the branch.</p>
+<p><a href="img/git-with-gitea/vs-branch-picker.png" target="_blank" rel="noopener"><img alt="The branch picker" src="img/git-with-gitea/vs-branch-picker.png" /></a></p>
+<p><em>The branch picker (this one is at the top of Git Changes; the status-bar one opens the same list):
+a filter box, </em><em>New Branch</em><em>, and </em><em>Locals</em><em> / </em><em>Remotes</em><em> tabs. Double-click a branch to switch.</em></p>
+<p><a href="img/git-with-gitea/vs-new-branch.png" target="_blank" rel="noopener"><img alt="The New Branch dialog" src="img/git-with-gitea/vs-new-branch.png" /></a></p>
+<p><em>The New Branch dialog. </em><em>Based on:</em><em> defaults to the branch you are standing on — make sure it
+says <code>main</code>. Leave </em><em>Checkout branch</em><em> ticked so you move onto the new branch.</em></p>
+<h3 id="then-leave-the-ide">Then leave the IDE</h3>
+<pre><code>In Visual Studio          →   branch, commit, push
+In the Gitea web UI       →   create the PR, review it, merge it
+In Visual Studio          →   switch to main, pull, delete the branch
+</code></pre>
+<p>That middle step never moves into the IDE for Gitea, no matter which extension you find. Budget
+for the browser tab; it is where code review happens anyway, and
+<a href="git-with-gitea-part0.html#05-pull-requests-the-part-that-is-not-git">§0.5</a> is the whole of it.</p>
+<p><strong>Pushing a branch changes nothing about <code>main</code>.</strong> Your branch sits on the server <em>beside</em> main,
+and the two are unrelated until something merges them. That something is the pull request.</p>
+<h3 id="after-the-merge-clean-up">After the merge, clean up</h3>
+<ol>
+<li>Branch picker → <strong><code>main</code></strong>.</li>
+<li><strong>↓ Pull</strong> — brings the merge Gitea made down to you.</li>
+<li><strong>Git → Manage Branches</strong> → right-click your feature branch → <strong>Delete</strong>. VS refuses if the
+   branch is not merged, which is the safety net working, and greys the item out for the branch you
+   are currently on — hence step 1.</li>
+<li><strong>Git → Fetch</strong> with pruning on (§2) — drops the stale remote-tracking entry.</li>
+</ol>
+<p><a href="img/git-with-gitea/vs-branch-context.png" target="_blank" rel="noopener"><img alt="Right-click menu on a branch" src="img/git-with-gitea/vs-branch-context.png" /></a></p>
+<p><em>Right-click a branch in the tree (1): </em><em>Merge 'feature/v3' into 'main'</em><em> (2) is how Lab V6 merges;
+</em><em>Delete</em><em> (3) is step 3 here. The menu always names the branch you clicked and the one you are on.</em></p>
+<p>Gitea can delete the remote branch for you at merge time — take the offer. Stale branches pile up
+fast and nobody ever cleans them later.</p>
+<hr />
+<h2 id="5-conflicts-the-merge-editor">5. Conflicts — the Merge Editor</h2>
+<p>A conflict means two branches changed the <em>same lines</em> and git will not guess. It is routine, not
+a failure — and this is the one job the IDE genuinely does better than the command line.</p>
+<p>The three shapes a merge can take — Lab V6 produces all three, with these names:</p>
+<pre><code>  FAST-FORWARD — main has not moved, so git just slides the label forward
+
+    before:  A ── B            ◄ main
+                  └── C ── D   ◄ feature/v3
+    after:   A ── B ── C ── D  ◄ main
+
+  MERGE COMMIT — both sides moved on; git joins them with a new commit M
+
+    before:  A ── B ── E       ◄ main
+                  └── C ── D   ◄ feature/v3
+    after:   A ── B ── E ───── M   ◄ main     (M has two parents: E and D)
+                  └── C ── D ──┘
+
+  CONFLICT — both sides changed the SAME line; git stops before M and asks you
+
+    B (where they split)  Version = &quot;1.1&quot;
+    main (hotfix/v21)     Version = &quot;2.1&quot; ┐
+    feature/v3            Version = &quot;3.0&quot; ┘ you pick one, or write a third
+</code></pre>
+<p>When you merge a branch from the branch tree, Visual Studio 2026 first shows a <strong>Merge branches</strong>
+dialog that already warns about <em>potential conflicts</em>. That is a forecast, not an error — click
+<strong>Merge</strong>.</p>
+<p><a href="img/git-with-gitea/vs-merge-dialog.png" target="_blank" rel="noopener"><img alt="Merge branches dialog" src="img/git-with-gitea/vs-merge-dialog.png" /></a></p>
+<p><em>The warning (boxed) means git has spotted a file both branches changed. You still go ahead.</em></p>
+<p>When a merge or pull conflicts:</p>
+<ol>
+<li><strong>Git Changes</strong> lists the conflicted files under <strong>Unmerged Changes</strong>. Double-click one.</li>
+<li>Three panes open: <strong>Incoming</strong> (left, the branch coming in), <strong>Current</strong> (right, where you are
+   standing), <strong>Result</strong> (bottom, what you will actually commit).</li>
+<li>Tick the checkbox on the side you want, per conflict — or <strong>click into the Result pane and type</strong>,
+   when the answer is a mix of both or something new entirely. The Result pane is a normal editor.</li>
+<li><strong>Accept Merge</strong> when the file has no conflicts left. Repeat for each file.</li>
+<li>Back in <strong>Git Changes</strong> the resolved file is under <em>Staged Changes</em> and the button reads
+   <strong>Commit Staged</strong>. <strong>The message box is empty</strong> — type one (for example <code>Merge branch
+   'feature/v3'</code>), then click <strong>Commit Staged</strong>. That commit <em>is</em> the merge commit.</li>
+</ol>
+<figure class="clip"><video controls preload="none" poster="img/git-with-gitea/rec-conflict-poster.png" src="img/git-with-gitea/rec-conflict.webm"></video></figure>
+
+<p><em>The whole resolution in 40 seconds, stepped through the real screenshots of Lab V6 below — right-click merge, the warning, Unmerged Changes, the Merge Editor before and after, the empty message box, and the graph that results.</em></p>
+<p><a href="img/git-with-gitea/vs-conflict-unmerged.png" target="_blank" rel="noopener"><img alt="Git Changes during a conflicted merge" src="img/git-with-gitea/vs-conflict-unmerged.png" /></a></p>
+<p><em>Step 1. "Merge in progress with conflicts" (1), the </em><em>Abort</em><em> button (2), and <code>Ledger.cs</code> under
+</em><em>Unmerged Changes</em><em> with a </em><em>C</em><em> (3). A gold bar across the Git Repository window says the same.</em></p>
+<p><a href="img/git-with-gitea/vs-merge-editor.png" target="_blank" rel="noopener"><img alt="The Merge Editor" src="img/git-with-gitea/vs-merge-editor.png" /></a></p>
+<p><em>Step 2. </em><em>Incoming</em><em> <code>feature/v3</code> says <code>"3.0"</code> (1), </em><em>Current</em><em> <code>main</code> says <code>"2.1"</code> (2), and
+</em><em>Result</em><em> (3) still shows the old <code>"1.1"</code> until you choose. </em><em>Accept Merge</em><em> (4) is top-right;
+"1 Conflict (1 Remaining)" is top-left.</em></p>
+<p><a href="img/git-with-gitea/vs-merge-editor-picked.png" target="_blank" rel="noopener"><img alt="Merge Editor after ticking Incoming" src="img/git-with-gitea/vs-merge-editor-picked.png" /></a></p>
+<p><em>Step 3. Ticking the Incoming checkbox (1) writes <code>"3.0"</code> into Result (2), and the counter drops to
+"1 Conflict (0 Remaining)" (top-left).</em></p>
+<p><a href="img/git-with-gitea/vs-merge-commit.png" target="_blank" rel="noopener"><img alt="Git Changes after Accept Merge" src="img/git-with-gitea/vs-merge-commit.png" /></a></p>
+<p><em>Step 5. After </em><em>Accept Merge</em><em>: Merge in progress, the file staged, </em><em>Commit Staged</em><em> — and an
+empty message box you must fill.</em></p>
+<p><strong>Then build and run it.</strong> A conflict resolved so it compiles is not the same as a conflict
+resolved correctly — the Merge Editor happily produces code that builds and is wrong. This is
+exactly why the sample app prints its version number, and why Lab V6 ends with <strong>Ctrl+F5</strong>.</p>
+<p>To bail out entirely: the <strong>Abort</strong> button beside the commit button in <strong>Git Changes</strong> (it appears
+only while a merge is in progress). Equally safe, and it puts everything back exactly as it was.</p>
+<blockquote>
+<p><strong>The Merge Editor is a better <em>conflict</em> tool, not a better <em>judgement</em> tool.</strong> It makes the
+mechanics painless; deciding which version is correct is still yours.</p>
+</blockquote>
+<hr />
+<h2 id="6-command-visual-studio-side-by-side">6. Command → Visual Studio, side by side</h2>
+<p>Keep this table. When you read a git answer online, this is how you translate it.</p>
+<table>
+<thead>
+<tr>
+<th>Command (Part 2)</th>
+<th>In Visual Studio</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>git status</code></td>
+<td>The <strong>Git Changes</strong> window, continuously</td>
+</tr>
+<tr>
+<td><code>git diff</code></td>
+<td>Double-click any file under <em>Changes</em> → side-by-side diff</td>
+</tr>
+<tr>
+<td><code>git diff --staged</code></td>
+<td>Double-click a file under <em>Staged Changes</em></td>
+</tr>
+<tr>
+<td><code>git add &lt;file&gt;</code></td>
+<td>The <strong>+</strong> beside the file (tooltip: <em>Stage</em>)</td>
+</tr>
+<tr>
+<td><code>git add .</code></td>
+<td><strong>+</strong> on the <em>Changes</em> header</td>
+</tr>
+<tr>
+<td><code>git add -p</code></td>
+<td>Select lines in the diff → right-click → <strong>Stage Selected Range</strong></td>
+</tr>
+<tr>
+<td><code>git add -f &lt;ignored&gt;</code></td>
+<td><strong>No UI.</strong> Terminal — see Lab V11</td>
+</tr>
+<tr>
+<td><code>git restore --staged</code></td>
+<td>The <strong>−</strong> beside a staged file (<em>Unstage</em>)</td>
+</tr>
+<tr>
+<td><code>git restore &lt;file&gt;</code></td>
+<td>Right-click the file → <strong>Undo Changes</strong>. <strong>Destructive</strong> — those edits were never in git</td>
+</tr>
+<tr>
+<td><code>git commit -m</code></td>
+<td>Type the message, click <strong>Commit Staged</strong></td>
+</tr>
+<tr>
+<td><code>git commit -am</code></td>
+<td><strong>Commit All</strong> — the same button, renamed when nothing is staged. It stages every tracked file. Read the label (§3)</td>
+</tr>
+<tr>
+<td><code>git commit --amend</code></td>
+<td>Tick <strong>Amend</strong> above the message box before committing. Unpushed commits only</td>
+</tr>
+<tr>
+<td><code>git push</code></td>
+<td>The <strong>↑</strong> arrow, or <strong>Git → Push</strong></td>
+</tr>
+<tr>
+<td><code>git pull</code></td>
+<td>The <strong>↓</strong> arrow, or <strong>Git → Pull</strong></td>
+</tr>
+<tr>
+<td><code>git fetch</code></td>
+<td><strong>Git → Fetch</strong>, the <strong>Fetch</strong> link on the <em>Incoming</em> row of <strong>Git Repository</strong>, or the first (underlined-down) arrow in Git Changes. <strong>Not ⟳ — that is Sync</strong> (§1.2). Safe — look before you leap</td>
+</tr>
+<tr>
+<td><code>git log HEAD..origin/main</code></td>
+<td>After a Fetch, <strong>Git Repository</strong> → the <strong>Incoming</strong> / <strong>Outgoing</strong> lists. The ↑↓ counts on the branch picker are the same thing in miniature</td>
+</tr>
+<tr>
+<td><code>git switch &lt;branch&gt;</code></td>
+<td>Branch picker (status bar) → double-click the branch</td>
+</tr>
+<tr>
+<td><code>git switch -c &lt;name&gt;</code></td>
+<td>Branch picker → <strong>New Branch…</strong>, or <strong>Git → New Branch…</strong></td>
+</tr>
+<tr>
+<td><code>git merge &lt;branch&gt;</code></td>
+<td><strong>Git → Manage Branches</strong> → right-click the branch → <strong>Merge \&lt;branch&gt; into current</strong></td>
+</tr>
+<tr>
+<td><code>git merge --abort</code></td>
+<td><strong>Abort</strong>, in Git Changes, while the merge is in progress</td>
+</tr>
+<tr>
+<td><code>git branch -d</code></td>
+<td><strong>Git → Manage Branches</strong> → right-click the branch → <strong>Delete</strong></td>
+</tr>
+<tr>
+<td><code>git push -u origin &lt;b&gt;</code></td>
+<td>Just <strong>Push</strong> a new branch — VS 2026 creates it on Gitea and sets the upstream for you, no prompt</td>
+</tr>
+<tr>
+<td><code>git push origin --delete &lt;b&gt;</code></td>
+<td><strong>Git → Manage Branches</strong> → expand <strong>Remotes</strong> → <code>origin</code> → right-click → <strong>Delete</strong></td>
+</tr>
+<tr>
+<td><code>git stash -u</code></td>
+<td><strong>Git Changes</strong> → the commit button's <strong>▾</strong> → <em>Stash All (--include-untracked)</em></td>
+</tr>
+<tr>
+<td><code>git stash --keep-index</code></td>
+<td>same dropdown → <em>Stash All and Keep Staged</em></td>
+</tr>
+<tr>
+<td><code>git stash list</code></td>
+<td>The <strong>Stashes</strong> section at the bottom of <strong>Git Changes</strong> (also in <strong>Git Repository</strong>)</td>
+</tr>
+<tr>
+<td><code>git stash pop</code></td>
+<td><strong>Stashes</strong> → right-click the stash → <em>Pop</em></td>
+</tr>
+<tr>
+<td><code>git log</code></td>
+<td><strong>Git Repository</strong> window — the graph on the left, commit details on the right</td>
+</tr>
+<tr>
+<td><code>git blame</code></td>
+<td>Right-click in the editor → <strong>Git → Blame (Annotate)</strong>. CodeLens above each method shows the same thing inline</td>
+</tr>
+<tr>
+<td><code>git revert &lt;sha&gt;</code></td>
+<td><strong>Git Repository</strong> → right-click the commit → <strong>Revert</strong>. The safe undo for pushed work</td>
+</tr>
+<tr>
+<td><code>git reset --mixed</code></td>
+<td>Right-click the commit → <strong>Reset → Keep Changes</strong>. Files return to <em>Changes</em>, <strong>unstaged</strong></td>
+</tr>
+<tr>
+<td><code>git reset --soft</code></td>
+<td><strong>No UI</strong> — VS offers only <em>Keep Changes</em> (<code>--mixed</code>) and <em>Delete Changes</em> (<code>--hard</code>). Terminal, if you want the changes back <strong>staged</strong></td>
+</tr>
+<tr>
+<td><code>git reset --hard</code></td>
+<td>Right-click the commit → <strong>Reset → Delete Changes</strong>. Read §7 before you touch this</td>
+</tr>
+<tr>
+<td><code>git cherry-pick</code></td>
+<td>Right-click a commit on another branch → <strong>Cherry-Pick</strong></td>
+</tr>
+<tr>
+<td><code>git tag -a</code></td>
+<td>Right-click a commit → <strong>New Tag…</strong>; push it from the <strong>Tags</strong> node</td>
+</tr>
+<tr>
+<td><code>git remote -v</code> / <code>set-url</code></td>
+<td><strong>Git → Manage Remotes</strong></td>
+</tr>
+<tr>
+<td><code>git clone</code></td>
+<td><strong>Git → Clone Repository…</strong></td>
+</tr>
+<tr>
+<td><code>git init</code></td>
+<td><strong>Git → Create Git Repository…</strong> — read §7 first, it commits for you</td>
+</tr>
+<tr>
+<td><code>git config --global</code></td>
+<td><strong>Git → Settings → Git Global Config</strong></td>
+</tr>
+<tr>
+<td><code>git config --local</code></td>
+<td><strong>Git → Settings → Git Repository Config</strong></td>
+</tr>
+<tr>
+<td><code>git reflog</code></td>
+<td><strong>No UI.</strong> Terminal. This is why §2 says keep it open</td>
+</tr>
+<tr>
+<td><code>git bisect</code></td>
+<td><strong>No UI.</strong> Terminal</td>
+</tr>
+<tr>
+<td>Open a PR</td>
+<td><strong>No UI for Gitea.</strong> Push, then the browser (<a href="git-with-gitea-part0.html#05-pull-requests-the-part-that-is-not-git">§0.5</a>)</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="7-visual-studio-gotchas">7. Visual Studio gotchas</h2>
+<p>Read these once now. Each one is a real surprise that the labs will walk you into deliberately.</p>
+<ul>
+<li><strong>"Commit All" is what the button becomes when you have staged nothing</strong>, and it stages every
+  tracked file first — so an unrelated half-finished edit rides along into your commit. If you want
+  a focused commit, stage deliberately with <strong>+</strong> so the button says <strong>Commit Staged</strong>. Read the
+  button's label before every commit; it is the only thing telling you which of the two you are
+  about to do (§3). <strong>Lab V4</strong> makes this happen to you on purpose.</li>
+<li><strong>"Create Git Repository" makes the first commit for you.</strong> One click does <code>git init</code>, stages
+  everything not ignored, and commits it — the staging area never appears. Convenient, and the
+  reason a beginner can use VS for a month without knowing the staging area exists.</li>
+<li><strong>Do not let it write the <code>.gitignore</code>.</strong> The Visual Studio 2026 <em>Create Git Repository</em> dialog
+  no longer offers a <code>.gitignore</code> template (only a <em>License template</em> — leave that at <strong>None</strong>),
+  but <strong>Git → Settings → Git Repository Config</strong> has an <strong>Add .gitignore</strong> button that writes VS's
+  generic one. Do not click it: §0.3 already gave you the right file. For the real
+  solution the rule is firmer: <a href="../../.gitignore">this repo's <code>.gitignore</code></a> is deliberately written
+  to catch <code>appsettings.Development.json</code>, <code>*.pfx</code>, <code>App_Data/</code> and <code>docker-data/</code>. Keep ours.
+  (<code>.vs/</code> and <code>*.user</code> are already covered by it.)</li>
+<li><strong>"Reset → Delete Changes" is <code>git reset --hard</code>.</strong> A destructive command, two clicks deep in a
+  context menu, with no scary confirmation. Commit before you experiment and it cannot hurt you.</li>
+<li><strong>"Undo Changes" on a file is unrecoverable</strong> — the edits were never committed, so nothing in
+  <a href="git-with-gitea-part3.html#15-oh-no-the-recovery-section">§15</a> can bring them back. The only genuinely irreversible
+  operations in git are the ones on work git never saw.</li>
+<li><strong>There is no reflog in the UI.</strong> The safety net that makes git forgiving has no button anywhere
+  in the IDE. Lab V8 walks you into this wall on purpose so it is not a surprise at 3am.</li>
+<li><strong>VS finds <code>.git</code> by walking upward</strong>, so it works whether you open the <code>.slnx</code>, a <code>.csproj</code>, or
+  the folder. One repo, many solutions is fine.</li>
+<li><strong>A branch deleted on the server lingers in your list</strong> until a <em>pruning</em> fetch. Turn on
+  <strong>Prune remote branches during fetch</strong> (§2).</li>
+<li><strong>Copilot commit messages</strong> (the ✨ icon on the message box) read your staged diff and work
+  against any server, Gitea included. Treat the result as a first draft — it describes <em>what</em>
+  changed; §0.6 asks you to say <em>why</em>.</li>
+<li><strong>Multi-repo:</strong> VS can have several repositories active at once (<strong>Git → Local Repositories</strong>).
+  Useful later; irrelevant today.</li>
+</ul>
+<hr />
+<h3 id="71-it-did-not-work-the-beginner-troubleshooting-table">7.1 "It did not work" — the beginner troubleshooting table</h3>
+<p>Every one of these is normal and none of them means you have broken anything. When in doubt, read
+<strong>Output → Source Control - Git</strong> first (§1.5).</p>
+<table>
+<thead>
+<tr>
+<th>What you see</th>
+<th>What is actually happening</th>
+<th>What to do</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><span id="ts-greyed"></span><strong>Most of the Git menu is greyed out</strong></td>
+<td>No folder or solution is open, so there is no repository to act on</td>
+<td><strong>File → Open → Project/Solution</strong>, or <strong>Open Folder</strong></td>
+</tr>
+<tr>
+<td><span id="ts-blank"></span><strong>Git Changes / Git Repository are blank</strong></td>
+<td>Same cause</td>
+<td>Open the folder or solution first</td>
+</tr>
+<tr>
+<td><span id="ts-unsaved"></span><strong>Git Changes is empty but I edited a file</strong></td>
+<td>You have not saved it</td>
+<td><strong>Ctrl+S</strong>. Git only sees the file on disk</td>
+</tr>
+<tr>
+<td><span id="ts-commit-grey"></span><strong>The Commit button is greyed out</strong></td>
+<td>Nothing is staged, or the message box is empty</td>
+<td>Stage something with <strong>+</strong>, and type a message</td>
+</tr>
+<tr>
+<td><span id="ts-not-on-gitea"></span><strong>My commit did not appear on Gitea</strong></td>
+<td>Committing is local. Nothing reaches the server until you push</td>
+<td>Press <strong>↑</strong>. Check the status bar reads <code>↑↓ 0 / 0</code></td>
+</tr>
+<tr>
+<td><span id="ts-push-failed"></span><strong>"Git - Push failed" dialog</strong></td>
+<td>Somebody pushed while you were working</td>
+<td>Click <strong>Pull</strong> in the dialog, look at what arrived, then <strong>↑ Push</strong> again. This is routine — Lab V10</td>
+</tr>
+<tr>
+<td><span id="ts-password"></span><strong>It keeps asking for a password</strong></td>
+<td>The stored credential is stale or wrong</td>
+<td>Windows <strong>Credential Manager</strong> → remove the <code>git:http://192.168.0.22:3000</code> entry, push again, paste a fresh PAT (Lab V13)</td>
+</tr>
+<tr>
+<td><span id="ts-auth"></span><strong>"Authentication failed"</strong></td>
+<td>You typed your Gitea <em>password</em> instead of a token</td>
+<td>Generate a PAT (<a href="git-with-gitea-part0.html#04-your-gitea-account-repo-and-token">§0.4</a>) and paste that as the password</td>
+</tr>
+<tr>
+<td><span id="ts-both-lists"></span><strong>A file is in Changes <em>and</em> Staged Changes</strong></td>
+<td>Part of it is staged. Not a bug</td>
+<td>§1.2, and Lab V4</td>
+</tr>
+<tr>
+<td><span id="ts-unmerged"></span><strong>"Unmerged Changes" appeared</strong></td>
+<td>A conflict</td>
+<td><a href="#5-conflicts-the-merge-editor">§5</a>. Or <strong>Abort</strong> in Git Changes to undo the whole thing</td>
+</tr>
+<tr>
+<td><span id="ts-commit-all"></span><strong>I clicked Commit All and it took files I did not want</strong></td>
+<td>That is what Commit All does</td>
+<td>Right-click the commit → <strong>Reset → Keep Changes</strong>, then stage properly (Lab V4)</td>
+</tr>
+<tr>
+<td><span id="ts-undo-gone"></span><strong>I clicked "Undo Changes" and my work is gone</strong></td>
+<td>It was never committed, so git never had a copy</td>
+<td>It is genuinely gone. This is the one unrecoverable action — §15</td>
+</tr>
+<tr>
+<td><span id="ts-reset-hard"></span><strong>My commits vanished after Reset → Delete Changes</strong></td>
+<td>The branch moved; the commits still exist</td>
+<td><strong>View → Terminal</strong>: <code>git reflog</code>, then <code>git reset --hard HEAD@{1}</code> (Lab V8)</td>
+</tr>
+<tr>
+<td><span id="ts-stale-branch"></span><strong>A branch I deleted on Gitea is still listed</strong></td>
+<td>A stale cache from your last fetch</td>
+<td><strong>Git → Fetch</strong> with pruning on (§2)</td>
+</tr>
+<tr>
+<td><span id="ts-no-pr-button"></span><strong>I cannot find the button to make a pull request</strong></td>
+<td>There is not one, for Gitea</td>
+<td>Push, then the browser (<a href="git-with-gitea-part0.html#05-pull-requests-the-part-that-is-not-git">§0.5</a>)</td>
+</tr>
+<tr>
+<td><span id="ts-scared"></span><strong>Everything looks wrong and I am scared</strong></td>
+<td>Almost certainly recoverable</td>
+<td>Do <strong>not</strong> delete the folder. Commit what you have, then §15</td>
+</tr>
+</tbody>
+</table>
+<h3 id="72-keyboard-shortcuts-worth-knowing">7.2 Keyboard shortcuts worth knowing</h3>
+<table>
+<thead>
+<tr>
+<th>Keys</th>
+<th>Does</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Ctrl+S</strong></td>
+<td>Save. Git cannot see an unsaved file</td>
+</tr>
+<tr>
+<td><strong>Ctrl+Shift+B</strong></td>
+<td>Build</td>
+</tr>
+<tr>
+<td><strong>Ctrl+F5</strong></td>
+<td>Run without debugging — how several labs verify themselves</td>
+</tr>
+<tr>
+<td><strong>Ctrl+`</strong></td>
+<td>Open the built-in <strong>Terminal</strong></td>
+</tr>
+<tr>
+<td><strong>Ctrl+Alt+O</strong></td>
+<td>Open the <strong>Output</strong> window (then pick <em>Source Control - Git</em>)</td>
+</tr>
+<tr>
+<td><strong>Ctrl+0, Ctrl+G</strong></td>
+<td>Focus <strong>Git Changes</strong> (press Ctrl+0, release, then Ctrl+G)</td>
+</tr>
+<tr>
+<td><strong>Ctrl+0, Ctrl+R</strong></td>
+<td>Focus <strong>Git Repository</strong></td>
+</tr>
+<tr>
+<td><strong>Ctrl+Enter</strong></td>
+<td>Commit, when the message box has focus</td>
+</tr>
+<tr>
+<td><strong>Ctrl+Z</strong></td>
+<td>Undo in the editor — <em>not</em> a git command, and it will not undo a commit</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="8-the-visual-studio-labs">8. The Visual Studio labs</h2>
+<p>Sixteen labs, roughly two and a half hours. <strong>VA and VB</strong> stand alone — their own folder and their
+own Gitea repo. <strong>V0–V13</strong> all run in <code>E:\adtemp\hands_on\git\GitSandbox-vs\</code> against the Gitea repo
+<code>git-practice-vs</code>. They assume you have read <a href="git-with-gitea-part0.html#03-the-sample-project-every-file-printed-here">§0.3</a>
+and can run the sample app.</p>
+<p><strong>What you are about to learn, and in what order</strong> — so you can see where this is going:</p>
+<table>
+<thead>
+<tr>
+<th>Lab</th>
+<th>You will learn</th>
+<th>Why it matters on real work</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>VA–VB</strong></td>
+<td>Put a folder you already have on Gitea; get a local copy of a Gitea repo</td>
+<td>The two things you need on day one — a new project, a new PC</td>
+</tr>
+<tr>
+<td><strong>V0–V2</strong></td>
+<td>Set your identity, make a repository, push it to Gitea</td>
+<td>Getting your work off your laptop</td>
+</tr>
+<tr>
+<td><strong>V3–V4</strong></td>
+<td>The staging area; stage whole files, then individual lines</td>
+<td>Making one commit mean one thing</td>
+</tr>
+<tr>
+<td><strong>V5</strong></td>
+<td>Branch → push → pull request → merge → clean up</td>
+<td><strong>The lab that is the actual job.</strong> Copy this one</td>
+</tr>
+<tr>
+<td><strong>V6</strong></td>
+<td>Cause a conflict, resolve it in the Merge Editor, and abort one</td>
+<td>The thing people fear; an hour from now you will not</td>
+</tr>
+<tr>
+<td><strong>V7–V8</strong></td>
+<td>Amend, unstage, discard, revert, reset — and recover work you destroyed</td>
+<td>Being able to undo anything means you can experiment</td>
+</tr>
+<tr>
+<td><strong>V9</strong></td>
+<td>Stash: park unfinished work when something urgent lands</td>
+<td>The interruption that happens weekly</td>
+</tr>
+<tr>
+<td><strong>V10</strong></td>
+<td>Two people editing at once; a rejected push, and what to do</td>
+<td>What every normal working day looks like</td>
+</tr>
+<tr>
+<td><strong>V11–V13</strong></td>
+<td><code>.gitignore</code>, tags and releases, token rotation, stale branches</td>
+<td>The housekeeping nobody teaches you</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Only need to get a folder onto Gitea, or a copy off it?</strong> VA and VB — fifteen minutes.</p>
+<p><strong>If you only have twenty minutes, do V0, V1, V2 and V5.</strong> That is a complete working loop and it
+is enough to contribute to a real repository. The rest turns "I can follow the steps" into "I know
+what happened".</p>
+<blockquote>
+<p><strong>How to use these.</strong> Do V0–V13 <strong>in order</strong> — each one leaves the repo in the state the next one
+expects. After every step, look at <strong>Git Changes</strong> and at the <strong>Git Repository</strong> graph and say to
+yourself what just moved. Each lab ends with a <strong>Verify</strong> you can check without help; if it does
+not match, stop and re-read the lab rather than pressing on.</p>
+<p><strong>And yes, several of these commit straight to <code>main</code></strong> — which §0.6 tells you never to do. That
+is deliberate: you are alone in a throwaway repo with no reviewer and no branch protection, and
+there is nothing to branch <em>from</em> until the first commit exists. <strong>Lab V5 is the one that shows
+the real workflow</strong> — branch, push, pull request, merge, delete — and that is the one to copy on
+<code>TflCbsNet10Sol</code>.</p>
+</blockquote>
+<hr />
+<h3 id="lab-va-put-an-existing-folder-on-gitea">Lab VA — Put an existing folder on Gitea</h3>
+<p>The situation: a folder of work on your disk — a project, a solution, a set of scripts — that has
+never been in git and should now live on Gitea. <strong>This lab and the next stand alone:</strong> they use
+their own folder and their own Gitea repo, so do them first, on their own, or skip to V0.</p>
+<p><strong>Before you start:</strong> your name and email are set (<a href="git-with-gitea-part0.html#01-before-you-start">§0.1</a>) and you
+have a token (<a href="git-with-gitea-part0.html#the-token-never-your-password">§0.4</a>).</p>
+<ol>
+<li>
+<p><strong>Make a stand-in for "the folder you already have".</strong> <strong>File → New → Project… → Console App</strong> →
+    name <code>MyFolder</code>, location <code>E:\adtemp\hands_on\git</code>, tick <strong>Place solution and project in the same
+    directory</strong> → <strong>Create</strong> (do <strong>not</strong> let it create a git repo). Then <strong>Ctrl+Shift+B</strong> once, so
+    <code>bin\</code> and <code>obj\</code> exist — exactly like a real folder somebody has been working in.</p>
+<p><em>Doing this for real? Open your own folder instead — </em><em>File → Open → Project/Solution</em><em>, or
+</em><em>File → Open → Folder</em><em> if it has no solution — and carry on from step 2.</em></p>
+</li>
+<li>
+<p><strong>Decide what must NOT go up — before git sees anything.</strong> Step 4 commits every file it finds,
+    with no list to review, so the ignore file has to exist first. Right-click the project →
+    <strong>Add → New Item… → Text File</strong> → name it <code>.gitignore</code> → paste:</p>
+<pre><code>bin/
+obj/
+.vs/
+*.user
+</code></pre>
+<p>On a real folder, also add anything holding a password or a connection string
+(<code>appsettings.Development.json</code>, <code>*.pfx</code>) — <a href="git-with-gitea-part3.html#17-graduating-the-real-repository">§17</a>
+has the checklist.</p>
+</li>
+<li>
+<p><strong>In Gitea, make an empty repo:</strong> <strong>+</strong> → <strong>New Repository</strong> → name <code>git-practice-folder</code>,
+    <strong>Private</strong>, <strong>Initialize Repository left unticked</strong> (the form is pictured in
+    <a href="git-with-gitea-part0.html#the-practice-repo">§0.4</a>). An initialised repo already has a commit of its own, and your
+    first push would be rejected.</p>
+</li>
+<li>
+<p><strong>Git → Create Git Repository…</strong> → under <strong>Other</strong> choose <strong>Local</strong> → <strong>Local path</strong> is your
+    folder → <strong>License template: None</strong> → <strong>Create</strong>. Visual Studio runs <code>git init</code>, stages
+    everything not ignored, and makes the first commit.</p>
+<p><a href="img/git-with-gitea/vs-create-repo.png" target="_blank" rel="noopener"><img alt="Create a Git repository, Local" src="img/git-with-gitea/vs-create-repo.png" /></a></p>
+<p><em>Other → </em><em>Local</em><em> (1), </em><em>License template: None</em><em> (2), </em><em>Create</em><em> (3). Your Local path will
+read <code>E:\adtemp\hands_on\git\MyFolder</code>. </em><em>Existing remote</em><em>, just above Local, is a shortcut that
+also connects the folder to a Gitea repo in the same dialog; this lab takes the two visible
+steps so you see each one.</em></p>
+</li>
+<li>
+<p><strong>Git → Manage Remotes…</strong> → in the <strong>Remotes</strong> grid add <code>origin</code> with
+    <code>http://192.168.0.22:3000/Adhir/git-practice-folder.git</code> for <strong>Fetch</strong> and <strong>Push</strong> — exactly as in
+    <a href="#lab-v2-connect-to-gitea-and-push">Lab V2</a> step 1. If the grid will not take a new row, the
+    terminal does the same thing (<strong>View → Terminal</strong>):</p>
+<pre><code>git remote add origin http://192.168.0.22:3000/Adhir/git-practice-folder.git
+</code></pre>
+</li>
+<li>
+<p><strong>Git → Push.</strong> If asked: username <code>Adhir</code>, password = <strong>your token</strong>. The status bar settles
+    at <code>↑↓ 0 / 0</code>.</p>
+</li>
+</ol>
+<p><strong>Verify:</strong> refresh the repo page in Gitea — <code>.gitignore</code>, <code>MyFolder.csproj</code>, <code>Program.cs</code> and the
+solution file are there, and <strong>no <code>bin</code> or <code>obj</code></strong>.</p>
+<p><strong>What git actually did</strong> — <strong>View → Terminal</strong>:</p>
+<pre><code class="language-bash">git log --oneline               # one commit
+git show --stat HEAD            # the files in it — no bin/ or obj/
+git remote -v                   # origin, twice (fetch and push)
+git status -sb                  # &quot;## main...origin/main&quot; — linked to Gitea
+</code></pre>
+<p><strong>Understand:</strong> nothing was copied or moved — the folder became a repository <em>where it stands</em>,
+by gaining a hidden <code>.git</code> folder. The order is the whole lesson: <strong>ignore file → repository →
+remote → push</strong>. Get the first one wrong and the build output, or a password, is in the history
+for good (<a href="#lab-v11-gitignore-and-the-mistake-it-does-not-fix">Lab V11</a> shows the clean-up).</p>
+<blockquote>
+<p><strong>Stuck?</strong> <strong>Create Git Repository</strong> greyed out → <a href="#ts-greyed">nothing is open</a>. The push is
+rejected → the Gitea repo was created <em>with</em> a README; delete it and create it again, empty.
+<code>bin</code> or <code>obj</code> on Gitea → <code>.gitignore</code> was missing or misnamed (<code>.gitignore.txt</code>) when you
+clicked Create; untrack them as in <a href="#lab-v11-gitignore-and-the-mistake-it-does-not-fix">Lab V11</a>.
+Asked for a password again and again → <a href="#ts-password">stale credential</a>, or
+<a href="#ts-auth">you typed your password, not the token</a>.</p>
+</blockquote>
+<hr />
+<h3 id="lab-vb-get-a-local-copy-of-a-gitea-repo">Lab VB — Get a local copy of a Gitea repo</h3>
+<p>The opposite direction: the repo is on Gitea and you want it on your disk — your own work on a
+second PC, or a colleague's project. In git this is <strong>cloning</strong>, and it is one dialog.</p>
+<ol>
+<li><strong>Find the URL.</strong> Gitea → the <code>git-practice-folder</code> repo from Lab VA → the blue <strong>Code</strong>
+    button → copy the <strong>HTTP</strong> URL: <code>http://192.168.0.22:3000/Adhir/git-practice-folder.git</code>. (The Code button is pictured in
+    <a href="git-with-gitea-part3.html#143-the-gitea-web-ui-mapped-to-git-concepts">§14.3</a>.)</li>
+<li><strong>File → Close Solution</strong>, so the two copies cannot be confused.</li>
+<li>
+<p><strong>Git → Clone Repository…</strong></p>
+<ul>
+<li><strong>Repository location:</strong> the URL from step 1</li>
+<li><strong>Path:</strong> <code>E:\adtemp\hands_on\git\MyFolder-copy</code> — a folder that does <strong>not</strong> exist yet;
+  the clone creates it</li>
+<li><strong>Clone.</strong></li>
+</ul>
+<p><a href="img/git-with-gitea/vs-clone.png" target="_blank" rel="noopener"><img alt="Clone a repository dialog" src="img/git-with-gitea/vs-clone.png" /></a></p>
+<p><em>The Clone dialog, shown here with Lab V10's values — yours are the URL and path above. The
+Azure DevOps / GitHub buttons are for those services only; ignore them.</em></p>
+</li>
+<li>
+<p>Visual Studio opens the copy. If Solution Explorer shows a folder view, double-click the
+    <code>.slnx</code> file to open it as a solution.</p>
+</li>
+<li><strong>Look before you touch anything:</strong> <strong>Git Changes</strong> is empty, the status bar reads
+    <code>↑↓ 0 / 0</code> on <code>main</code>, and <strong>View → Git Repository</strong> shows the same single commit as Gitea's
+    <strong>Commits</strong> page.</li>
+<li><strong>Ctrl+Shift+B.</strong> <code>bin\</code> and <code>obj\</code> are rebuilt on this machine — and still do not appear in Git
+    Changes, because the <code>.gitignore</code> came down with everything else.</li>
+</ol>
+<p><strong>Verify:</strong> the short commit id in <strong>Git Repository</strong> matches the one on Gitea's <strong>Commits</strong> page,
+and Git Changes stays empty after the build.</p>
+<p><strong>What git actually did:</strong></p>
+<pre><code class="language-bash">git remote -v                   # origin is already set — the clone did it
+git status -sb                  # &quot;## main...origin/main&quot; — already linked, no push -u needed
+git log --oneline               # the history came down, not just the files
+</code></pre>
+<p><strong>Understand:</strong> a clone is the whole repository — every commit, every branch — plus <code>origin</code>
+pointing back at Gitea and <code>main</code> linked to <code>origin/main</code>. That is why Lab VA needed three steps
+(repository, remote, push) and this one needed one. From here the copy works like any other: edit,
+commit, <strong>Push</strong> — and <strong>Pull</strong> to get what others pushed.</p>
+<p><strong>When you are done:</strong> nothing later uses these two. Remove <code>MyFolder</code> and <code>MyFolder-copy</code> from
+<strong>Git → Local Repositories</strong>, delete both folders, and delete <code>git-practice-folder</code> in Gitea
+(<strong>Settings → Delete This Repository</strong>) — or keep them to experiment in.</p>
+<blockquote>
+<p><strong>Stuck?</strong> Clone refuses because the folder exists → <strong>Path</strong> must be a new, non-existent folder;
+pick another name. "Repository not found" → check the URL against Gitea's <strong>Code</strong> button; the
+repo is private, so the account you sign in with needs access. Asked for a password →
+<a href="#ts-auth">token, not password</a>. Never clone into a folder that is itself inside another
+repository — clone next to it.</p>
+</blockquote>
+<hr />
+<h3 id="lab-v0-identity-and-an-empty-repo-on-gitea">Lab V0 — Identity, and an empty repo on Gitea</h3>
+<p><strong>In Visual Studio:</strong></p>
+<blockquote>
+<p><strong>Nothing is open yet, and that is fine.</strong> <em>Global</em> settings are not tied to a repository, so
+this works from the start window. If your Visual Studio opened straight to the start dialog with
+no menu bar, click <strong>Continue without code</strong> first. (If you would rather have something open,
+do step 1 of Lab V1 and come back — the order does not matter.)</p>
+</blockquote>
+<ol>
+<li><strong>Git → Settings → Git Global Config</strong> (screenshot in <a href="#2-one-time-setup-in-visual-studio">§2</a>).
+   Confirm <strong>User name</strong> = <code>Adhir Ranjan</code> and <strong>Email</strong> = <code>adhirranjan@softtrust.com</code>. Fix them if
+   not. This is stamped on every commit you will ever make, and it cannot be corrected later
+   without rewriting history.</li>
+<li>While you are here, set <strong>Rebase local branch when pulling</strong> = <em>False</em> and <strong>Prune remote
+   branches during fetch</strong> = <em>True</em>.</li>
+</ol>
+<p><strong>In the terminal</strong> (<strong>View → Terminal</strong>) — these three have no reliable UI:</p>
+<pre><code class="language-bash">git config --global core.autocrlf true        # Windows line endings: check out CRLF, store LF
+git config --global pull.rebase false         # a diverged pull merges, never rewrites your commits
+git config --global init.defaultBranch main   # new repos start on `main`, not `master`
+git config --global --list                    # print everything — confirm name, email and the three above
+</code></pre>
+<p><strong>In the Gitea web UI:</strong> <strong>+</strong> (top right) → <strong>New Repository</strong>.</p>
+<ul>
+<li>Name: <code>git-practice-vs</code></li>
+<li>Visibility: Private</li>
+<li><strong>Leave "Initialize repository" UNCHECKED.</strong></li>
+</ul>
+<p>(Both Gitea screens — the form and the empty-repo page you land on — are pictured in
+<a href="git-with-gitea-part0.html#04-your-gitea-account-repo-and-token">§0.4</a>.)</p>
+<p><strong>Verify:</strong> Gitea shows an empty-repo page with setup instructions and a clone URL, and
+<code>git config --global --list</code> lists your name, your email and the three settings above.</p>
+<blockquote>
+<p><strong>Stuck?</strong> Git menu greyed out, or no <strong>Settings</strong> in it → <a href="#ts-greyed">open a folder or click <em>Continue without code</em></a>. Ticked <strong>Initialize Repository</strong> on Gitea by mistake → delete the repo (<strong>Settings → Delete This Repository</strong>) and create it again, empty.</p>
+</blockquote>
+<hr />
+<h3 id="lab-v1-build-the-sample-project-and-make-your-first-commit">Lab V1 — Build the sample project and make your first commit</h3>
+<ol>
+<li>Create the project exactly as in <a href="git-with-gitea-part0.html#031-create-the-folder-and-project">§0.3.1</a> — Console App,
+   project name <code>GitSandbox-vs</code>, location <code>E:\adtemp\hands_on\git</code>, <strong>Place solution and project in the
+   same directory</strong> ticked, .NET 10.0.</li>
+<li>Replace the file contents with the six listings in
+   <a href="git-with-gitea-part0.html#032-the-six-files">§0.3.2</a>. Add <code>Ledger.cs</code> and <code>Account.cs</code> with <strong>right-click the project →
+   Add → Class…</strong>, and <code>README.md</code> / <code>.gitignore</code> with <strong>Add → New Item… → Text File</strong>.</li>
+<li><strong>Ctrl+F5.</strong> You must see <code>ledger v1.0</code> and <code>SB-0001 A. Ranjan: 1250.00</code>. Do not continue
+   until you do.</li>
+<li><strong>Git → Create Git Repository…</strong><ul>
+<li>In the left column, under <strong>Other</strong>, choose <strong>Local</strong> — you are not connecting to Gitea yet.</li>
+<li><strong>Local path</strong> is already your project folder; leave it.</li>
+<li><strong>License template: None.</strong> (Visual Studio 2026 no longer offers a <code>.gitignore</code> template here —
+ good, because you already wrote one; see the gotcha in §7.)</li>
+<li><strong>Create.</strong></li>
+</ul>
+</li>
+</ol>
+<p><a href="img/git-with-gitea/vs-create-repo.png" target="_blank" rel="noopener"><img alt="Create a Git repository, Local" src="img/git-with-gitea/vs-create-repo.png" /></a></p>
+<p><em>Other → </em><em>Local</em><em> (1), </em><em>License template: None</em><em> (2), </em><em>Create</em><em> (3). The Local path shows
+   wherever your solution lives — <code>E:\adtemp\hands_on\git\GitSandbox-vs</code> for you.</em></p>
+<ol start="5">
+<li>Open <strong>View → Git Changes</strong> and <strong>View → Git Repository</strong>, and dock them side by side.</li>
+</ol>
+<p><strong>Look at what just happened.</strong> Git Changes is <em>empty</em>, and Git Repository shows <strong>one commit</strong>
+already. Visual Studio ran <code>git init</code>, staged everything your <code>.gitignore</code> did not exclude, and
+committed it — all from that one button, without ever showing you the staging area.</p>
+<p>That is convenient and it is also the thing to be aware of: <strong>the IDE will happily commit for you
+before you have understood what a commit is.</strong> Lab V3 slows that down deliberately.</p>
+<p>Now confirm the <code>.gitignore</code> did its job — because it was on disk <em>before</em> <code>git init</code> ran, <code>bin/</code>
+and <code>obj/</code> were never tracked at all:</p>
+<p><strong>What git actually did</strong> — <strong>View → Terminal</strong>:</p>
+<pre><code class="language-bash">git log --oneline               # exactly one commit
+git show --stat HEAD            # the files it contains: six, and no bin/ or obj/
+git status                      # &quot;nothing to commit, working tree clean&quot;
+</code></pre>
+<p><strong>Verify:</strong> one commit, six files in it, and <code>git show --stat HEAD</code> mentions neither <code>bin/</code> nor
+<code>obj/</code> even though both exist on disk from step 3.</p>
+<p><strong>Understand:</strong> a commit is a snapshot plus a message, an author and a parent. Your repository now
+has exactly one, and it has no connection to Gitea whatsoever — everything so far is local.</p>
+<blockquote>
+<p><strong>Stuck?</strong> <strong>Create Git Repository</strong> greyed out → <a href="#ts-greyed">nothing is open</a>. <code>bin/</code> or <code>obj/</code> in the first commit → <code>.gitignore</code> was missing or misnamed (<code>.gitignore.txt</code>) when you clicked Create; untrack them the way <a href="#lab-v11-gitignore-and-the-mistake-it-does-not-fix">Lab V11</a> does. The app does not print <code>ledger v1.0</code> → recheck the listings in <a href="git-with-gitea-part0.html#032-the-six-files">§0.3.2</a>.</p>
+</blockquote>
+<hr />
+<h3 id="lab-v2-connect-to-gitea-and-push">Lab V2 — Connect to Gitea and push</h3>
+<ol>
+<li><strong>Git → Manage Remotes…</strong> In Visual Studio 2026 this opens <strong>Options → Git Repository Config</strong>;
+   remotes live in the <strong>Remotes</strong> grid at the bottom of that page (Name / Fetch / Push). Add one:<ul>
+<li><strong>Name:</strong> <code>origin</code> (just a nickname, not a keyword — but everyone uses it)</li>
+<li><strong>Fetch</strong> and <strong>Push:</strong> <code>http://192.168.0.22:3000/Adhir/git-practice-vs.git</code></li>
+</ul>
+</li>
+</ol>
+<p>If your build of Visual Studio gives you no way to add a row to that grid, do this one step in
+   <strong>View → Terminal</strong> instead — it has exactly the same effect, and the grid shows <code>origin</code> as
+   soon as you reopen the page:</p>
+<pre><code>    git remote add origin http://192.168.0.22:3000/Adhir/git-practice-vs.git
+</code></pre>
+<ol start="2">
+<li><strong>Git → Push</strong> (or the <strong>↑</strong> arrow).</li>
+<li>A credential prompt appears. <strong>Username:</strong> <code>Adhir</code>. <strong>Password: paste your Personal Access
+   Token</strong> (<a href="git-with-gitea-part0.html#04-your-gitea-account-repo-and-token">§0.4</a>) — <em>not</em> your account password.</li>
+<li>Watch the status bar. When it finishes, the <strong>↑↓</strong> counts read <code>0 / 0</code>.</li>
+</ol>
+<p><a href="img/git-with-gitea/vs-manage-remotes.png" target="_blank" rel="noopener"><img alt="The Remotes grid" src="img/git-with-gitea/vs-manage-remotes.png" /></a></p>
+<p><em>The </em><em>Remotes</em><em> grid after this lab: <code>origin</code>, with the same Gitea URL for Fetch and Push.</em></p>
+<p><strong>Verify:</strong> refresh the repo page in Gitea. Your six files are there, with your commit message and
+your name against it. If the name is wrong, fix <strong>Git → Settings → Git Global Config</strong> now; it
+only applies to <em>future</em> commits.</p>
+<p><a href="img/git-with-gitea/g-commits.png" target="_blank" rel="noopener"><img alt="The repo's Commits page on Gitea" src="img/git-with-gitea/g-commits.png" /></a></p>
+<p><em>The repo's </em><em>Commits</em><em> page: every commit with its author, message, short SHA and time. The name
+here comes from </em><em>Git Global Config</em><em>, not from your Gitea login.</em></p>
+<p><strong>What git actually did:</strong></p>
+<pre><code class="language-bash">git remote -v                   # two lines, fetch and push — normal, not a duplicate
+git status -sb                  # &quot;## main...origin/main&quot; — your branch is now linked to the server's
+</code></pre>
+<p><strong>Understand:</strong> VS set the upstream for you (<code>git push -u</code>) as part of that first push. That link
+is why every later push needs no arguments and why the ↑↓ counts can exist at all.</p>
+<blockquote>
+<p><strong>Stuck?</strong> Keeps asking for a password → <a href="#ts-password">stale credential</a>. "Authentication failed" → <a href="#ts-auth">you typed your password, not the token</a>. This very first push is rejected → the Gitea repo was created <em>with</em> a README; delete it and create it again, empty (<a href="git-with-gitea-part0.html#the-practice-repo">§0.4</a>). Nothing on Gitea → <a href="#ts-not-on-gitea">committed but not pushed</a>.</p>
+</blockquote>
+<hr />
+<h3 id="lab-v3-the-staging-area-properly">Lab V3 — The staging area, properly</h3>
+<p>Prove that staging and committing are separate steps. Make <strong>two unrelated</strong> edits, commit them
+separately.</p>
+<ol>
+<li>In <code>README.md</code>, add a line: <code>Practising git.</code></li>
+<li>In <code>Ledger.cs</code>, change <code>Version</code> from <code>"1.0"</code> to <code>"1.1"</code>.</li>
+<li><strong>Git Changes</strong> now lists both files under <strong>Changes</strong>. Neither is staged.</li>
+<li><strong>Double-click <code>README.md</code>.</strong> The side-by-side diff opens — old on the left, yours on the
+   right. Do the same for <code>Ledger.cs</code>. <strong>Read them.</strong> This is the review step people skip.</li>
+</ol>
+<p><a href="img/git-with-gitea/vs-diff.png" target="_blank" rel="noopener"><img alt="Side-by-side diff of README.md" src="img/git-with-gitea/vs-diff.png" /></a></p>
+<p><em>Left is </em><em>(Index)</em><em> — what git has; right is </em><em>(Working tree)</em><em> — your file on disk. The green
+   block (boxed) is what you added. </em><em>Show Staging Controls</em><em> (boxed, top) adds stage buttons into
+   this view; Lab V4 uses them.</em></p>
+<ol start="5">
+<li>Click <strong>+</strong> on <code>README.md</code> only. It moves down to <strong>Staged Changes</strong>; <code>Ledger.cs</code> stays put.
+   You are now looking at the staging area, directly: one file on the shortlist, one not.</li>
+<li>Message: <code>docs: note that this repo is for practice</code>. Click <strong>Commit Staged</strong>.</li>
+<li>Look at Git Changes: <code>Ledger.cs</code> is <strong>still there</strong>, still modified. It was never staged, so the
+   commit passed it by.</li>
+<li><strong>Look at the commit button now.</strong> <em>Staged Changes</em> is empty, so its label has changed by
+   itself from <em>Commit Staged</em> to <strong>Commit All</strong> (§3). Type <code>feat: bump ledger version to 1.1</code> and
+   click it — no dropdown needed. That stages every tracked file and commits, in one step.</li>
+<li><strong>↑ Push.</strong></li>
+</ol>
+<p><strong>Verify:</strong> the <strong>Git Repository</strong> graph shows three commits on <code>main</code>. Click each one — the
+details pane on the right shows exactly one changed file per commit. Gitea's repo page agrees.</p>
+<p><strong>What git actually did:</strong></p>
+<pre><code class="language-bash">git log --oneline               # three commits
+git show --stat HEAD~1          # README.md only
+git show --stat HEAD            # Ledger.cs only
+</code></pre>
+<p><strong>Understand:</strong> <code>+</code> is <code>git add</code> and <strong>Commit Staged</strong> is <code>git commit</code>. They are separate because
+you frequently want to commit <em>some</em> of your edits and not others — which is the next lab.</p>
+<blockquote>
+<p><strong>Push before you branch, always.</strong> Lab V5 branches off <code>main</code>. If <code>main</code> is ahead of the server
+when you do that, your feature branch carries those extra commits with it and the pull request
+shows three changed files instead of the one you wrote. <strong>A branch always carries everything your
+local <code>main</code> has that the server does not.</strong></p>
+<p><strong>Stuck?</strong> An edited file is not listed → <a href="#ts-unsaved">not saved</a>. Commit button greyed out → <a href="#ts-commit-grey">empty message, or nothing staged</a>. Both files went into one commit → the button said <strong>Commit All</strong>; undo it as in <a href="#lab-v4-stage-selected-lines-and-the-two-commit-buttons">Lab V4 step 9</a> and redo.</p>
+</blockquote>
+<hr />
+<h3 id="lab-v4-stage-selected-lines-and-the-two-commit-buttons">Lab V4 — Stage selected lines, and the two commit buttons</h3>
+<p>The one place the UI beats the terminal outright — and the one place it quietly does something you
+did not ask for. Meet both, deliberately, once.</p>
+<ol>
+<li>Branch picker → <strong>New Branch…</strong> → name <code>feature/vs-staging</code>, <strong>Based on: <code>main</code></strong>, leave
+   <strong>Checkout branch</strong> ticked.</li>
+</ol>
+<blockquote>
+<p><strong>There is no "remote branch" option, and that is not a gap.</strong> Every branch starts local; it
+appears on Gitea only when you push it (step 12). The <em>Based on</em> dropdown offering both <code>main</code>
+and <code>remotes/origin/main</code> is choosing a <strong>starting commit</strong>, not a kind of branch — they are
+the same commit right now, because Lab V3 ended with a push.</p>
+</blockquote>
+<ol start="2">
+<li>
+<p>Make <strong>two unrelated edits in the same file</strong>, <code>Ledger.cs</code>:</p>
+<ul>
+<li>change <code>Version</code> to <code>"1.2"</code></li>
+<li>add a method below <code>Round</code>:<pre><code>public static decimal Fee(decimal amount) =&gt; Round(amount * 0.01m);
+</code></pre>
+</li>
+</ul>
+</li>
+<li>
+<p>Also add a stray line to <code>README.md</code> — work you are <em>not</em> ready to commit.</p>
+</li>
+<li><strong>Git Changes</strong> → double-click <code>Ledger.cs</code> to open the diff.</li>
+<li>Select just the <code>Version</code> line in the right-hand (working tree) pane → <strong>right-click → Git →
+   Stage Selected Range</strong>.</li>
+</ol>
+<p><a href="img/git-with-gitea/vs-stage-range.png" target="_blank" rel="noopener"><img alt="Right-click, Git, Stage Selected Range" src="img/git-with-gitea/vs-stage-range.png" /></a></p>
+<p><em>Select the line (1), right-click, open </em><em>Git ›</em><em> at the very bottom of the menu (2), then
+   </em><em>Stage Selected Range</em><em> (3). The same submenu has </em><em>Revert Selected Range</em><em> — don't confuse the
+   two.</em></p>
+<ol start="6">
+<li><strong>Look at the file list.</strong> <code>Ledger.cs</code> now appears under <strong>both</strong> <em>Changes</em> <strong>and</strong> <em>Staged
+   Changes</em> — the same file, in two states at once. This is exactly <a href="git-with-gitea-part0.html#02-the-model-in-five-minutes">§0.2</a>'s
+   staging area, and it is the single most confusing thing in the window until you have seen it once.</li>
+</ol>
+<p><a href="img/git-with-gitea/vs-both-lists.png" target="_blank" rel="noopener"><img alt="Ledger.cs in both lists" src="img/git-with-gitea/vs-both-lists.png" /></a></p>
+<p><em>The <code>Version</code> line is staged (top box); the <code>Fee</code> method is not (lower box). The button says
+   </em><em>Commit Staged</em><em>, so only the top one will be committed.</em></p>
+<ol start="7">
+<li>Message <code>feat: bump ledger version to 1.2</code> → <strong>Commit Staged</strong>. Only the <code>Version</code> line goes in.</li>
+<li><strong>Read the commit button again.</strong> Nothing is staged now, so it says <strong>Commit All</strong> — and it will
+   sweep up the <code>Fee</code> method <strong>and</strong> your unfinished <code>README.md</code> edit. Message <code>feat: add fee
+   calculation</code>. <strong>Do it anyway</strong>, so you see it happen. (This is the label change from §3 doing
+   real damage: the button you pressed a moment ago for one line now takes everything — the
+   screenshot in <a href="#the-commit-button-renames-itself-and-that-is-the-whole-trick">§3</a> is this exact
+   moment.)</li>
+</ol>
+<p><strong>What git actually did:</strong></p>
+<pre><code class="language-bash">git log --oneline -2            # your two commits
+git show --stat HEAD~1          # Ledger.cs only — and only one line of it
+git show --stat HEAD            # Ledger.cs AND README.md: Commit All took both
+</code></pre>
+<p><strong>Verify:</strong> you can point at the exact commit where <em>Commit All</em> included a file you had not
+finished. That is the whole lesson.</p>
+<p><strong>Now undo the damage</strong>, using only the UI:</p>
+<ol start="9">
+<li><strong>Git Repository</strong> → in the graph, right-click the commit <strong>directly below</strong> your newest one —
+   that is <code>feat: bump ledger version to 1.2</code>, the one you made in step 7 — and choose
+   <strong>Reset → Keep Changes (--mixed)</strong>.</li>
+</ol>
+<p><a href="img/git-with-gitea/vs-commit-context.png" target="_blank" rel="noopener"><img alt="Right-click a commit, Reset submenu" src="img/git-with-gitea/vs-commit-context.png" /></a></p>
+<p><em>Right-clicking the commit </em><em>below</em><em> the newest (top box) → </em><em>Reset ›</em><em> → </em><em>Keep Changes
+   (--mixed)</em><em> (1). Its neighbour </em><em>Delete Changes (--hard)</em><em> (2) is Lab V8's dangerous one. The
+   same menu holds </em><em>New Tag…</em><em> (boxed) for Lab V12, and </em><em>Revert</em><em> for Lab V7.</em></p>
+<blockquote>
+<p><strong>Why that one, and not the commit you want to undo?</strong> <strong>Reset moves your branch to the commit
+you right-clicked.</strong> You are saying <em>"make <code>feature/vs-staging</code> point here again"</em>, and
+everything above that point stops being part of the branch. The graph is newest-at-top, so the
+commit <em>below</em> your latest is its parent — the state you want to go back to. Right-clicking
+the bad commit itself would reset <strong>to</strong> it and change nothing.</p>
+</blockquote>
+<ol start="10">
+<li><strong>Look at Git Changes.</strong> The bad commit is gone from the graph, and both of its files —
+    <code>Ledger.cs</code> (the <code>Fee</code> method) and <code>README.md</code> (the stray line) — are back under <strong>Changes</strong>,
+    <strong>unstaged</strong>. Nothing was lost; the commit was taken apart and its contents handed back to you.
+    That is <code>git reset --mixed</code>, and it is recoverable in every sense.</li>
+<li>Now do it properly: click <strong>+</strong> on <strong><code>Ledger.cs</code> only</strong>, leave <code>README.md</code> where it is, and
+    <strong>Commit Staged</strong> with the message <code>feat: add fee calculation</code>.</li>
+</ol>
+<p>Two focused commits, which is what you wanted from the start.</p>
+<ol start="12">
+<li><strong>↑ Push.</strong> The branch exists only on your machine so far — <strong>every branch starts local</strong> — so
+    this first push creates it on Gitea. Visual Studio 2026 does it without asking and reports
+    <em>"Successfully pushed feature/vs-staging to origin"</em> (pictured in <a href="#3-the-daily-loop-in-clicks">§3</a>).
+    That is <code>git push -u</code>: it creates the branch <em>beside</em> <code>main</code> and links the two, which is why
+    later pushes need no arguments.
+    <strong><code>main</code> is completely unaffected by this.</strong> You are not merging anything; Lab V13 needs this
+    branch to exist on the server.</li>
+<li>Branch picker → <strong><code>main</code></strong>. Leave <code>feature/vs-staging</code> alone; Lab V13 cleans it up.</li>
+</ol>
+<p><strong>Verify:</strong> <code>README.md</code> still shows as modified in Git Changes on <code>main</code> — proof that the stray
+edit is out of your history and still on your disk, exactly as intended. Right-click it →
+<strong>Undo Changes</strong> to discard it now.</p>
+<p><strong>Understand:</strong> <em>Stage Selected Range</em> is genuinely better than the command-line equivalent
+(<code>git add -p</code>, where you answer <code>y</code>/<code>n</code>/<code>s</code> per hunk). You click the lines you mean. It is the
+strongest argument in this guide for using the IDE.</p>
+<blockquote>
+<p><strong>Stuck?</strong> No <strong>Stage Selected Range</strong> → select in the <strong>right-hand</strong> (working tree) pane, then open <strong>Git ›</strong> at the very bottom of the right-click menu. <code>Ledger.cs</code> in both lists → <a href="#ts-both-lists">that is the point</a>. Commit All took <code>README.md</code> → <a href="#ts-commit-all">steps 9–11 are the fix</a>.</p>
+</blockquote>
+<hr />
+<h3 id="lab-v5-a-branch-and-a-real-pull-request">Lab V5 — A branch and a real pull request</h3>
+<p>The real workflow, end to end. This is the lab to copy on actual work.</p>
+<ol>
+<li>Branch picker → <strong><code>main</code></strong> → <strong>↓ Pull</strong>, so you start level with Gitea.</li>
+<li>Branch picker → <strong>New Branch…</strong> → <code>feature/interest-rate</code>, <strong>based on <code>main</code></strong>.</li>
+<li>
+<p>In <code>Ledger.cs</code>, add a method:</p>
+<pre><code>public static decimal Interest(decimal amount) =&gt; Round(amount * 0.04m);
+</code></pre>
+</li>
+<li>
+<p><strong>Git Changes</strong> → <strong>+</strong> on <code>Ledger.cs</code> → message <code>feat: add simple interest calculation</code> →
+   <strong>Commit Staged</strong>.</p>
+</li>
+<li><strong>↑ Push.</strong> The branch does not exist on the server yet, so this push creates it there (VS
+   2026 does not ask first). <code>main</code> on the server is still unchanged.</li>
+</ol>
+<p><strong>Now leave the IDE.</strong> In Gitea (every screen of steps 6–8 is pictured in
+<a href="git-with-gitea-part0.html#05-pull-requests-the-part-that-is-not-git">§0.5</a>):</p>
+<ol start="6">
+<li><strong>Pull Requests</strong> tab → <strong>New Pull Request</strong> (or the green <em>"You pushed on branch
+   feature/interest-rate"</em> banner on the repo page, if it is still showing). Confirm the direction:
+   <strong>merge into: <code>main</code></strong> ← <strong>pull from: <code>feature/interest-rate</code></strong>.</li>
+<li>Title and description per <a href="git-with-gitea-part0.html#05-pull-requests-the-part-that-is-not-git">§0.5</a> →
+   <strong>Create Pull Request</strong>.</li>
+<li>Open the <strong>Files Changed</strong> tab — this is exactly what a reviewer sees. Hover the <code>Interest</code>
+   line, click <strong>+</strong>, and leave yourself a comment. Feel how specific it is.</li>
+</ol>
+<p><strong>Back in Visual Studio</strong>, respond to your own review:</p>
+<ol start="9">
+<li>Change <code>0.04m</code> to <code>0.045m</code> in <code>Ledger.cs</code>. Stage → <strong>Commit Staged</strong>, message
+   <code>fix: correct rate to 4.5%</code> → <strong>↑ Push</strong> (the branch is already linked, so it just pushes).</li>
+<li>Refresh the PR. <strong>The new commit is in it automatically</strong> — the PR tracks the <em>branch</em>. Never
+    close a PR and open a new one to incorporate feedback.</li>
+<li>In Gitea, scroll past the conversation to the merge box: the button is <strong>Create merge
+    commit</strong> — that <em>is</em> the merge button (Gitea has no button called <em>"Merge Pull Request"</em>; the
+    <strong>▾</strong> beside it holds the other merge styles, <a href="git-with-gitea-part3.html#144-merge-styles-gitea-offers-on-a-pr">§14.4</a>).
+    Click it. A confirm form opens with the merge message already filled in — leave it — and a
+    <strong>Delete Branch "feature/interest-rate"</strong> checkbox. Tick it, then click <strong>Create merge commit</strong>
+    again. (Forgot to tick it? The merged PR then shows a <strong>Delete Branch</strong> button instead.)</li>
+</ol>
+<p><a href="img/git-with-gitea/g-pr-merge-box.png" target="_blank" rel="noopener"><img alt="The merge box on an open PR" src="img/git-with-gitea/g-pr-merge-box.png" /></a></p>
+<p><em>The merge box at the bottom of </em><em>Conversation</em><em>: "This pull request can be merged automatically."
+and the </em><em>Create merge commit</em><em> button with its </em><em>▾</em><em>.</em></p>
+<p><a href="img/git-with-gitea/g-pr-merge-confirm.png" target="_blank" rel="noopener"><img alt="The merge confirm form" src="img/git-with-gitea/g-pr-merge-confirm.png" /></a></p>
+<p><em>After the first click: the pre-filled merge message, the confirming </em><em>Create merge commit</em><em>
+(boxed), and the </em><em>Delete Branch</em><em> checkbox to its right.</em></p>
+<p><a href="img/git-with-gitea/g-pr-delete-branch.png" target="_blank" rel="noopener"><img alt="A merged PR offering Delete Branch" src="img/git-with-gitea/g-pr-delete-branch.png" /></a></p>
+<p><em>If you left the box unticked: "Pull request successfully merged and closed — The branch … can now
+be deleted." One click on </em><em>Delete Branch</em><em> (boxed) removes it from Gitea; there is no confirm.</em></p>
+<p><strong>Back in Visual Studio, clean up:</strong></p>
+<ol start="12">
+<li>Branch picker → <strong><code>main</code></strong>.</li>
+<li><strong>Git → Fetch</strong> — the menu, not the toolbar, because ⟳ in Git Changes is <strong>Sync</strong>, not Fetch
+    (<a href="#12-the-git-changes-window-button-by-button">§1.2</a>). The <strong>Git Repository</strong> window has a
+    <strong>Fetch</strong> link on its <em>Incoming</em> row too. Nothing on your branch changes yet.</li>
+<li>
+<p><strong>Git Repository</strong> → look at the <strong>Incoming</strong> list: the merge commit and your two feature
+    commits, sitting on the server, not yet yours. <em>This is the step worth learning</em> — look before
+    you pull.</p>
+<p><a href="img/git-with-gitea/vs-incoming.png" target="_blank" rel="noopener"><img alt="Incoming list after a fetch" src="img/git-with-gitea/vs-incoming.png" /></a></p>
+<p><em>The Incoming list after </em><em>Git → Fetch</em><em> (1): the PR's merge commit and its two commits, on
+the server but not yet in your <code>main</code>. Its </em><em>Pull</em><em> link (2) is step 15.</em></p>
+</li>
+<li>
+<p><strong>↓ Pull.</strong></p>
+</li>
+<li><strong>Git → Manage Branches</strong> → under <strong>Branches</strong>, right-click <code>feature/interest-rate</code> → <strong>Delete</strong>.
+    <em>(Same window as </em><em>Git Repository</em><em>; the branch tree is that window's left pane, collapsed to a
+    strip of icons until you expand it — see <a href="#13-the-git-repository-window-pane-by-pane">§1.3</a>.
+    The branch badge in the graph is a label, not the branch list: right-clicking it gives you the
+    commit menu.)</em> <strong>Delete</strong> is greyed out for the branch you are standing on, which is why step 12
+    put you on <code>main</code> first.</li>
+</ol>
+<p><strong>Verify:</strong> <code>main</code> contains the <code>Interest</code> method, the branch is gone from both the local list and
+<code>remotes/origin</code>, and the graph shows a merge commit joining two lines of work.</p>
+<p><strong>What git actually did:</strong></p>
+<pre><code class="language-bash">git log --oneline --graph --all -8   # the fork and the join
+git branch -a                        # feature/interest-rate is in neither list
+</code></pre>
+<blockquote>
+<p><strong>Why <em>Create merge commit</em>.</strong> Deleting a branch is only allowed when its commits are reachable from where
+you stand. <strong>Create squash commit</strong> and the two <strong>Rebase, then …</strong> styles (<a href="git-with-gitea-part3.html#144-merge-styles-gitea-offers-on-a-pr">§14.4</a>)
+all rewrite your commits into <em>new</em> ones with new SHAs, so git cannot see your branch as merged
+and Gitea's <strong>Delete Branch</strong> / Visual Studio's <strong>Delete</strong> refuses. That is the safety net doing its job with incomplete
+information, not a bug. On a team that squash-merges, you confirm the work landed on <code>main</code> and
+then force the delete.</p>
+<p><strong>Stuck?</strong> No pull request button in Visual Studio → <a href="#ts-no-pr-button">there is none, for Gitea</a>. Your branch is missing from <strong>pull from:</strong> → <a href="git-with-gitea-part0.html#pr-no-branch">not pushed yet</a>. The diff is <a href="git-with-gitea-part0.html#pr-empty">empty</a> or <a href="git-with-gitea-part0.html#pr-enormous">enormous</a> → the direction is backwards. No merge button → <a href="git-with-gitea-part0.html#pr-no-merge">scroll down, or remove <code>WIP:</code></a>. <strong>Delete</strong> refused → the PR was merged with a squash or rebase style; see the note just above.</p>
+</blockquote>
+<hr />
+<h3 id="lab-v6-make-a-conflict-on-purpose-fix-it-in-the-merge-editor">Lab V6 — Make a conflict on purpose, fix it in the Merge Editor</h3>
+<p>The single most feared part of git. Do it deliberately, once, and it stops being scary.</p>
+<ol>
+<li>Branch picker → <strong><code>main</code></strong> → <strong>↓ Pull</strong>.</li>
+<li>Branch picker → <strong>New Branch…</strong> → <code>feature/v3</code>, <strong>based on <code>main</code></strong>.</li>
+<li>In <code>Ledger.cs</code>, set <code>Version = "3.0"</code>. Stage → <strong>Commit Staged</strong> (<code>feat: version 3.0</code>).</li>
+<li>Branch picker → <strong>New Branch…</strong> → <code>hotfix/v21</code>, <strong>based on <code>main</code></strong> — <em>not</em> on <code>feature/v3</code>.
+   Branching both from <code>main</code> is what makes the histories diverge.</li>
+<li>Set the <strong>same line</strong> to <code>"2.1"</code>. Stage → <strong>Commit Staged</strong> (<code>fix: version 2.1</code>).</li>
+<li>Branch picker → <strong><code>main</code></strong>. <strong>Git → Manage Branches</strong> → right-click <code>hotfix/v21</code> → <strong>Merge
+   'hotfix/v21' into 'main'</strong> → <strong>Merge</strong> in the small <em>Merge branches</em> dialog. Clean — <code>main</code> had
+   no commits of its own, so the pointer just slides forward. (That is a <em>fast-forward</em>: a merge
+   with nothing to merge.)</li>
+<li>Right-click <code>feature/v3</code> → <strong>Merge 'feature/v3' into 'main'</strong>. This time the dialog warns
+   <em>"1 file with potential conflicts"</em> — click <strong>Merge</strong> anyway. <strong>Conflict.</strong> <code>Ledger.cs</code> appears
+   under <strong>Unmerged Changes</strong> in Git Changes.</li>
+<li>Double-click it. The <strong>Merge Editor</strong> opens: <strong>Incoming</strong> (left), <strong>Current</strong> (right),
+   <strong>Result</strong> (bottom).</li>
+<li>Tick one side's checkbox, then the other, and watch the <em>Result</em> pane change. Then click into
+   <em>Result</em> and type <code>"3.0"</code> by hand — proving the answer does not have to be either side.</li>
+<li><strong>Accept Merge</strong>. In Git Changes the button now reads <strong>Commit Staged</strong> and the message box is
+    <strong>empty</strong>: type <code>Merge branch 'feature/v3'</code> and click <strong>Commit Staged</strong>.</li>
+<li><strong>Ctrl+F5.</strong></li>
+</ol>
+<p>Every screen of steps 7–10 — the right-click menu, the dialog, the conflict, the Merge Editor
+before and after, and the empty message box — is pictured in
+<a href="#after-the-merge-clean-up">§4</a> and <a href="#5-conflicts-the-merge-editor">§5</a>, taken during this lab.</p>
+<p><strong>Verify:</strong> the app prints <code>ledger v3.0</code>, and the <strong>Git Repository</strong> graph shows a genuine fork and
+join — not a straight line.</p>
+<p><a href="img/git-with-gitea/vs-merge-graph.png" target="_blank" rel="noopener"><img alt="The graph after the merge" src="img/git-with-gitea/vs-merge-graph.png" /></a></p>
+<p><em>The fork and the join: <code>fix: version 2.1</code> and <code>feat: version 3.0</code> on two lines, rejoined by
+<code>Merge branch 'feature/v3'</code> (boxed). The ↑ arrows mark commits not yet pushed.</em></p>
+<p><strong>What git actually did:</strong></p>
+<pre><code class="language-bash">git log --oneline --graph --all -8   # two branches diverging and rejoining
+git show --stat HEAD                 # a merge commit: two parents, and the file you resolved
+</code></pre>
+<p><strong>Now prove the escape hatch works</strong>, because you will want it one day:</p>
+<ol start="12">
+<li>Branch picker → <strong>New Branch…</strong> → <code>spike/conflict-again</code> from <code>main</code>, set <code>Version</code> to
+    <code>"9.9"</code>, commit.</li>
+<li>Switch to <code>main</code>, right-click <code>spike/conflict-again</code> → <strong>Merge into <code>main</code></strong> → conflict.</li>
+<li>Click <strong>Abort</strong> at the top of <strong>Git Changes</strong> (it appears only while a merge is in progress).</li>
+</ol>
+<p><strong>Verify:</strong> Git Changes is clean, the graph is unchanged, and <code>Ledger.cs</code> still says <code>"3.0"</code>.
+Nothing was lost and nothing was half-merged.</p>
+<ol start="15">
+<li><strong>↑ Push</strong> to send the real merge to Gitea.</li>
+</ol>
+<p><strong>Understand:</strong> the Merge Editor made the mechanics easy, but step 11 is what proved you were
+<em>right</em>. A resolution that compiles can still be wrong, and only running it tells you.</p>
+<blockquote>
+<p><strong>Stuck?</strong> No conflict at step 7 → the two branches were not both made from <code>main</code>, or step 5 changed a different line; <code>git log --oneline --graph --all</code> shows which. Lost in the Merge Editor → <a href="#ts-unmerged"><strong>Abort</strong></a> puts everything back. The app prints the wrong version → you kept the other side, which is exactly what step 11 is there to catch: fix <code>Ledger.cs</code> and commit again.</p>
+</blockquote>
+<hr />
+<h3 id="lab-v7-undo-from-the-history-graph">Lab V7 — Undo, from the history graph</h3>
+<p>Five undos, each for a different situation. Do all five, in order, entirely in the UI.</p>
+<p><strong>(a) Wrong message — Amend.</strong></p>
+<ol>
+<li>Edit <code>README.md</code>. Stage it. Commit with a deliberately bad message: <code>asdf</code>.</li>
+<li>Tick <strong>Amend</strong> (beside the commit button). The message box fills with the last commit's message
+   (<code>asdf</code>) — replace it with <code>docs: describe the practice labs</code>, then click the commit button.</li>
+</ol>
+<p><a href="img/git-with-gitea/vs-amend.png" target="_blank" rel="noopener"><img alt="Amend ticked" src="img/git-with-gitea/vs-amend.png" /></a></p>
+<p><em>With </em><em>Amend</em><em> ticked, VS names the commit it will replace (<code>Amend 340d73cb</code>) and pre-fills its
+   message (boxed) for you to edit.</em></p>
+<ol start="3">
+<li>Look at the graph: <strong>one</strong> commit, new message. That is <code>git commit --amend</code> — it <em>replaces</em>
+   the last commit rather than adding one.</li>
+</ol>
+<p><strong>(b) Staged the wrong file — Unstage.</strong></p>
+<ol start="4">
+<li>Edit <code>README.md</code> and <code>Account.cs</code>. Stage <strong>both</strong> with the <strong>+</strong> on the <em>Changes</em> header.</li>
+<li>Unstage <code>README.md</code> with <strong>−</strong>. Your edits are untouched; only the shortlist changed.</li>
+<li><strong>Commit Staged</strong> — <code>Account.cs</code> alone goes in.</li>
+</ol>
+<p><strong>(c) Wrecked a file — Undo Changes. The irreversible one.</strong></p>
+<ol start="7">
+<li>Make a mess of <code>README.md</code> — delete half of it.</li>
+<li>Right-click it under <em>Changes</em> → <strong>Undo Changes</strong> → confirm.</li>
+</ol>
+<p><a href="img/git-with-gitea/vs-undo-changes.png" target="_blank" rel="noopener"><img alt="Undo Changes on a file" src="img/git-with-gitea/vs-undo-changes.png" /></a></p>
+<p><em>The </em><em>Undo Changes</em><em> item (boxed) sits between the harmless Stage and View History. Nothing
+   about it warns you that the edits are gone for good.</em></p>
+<ol start="9">
+<li><strong>Those edits are gone for good.</strong> They were never committed, so nothing in
+   <a href="git-with-gitea-part3.html#15-oh-no-the-recovery-section">§15</a> can bring them back. This is the only truly irreversible
+   operation in this lab, and it lives in a context menu next to a dozen safe ones.</li>
+</ol>
+<p><strong>(d) Undo something already pushed — Revert.</strong></p>
+<ol start="10">
+<li>Edit <code>Ledger.cs</code> (change <code>Round</code>'s comment, anything). Stage, <strong>Commit Staged</strong>, <strong>↑ Push</strong>.</li>
+<li><strong>Git Repository</strong> → right-click that commit in the graph → <strong>Revert</strong>.</li>
+<li>Look at the graph: <strong>two</strong> commits now — yours and its reversal. Nothing was deleted, which is
+    exactly why this is the safe undo for anything others may already have pulled. <strong>↑ Push</strong>.</li>
+</ol>
+<p><strong>(e) Committed too early — Reset.</strong></p>
+<ol start="13">
+<li>Edit any file, stage, commit with the message <code>wip</code>.</li>
+<li>Right-click the commit <strong>below</strong> it → <strong>Reset → Keep Changes (--mixed)</strong> (the menu is pictured
+    in Lab V4, step 9). The <code>wip</code> commit disappears and your work returns to Git Changes, ready to
+    stage properly. That is <code>git reset --mixed</code>.</li>
+<li>Stage and <strong>Commit Staged</strong> with a real message.</li>
+</ol>
+<p><strong>Verify:</strong> you can say, in your own words, why (d) must be used instead of (a) or (e) once a
+commit has been pushed. (Because (a) and (e) <em>rewrite</em> commits, and everyone else's history still
+contains the originals.)</p>
+<p><strong>What git actually did:</strong></p>
+<pre><code class="language-bash">git log --oneline -6            # the amend left one commit; the revert left two
+</code></pre>
+<blockquote>
+<p><strong>Stuck?</strong> Amend made a <em>new</em> commit → <strong>Amend</strong> was not ticked; <a href="git-with-gitea-part3.html#oh-too-early">Reset › Keep Changes</a> on the commit below and try again. Revert stops with a conflict → a later commit touched the same lines; resolve it as in <a href="#5-conflicts-the-merge-editor">§5</a>. Undo Changes took real work → <a href="#ts-undo-gone">it is gone</a>, which is this lab's lesson.</p>
+</blockquote>
+<hr />
+<h3 id="lab-v8-destroy-work-get-it-back-and-hit-the-wall">Lab V8 — Destroy work, get it back, and hit the wall</h3>
+<p>This is the lab that makes you unafraid of git — and the one that shows you the IDE's limit.</p>
+<ol>
+<li>Note where you are: <strong>Git Repository</strong> → read the top three commits.</li>
+<li>Add a line to <code>Ledger.cs</code> — a comment saying <code>// something valuable</code>. Stage, <strong>Commit Staged</strong>
+   (<code>feat: valuable work I am about to destroy</code>).</li>
+<li><strong>Git Repository</strong> → right-click the commit <strong>two below</strong> your latest → <strong>Reset → Delete
+   Changes (--hard)</strong>. Read the menu item. Accept.</li>
+<li>Look at the graph. Your two commits are gone, and the line has vanished from <code>Ledger.cs</code>. That
+   was <code>git reset --hard</code>: the single genuinely dangerous operation in git, sitting in a context
+   menu with no red warning.</li>
+</ol>
+<p><strong>Now get it back — and try the UI first.</strong></p>
+<ol start="5">
+<li>Search every Git menu, every right-click, every pane, for something that undoes step 3. Spend a
+   real minute on it. <strong>There is nothing.</strong> Visual Studio has no reflog.</li>
+<li><strong>View → Terminal</strong> — this part is <strong>not optional</strong>:</li>
+</ol>
+<pre><code class="language-bash">git reflog -10               # every position HEAD has held, including the one you just left
+git reset --hard HEAD@{1}    # move the branch back to where HEAD was one step ago
+git log --oneline -3         # your commits are back, with the same SHAs
+</code></pre>
+<p><a href="img/git-with-gitea/t-reflog.png" target="_blank" rel="noopener"><img alt="reflog rescue in the terminal" src="img/git-with-gitea/t-reflog.png" /></a></p>
+<p><em>What it looks like (the command-line Lab C7 does the same steps): after the <code>reset --hard HEAD~2</code>
+the log has lost two commits, but <code>git reflog</code> still lists the "destroyed" one as <code>HEAD@{1}</code>, and
+<code>git reset --hard HEAD@{1}</code> brings it back with the same SHA (<code>b75c72b</code>).</em></p>
+<ol start="7">
+<li>Switch back to the <strong>Git Repository</strong> window and look: the graph has repopulated. The IDE reads
+   the same repository; it simply had no way to <em>ask</em> for that.</li>
+</ol>
+<p><strong>Now the same for a deleted branch:</strong></p>
+<ol start="8">
+<li>Branch picker → <strong>New Branch…</strong> → <code>spike/throwaway</code> from <code>main</code>. Edit <code>README.md</code>, stage,
+   <strong>Commit Staged</strong> (<code>spike: work I will lose</code>).</li>
+<li>Branch picker → <strong><code>main</code></strong> (you cannot delete the branch you are standing on).</li>
+<li><strong>Git → Manage Branches</strong> → right-click <code>spike/throwaway</code> → <strong>Delete</strong>. VS warns it is unmerged.
+    Delete it anyway. That commit now belongs to no branch.</li>
+<li><strong>Terminal:</strong></li>
+</ol>
+<pre><code class="language-bash">git reflog                              # find &quot;spike: work I will lose&quot; and copy its SHA
+git switch -c spike/recovered &lt;that-sha&gt;   # create a branch AT that commit — the work is back
+git log --oneline -1
+</code></pre>
+<ol start="12">
+<li>Branch picker → <strong><code>main</code></strong>, then delete <code>spike/recovered</code> from the graph. You have proved the
+    point; you do not need the branch.</li>
+</ol>
+<p><strong>Verify:</strong> you recovered both, and you can name the one thing in this lab that had no button.</p>
+<p><strong>Remember for life:</strong> anything <strong>committed</strong> is recoverable for ~90 days via <code>git reflog</code>.
+Anything never committed — Lab V7's <em>Undo Changes</em> — is not. That is the whole rule.</p>
+<blockquote>
+<p><strong>Stuck?</strong> Cannot tell which reflog line to use → look for <code>commit: feat: valuable work…</code>; its <code>HEAD@{n}</code> is the one. Restored the wrong one → run <code>git reflog</code> again: that reset is recorded too, so pick the right line and reset again (<a href="git-with-gitea-part3.html#oh-reset-hard">§15</a>). The terminal says <code>not a git repository</code> → it opened somewhere else; <code>cd E:/adtemp/hands_on/git/GitSandbox-vs</code>.</p>
+</blockquote>
+<hr />
+<h3 id="lab-v9-stash-i-need-to-switch-branches-right-now">Lab V9 — Stash: "I need to switch branches right now"</h3>
+<ol>
+<li>Branch picker → <strong><code>main</code></strong>.</li>
+<li>Start editing <code>Program.cs</code> — add a half-finished line, something that does not even compile:<pre><code>// TODO: print the fee as well
+</code></pre>
+</li>
+</ol>
+<p>Leave it. Do <strong>not</strong> commit.
+3. <strong>Git Changes</strong> → click the <strong>▾</strong> on the <strong>commit button</strong> → <strong>Stash All (--include-untracked)</strong>.
+   <em>(There is no separate Stash button — stashing shares the commit dropdown, §3.)</em>
+4. Look: Git Changes is empty, and <code>Program.cs</code> on disk is back to its committed state. Your edit
+   is not lost — it is on a shelf.
+5. Scroll to the bottom of <strong>Git Changes</strong> — the <strong>Stashes</strong> section now lists it. (<strong>Git
+   Repository</strong> shows the same thing in its left pane.)
+6. Branch picker → <strong>New Branch…</strong> → <code>fix/urgent</code> from <code>main</code>. Edit <code>README.md</code>, stage,
+   <strong>Commit Staged</strong> (<code>fix: the urgent thing</code>). This is the interruption you stashed for.
+7. Branch picker → <strong><code>main</code></strong>.
+8. <strong>Stashes</strong> → right-click your stash → <strong>Pop ›</strong> → <strong>Pop All as Unstaged</strong>. (<em>Pop</em> applies it
+   <strong>and</strong> removes it from the shelf; <em>Apply</em> keeps a copy. Both are submenus in VS 2026; the other
+   choice, <em>…and Restore Staged (--index)</em>, also puts back what you had staged.)</p>
+<p><a href="img/git-with-gitea/vs-stash.png" target="_blank" rel="noopener"><img alt="Stash right-click menu" src="img/git-with-gitea/vs-stash.png" /></a></p>
+<p><em>The stash entry under </em><em>Stashes (1)</em><em> (1), its right-click menu with </em><em>Pop ›</em><em> (2), and the two
+   Pop choices (3) — </em><em>Pop All as Unstaged</em><em> is the one for this lab.</em></p>
+<ol start="9">
+<li><code>Program.cs</code> has your half-finished line back, exactly as you left it.</li>
+<li><strong>Important:</strong> right-click <code>Program.cs</code> → <strong>Undo Changes</strong> to throw that scrap away now.</li>
+</ol>
+<p><strong>Verify:</strong> the edit came back, the <strong>Stashes</strong> section says <em>There are no stashed changes</em>, and
+Git Changes is clean.</p>
+<blockquote>
+<p><strong>Do not skip step 10.</strong> Lab V10 has a "colleague" edit <code>Program.cs</code>, and Lab V10 commits your
+side too. Leave this practice edit lying around and it rides along into that commit, collides
+with the colleague's change, and Lab V10's "different files, so no conflict" stops being true.</p>
+</blockquote>
+<p><strong>Understand:</strong> a stash is not a commit and not a branch. It is a shelf, it is easy to forget things
+on, and the <strong>Stashes</strong> section is the only place you will ever see them. Check it before concluding
+work is lost.</p>
+<blockquote>
+<p><strong>Stuck?</strong> No <strong>Stash All</strong> anywhere → it is in the commit button's <strong>▾</strong>, not a button of its own. The stash seems gone → the <strong>Stashes</strong> section at the bottom of Git Changes. Pop reports a conflict → the file changed since you stashed; resolve it as in <a href="#5-conflicts-the-merge-editor">§5</a> — the stash stays on the shelf until you drop it.</p>
+</blockquote>
+<hr />
+<h3 id="lab-v10-be-your-own-colleague">Lab V10 — Be your own colleague</h3>
+<p>Simulate the thing that actually causes trouble: two people editing at once.</p>
+<ol>
+<li><strong>↑ Push</strong>, so your copy and the server are level.</li>
+<li><strong>Git → Clone Repository…</strong> (the same dialog as Lab VB)<ul>
+<li>URL <code>http://192.168.0.22:3000/Adhir/git-practice-vs.git</code></li>
+<li>Path <code>E:\adtemp\hands_on\git\GitSandbox-colleague</code></li>
+<li><strong>Clone.</strong> Visual Studio opens the second copy. <em>From here on, pretend you are somebody else.</em></li>
+</ul>
+</li>
+</ol>
+<p><a href="img/git-with-gitea/vs-clone.png" target="_blank" rel="noopener"><img alt="Clone a repository dialog" src="img/git-with-gitea/vs-clone.png" /></a></p>
+<p><em>Repository location and Path filled in as above, then </em><em>Clone</em><em> (bottom right). The Azure DevOps
+   / GitHub buttons are for those services only — ignore them.</em></p>
+<ol start="3">
+<li>In the colleague's copy, edit <code>Program.cs</code> — add a line at the end of <code>Main</code>:<pre><code>Console.WriteLine("-- end of report --");
+</code></pre>
+</li>
+</ol>
+<p>Stage, <strong>Commit Staged</strong> (<code>feat: colleague adds a report footer</code>), <strong>↑ Push</strong>. Gitea's <code>main</code>
+   has now moved forward.
+4. <strong>Switch back to your own copy</strong> — <strong>Git → Local Repositories → GitSandbox-vs</strong>. It knows
+   nothing about that push.
+5. Edit <code>README.md</code>. Stage, <strong>Commit Staged</strong> (<code>docs: my own change</code>).
+6. <strong>↑ Push.</strong> <strong>Rejected.</strong> Visual Studio 2026 pops up <strong>Git - Push failed</strong> ("your local branch
+   is behind the remote branch"), pictured in <a href="#15-where-visual-studio-tells-you-things-went-wrong">§1.5</a>.
+   Click <strong>Cancel</strong> for now — this lab wants you to <em>look</em> first — and read the full text in
+   <strong>Output → Source Control - Git</strong>: the server holds a commit you do not have.
+7. <strong>Git → Fetch</strong>, then <strong>Git Repository</strong> → read the <strong>Incoming</strong> list. There is the colleague's
+   commit.
+8. <strong>↓ Pull.</strong> You edited different files, so it merges cleanly and creates a merge commit.
+9. <strong>↑ Push.</strong> Accepted this time — your branch now contains theirs.</p>
+<p><strong>Verify:</strong> both changes are on Gitea, and the graph shows two lines of work joining.</p>
+<p><a href="img/git-with-gitea/vs-colleague-merge.png" target="_blank" rel="noopener"><img alt="Your commit and the colleague's, joined" src="img/git-with-gitea/vs-colleague-merge.png" /></a></p>
+<p><em>The result (boxed): <code>feat: colleague adds a report footer</code> by </em><em>A. Colleague</em><em> and your
+<code>docs: my own change</code>, joined by the merge commit the pull created.</em></p>
+<p><strong>Now do it again, badly</strong>, because this is what your real day looks like:</p>
+<ol start="10">
+<li>
+<p>Repeat steps 3–8 but have <strong>both</strong> copies edit the <strong>same line</strong> of <code>README.md</code>. The pull
+    conflicts; resolve it in the Merge Editor as in Lab V6.</p>
+</li>
+<li>
+<p>When you are done, <strong>Git → Local Repositories</strong> → remove <code>GitSandbox-colleague</code> from the list,
+    and delete the folder from disk.</p>
+</li>
+</ol>
+<p><strong>Understand:</strong> the rejection in step 6 is not an error you did something to cause. It is git
+refusing to let you overwrite work you have never seen. <em>Fetch, look, pull, push</em> is the whole
+answer, every time.</p>
+<blockquote>
+<p><strong>Stuck?</strong> The <a href="#ts-push-failed">Push failed dialog</a> at step 6 is the lab working. The pull at step 8 conflicts → both copies edited the same line (step 10 does that on purpose); <a href="#5-conflicts-the-merge-editor">§5</a>. The picture of what happened is <em>Why a push gets rejected</em> in <a href="git-with-gitea-part0.html#02-the-model-in-five-minutes">§0.2</a>.</p>
+</blockquote>
+<hr />
+<h3 id="lab-v11-gitignore-and-the-mistake-it-does-not-fix">Lab V11 — .gitignore, and the mistake it does not fix</h3>
+<ol>
+<li><strong>Ctrl+Shift+B</strong> to build. <code>bin\</code> and <code>obj\</code> fill with hundreds of files.</li>
+<li>Look at <strong>Git Changes</strong>: nothing. Not one of them appears. That is your <code>.gitignore</code> working.</li>
+<li><strong>Now break it deliberately.</strong> There is <strong>no UI for this</strong> — force-adding an ignored file is the
+   second of the three walls. <strong>View → Terminal:</strong></li>
+</ol>
+<pre><code class="language-bash">git add -f bin/                 # stage bin/ even though .gitignore excludes it. NEVER do this for real
+</code></pre>
+<ol start="4">
+<li>Back in <strong>Git Changes</strong>: every file in <code>bin/</code> is suddenly listed under <em>Staged Changes</em>. Commit
+   them with the message <code>oops: committed build output</code>.</li>
+<li><strong>Ctrl+Shift+B</strong> again, and watch <strong>Git Changes</strong>: every rebuilt artefact now counts as a
+   modification. The window is useless — this is what a repo with committed build output feels like
+   forever.</li>
+<li>Fix it. <strong>Terminal:</strong></li>
+</ol>
+<pre><code class="language-bash">git rm -r --cached bin/         # stop tracking bin/ — --cached leaves the files on disk
+</code></pre>
+<ol start="7">
+<li><strong>Git Changes</strong> shows those files as <em>deleted</em> and staged. Commit: <code>chore: stop tracking build
+   output</code>.</li>
+<li><strong>Ctrl+Shift+B</strong> once more.</li>
+</ol>
+<p><strong>Verify:</strong> <code>bin\</code> still exists on disk (Solution Explorer → <strong>Show All Files</strong> proves it), and
+<strong>Git Changes</strong> is quiet again.</p>
+<p><strong>Understand:</strong> <code>.gitignore</code> only governs files git is <strong>not already tracking</strong>. Once a file is
+tracked, the ignore rule is simply not consulted. This is exactly how
+<code>appsettings.Development.json</code> — with your DB password in it — ends up in a repository forever, and
+why <a href="git-with-gitea-part3.html#17-graduating-the-real-repository">§17</a> checks the ignores <em>before</em> the first commit rather
+than after.</p>
+<blockquote>
+<p><strong>Stuck?</strong> The terminal says <code>not a git repository</code> → <code>cd E:/adtemp/hands_on/git/GitSandbox-vs</code>. <code>bin/</code> files still listed after <code>git rm -r --cached bin/</code> → commit step 7 first; until then they are staged deletions. The rule behind it: <a href="git-with-gitea-part2.html#118-ignoring-files">§11.8</a>.</p>
+</blockquote>
+<hr />
+<h3 id="lab-v12-tags-and-a-gitea-release">Lab V12 — Tags and a Gitea release</h3>
+<ol>
+<li>Branch picker → <strong><code>main</code></strong> → <strong>↓ Pull</strong>, then <strong>↑ Push</strong> so nothing is outstanding. A tag should
+   point at a commit the server already has.</li>
+<li><strong>Git Repository</strong> → right-click the top commit on <code>main</code> → <strong>New Tag…</strong><ul>
+<li><strong>Tag name</strong> <code>v1.0</code>, <strong>Tag message</strong> <code>First practice release</code>. <strong>Create.</strong></li>
+</ul>
+</li>
+</ol>
+<p><a href="img/git-with-gitea/vs-new-tag.png" target="_blank" rel="noopener"><img alt="Create a new tag dialog" src="img/git-with-gitea/vs-new-tag.png" /></a></p>
+<p><em>The dialog names the commit it will tag (</em><em>Create at:</em><em>). A message makes it an annotated
+   tag, which is what Gitea releases expect.</em></p>
+<ol start="3">
+<li>In the left pane, expand <strong>tags</strong> → right-click <code>v1.0</code> → <strong>Push</strong>. (<strong>A plain Push does not send
+   tags.</strong> This catches everybody once.)</li>
+</ol>
+<p><a href="img/git-with-gitea/vs-tag-push.png" target="_blank" rel="noopener"><img alt="Right-click a tag, Push" src="img/git-with-gitea/vs-tag-push.png" /></a></p>
+<p><em>The <code>v1.0</code> tag under </em><em>tags</em><em> (top box) and its </em><em>Push</em><em> item (bottom box). VS confirms with
+   "Successfully pushed tag v1.0 to origin".</em></p>
+<ol start="4">
+<li>In Gitea: <strong>Releases</strong> → <strong>New Release</strong> → type or pick <code>v1.0</code> in <strong>Git Tag</strong> → title and notes
+   → <strong>Publish Release</strong>.</li>
+</ol>
+<p><a href="img/git-with-gitea/g-release-new.png" target="_blank" rel="noopener"><img alt="Gitea New Release form" src="img/git-with-gitea/g-release-new.png" /></a></p>
+<p><em>Step 4: </em><em>Git Tag</em><em> <code>v1.0</code> (boxed), a title, notes, then </em><em>Publish Release</em><em> (boxed).</em></p>
+<p><a href="img/git-with-gitea/g-releases.png" target="_blank" rel="noopener"><img alt="The published release" src="img/git-with-gitea/g-releases.png" /></a></p>
+<p><em>The Releases tab afterwards: the tag, the commit it points at, your notes, and source archives
+Gitea builds for free.</em></p>
+<p><strong>Verify:</strong> Gitea's <strong>Releases</strong> tab shows <code>v1.0</code>, and the <strong>Tags</strong> node in Git Repository shows it
+as pushed.</p>
+<p><strong>What git actually did:</strong></p>
+<pre><code class="language-bash">git tag                         # v1.0
+git show v1.0                   # the tag's own message, author and date, then the commit it points at
+git ls-remote --tags origin     # proof the server has it
+</code></pre>
+<p><strong>Understand:</strong> a Gitea <em>release</em> is a tag plus a description and optional file attachments. The
+tag is the git part; the release is the web part — the same split as commits and pull requests.</p>
+<blockquote>
+<p><strong>Stuck?</strong> <code>v1.0</code> not on Gitea, or not offered in <strong>Git Tag</strong> → a plain push does not send tags; step 3. Tagged the wrong commit → before pushing it, <code>git tag -d v1.0</code> in the terminal, then tag again.</p>
+</blockquote>
+<hr />
+<h3 id="lab-v13-gitea-housekeeping-from-visual-studio">Lab V13 — Gitea housekeeping from Visual Studio</h3>
+<p>Short, and it settles the questions everybody hits in week one.</p>
+<ol>
+<li><strong>Git → Manage Remotes.</strong> The <strong>Remotes</strong> grid (pictured in Lab V2) lists <code>origin</code> with the
+   Gitea URL. If the server ever moves, edit the URL in that grid (click the cell) rather than
+   removing and re-adding the remote — editing preserves every branch's upstream link. The terminal
+   equivalent is <code>git remote set-url origin &lt;new-url&gt;</code>.</li>
+<li><strong>Git → Settings → Git Repository Config.</strong> Per-repo overrides live here, and they <strong>beat</strong>
+   your global settings. A different <code>user.email</code> for one project is the usual reason.</li>
+</ol>
+<p><a href="img/git-with-gitea/vs-git-repo-config.png" target="_blank" rel="noopener"><img alt="Git Repository Config page" src="img/git-with-gitea/vs-git-repo-config.png" /></a></p>
+<p><em>Git Repository Config. </em><em>User name / Email</em><em> left empty (2) mean "use the global value". The
+   </em><em>Add .gitignore</em><em> button (1) writes Visual Studio's generic file — the one §7 tells you not to
+   use.</em></p>
+<ol start="3">
+<li><strong>Prove the stale-branch cache.</strong> In <strong>Gitea</strong>, delete the <code>feature/vs-staging</code> branch through
+   the web UI (<strong>Branches</strong> → the bin icon). Back in VS, look at <strong>Git Repository</strong> → <code>remotes/origin</code>:
+   it is <strong>still listed</strong>. Now <strong>Git → Fetch</strong> with pruning on (§2) and look again — gone.
+   That entry was never live; it was a cache from your last fetch.</li>
+</ol>
+<p><a href="img/git-with-gitea/g-branches.png" target="_blank" rel="noopener"><img alt="Gitea Branches page" src="img/git-with-gitea/g-branches.png" /></a></p>
+<p><em>Gitea's </em><em>Branches</em><em> page: the default branch on top, the others below, each with </em><em>New Pull
+   Request</em><em> and the bin icon (boxed) that deletes it on the server.</em></p>
+<p>After the pruning fetch, <strong>Output → Source Control - Git</strong> shows the line
+   <code>- [deleted] (none) -&gt; origin/feature/vs-staging</code> — that is the stale entry being dropped (see
+   the Output screenshot in §1.5).
+4. Delete the leftover local branches too: right-click <code>feature/vs-staging</code> and <code>spike/*</code> →
+   <strong>Delete</strong>.
+5. <strong>Rotate your token.</strong> Windows <strong>Credential Manager</strong> → <em>Windows Credentials</em> → find the
+   <code>git:http://192.168.0.22:3000</code> entry → <strong>Remove</strong>. Push again in VS: it prompts, and you paste a
+   fresh PAT from Gitea. This is how you rotate a token, and how you fix "VS keeps using the wrong
+   account".</p>
+<p><a href="img/git-with-gitea/g-token.png" target="_blank" rel="noopener"><img alt="Gitea access tokens" src="img/git-with-gitea/g-token.png" /></a></p>
+<p><em>Gitea → Settings → </em><em>Applications</em><em>: your existing tokens, each with </em><em>Delete</em><em> (boxed) — delete
+   the old one once the new one works. </em><em>Generate New Token</em><em> below makes the replacement (§0.4).</em></p>
+<ol start="6">
+<li><strong>Confirm the boundary for yourself.</strong> Open every Git menu in Visual Studio and look for
+   anything that creates a pull request. There is nothing — VS's PR tooling binds to GitHub and
+   Azure DevOps only. The browser is not a workaround here; it is the tool.</li>
+</ol>
+<p><strong>Verify:</strong> you can rotate your PAT without help, you know that a branch deleted on the server
+lingers in VS until a pruning fetch, and your branch list contains only <code>main</code>.</p>
+<blockquote>
+<p><strong>Stuck?</strong> <code>remotes/origin/feature/vs-staging</code> still listed after the fetch → <a href="#ts-stale-branch">pruning is off</a>; turn it on in <a href="#2-one-time-setup-in-visual-studio">§2</a>. No <code>git:http://192.168.0.22:3000</code> entry in Credential Manager → look for any entry containing <code>192.168.0.22</code>; Git Credential Manager may have named it differently.</p>
+</blockquote>
+<hr />
+<h3 id="you-have-finished-part-1">You have finished Part 1</h3>
+<p>You can now do, entirely in the IDE: clone and init, stage by file and by line, commit, amend,
+branch, merge, resolve a conflict, stash, tag, revert, reset, push and pull — and you know the
+three places where you must open a terminal, and why.</p>
+<p><strong>Where to go from here:</strong></p>
+<ul>
+<li><a href="git-with-gitea-part3.html#15-oh-no-the-recovery-section">§15 — "Oh no", the recovery section</a>. Read it once now, so you
+  remember it exists at 3am.</li>
+<li><a href="git-with-gitea-part3.html#17-graduating-the-real-repository">§17 — Graduating: the real repository</a>, when you are ready
+  to work on <code>TflCbsNet10Sol</code> itself.</li>
+<li><strong><a href="git-with-gitea-part2.html">Part 2</a></strong>, if you want to understand what the buttons were
+  doing. The labs there use a separate folder and a separate Gitea repo, so nothing you did here is
+  at risk. Doing both halves is not repetition — Part 2's reference tables
+  (<a href="git-with-gitea-part2.html#11-section-a-practical-reference">§11</a> and <a href="git-with-gitea-part2.html#12-section-b-exhaustive-reference">§12</a>) are
+  what you will actually reach for when an error message is unfamiliar.</li>
+</ul>
+<hr />
+<p><strong>Next:</strong> <a href="git-with-gitea-part2.html">Part 2 — Git at the command line →</a></p>
+<p><a href="git-with-gitea.html">Git with Gitea — start page</a> · <a href="git-with-gitea-part0.html">← Part 0 · Common ground</a> · <a href="git-with-gitea-part2.html">Part 2 · Command line →</a> · <a href="git-with-gitea-cheat-sheet.html">Cheat sheet</a></p>
+</div></div>
+<script>
+(function(){
+ function put(t){
+  if(navigator.clipboard&&navigator.clipboard.writeText)return navigator.clipboard.writeText(t);
+  return new Promise(function(res,rej){
+   var a=document.createElement('textarea');a.value=t;a.setAttribute('readonly','');
+   a.style.cssText='position:fixed;top:0;left:0;opacity:0';document.body.appendChild(a);
+   a.select();var ok=false;try{ok=document.execCommand('copy')}catch(e){}
+   document.body.removeChild(a);ok?res():rej()});
+ }
+ function flash(el,txt,ms){
+  var was=el.textContent;el.classList.add('done');if(txt)el.textContent=txt;
+  setTimeout(function(){el.classList.remove('done');if(txt)el.textContent=was},ms||1200);
+ }
+ function copy(text,el,okTxt){
+  put(text).then(function(){flash(el,okTxt)},function(){
+   if(okTxt){var w=el.textContent;el.textContent='Ctrl+C';setTimeout(function(){el.textContent=w},2000)}});
+ }
+ document.querySelectorAll('pre').forEach(function(pre){
+  if(pre.classList.contains('txtdoc'))return;
+  var b=document.createElement('button');
+  b.type='button';b.className='copy';b.textContent='Copy';
+  b.setAttribute('aria-label','Copy this code block to the clipboard');
+  b.addEventListener('click',function(){copy((pre.querySelector('code')||pre).innerText,b,'Copied')});
+  pre.appendChild(b);
+ });
+ document.querySelectorAll('td code').forEach(function(c){
+  if(!c.textContent.trim())return;
+  c.classList.add('cp');c.tabIndex=0;c.setAttribute('role','button');
+  c.title='Click to copy';
+  c.addEventListener('click',function(){copy(c.textContent,c)});
+  c.addEventListener('keydown',function(e){
+   if(e.key==='Enter'||e.key===' '){e.preventDefault();copy(c.textContent,c)}});
+ });
+ // Lab tick-boxes: any heading whose id starts "lab-" gets a checkbox, remembered in this
+ // browser only. Storage can be missing (private window, blocked site data) - the page
+ // still works, the ticks just do not persist.
+ function sget(k){try{return localStorage.getItem(k)}catch(e){return null}}
+ function sset(k,on){try{on?localStorage.setItem(k,'1'):localStorage.removeItem(k)}catch(e){}}
+ var labs=[].slice.call(document.querySelectorAll('h2[id^="lab-"],h3[id^="lab-"]'));
+ if(labs.length){
+  var badge=document.createElement('div');badge.className='labbadge';document.body.appendChild(badge);
+  var count=function(){badge.textContent='Labs done: '+labs.filter(function(h){return sget('labdone:'+h.id)}).length+' of '+labs.length};
+  labs.forEach(function(h){
+   var cb=document.createElement('input');cb.type='checkbox';cb.className='lab';
+   cb.title='Tick when you have finished this lab (remembered in this browser)';cb.setAttribute('aria-label','Lab done');
+   cb.checked=!!sget('labdone:'+h.id);h.classList.toggle('labdone',cb.checked);
+   cb.addEventListener('change',function(){sset('labdone:'+h.id,cb.checked);h.classList.toggle('labdone',cb.checked);count()});
+   h.insertBefore(cb,h.firstChild);
+  });
+  count();
+ }
+ document.querySelectorAll('li>a[href*="#lab-"]').forEach(function(a){
+  if(sget('labdone:'+a.getAttribute('href').split('#')[1]))a.classList.add('labdone')});
+})();
+</script>
+</body></html>

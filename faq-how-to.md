@@ -200,6 +200,15 @@ changing a SHARED component, run the **component-docs-sync** and **component-dem
   Preserve legacy raw-SQL/procs ONLY where already migrated as such.
 - Services return `Result` / `Result<T>` — handle errors explicitly, never throw
   across the service boundary, no silent failures.
+- NO `BIT` column — a flag is `INT` holding **0/1** (`INT` / `NUMBER(10,0)` / `INTEGER`);
+  entity `int?`. Compare `== 1`, never `== true` or `?? false`.
+- NO `UNIQUEIDENTIFIER` column — a GUID is `CHAR(36)` holding the **uppercase** hyphenated
+  form on all three providers; entity `string?`. Write
+  `Guid.NewGuid().ToString().ToUpperInvariant()` — `.ToString()` alone is lowercase and never
+  matches on a `CHAR` compare.
+  Both: Oracle's provider cannot bind a CLR `bool` or `Guid`, and the read path coerces, so a
+  wrong type passes every read test and fails only on write, only on Oracle. Detail:
+  [know-your-code.md §2](know-your-code.md#2-portable-column-types--the-two-banned-sql-server-types).
 
 ### Web
 
@@ -252,7 +261,7 @@ The topology is now baked into launch/`appsettings.Development.json`:
   so everyday dev isn't coupled to the SSO tables.
 - A plain `dotnet run` per project brings the HTTPS topology up (no args).
 
-Needs the two shared tables: `CBS_DATAPROTECTIONKEYS`, `CBS_SESSIONREVOCATIONS`.
+Needs the two shared tables: `CBS_DATAPROTECTIONKEYS`, `CBS_SESSIONREVOCATIONS` — created by DbMigrator migration `0020_sso_shared_tables` (all three providers, idempotent).
 Full detail: [docs/single-sign-on.md](single-sign-on.md).
 
 **Q. My thin host denies every screen even for authorized users!**
@@ -311,12 +320,13 @@ Framework or Web.Shared.
 
 1. Running the app is allowed for verification — STOP it before rebuilding.
 2. No raw SQL / stored procedures for new master CRUD — use `Repository<T>`.
-3. Services return `Result`/`Result<T>` — no silent failures, no throwing across the boundary.
-4. Access is fail-closed — never widen access or bypass the menu/route guard.
-5. Reusable components stay additive with safe defaults.
-6. Build `TflCbs.Entities` FIRST when entities change.
-7. Never hardcode credentials/connection strings; never log secrets.
-8. **When uncertain, ask** rather than assume.
+3. **Never `BIT` or `UNIQUEIDENTIFIER`** — flags are `INT` 0/1, GUIDs are `CHAR(36)` uppercase, on all three providers.
+4. Services return `Result`/`Result<T>` — no silent failures, no throwing across the boundary.
+5. Access is fail-closed — never widen access or bypass the menu/route guard.
+6. Reusable components stay additive with safe defaults.
+7. Build `TflCbs.Entities` FIRST when entities change.
+8. Never hardcode credentials/connection strings; never log secrets.
+9. **When uncertain, ask** rather than assume.
 
 ## Section J — Working memory / changelog
 
